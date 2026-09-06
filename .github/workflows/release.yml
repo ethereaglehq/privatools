@@ -102,3 +102,37 @@ jobs:
       - uses: sigstore/cosign-installer@398d4b0eeef1380460a10c8013a76f728fb906ac # v3
       - name: Sign published image digest
         run: cosign sign --yes "${IMAGE_NAME}@${{ steps.build.outputs.digest }}"
+
+  # A tag is not a release. GitHub's Releases API is what package trackers,
+  # awesome-list tooling and self-hosters actually read, and for 42 tags it
+  # returned an empty list — so the project looked, to anything automated, as
+  # though it had never shipped. Backfilled by hand once; this makes sure it
+  # cannot lapse again.
+  #
+  # Runs after `docker` on purpose: a release should only exist for a version
+  # whose image was built, scanned and signed.
+  publish-release:
+    name: Publish GitHub Release
+    needs: docker
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create the release
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          # --generate-notes diffs against the previous tag, which needs history.
+          fetch-depth: 0
+      - name: Create the release if it does not already exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "release $TAG already exists — nothing to do"
+            exit 0
+          fi
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --generate-notes \
+            --verify-tag
