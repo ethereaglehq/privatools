@@ -6,7 +6,7 @@ Last updated: 2026-06-18
 
 - [x] Repository path verified: `/Users/lakshya/projects/priva-tool/.claude/worktrees/focused-shaw-fd415a`
 - [x] GitHub identity collision corrected locally: `taiyeba-dg` replaced with `ethereaglehq` across frontend/backend references.
-- [x] GitHub identity verification passed: Phase 0 grep returns no `taiyeba-dg` refs; `DynamicHead.tsx` Organization and Person `sameAs` point to `https://github.com/ethereaglehq/privatools`.
+- [x] GitHub identity verification passed: Phase 0 grep returns no retired-identity refs; `DynamicHead.tsx` Organization and Person `sameAs` point to `https://github.com/ethereaglehq/privatools`.
 - [x] OG image verified live at 1200x630: production PNG header printed `(1200, 630)`.
 - [x] Favorite/pin loop completed locally: tool-page H1 star, non-PDF tool-page H1 star, ToolCard star affordance, same-tab favorites event, Sidebar/Index consumption.
 - [x] EditPdfUI migrated to Pointer Events with pointer capture, `touch-action: none`, pointer release, and 24px coarse-pointer resize handles.
