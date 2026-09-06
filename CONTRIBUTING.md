@@ -20,7 +20,7 @@ test your changes, and open a pull request.
 ### Run the whole app (Docker — easiest)
 
 ```bash
-git clone https://github.com/deadpoolrulesmarvel1-svg/privatools.git
+git clone https://github.com/ethereaglehq/privatools.git
 cd privatools
 docker compose up --build
 # open http://localhost:8080

@@ -37,7 +37,7 @@ DEPLOY_TAG_GLOB="${DEPLOY_TAG_GLOB:-v*}"
 # heavy rebuild on this 2-core VM. The deploy pulls ${DEPLOY_IMAGE_REPO}:<tag>,
 # verifies its org.opencontainers.image.revision label == the tag's commit, and
 # runs it with `up --no-build`. Set DEPLOY_IMAGE_REPO="" to force local builds.
-DEPLOY_IMAGE_REPO="${DEPLOY_IMAGE_REPO:-ghcr.io/deadpoolrulesmarvel1-svg/privatools}"
+DEPLOY_IMAGE_REPO="${DEPLOY_IMAGE_REPO:-ghcr.io/ethereaglehq/privatools}"
 
 # Second namespace to try when the primary pull fails outright.
 #
@@ -49,7 +49,10 @@ DEPLOY_IMAGE_REPO="${DEPLOY_IMAGE_REPO:-ghcr.io/deadpoolrulesmarvel1-svg/privato
 #
 # Listing both namespaces means the rename needs no coordinated deploy window.
 # Set to "" to disable the fallback.
-DEPLOY_IMAGE_REPO_FALLBACK="${DEPLOY_IMAGE_REPO_FALLBACK:-ghcr.io/ethereaglehq/privatools}"
+# Empty now that the 2026-09-06 rename has settled and the primary points at
+# the current namespace — the old one no longer resolves, so retrying it would
+# only add ~36s to a genuine outage. The mechanism stays for the next rename.
+DEPLOY_IMAGE_REPO_FALLBACK="${DEPLOY_IMAGE_REPO_FALLBACK:-}"
 
 # Optional deploy-health alerting: set DEPLOY_PING_URL to a Healthchecks.io (or
 # similar) check URL. We ping it on success and ping <url>/fail on failure, so a

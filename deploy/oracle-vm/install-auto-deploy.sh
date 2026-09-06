@@ -4,7 +4,7 @@
 set -euo pipefail
 
 REPO_DIR="${REPO_DIR:-/home/ubuntu/privatools}"
-REPO_URL="${REPO_URL:-https://github.com/deadpoolrulesmarvel1-svg/privatools.git}"
+REPO_URL="${REPO_URL:-https://github.com/ethereaglehq/privatools.git}"
 APP_USER="${APP_USER:-ubuntu}"
 
 if [[ "${EUID}" -ne 0 ]]; then

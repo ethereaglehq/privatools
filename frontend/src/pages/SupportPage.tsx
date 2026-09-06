@@ -13,7 +13,7 @@ const CHANNELS = [
     {
         icon: Bug, title: "Something is broken",
         body: "Open an issue with the tool name and what you expected. If a file failed, say what kind — never attach the file itself.",
-        cta: "Open an issue", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools/issues",
+        cta: "Open an issue", href: "https://github.com/ethereaglehq/privatools/issues",
         external: true,
     },
     {
@@ -29,7 +29,7 @@ const CHANNELS = [
     {
         icon: Github, title: "Read the code",
         body: `All ${TOTAL_TOOL_COUNT} tools are MIT-licensed and self-hostable. If you would rather run it yourself, you can.`,
-        cta: "View on GitHub", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools",
+        cta: "View on GitHub", href: "https://github.com/ethereaglehq/privatools",
         external: true,
     },
 ] as const;

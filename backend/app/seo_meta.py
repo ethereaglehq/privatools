@@ -1405,7 +1405,7 @@ _TRUST_VARIANTS: tuple[str, ...] = (
     "Every PrivaTools tool — including {name} — is genuinely free with no "
     "premium tier, no per-day limit, and no watermark on the output. Files are "
     "deleted from the server within seconds of your download completing. "
-    "Source code: github.com/deadpoolrulesmarvel1-svg/privatools.",
+    "Source code: github.com/ethereaglehq/privatools.",
 
     "{name} was built around one rule: your file is yours. Browser-only helpers "
     "never upload anything; anything that needs the server runs in a throwaway "
@@ -1992,7 +1992,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     # the strongest current node; add a Wikidata Q-number here
                     # once minted (see docs/GEO-RUNBOOK.md) for full KG linkage.
                     "sameAs": [
-                        "https://github.com/deadpoolrulesmarvel1-svg/privatools",
+                        "https://github.com/ethereaglehq/privatools",
                         "https://x.com/ethereaglehq",
                         "https://privatools.me",
                     ],
@@ -2029,7 +2029,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                         {
                             "@type": "Question",
                             "name": "Can I self-host PrivaTools?",
-                            "acceptedAnswer": {"@type": "Answer", "text": f"Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run `docker compose up --build` to host all {_TOTAL_TOOL_COUNT} tools on your own server."},
+                            "acceptedAnswer": {"@type": "Answer", "text": f"Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/ethereaglehq/privatools and run `docker compose up --build` to host all {_TOTAL_TOOL_COUNT} tools on your own server."},
                         },
                         {
                             "@type": "Question",
@@ -2202,7 +2202,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "@type": "Organization",
                     "name": "PrivaTools",
                     "url": BASE_URL,
-                    "sameAs": ["https://github.com/deadpoolrulesmarvel1-svg/privatools"],
+                    "sameAs": ["https://github.com/ethereaglehq/privatools"],
                 },
                 "datePublished": "2026-03-15",
                 "dateModified": reviewed,
@@ -2358,7 +2358,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "@id": f"{BASE_URL}/about#author",
                     "name": post.get("author") or "Lakshya Lodha",
                     "url": f"{BASE_URL}/about",
-                    "sameAs": ["https://github.com/deadpoolrulesmarvel1-svg/privatools"],
+                    "sameAs": ["https://github.com/ethereaglehq/privatools"],
                 },
                 "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
                 "mainEntityOfPage": {
@@ -2439,7 +2439,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
         about_faqs = [
             {
                 "q": "Who runs PrivaTools?",
-                "a": "PrivaTools is an open-source project under the MIT license — see the code on GitHub at deadpoolrulesmarvel1-svg/privatools. The public demo at privatools.me is maintained by independent contributors and funded by no advertisers, investors, or data brokers.",
+                "a": "PrivaTools is an open-source project under the MIT license — see the code on GitHub at ethereaglehq/privatools. The public demo at privatools.me is maintained by independent contributors and funded by no advertisers, investors, or data brokers.",
             },
             {
                 "q": "What happens to files I upload?",
@@ -2691,7 +2691,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         for q, a in [
             ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."),
             ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload file content."),
-            ("Can I self-host PrivaTools?", f"Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/deadpoolrulesmarvel1-svg/privatools and run docker compose up --build to host all {_TOTAL_TOOL_COUNT} tools on your own server."),
+            ("Can I self-host PrivaTools?", f"Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/ethereaglehq/privatools and run docker compose up --build to host all {_TOTAL_TOOL_COUNT} tools on your own server."),
             ("What file size limit does PrivaTools have?", "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."),
             ("Does PrivaTools use AI?", "Two tools use AI without third-party AI APIs. Summarize PDF runs distilbart-cnn-12-6 in your browser. Smart Redact runs BERT-base-NER in your browser for detection, then sends the PDF and approved strings to the isolated backend only to permanently apply redactions."),
             ("How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?", "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."),
@@ -2760,7 +2760,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f'<p class="meta-trust"><em>Last reviewed {reviewed} by the PrivaTools maintainers. '
                 f'Source code on '
-                f'<a href="https://github.com/deadpoolrulesmarvel1-svg/privatools" rel="author">GitHub</a> '
+                f'<a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
                 f'(MIT-licensed, self-hostable).</em></p>'
             )
             # Related tools for internal linking — most-popular first
@@ -2821,7 +2821,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(
                 f'<p class="meta-trust"><em>Last reviewed {reviewed} by the PrivaTools maintainers. '
                 f'Source code on '
-                f'<a href="https://github.com/deadpoolrulesmarvel1-svg/privatools" rel="author">GitHub</a> '
+                f'<a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
                 f'(MIT-licensed, self-hostable).</em></p>'
             )
             related = [(s, n) for s, (n, _) in _by_popularity(_NONPDF_TOOLS.items()) if s != slug][:8]
@@ -2964,7 +2964,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         )
         parts.append("<h2>Frequently Asked Questions</h2>")
         for q, a in [
-            ("Who runs PrivaTools?", "PrivaTools is an open-source project under the MIT license — see the code on GitHub at deadpoolrulesmarvel1-svg/privatools. The public demo at privatools.me is maintained by independent contributors, with no advertisers, investors, or data brokers in the picture."),
+            ("Who runs PrivaTools?", "PrivaTools is an open-source project under the MIT license — see the code on GitHub at ethereaglehq/privatools. The public demo at privatools.me is maintained by independent contributors, with no advertisers, investors, or data brokers in the picture."),
             ("What happens to files I upload?", "Server-side tools hold your file in isolated temporary storage only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all."),
             ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. We do not sell user data, run ads, or operate a freemium tier."),
             ("Can I self-host PrivaTools?", "Yes. The full stack is MIT-licensed and ships as a Docker Compose project. Clone the repo and run docker compose up --build to host the whole thing on your own server."),
@@ -3006,7 +3006,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("<h2>4. Open Source &amp; Self-Hosting</h2>")
         parts.append(
             "<p>The entire stack is MIT-licensed at "
-            "<a href='https://github.com/deadpoolrulesmarvel1-svg/privatools'>github.com/deadpoolrulesmarvel1-svg/privatools</a>. "
+            "<a href='https://github.com/ethereaglehq/privatools'>github.com/ethereaglehq/privatools</a>. "
             "If you don't want to trust our deployment, "
             "<code>docker compose up --build</code> runs the whole thing on your own server.</p>"
         )

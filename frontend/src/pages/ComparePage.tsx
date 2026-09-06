@@ -510,7 +510,7 @@ export default function ComparePage() {
                 Browse all tools <ArrowRight size={13} />
               </Link>
               <a
-                href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
+                href="https://github.com/ethereaglehq/privatools"
                 target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
               >
@@ -919,7 +919,7 @@ function DirectoryView() {
                     Browse all {TOTAL_TOOL_COUNT} tools <ArrowRight size={13} />
                   </Link>
                   <a
-                    href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
+                    href="https://github.com/ethereaglehq/privatools"
                     target="_blank" rel="noreferrer"
                     className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                   >

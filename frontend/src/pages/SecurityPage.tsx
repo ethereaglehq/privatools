@@ -25,7 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const LAST_UPDATED = "June 18, 2026";
-const GIT_HISTORY_URL = "https://github.com/deadpoolrulesmarvel1-svg/privatools/commits/main/frontend/src/pages/SecurityPage.tsx";
+const GIT_HISTORY_URL = "https://github.com/ethereaglehq/privatools/commits/main/frontend/src/pages/SecurityPage.tsx";
 
 interface Section { id: string; title: string; flag?: boolean }
 const SECTIONS: Section[] = [
@@ -387,7 +387,7 @@ Policy: https://privatools.me/security`}</code></pre>
               <p>
                 Security and privacy questions: <a href="mailto:hello@privatools.me">hello@privatools.me</a>.
                 Source code and public issues:{" "}
-                <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools" target="_blank" rel="noopener noreferrer">
+                <a href="https://github.com/ethereaglehq/privatools" target="_blank" rel="noopener noreferrer">
                   GitHub
                 </a>.
               </p>
