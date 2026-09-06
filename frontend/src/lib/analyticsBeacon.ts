@@ -16,11 +16,19 @@ import { readAnalyticsPrivacyPreference } from "./analyticsPrivacy";
 
 const CLIENT_ID_KEY = "pt-analytics-cid";
 const SESSION_KEY = "pt-analytics-session";
+const PROGRESS_KEY = "pt-analytics-progress";
 const ENDPOINT = "/api/analytics/pageview";
 /** GA4's own definition of a session: 30 minutes of inactivity ends it. */
 const SESSION_IDLE_MS = 30 * 60 * 1000;
 /** GA4 rejects a single event claiming more than an hour of engagement. */
 const MAX_ENGAGEMENT_MS = 3_600_000;
+/**
+ * GA4's own thresholds for calling a session engaged: over ten seconds, or a
+ * second page, or a key event. Bounce rate is the inverse of that, so these
+ * two numbers are what the metric is actually made of.
+ */
+const ENGAGED_AFTER_MS = 10_000;
+const ENGAGED_AFTER_VIEWS = 2;
 /**
  * Don't spend a request on a sub-second sliver.
  *
@@ -152,6 +160,59 @@ function takeEngagement(): number {
     return ms;
 }
 
+/**
+ * How far this session has got towards GA4's engagement bar.
+ *
+ * Reporting engagement *time* is not enough on its own: GA4 stamps each event
+ * with a `session_engaged` flag, and the engaged-session count — and therefore
+ * bounce rate — is built from that flag, not from the time. Sending the time
+ * without the flag produces the exact reading this site had: a real average
+ * engagement time next to a 100% bounce rate, which cannot both be true.
+ *
+ * Kept in sessionStorage because the bar is crossed *across* page views: two
+ * views is one of the triggers, so the count has to outlive a navigation.
+ */
+type Progress = { id: string; ms: number; views: number };
+
+function readProgress(id: string): Progress {
+    try {
+        const raw = sessionStorage.getItem(PROGRESS_KEY);
+        if (raw) {
+            const held = JSON.parse(raw) as Partial<Progress>;
+            // A stale id means the 30-minute session rolled; start over.
+            if (held && held.id === id) {
+                return { id, ms: Number(held.ms) || 0, views: Number(held.views) || 0 };
+            }
+        }
+    } catch {
+        // Private mode, or something else wrote nonsense here.
+    }
+    return { id, ms: 0, views: 0 };
+}
+
+function writeProgress(p: Progress): void {
+    try {
+        sessionStorage.setItem(PROGRESS_KEY, JSON.stringify(p));
+    } catch {
+        // Without storage every event reports the session as not yet engaged,
+        // which understates rather than invents. That is the right way to fail.
+    }
+}
+
+/**
+ * Record this event against the session and say whether it is engaged yet.
+ *
+ * gtag.js sends 0 on the events before the bar is crossed and 1 on every event
+ * after, so an early event carrying 0 is correct rather than a rounding error.
+ */
+function advance(id: string, ms: number, isPageView: boolean): boolean {
+    const p = readProgress(id);
+    p.ms += ms;
+    if (isPageView) p.views += 1;
+    writeProgress(p);
+    return p.ms >= ENGAGED_AFTER_MS || p.views >= ENGAGED_AFTER_VIEWS;
+}
+
 function post(body: Record<string, unknown>): void {
     const json = JSON.stringify(body);
     try {
@@ -183,16 +244,20 @@ export function sendPageview(path?: string): void {
     if (clean === lastPath) return;
     lastPath = clean;
 
+    // Whatever the visitor spent on the page they are leaving. On the very
+    // first view of a visit this is legitimately ~0.
+    const ms = takeEngagement();
+    const sid = sessionId();
+
     post({
         event: "page_view",
         path: clean,
         title: document.title.slice(0, 160) || null,
         referrer: document.referrer || null,
         client_id: clientId(),
-        session_id: sessionId(),
-        // Whatever the visitor spent on the page they are leaving. On the very
-        // first view of a visit this is legitimately ~0.
-        engagement_time_msec: takeEngagement(),
+        session_id: sid,
+        engagement_time_msec: ms,
+        session_engaged: advance(sid, ms, true) ? "1" : "0",
     });
 }
 
@@ -212,13 +277,16 @@ export function flushEngagement(): void {
     const ms = Math.min(unreported, MAX_ENGAGEMENT_MS);
     unreported = 0;
 
+    const sid = sessionId();
+
     post({
         event: "user_engagement",
         path: currentPath(),
         title: document.title.slice(0, 160) || null,
         client_id: clientId(),
-        session_id: sessionId(),
+        session_id: sid,
         engagement_time_msec: ms,
+        session_engaged: advance(sid, ms, false) ? "1" : "0",
     });
 }
 

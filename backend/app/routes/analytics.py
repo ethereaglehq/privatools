@@ -36,6 +36,14 @@ class AnalyticsPageview(BaseModel):
     # both as page_view would double the page-view count; sending neither is
     # how every single-page visit scored as a bounce.
     event: str | None = Field(default=None, max_length=32)
+    # Engagement TIME alone does not make a session engaged. GA4 builds the
+    # engaged-session count — and so bounce rate, its inverse — from this flag,
+    # which is why the property once reported a real 40s average engagement
+    # next to a 100% bounce rate.
+    # Wide enough to accept a wrong value and normalise it to "0" rather than
+    # 422 the whole event: a malformed flag should cost the engagement reading,
+    # not the page view that carried it.
+    session_engaged: str | None = Field(default=None, max_length=8)
 
 
 def _clean_path(path: str | None) -> str:
@@ -71,6 +79,16 @@ _ALLOWED_EVENTS = frozenset({"page_view", "user_engagement"})
 def _clean_event(value: str | None) -> str:
     v = (value or "").strip()
     return v if v in _ALLOWED_EVENTS else "page_view"
+
+
+def _clean_engaged(value: str | None) -> str:
+    """GA4 wants the literal string "1" or "0"; anything else is not engaged.
+
+    Defaulting to "0" rather than omitting the parameter keeps the reading
+    conservative: a session we cannot vouch for counts as a bounce, which
+    understates engagement instead of inventing it.
+    """
+    return "1" if (value or "").strip() == "1" else "0"
 
 
 def _clean_text(value: str | None, limit: int) -> str | None:
@@ -115,6 +133,7 @@ def _build_ga4_payload(pageview: AnalyticsPageview) -> dict[str, Any] | None:
         # report. 1ms is the smallest honest floor: the real number arrives in
         # the user_engagement event sent when the page is hidden.
         "engagement_time_msec": max(pageview.engagement_time_msec or 0, 1),
+        "session_engaged": _clean_engaged(pageview.session_engaged),
     }
     title = _clean_text(pageview.title, 160)
     referrer = _clean_referrer(pageview.referrer)
