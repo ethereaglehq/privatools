@@ -39,6 +39,18 @@ DEPLOY_TAG_GLOB="${DEPLOY_TAG_GLOB:-v*}"
 # runs it with `up --no-build`. Set DEPLOY_IMAGE_REPO="" to force local builds.
 DEPLOY_IMAGE_REPO="${DEPLOY_IMAGE_REPO:-ghcr.io/deadpoolrulesmarvel1-svg/privatools}"
 
+# Second namespace to try when the primary pull fails outright.
+#
+# Renaming the GitHub account moves the GHCR namespace with it and leaves NO
+# redirect behind, so the configured repo starts 404ing the moment the rename
+# lands. The site stays up — the running container is unaffected — but every
+# subsequent release fails to pull and the deploy quietly stalls, which is the
+# worst shape of failure: nothing is broken enough to notice.
+#
+# Listing both namespaces means the rename needs no coordinated deploy window.
+# Set to "" to disable the fallback.
+DEPLOY_IMAGE_REPO_FALLBACK="${DEPLOY_IMAGE_REPO_FALLBACK:-ghcr.io/ethereaglehq/privatools}"
+
 # Optional deploy-health alerting: set DEPLOY_PING_URL to a Healthchecks.io (or
 # similar) check URL. We ping it on success and ping <url>/fail on failure, so a
 # stuck or failed deploy raises an alert instead of going unnoticed.
@@ -49,7 +61,12 @@ DEPLOY_PING_URL="${DEPLOY_PING_URL:-}"
 # unauthenticated, so the signature is the real trust anchor. When cosign is
 # installed on the host, verification is FAIL-CLOSED. The signing identity is
 # the release.yml workflow on a tag ref. (Validated against a real signed image.)
-DEPLOY_COSIGN_IDENTITY_REGEXP="${DEPLOY_COSIGN_IDENTITY_REGEXP:-^https://github.com/deadpoolrulesmarvel1-svg/privatools/\\.github/workflows/release\\.yml@}"
+# The owner is an alternation for the same reason as the image fallback above:
+# the signing identity embeds the account name, verification is FAIL-CLOSED, and
+# a rename would otherwise make every new image unverifiable — refusing to
+# deploy rather than merely stalling. Both names are accepted until the rename
+# settles, then the stale one should be dropped.
+DEPLOY_COSIGN_IDENTITY_REGEXP="${DEPLOY_COSIGN_IDENTITY_REGEXP:-^https://github\\.com/(deadpoolrulesmarvel1-svg|ethereaglehq)/privatools/\\.github/workflows/release\\.yml@}"
 DEPLOY_COSIGN_OIDC_ISSUER="${DEPLOY_COSIGN_OIDC_ISSUER:-https://token.actions.githubusercontent.com}"
 
 ping_deploy() {  # ping_deploy ok|fail
@@ -189,6 +206,23 @@ if [[ "$target_ref" != "${REMOTE}/${BRANCH}" && -n "$DEPLOY_IMAGE_REPO" ]]; then
         log "pull attempt ${attempt}/3 for ${target_ref} failed; retrying in 12s (layers kept)"
         sleep 12
     done
+    if ! $pulled && [[ -n "$DEPLOY_IMAGE_REPO_FALLBACK" ]]; then
+        # Distinguishes "GHCR is briefly unhappy" (the retries above) from "this
+        # namespace no longer exists" (an account rename). Only reached once the
+        # primary has genuinely given up, so it costs nothing in the normal case.
+        fallback_ref="${DEPLOY_IMAGE_REPO_FALLBACK}:${target_ref}"
+        log "primary repo did not yield ${target_ref}; trying ${fallback_ref}"
+        for attempt in 1 2 3; do
+            if docker pull "$fallback_ref" >/dev/null 2>&1; then
+                pulled=true
+                image_ref="$fallback_ref"
+                log "pulled from fallback namespace ${DEPLOY_IMAGE_REPO_FALLBACK}"
+                break
+            fi
+            log "fallback pull attempt ${attempt}/3 for ${target_ref} failed; retrying in 12s (layers kept)"
+            sleep 12
+        done
+    fi
     if ! $pulled; then
         log "pull not complete this cycle for ${target_ref}; will resume next cycle"
     fi
