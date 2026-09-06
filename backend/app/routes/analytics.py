@@ -32,6 +32,10 @@ class AnalyticsPageview(BaseModel):
     # reached Traffic acquisition or Pages and screens.
     session_id: str | None = Field(default=None, max_length=32)
     engagement_time_msec: int | None = Field(default=None, ge=0, le=3_600_000)
+    # A page view and a report of time-on-page are different events. Sending
+    # both as page_view would double the page-view count; sending neither is
+    # how every single-page visit scored as a bounce.
+    event: str | None = Field(default=None, max_length=32)
 
 
 def _clean_path(path: str | None) -> str:
@@ -56,6 +60,17 @@ def _clean_session_id(value: str | None) -> str:
     if _SESSION_ID_RE.fullmatch(v):
         return v
     return str(int(time.time()))
+
+
+# Only the two events this site actually sends. An allowlist rather than a
+# passthrough: the endpoint is unauthenticated, and an open event name would
+# let anyone write arbitrary events into the property.
+_ALLOWED_EVENTS = frozenset({"page_view", "user_engagement"})
+
+
+def _clean_event(value: str | None) -> str:
+    v = (value or "").strip()
+    return v if v in _ALLOWED_EVENTS else "page_view"
 
 
 def _clean_text(value: str | None, limit: int) -> str | None:
@@ -96,7 +111,10 @@ def _build_ga4_payload(pageview: AnalyticsPageview) -> dict[str, Any] | None:
         # Both are required for a Measurement Protocol event to count towards
         # users, sessions and engagement rather than only appearing in Realtime.
         "session_id": _clean_session_id(pageview.session_id),
-        "engagement_time_msec": pageview.engagement_time_msec or 100,
+        # Present and non-zero, or GA4 keeps the event out of every standard
+        # report. 1ms is the smallest honest floor: the real number arrives in
+        # the user_engagement event sent when the page is hidden.
+        "engagement_time_msec": max(pageview.engagement_time_msec or 0, 1),
     }
     title = _clean_text(pageview.title, 160)
     referrer = _clean_referrer(pageview.referrer)
@@ -108,7 +126,7 @@ def _build_ga4_payload(pageview: AnalyticsPageview) -> dict[str, Any] | None:
     return {
         "client_id": client_id,
         "non_personalized_ads": True,
-        "events": [{"name": "page_view", "params": params}],
+        "events": [{"name": _clean_event(pageview.event), "params": params}],
     }
 
 
