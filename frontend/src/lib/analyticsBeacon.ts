@@ -19,6 +19,16 @@ const SESSION_KEY = "pt-analytics-session";
 const ENDPOINT = "/api/analytics/pageview";
 /** GA4's own definition of a session: 30 minutes of inactivity ends it. */
 const SESSION_IDLE_MS = 30 * 60 * 1000;
+/** GA4 rejects a single event claiming more than an hour of engagement. */
+const MAX_ENGAGEMENT_MS = 3_600_000;
+/**
+ * Don't spend a request on a sub-second sliver.
+ *
+ * Time under the threshold is *kept*, not dropped — it stays in the
+ * accumulator and rides along with the next flush — so a visitor who flicks
+ * between tabs a dozen times still has every millisecond counted once.
+ */
+const MIN_FLUSH_MS = 1000;
 
 /**
  * A random id, kept in localStorage so repeat visits count as one browser.
@@ -106,8 +116,61 @@ function sessionId(): string {
     }
 }
 
-/** When this page-view began, so engagement time is a real number. */
-let viewStartedAt = Date.now();
+/**
+ * Foreground milliseconds spent on the current page and not yet reported.
+ *
+ * GA4 calls a session engaged when it lasts over ten seconds, reaches a second
+ * page, or fires a key event — and bounce rate is simply the inverse. So a
+ * visit that reports no engagement time and never navigates is *defined* as a
+ * bounce no matter how long the visitor actually stayed.
+ *
+ * The first version of this file measured the wrong interval: it sent the time
+ * between module load and the pageview firing, which is a few milliseconds,
+ * and then sent nothing else for the rest of the visit. Every single-page
+ * visit therefore reported ~0ms and scored as a bounce, which is how a real
+ * site produced a 100% bounce rate. Accumulating foreground time and flushing
+ * it when the page is hidden is what gtag.js does, and it is the only way the
+ * number means anything.
+ */
+let unreported = 0;
+/** When the current foreground stretch began; 0 while the page is hidden. */
+let foregroundSince = Date.now();
+
+/** Fold the open foreground stretch into the accumulator. */
+function accrue(): void {
+    if (!foregroundSince) return;
+    const now = Date.now();
+    unreported += now - foregroundSince;
+    foregroundSince = now;
+}
+
+/** Take everything accumulated so far, leaving the accumulator empty. */
+function takeEngagement(): number {
+    accrue();
+    const ms = Math.min(unreported, MAX_ENGAGEMENT_MS);
+    unreported = 0;
+    return ms;
+}
+
+function post(body: Record<string, unknown>): void {
+    const json = JSON.stringify(body);
+    try {
+        // sendBeacon survives the page being closed mid-navigation, which is
+        // exactly when the last pageview of a visit would otherwise be lost.
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(ENDPOINT, new Blob([json], { type: "application/json" }));
+            return;
+        }
+        void fetch(ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: json,
+            keepalive: true,
+        }).catch(() => {});
+    } catch {
+        // Analytics must never be the reason a page misbehaves.
+    }
+}
 
 /** The last path sent, so a re-render does not count twice. */
 let lastPath = "";
@@ -120,51 +183,91 @@ export function sendPageview(path?: string): void {
     if (clean === lastPath) return;
     lastPath = clean;
 
-    const now = Date.now();
-    const engaged = Math.min(Math.max(now - viewStartedAt, 100), 3_600_000);
-    viewStartedAt = now;
-
-    const body = JSON.stringify({
+    post({
+        event: "page_view",
         path: clean,
         title: document.title.slice(0, 160) || null,
         referrer: document.referrer || null,
         client_id: clientId(),
         session_id: sessionId(),
-        engagement_time_msec: engaged,
+        // Whatever the visitor spent on the page they are leaving. On the very
+        // first view of a visit this is legitimately ~0.
+        engagement_time_msec: takeEngagement(),
     });
-
-    try {
-        // sendBeacon survives the page being closed mid-navigation, which is
-        // exactly when the last pageview of a visit would otherwise be lost.
-        if (navigator.sendBeacon) {
-            navigator.sendBeacon(ENDPOINT, new Blob([body], { type: "application/json" }));
-            return;
-        }
-        void fetch(ENDPOINT, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body,
-            keepalive: true,
-        }).catch(() => {});
-    } catch {
-        // Analytics must never be the reason a page misbehaves.
-    }
 }
 
 /**
- * Count the first view and every hash navigation after it.
+ * Report time spent, without counting another page view.
+ *
+ * `user_engagement` is GA4's own event for this: it adds to engagement time
+ * and can tip a session over the ten-second line, but it does not inflate the
+ * page-view count the way a second `page_view` would.
+ */
+export function flushEngagement(): void {
+    if (typeof window === "undefined") return;
+    if (optedOut()) return;
+
+    accrue();
+    if (unreported < MIN_FLUSH_MS) return;
+    const ms = Math.min(unreported, MAX_ENGAGEMENT_MS);
+    unreported = 0;
+
+    post({
+        event: "user_engagement",
+        path: currentPath(),
+        title: document.title.slice(0, 160) || null,
+        client_id: clientId(),
+        session_id: sessionId(),
+        engagement_time_msec: ms,
+    });
+}
+
+/**
+ * Count the first view, every hash navigation after it, and time on page.
  *
  * Returns a teardown so a test — or a second mount — cannot leave a listener
  * behind.
  */
 export function startPageviewTracking(): () => void {
     if (typeof window === "undefined") return () => {};
-    const onNav = () => sendPageview();
+
+    // The skin sets document.title from its own hashchange handler, which runs
+    // after this one — so sending immediately records every tool page under
+    // the *previous* page's title. One macrotask is enough to let the router
+    // and React's effects settle, and a visitor who leaves inside that tick
+    // was never going to register as a page view anyway.
+    let navTimer: ReturnType<typeof setTimeout> | undefined;
+    const onNav = () => {
+        clearTimeout(navTimer);
+        navTimer = setTimeout(() => sendPageview(), 0);
+    };
+    const onVisibility = () => {
+        if (document.visibilityState === "hidden") {
+            // Report before the tab is frozen, and stop the clock: minutes
+            // spent in a background tab are not engagement.
+            flushEngagement();
+            foregroundSince = 0;
+        } else if (!foregroundSince) {
+            foregroundSince = Date.now();
+        }
+    };
+    // pagehide, not beforeunload: beforeunload is unreliable on mobile Safari
+    // and disqualifies the page from the back/forward cache.
+    const onHide = () => flushEngagement();
+
+    foregroundSince = document.visibilityState === "hidden" ? 0 : Date.now();
     sendPageview();
+
     window.addEventListener("hashchange", onNav);
     window.addEventListener("popstate", onNav);
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("pagehide", onHide);
+
     return () => {
+        clearTimeout(navTimer);
         window.removeEventListener("hashchange", onNav);
         window.removeEventListener("popstate", onNav);
+        document.removeEventListener("visibilitychange", onVisibility);
+        window.removeEventListener("pagehide", onHide);
     };
 }
