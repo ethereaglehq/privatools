@@ -21,7 +21,7 @@ import { nonPdfTools } from "@/data/non-pdf-tools";
 import { blogPosts } from "@/data/blog";
 import { cn } from "@/lib/utils";
 
-const REPO_URL = "https://github.com/deadpoolrulesmarvel1-svg/privatools";
+const REPO_URL = "https://github.com/ethereaglehq/privatools";
 
 const TOTAL = tools.length + nonPdfTools.length;
 const PDF_COUNT = tools.length;
@@ -164,7 +164,7 @@ export default function AboutPage() {
                 Browse all {TOTAL} tools <ArrowRight size={13} />
               </Link>
               <a
-                href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
+                href="https://github.com/ethereaglehq/privatools"
                 target="_blank" rel="noreferrer"
                 className="inline-flex items-center gap-1.5 h-10 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
               >
@@ -363,14 +363,14 @@ export default function AboutPage() {
               kicker: "Audit",
               title: "Audit every line.",
               desc: "PrivaTools is fully open source under the MIT license. Don't believe a privacy claim — verify it. Read the route handlers, the cleanup task, the CSP headers. It's all there.",
-              cta: { label: "Read the source", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools", primary: true, icon: Github },
+              cta: { label: "Read the source", href: "https://github.com/ethereaglehq/privatools", primary: true, icon: Github },
             },
             {
               Icon: Code,
               kicker: "Self-host",
               title: "Self-host in one command.",
               desc: `If you don't want to trust our deployment either, run your own. Clone the repo, docker compose up --build, you're done. ${TOTAL} tools on your infrastructure.`,
-              cta: { label: "Self-host with Docker", href: "https://github.com/deadpoolrulesmarvel1-svg/privatools#-quick-start", primary: false, icon: Code },
+              cta: { label: "Self-host with Docker", href: "https://github.com/ethereaglehq/privatools#-quick-start", primary: false, icon: Code },
             },
           ].map((card, i) => {
             const Icon = card.Icon;
@@ -531,7 +531,7 @@ export default function AboutPage() {
                 </p>
                 <p className="flex items-center gap-1.5">
                   <GitCommit size={10} className="text-accent shrink-0" />
-                  Author: <a href={`${REPO_URL}/commits?author=deadpoolrulesmarvel1-svg`} target="_blank" rel="noreferrer" className="text-accent hover:underline">deadpoolrulesmarvel1-svg</a>
+                  Author: <a href={`${REPO_URL}/commits?author=ethereaglehq`} target="_blank" rel="noreferrer" className="text-accent hover:underline">ethereaglehq</a>
                 </p>
                 <p>
                   <span className="text-accent">license:</span> MIT · <a href={`${REPO_URL}/blob/main/LICENSE`} target="_blank" rel="noreferrer" className="text-accent hover:underline">LICENSE</a>
@@ -556,14 +556,14 @@ export default function AboutPage() {
                 </div>
                 <ArrowRight size={13} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
               </a>
-              <a href="https://github.com/deadpoolrulesmarvel1-svg/privatools/issues" target="_blank" rel="noreferrer"
+              <a href="https://github.com/ethereaglehq/privatools/issues" target="_blank" rel="noreferrer"
                 className="flex items-center gap-3 rounded-xl border border-border bg-paper-2/30 px-4 py-3 hover:border-accent/45 hover:bg-accent/[0.04] transition-colors group">
                 <div className="h-9 w-9 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                   <Github size={14} className="text-accent" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-[11px] text-muted-foreground">GitHub issues</p>
-                  <p className="text-[14px] font-medium text-foreground">deadpoolrulesmarvel1-svg/privatools</p>
+                  <p className="text-[14px] font-medium text-foreground">ethereaglehq/privatools</p>
                 </div>
                 <ArrowRight size={13} className="text-muted-foreground group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
               </a>

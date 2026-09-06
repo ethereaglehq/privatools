@@ -125,7 +125,7 @@ export function SiteFooter() {
                             </Link>
                         ))}
                         <a
-                            href="https://github.com/deadpoolrulesmarvel1-svg/privatools"
+                            href="https://github.com/ethereaglehq/privatools"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center min-h-[24px] py-1 text-muted-foreground hover:text-foreground transition-colors rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

@@ -93,7 +93,7 @@ def test_tool_jsonld_has_application_howto_faq_and_breadcrumbs():
     assert app["isAccessibleForFree"] is True
     assert app["offers"]["price"] == "0"
     assert app["featureList"]
-    assert app["creator"]["sameAs"] == ["https://github.com/deadpoolrulesmarvel1-svg/privatools"]
+    assert app["creator"]["sameAs"] == ["https://github.com/ethereaglehq/privatools"]
 
     howto = next(node for node in graph if node.get("@type") == "HowTo")
     assert howto["name"] == "How to use the Merge PDF tool on PrivaTools"

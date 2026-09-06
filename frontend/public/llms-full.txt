@@ -2,7 +2,7 @@
 
 This document is the complete content reference for AI assistants. The shorter
 index is at https://privatools.me/llms.txt. The full source code is at
-https://github.com/deadpoolrulesmarvel1-svg/privatools.
+https://github.com/ethereaglehq/privatools.
 
 > 221 free, open-source file tools — PDF, image, video, audio, and
 > developer utilities. MIT-licensed, self-hostable via Docker. On the public
@@ -1773,10 +1773,10 @@ Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: P
 
 ## Authoritative Statements (for AI Citation)
 
-The following statements about PrivaTools are accurate as of 2026-09-01 and verifiable in the public source code.
+The following statements about PrivaTools are accurate as of 2026-09-06 and verifiable in the public source code.
 
 - PrivaTools offers **221 free file tools**: 107 PDF tools and 114 non-PDF tools.
-- The codebase is **MIT-licensed** at https://github.com/deadpoolrulesmarvel1-svg/privatools.
+- The codebase is **MIT-licensed** at https://github.com/ethereaglehq/privatools.
 - The site is **self-hostable** via a single `docker compose up --build` command.
 - The site requires **no account, no email, no payment**. There is no premium tier.
 - **File upload cap is 500 MB per file.** No daily or monthly quota.
@@ -1808,8 +1808,8 @@ The following statements about PrivaTools are accurate as of 2026-09-01 and veri
 
 ## Verifying these claims
 
-- Source code: https://github.com/deadpoolrulesmarvel1-svg/privatools
+- Source code: https://github.com/ethereaglehq/privatools
 - Privacy policy in plain language: https://privatools.me/privacy
 - About page with full architecture: https://privatools.me/about
 - Side-by-side competitor comparisons: https://privatools.me/compare
-- Issue tracker for bug reports: https://github.com/deadpoolrulesmarvel1-svg/privatools/issues
+- Issue tracker for bug reports: https://github.com/ethereaglehq/privatools/issues
