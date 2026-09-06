@@ -186,3 +186,39 @@ def test_zero_engagement_is_floored_to_one_millisecond(client, monkeypatch):
     )
 
     assert event["params"]["engagement_time_msec"] == 1
+
+
+def test_session_engaged_flag_is_forwarded(client, monkeypatch):
+    """Engagement time alone never makes a session engaged.
+
+    GA4 counts engaged sessions from this flag, and bounce rate is its
+    inverse — so sending a real engagement time without it produces a true
+    average engagement time sitting next to a 100% bounce rate, which is the
+    exact contradiction this property reported.
+    """
+    event = _forwarded(
+        client,
+        monkeypatch,
+        {
+            "path": "/",
+            "client_id": "client.12345678",
+            "engagement_time_msec": 12_000,
+            "session_engaged": "1",
+        },
+    )
+
+    assert event["params"]["session_engaged"] == "1"
+
+
+def test_session_engaged_defaults_to_not_engaged(client, monkeypatch):
+    """Absent or malformed means "0", never omitted.
+
+    Conservative on purpose: a session we cannot vouch for should understate
+    engagement rather than invent it.
+    """
+    for payload in (
+        {"path": "/", "client_id": "client.12345678"},
+        {"path": "/", "client_id": "client.12345678", "session_engaged": "yes"},
+    ):
+        event = _forwarded(client, monkeypatch, payload)
+        assert event["params"]["session_engaged"] == "0"
