@@ -1015,6 +1015,20 @@ async def readyz():
 # Mount frontend static files with SPA catch-all
 
 _frontend_path = _resolve_frontend_path()
+
+
+@lru_cache(maxsize=8)
+def _frontend_file_inventory(root: Path) -> dict[str, Path]:
+    """Resolve only files discovered in the immutable build, never a request path."""
+    boundary = root.resolve()
+    files = {}
+    for candidate in boundary.rglob("*"):
+        resolved = candidate.resolve()
+        if candidate.is_file() and resolved.is_relative_to(boundary):
+            files[candidate.relative_to(boundary).as_posix()] = resolved
+    return files
+
+
 if _frontend_path.exists():
     # SPA catch-all: serve static files when they exist on disk,
     # otherwise serve index.html so React Router handles routing.
@@ -1036,13 +1050,10 @@ if _frontend_path.exists():
         # Prevent path traversal
         if ".." in full_path:
             return JSONResponse({"detail": "Not found"}, status_code=404)
-        file_path = (_frontend_path / full_path).resolve()
-        # Ensure the resolved path is within the frontend directory
-        try:
-            file_path.relative_to(_frontend_path.resolve())
-        except ValueError:
-            return JSONResponse({"detail": "Not found"}, status_code=404)
-        if file_path.is_file() and file_path.suffix.lower() == ".html":
+        # The URL selects an already-discovered build entry. It never becomes
+        # part of a filesystem expression, including for HTML and model files.
+        file_path = _frontend_file_inventory(_frontend_path).get(full_path)
+        if file_path is not None and file_path.is_file() and file_path.suffix.lower() == ".html":
             html = _inject_csp_nonce(
                 file_path.read_text("utf-8"),
                 getattr(request.state, "csp_nonce", None),
@@ -1051,7 +1062,7 @@ if _frontend_path.exists():
             resp = HTMLResponse(content=html)
             resp.headers["Cache-Control"] = "no-cache"
             return resp
-        if file_path.is_file():
+        if file_path is not None and file_path.is_file():
             resp = FileResponse(
                 file_path,
                 media_type="application/manifest+json" if full_path == "manifest.json" else _BROWSER_MODEL_ASSETS.get(full_path),
@@ -1076,7 +1087,7 @@ if _frontend_path.exists():
                 resp.headers["Cache-Control"] = "no-cache"
             return resp
         # Missing build assets must fail as assets, never as a 200 HTML shell.
-        if full_path.startswith(("assets/", "fonts/", "icons/", "pwa/", "experience/", "models/")) or file_path.suffix.lower() in _STATIC_EXTENSIONS:
+        if full_path.startswith(("assets/", "fonts/", "icons/", "pwa/", "experience/", "models/")) or Path(full_path).suffix.lower() in _STATIC_EXTENSIONS:
             return JSONResponse({"detail": "Not found"}, status_code=404)
         # Fall back to index.html for SPA routing
         index = _frontend_path / "index.html"

@@ -2,6 +2,9 @@
 import importlib
 import pytest
 
+def directives(policy):
+    return {parts[0]: set(parts[1:]) for item in policy.split(';') if (parts := item.split())}
+
 @pytest.mark.parametrize('path', ['/', '/blog', '/tool/merge-pdf', '/privacy'])
 def test_google_origins_require_operator_switch(monkeypatch, path):
     main = importlib.import_module('app.main')
@@ -9,10 +12,11 @@ def test_google_origins_require_operator_switch(monkeypatch, path):
     assert 'googletagmanager.com' not in main._content_security_policy(path, 'nonce')
     monkeypatch.setenv('GA_BROWSER_TAG_ENABLED', 'true')
     policy = main._content_security_policy(path, 'nonce')
-    assert 'https://www.googletagmanager.com' in policy
-    assert 'https://www.google-analytics.com' in policy
-    assert 'https://region1.google-analytics.com' in policy
-    assert 'script-src https:' not in policy
+    parsed = directives(policy)
+    assert 'https://www.googletagmanager.com' in parsed['script-src']
+    assert 'https://www.google-analytics.com' in parsed['connect-src']
+    assert 'https://region1.google-analytics.com' in parsed['connect-src']
+    assert 'https:' not in parsed['script-src']
 
 @pytest.mark.parametrize('path', ['/account', '/account/sign-in', '/account/settings', '/settings', '/my-stuff', '/my-stuff/vault'])
 def test_private_documents_do_not_gain_google_csp_or_meta(monkeypatch, path):

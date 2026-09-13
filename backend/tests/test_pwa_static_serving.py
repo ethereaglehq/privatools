@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 from pathlib import Path
+from html.parser import HTMLParser
 
 import pytest
 
@@ -46,9 +47,20 @@ def test_precache_index_is_200_and_keeps_sri_and_nonce_policy(client, frontend_b
     assert response.headers["cache-control"] == "no-cache"
     assert f'integrity="{integrity}"' in response.text
     nonce = re.search(r"'nonce-([^']+)'", response.headers["content-security-policy"]).group(1)
-    scripts = re.findall(r"<script\b[^>]*>", response.text)
+    class Scripts(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.tags = []
+
+        def handle_starttag(self, tag, attrs):
+            if tag == 'script':
+                self.tags.append(dict(attrs))
+
+    document = Scripts()
+    document.feed(response.text)
+    scripts = document.tags
     assert len(scripts) == 2
-    assert all(f'nonce="{nonce}"' in tag for tag in scripts)
+    assert all(tag.get('nonce') == nonce for tag in scripts)
     assert client.get("/index.html").headers["content-security-policy"] != response.headers["content-security-policy"]
 
 
