@@ -209,3 +209,67 @@ def test_real_ip_restoration_trusts_only_verified_edges_and_preserves_country_pe
     assert [n.args for n in named(nodes, "real_ip_header")] == [["CF-Connecting-IP"]]
     assert [n.args for n in named(nodes, "real_ip_recursive")] == [["off"]]
     assert named(nodes, "geo")[0].args[0] == "$realip_remote_addr"
+
+
+def tls_server(host):
+    return next(
+        server for server in named(parse_config(ORACLE), "server")
+        if ["443", "ssl", "http2"] in direct(server, "listen")
+        and [host] in direct(server, "server_name")
+    )
+
+
+def test_api_document_exact_match_prevents_nginx_automatic_slash_redirect():
+    server = tls_server("privatools.me")
+    locations = named(server.children, "location")
+    # A proxied /api/ prefix makes nginx redirect /api to /api/ before the
+    # default SPA location can run. Only an EXACT /api location prevents this;
+    # merely retaining location / (or adding an /api prefix) is insufficient.
+    api_prefix = next(location for location in locations if location.args == ["/api/"])
+    assert direct(api_prefix, "proxy_pass"), "Keep the existing API endpoint upstream"
+    exact = [location for location in locations if location.args == ["=", "/api"]]
+    assert len(exact) == 1, "Without exact /api, nginx's proxied /api/ prefix returns automatic 301"
+    document = exact[0]
+    default = next(location for location in locations if location.args == ["/"])
+    for directive in ("proxy_pass", "proxy_set_header", "proxy_read_timeout", "proxy_connect_timeout"):
+        assert direct(document, directive) == direct(default, directive)
+    assert direct(document, "proxy_pass") == [["http://127.0.0.1:8000"]], "Do not rewrite /api to /api/ upstream"
+    assert not direct(document, "return")
+    assert not direct(document, "rewrite")
+    assert not direct(document, "add_header"), "Inherit all apex security headers"
+    assert not direct(document, "proxy_hide_header"), "Preserve the backend's per-request CSP"
+
+
+def test_api_document_trailing_slash_redirect_is_exact_and_preserves_query():
+    locations = named(tls_server("privatools.me").children, "location")
+    exact = [location for location in locations if location.args == ["=", "/api/"]]
+    assert len(exact) == 1
+    assert direct(exact[0], "return") == [["308", "/api$is_args$args"]]
+    assert not direct(exact[0], "proxy_pass")
+    assert not direct(exact[0], "add_header"), "Redirects retain inherited apex security headers"
+
+
+@pytest.mark.parametrize("route", ["/api/health", "/api/tools/merge-pdf", "/api/analytics/policy"])
+def test_api_document_locations_do_not_capture_real_api_endpoints(route):
+    locations = named(tls_server("privatools.me").children, "location")
+    exact = next((location for location in locations if location.args == ["=", route]), None)
+    # These non-static API routes use an exact endpoint when present, otherwise
+    # the longest prefix. The document redirects must match neither case.
+    selected = exact or max(
+        (location for location in locations if len(location.args) == 1 and route.startswith(location.args[0])),
+        key=lambda location: len(location.args[0]),
+    )
+    assert direct(selected, "proxy_pass") == [["http://127.0.0.1:8000"]]
+    assert not direct(selected, "return")
+    if route != POLICY:
+        assert selected.args == ["/api/"]
+        assert direct(selected, "limit_req") == [["zone=api", "burst=20", "nodelay"]]
+        assert direct(selected, "limit_conn") == [["apiconn", "24"]]
+        assert direct(selected, "proxy_read_timeout") == [["300s"]]
+
+
+def test_api_document_locations_are_not_added_to_the_direct_api_host():
+    locations = named(tls_server("api.privatools.me").children, "location")
+    assert not any(location.args in (["=", "/api"], ["=", "/api/"]) for location in locations)
+    default = next(location for location in locations if location.args == ["/"])
+    assert direct(default, "return") == [["404"]]
