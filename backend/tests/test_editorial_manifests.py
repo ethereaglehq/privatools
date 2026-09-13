@@ -134,7 +134,12 @@ def test_sitemap_dates_do_not_change_with_request_day_and_private_pages_are_abse
 
 def test_valid_generated_sitemap_is_primary_and_stale_generated_routes_are_rejected(manifests):
     fallback = sitemap._build_sitemap_xml()
-    valid = fallback.replace(b'\n</urlset>', b'\n<!-- generated artifact -->\n</urlset>')
+    # A fixture must not inherit review dates that are tomorrow in the UTC CI
+    # runner's timezone. Exercise acceptance with an explicitly past date.
+    root = ElementTree.fromstring(fallback)
+    for lastmod in root.iter('{http://www.sitemaps.org/schemas/sitemap/0.9}lastmod'):
+        lastmod.text = '2000-01-01'
+    valid = ElementTree.tostring(root)
     sitemap.GENERATED_SITEMAP.write_bytes(valid)
     assert sitemap._build_sitemap_xml() == valid
     stale = valid.replace(b'https://privatools.me/about', b'https://privatools.me/account/settings')

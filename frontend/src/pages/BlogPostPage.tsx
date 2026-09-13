@@ -1,5 +1,5 @@
-import { type BlogHeading, prepareBlogBody } from "./blog-content";
-import { useMemo, useState } from "react";
+import { type BlogNode, prepareBlogBody } from "./blog-content";
+import { createElement, useMemo, useState, type ReactNode } from "react";
 import { useParams } from "react-router-dom";
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowUpRight, BookOpen, Check, Clock3, Link2, List, Printer } from "lucide-react";
 import { getBlogPost, blogPosts } from "@/data/blog";
@@ -9,6 +9,19 @@ import { useDocumentReader } from "@/skins/experience/useDocumentReader";
 import { GuideCover } from "./BlogPage";
 import { guideTopic, journalDate } from "./blog-content";
 import "./blog-journal.css";
+function renderArticleNodes(nodes: BlogNode[]): ReactNode[] {
+  return nodes.map((node, index) => {
+    if (typeof node === "string") return node;
+    const content = createElement(node.tag, {
+      key: index, id: node.id, tabIndex: node.id ? -1 : undefined,
+      href: node.href, rel: node.tag === "a" ? "noopener noreferrer" : undefined,
+      className: node.section ? "journal-heading-link" : undefined,
+      "data-blog-heading": node.section,
+      "aria-label": node.section ? "Link to this section" : undefined,
+    }, ...renderArticleNodes(node.children));
+    return node.codeBlock ? <div className="journal-code" key={index}><button type="button" data-copy-code>Copy example</button>{content}</div> : content;
+  });
+}
 function toolFor(slug: string) {
   const tool = toolBySlug[slug];
   if (tool) return { name: tool.name, description: tool.description, href: `/tool/${slug}` };
@@ -39,7 +52,7 @@ export function BlogArticleContent({ slug }: { slug: string }) {
       <aside className="journal-outline"><details open><summary><List size={17} />On this page</summary><nav aria-label="Article contents">{prepared.headings.map(item => <a key={item.id} href={sectionHref(item.id)} data-level={item.level} aria-current={reader.activeId === item.id ? "location" : undefined} onClick={event => { event.preventDefault(); reader.scrollToHeading(item.id); }}>{item.text}</a>)}<a href={sectionHref("sources-and-review")} aria-current={reader.activeId === "sources-and-review" ? "location" : undefined} onClick={event => { event.preventDefault(); reader.scrollToHeading("sources-and-review"); }}>Sources &amp; review</a></nav></details><p className="journal-outline-note">Read a little.<br />Try it for yourself.</p></aside>
       <article ref={reader.articleRef} className="journal-article-paper">
         {post.tldr && <aside className="journal-answer" aria-labelledby="journal-answer-title"><span><BookOpen size={20} strokeWidth={1.5} /></span><div><h2 id="journal-answer-title">The short answer</h2><p>{post.tldr}</p></div></aside>}
-        <div className="journal-prose blog-prose" onClick={event => { const target = event.target as HTMLElement; const link = target.closest<HTMLAnchorElement>("a[data-blog-heading]"); if (link?.dataset.blogHeading) { event.preventDefault(); reader.scrollToHeading(link.dataset.blogHeading); } const button = target.closest<HTMLButtonElement>("button[data-copy-code]"); if (button) void copy(button.parentElement?.querySelector("code")?.textContent || "", "Example"); }} dangerouslySetInnerHTML={{ __html: prepared.html }} />
+        <div className="journal-prose blog-prose" onClick={event => { const target = event.target as HTMLElement; const link = target.closest<HTMLAnchorElement>("a[data-blog-heading]"); if (link?.dataset.blogHeading) { event.preventDefault(); reader.scrollToHeading(link.dataset.blogHeading); } const button = target.closest<HTMLButtonElement>("button[data-copy-code]"); if (button) void copy(button.parentElement?.querySelector("code")?.textContent || "", "Example"); }}>{renderArticleNodes(prepared.nodes)}</div>
         <section className="journal-sources" id="sources-and-review" tabIndex={-1}><p className="journal-eyebrow">A note on the evidence</p><h2>Sources &amp; review</h2><p>Written by PrivaTools. Product behaviour was checked against the current implementation on <time dateTime={post.reviewedAt || post.updatedAt || post.publishedAt}>{journalDate(post.reviewedAt || post.updatedAt || post.publishedAt)}</time>. External references support the specific claims linked in the guide; they do not certify this service or every possible output.</p>{Boolean(post.sources?.length) && <ul>{post.sources!.map(source => <li key={source.url}><a href={source.url} {...(source.url.startsWith("https://") ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{source.label}<ArrowUpRight size={14} /></a></li>)}</ul>}<a className="journal-correction" href="/support">Something changed? Suggest a correction <ArrowUpRight size={15} /></a></section>
         <div className="journal-article-end"><span>Ready for the next step?</span><a href="/tools">Find your tool <ArrowRight size={17} /></a></div>
       </article>

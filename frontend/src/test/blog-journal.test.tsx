@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { blogPosts } from '@/data/blog';
+import * as blogData from '@/data/blog';
 import { toolBySlug } from '@/data/tools';
 import { nonPdfToolBySlug } from '@/data/non-pdf-tools';
 import { BlogIndexContent } from "@/pages/BlogPage";
@@ -82,8 +83,8 @@ describe('guide finding and reading', () => {
   it('creates unique, shareable section addresses without replacing the application hash', () => {
     const result = prepareBlogBody('<h2>A &amp; B</h2><h3>A &amp; B</h3><h2>Résumé</h2>', 'guide');
     expect(result.headings.map(item => item.id)).toEqual(['a-b', 'a-b-2', 'resume']);
-    expect(result.html).toContain('href="/blog/guide?section=a-b-2"');
-    expect(result.html).not.toContain('href="#');
+    expect(JSON.stringify(result.nodes)).toContain('"href":"/blog/guide?section=a-b-2"');
+    expect(JSON.stringify(result.nodes)).not.toContain('"href":"#');
   });
   it('renders without Router context and makes TOC clicks focus a real heading', () => {
     window.history.replaceState({}, '', '/blog/' + markdown.slug + '#/blog/' + markdown.slug);
@@ -122,5 +123,37 @@ describe('guide finding and reading', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('isn’t on the shelf');
     rerender(<BlogArticleContent slug={markdown.slug} />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(markdown.title);
+  });
+  it('renders article semantics while dropping active content, handler attributes and unsafe links', () => {
+    vi.spyOn(blogData, 'getBlogPost').mockReturnValue({ ...markdown, body: '<h2 onclick="alert(1)">A &amp; <em>B</em></h2><script>alert(1)</script><svg onload="alert(1)"><a href="javascript:alert(1)">SVG</a></svg><iframe srcdoc="bad"></iframe><p style="background:url(https://example.invalid)"><img src=x onerror="alert(1)">Safe <strong>text</strong></p><a href="jav&#x61;script:alert(1)">Bad scheme</a><a href="//example.invalid">Remote path</a><a href="/\\example.invalid">Backslash path</a><a href="/tools/remove-background">Your tool</a><a href="https://example.com/guide">Reference</a><table><tbody><tr><th>Label</th><td>Value</td></tr></tbody></table><pre><code>&lt;img src=x onerror=alert(1)&gt;</code></pre>' });
+    const { container } = render(<BlogArticleContent slug={markdown.slug} />);
+    const prose = container.querySelector('.journal-prose')!;
+    expect(prose.querySelector('script,svg,iframe,img,style,form,object')).toBeNull();
+    expect(prose.querySelector('[onclick],[onerror],[onload],[style],[srcdoc]')).toBeNull();
+    for (const text of ['Bad scheme', 'Remote path', 'Backslash path']) expect(within(prose as HTMLElement).getByText(text)).not.toHaveAttribute('href');
+    expect(within(prose as HTMLElement).getByRole('link', { name: 'Your tool' })).toHaveAttribute('href', '/tools/remove-background');
+    expect(within(prose as HTMLElement).getByRole('link', { name: 'Reference' })).toHaveAttribute('href', 'https://example.com/guide');
+    expect(prose.querySelector('h2 em')).toHaveTextContent('B');
+    expect(prose.querySelector('td')).toHaveTextContent('Value');
+    expect(prose.querySelector('code')).toHaveTextContent('<img src=x onerror=alert(1)>');
+    expect(within(prose as HTMLElement).getByRole('button', { name: 'Copy example' })).toBeInTheDocument();
+  });
+  it('preserves headings, article links and tables for every published guide', () => {
+    const { container, rerender } = render(<BlogArticleContent slug={blogPosts[0].slug} />);
+    for (const post of blogPosts) {
+      rerender(<BlogArticleContent slug={post.slug} />);
+      const original = new DOMParser().parseFromString(post.body, 'text/html');
+      const prose = container.querySelector('.journal-prose')!;
+      for (const tag of ['h2', 'h3', 'table', 'tr', 'th', 'td', 'pre', 'code']) expect(prose.querySelectorAll(tag).length, `${post.slug}: ${tag}`).toBe(original.querySelectorAll(tag).length);
+      for (const anchor of original.querySelectorAll('a[href]')) expect([...prose.querySelectorAll('a:not([data-blog-heading])')].some(link => link.getAttribute('href') === anchor.getAttribute('href') && link.textContent === anchor.textContent), `${post.slug}: ${anchor.textContent}`).toBe(true);
+    }
+  });
+  it('treats hostile section slugs as URL path text and decodes heading entities only as text', () => {
+    const slug = 'guide"><img src=x onerror=alert(1)>';
+    const result = prepareBlogBody('<h2>&lt;script&gt; &quot;Heading&quot;</h2>', slug);
+    expect(result.headings[0].text).toBe('<script> "Heading"');
+    const heading = result.nodes.find(node => typeof node !== 'string');
+    expect(heading && typeof heading !== 'string' && heading.children[heading.children.length - 1]).toEqual({ tag: 'a', children: ['#'], section: 'script-heading', href: `/blog/${encodeURIComponent(slug)}?section=script-heading` });
+    expect(result).not.toHaveProperty('html');
   });
 });

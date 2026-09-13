@@ -9,6 +9,7 @@ import { downloadBlob, postFormData } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { useMediaUrl } from "./media/media-files";
 
 const PAGE_W = 612;
 const PAGE_H = 792;
@@ -31,8 +32,7 @@ export function SignUI() {
     const [file, setFile] = useState<File | null>(null);
     const [sigData, setSigData] = useState("");
     const [sigFile, setSigFile] = useState<File | null>(null);
-    const [sigFilePreview, setSigFilePreview] = useState<string | null>(null);
-    useEffect(() => { if (!sigFile) { setSigFilePreview(null); return; } const url = URL.createObjectURL(sigFile); setSigFilePreview(url); return () => URL.revokeObjectURL(url); }, [sigFile]);
+    const sigFilePreview = useMediaUrl(sigFile);
     const [page, setPage] = useState(1);
 
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");

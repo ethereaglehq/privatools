@@ -5,13 +5,13 @@ import { downloadBlob, formatFileSize, postFormData } from "@/lib/api";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { ProcessingBar } from "./FileUploadZone";
 import { LabWorkspace } from "./SpecialistTools";
+import { useMediaUrl } from "./media/media-files";
 const DEFAULTS: {size:number; format:"png" | "pdf"; fgColor:string; bgColor:string} = {size:300,format:"png",fgColor:"#000000",bgColor:"#ffffff"};
 export function QrCodeUI() {
     const [config, , {setField}] = useToolDefaults("qr-code", DEFAULTS);
-    const [data, setData] = useState(""), [logo, setLogo] = useState<File | null>(null), [logoPreview, setLogoPreview] = useState<string | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null), [result, setResult] = useState<{blob:Blob;format:"png" | "pdf";size:number;data:string} | null>(null), [preview, setPreview] = useState<string | null>(null);
+    const [data, setData] = useState(""), [logo, setLogo] = useState<File | null>(null), [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null), [result, setResult] = useState<{blob:Blob;format:"png" | "pdf";size:number;data:string} | null>(null);
+    const logoPreview = useMediaUrl(logo), preview = useMediaUrl(result?.format === "png" ? result.blob : null);
     const input = useRef<HTMLInputElement>(null), active = useRef(false), generation = useRef(0);
-    useEffect(() => { if (!logo) { setLogoPreview(null); return; } const url = URL.createObjectURL(logo); setLogoPreview(url); return () => URL.revokeObjectURL(url); }, [logo]);
-    useEffect(() => { if (!result || result.format !== "png") { setPreview(null); return; } const url = URL.createObjectURL(result.blob); setPreview(url); return () => URL.revokeObjectURL(url); }, [result]);
     useEffect(() => () => { generation.current++; }, []);
     const process = useCallback(async () => {
         if (!data.trim() || active.current) return;
