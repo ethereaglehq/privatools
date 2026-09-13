@@ -203,19 +203,34 @@ def _weasyprint_url_fetcher(url: str, timeout: int = 15, ssl_context=None):
     scheme = url.split(":", 1)[0].lower()
     if scheme in ("http", "https"):
         result = safe_url_fetch(url, max_bytes=_MAX_SUBRESOURCE_BYTES, timeout=timeout)
-        return {
-            "string": result.body,
-            "mime_type": result.content_type or None,
-            "encoding": result.encoding,
-            "redirected_url": result.final_url,
-        }
+        from weasyprint.urls import URLFetcherResponse
+
+        content_type = result.content_type or "application/octet-stream"
+        if result.encoding and "charset=" not in content_type.lower():
+            content_type = f"{content_type}; charset={result.encoding}"
+        return URLFetcherResponse(
+            result.final_url, result.body, {"Content-Type": content_type}
+        )
     if scheme == "data":
-        try:
-            from weasyprint.urls import default_url_fetcher
-        except ImportError:  # pragma: no cover - older/newer weasyprint layout
-            from weasyprint import default_url_fetcher
-        return default_url_fetcher(url, timeout=timeout, ssl_context=ssl_context)
+        from weasyprint.urls import URLFetcher
+
+        return URLFetcher(
+            timeout=timeout, ssl_context=ssl_context, allowed_protocols={"data"}
+        ).fetch(url)
     raise HTTPException(status_code=400, detail=f"Blocked URL scheme: {scheme or 'unknown'}")
+
+
+def _make_weasyprint_url_fetcher():
+    """Create a WeasyPrint 70 fetcher without loading native libraries at boot."""
+    from weasyprint.urls import URLFetcher
+
+    class ValidatingURLFetcher(URLFetcher):
+        def fetch(self, url, headers=None):
+            # Never delegate HTTP, redirects, or file URLs to the default
+            # fetcher. Both render paths retain the same SSRF validation.
+            return _weasyprint_url_fetcher(url, timeout=self._timeout)
+
+    return ValidatingURLFetcher(timeout=15)
 
 
 def _weasyprint_html_to_pdf(html_content: str, output_path: str) -> None:
@@ -230,7 +245,7 @@ def _weasyprint_html_to_pdf(html_content: str, output_path: str) -> None:
         # url_fetcher so sub-resources in attacker-supplied HTML (<img src=
         # "file:///etc/passwd">, http://169.254.169.254/...) are SSRF-validated
         # rather than fetched by WeasyPrint's permissive default fetcher.
-        HTML(string=_wrap_html(html_content), url_fetcher=_weasyprint_url_fetcher).write_pdf(output_path)
+        HTML(string=_wrap_html(html_content), url_fetcher=_make_weasyprint_url_fetcher()).write_pdf(output_path)
         _weasyprint_ok = True
     except (ImportError, OSError):
         _weasyprint_ok = False

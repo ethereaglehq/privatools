@@ -17,18 +17,24 @@ literal-IP checks before any socket is opened.
 """
 from __future__ import annotations
 
+import base64
 import email.message
+import io
 
+import fitz
 import pytest
 from fastapi import HTTPException
+from PIL import Image
 
+from backend.app.services import html_to_pdf_service as html_service
+from backend.app.services import url_to_pdf_service as url_service
 from backend.app.services.html_to_pdf_service import (
     _ValidatingRedirectHandler,
+    _make_weasyprint_url_fetcher,
     _validating_opener,
     _weasyprint_url_fetcher as _canonical_fetcher,
     safe_url_fetch,
 )
-from backend.app.services.url_to_pdf_service import _weasyprint_url_fetcher
 
 # A few addresses an SSRF guard must reject, none of which require DNS.
 _METADATA_URL = "http://169.254.169.254/latest/meta-data/"
@@ -88,16 +94,102 @@ class TestWeasyprintSubresourceFetcher:
 
     def test_blocks_metadata_subresource(self):
         with pytest.raises(HTTPException):
-            _weasyprint_url_fetcher(_METADATA_URL)
+            _canonical_fetcher(_METADATA_URL)
 
     def test_blocks_file_subresource(self):
         with pytest.raises(HTTPException):
-            _weasyprint_url_fetcher(_FILE_URL)
+            _canonical_fetcher(_FILE_URL)
 
     def test_shared_between_url_and_html_render_paths(self):
         # Both the url= (url_to_pdf) and string= (html_to_pdf raw HTML) render
         # paths must use the SAME validated fetcher — a regression where only
         # one path is protected is exactly the bug this guards against.
-        assert _weasyprint_url_fetcher is _canonical_fetcher
+        assert url_service._make_weasyprint_url_fetcher is _make_weasyprint_url_fetcher
         with pytest.raises(HTTPException):
             _canonical_fetcher(_FILE_URL)
+
+
+@pytest.fixture
+def native_weasyprint():
+    try:
+        import weasyprint
+    except (ImportError, OSError) as exc:
+        pytest.skip(f"Native WeasyPrint libraries unavailable: {exc}")
+    return weasyprint
+
+
+class TestNativeWeasyprintFetcher:
+    """Exercise the renderer so fallback success cannot hide fetcher API drift."""
+
+    def test_inline_png_is_embedded(self, native_weasyprint, tmp_path, monkeypatch):
+        image = io.BytesIO()
+        Image.new("RGB", (8, 8), "blue").save(image, format="PNG")
+        uri = "data:image/png;base64," + base64.b64encode(image.getvalue()).decode()
+        output = tmp_path / "inline.pdf"
+        monkeypatch.setattr(html_service, "_weasyprint_ok", None)
+        html_service._weasyprint_html_to_pdf(
+            f'<h1>Embedded image</h1><img src="{uri}">', str(output)
+        )
+        with fitz.open(output) as document:
+            assert "Embedded image" in document[0].get_text()
+            assert document[0].get_images()
+
+    @pytest.mark.parametrize("uri", [_FILE_URL, _LOOPBACK_URL, _METADATA_URL])
+    def test_forbidden_subresources_never_open_a_connection(
+        self, native_weasyprint, tmp_path, monkeypatch, uri
+    ):
+        def unexpected_open():
+            pytest.fail("A forbidden subresource reached the network opener")
+
+        monkeypatch.setattr(html_service, "_validating_opener", unexpected_open)
+        monkeypatch.setattr(html_service, "_weasyprint_ok", None)
+        output = tmp_path / "blocked.pdf"
+        html_service._weasyprint_html_to_pdf(
+            f'<h1>Safe document</h1><link rel="stylesheet" href="{uri}">'
+            f'<img src="{uri}">', str(output)
+        )
+        with fitz.open(output) as document:
+            assert "Safe document" in document[0].get_text()
+            assert not document[0].get_images()
+
+    def test_public_url_renders_through_validated_response(
+        self, native_weasyprint, tmp_path, monkeypatch
+    ):
+        from backend.app.utils import cleanup
+
+        calls = []
+
+        def local_response(url, **kwargs):
+            calls.append(url)
+            return html_service._FetchResult(
+                url, "text/html", "utf-8", b"<h1>Public URL document</h1>"
+            )
+
+        monkeypatch.setattr(html_service, "safe_url_fetch", local_response)
+        monkeypatch.setattr(cleanup, "TEMP_DIR", tmp_path)
+        output = url_service.url_to_pdf(_PUBLIC_IP_URL)
+        assert calls == [_PUBLIC_IP_URL]
+        with fitz.open(output) as document:
+            assert "Public URL document" in document[0].get_text()
+
+    def test_eps_image_never_reaches_ghostscript(
+        self, native_weasyprint, tmp_path, monkeypatch
+    ):
+        from PIL import EpsImagePlugin
+
+        def unexpected_ghostscript(*args, **kwargs):
+            pytest.fail("WeasyPrint must not render an untrusted EPS image")
+
+        # Keep Pillow's disabled-Ghostscript guard intact and observe the
+        # subprocess boundary instead of replacing that guard itself.
+        monkeypatch.setattr(EpsImagePlugin.subprocess, "Popen", unexpected_ghostscript)
+        monkeypatch.setattr(html_service, "_weasyprint_ok", None)
+        eps = b"%!PS-Adobe-3.0 EPSF-3.0\n%%BoundingBox: 0 0 10 10\nshowpage\n"
+        uri = "data:application/postscript;base64," + base64.b64encode(eps).decode()
+        output = tmp_path / "eps.pdf"
+        html_service._weasyprint_html_to_pdf(
+            f'<h1>EPS is excluded</h1><img src="{uri}">', str(output)
+        )
+        with fitz.open(output) as document:
+            assert "EPS is excluded" in document[0].get_text()
+            assert not document[0].get_images()
