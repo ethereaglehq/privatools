@@ -1,0 +1,21 @@
+import { cleanup, render } from "@testing-library/react";
+import { afterEach, expect, it, vi } from "vitest";
+import { ClerkBridge } from "./ClerkBridge";
+const fixture = vi.hoisted(() => ({ clerk: { loaded: false, user: null as unknown, addListener: vi.fn(), on: vi.fn(), off: vi.fn() }, set: vi.fn() }));
+vi.mock("@clerk/react", () => ({ useClerk: () => fixture.clerk }));
+vi.mock("./instance", () => ({ setClerkInstance: fixture.set }));
+afterEach(cleanup);
+it("publishes resource changes even when useClerk retains the same object identity", () => {
+  let emit!: () => void; const unsubscribe = vi.fn();
+  fixture.clerk.addListener.mockImplementation(callback => { emit = callback; return unsubscribe; });
+  const { unmount } = render(<ClerkBridge />);
+  expect(fixture.set).toHaveBeenCalledOnce();
+  expect(fixture.clerk.on).toHaveBeenCalledWith("status", expect.any(Function), { notify: true });
+  fixture.clerk.loaded = true; fixture.clerk.user = { id: "synthetic" }; emit();
+  expect(fixture.set).toHaveBeenCalledTimes(2);
+  fixture.clerk.user = null; emit();
+  expect(fixture.set).toHaveBeenCalledTimes(3);
+  unmount(); expect(unsubscribe).toHaveBeenCalledOnce();
+  expect(fixture.clerk.off).toHaveBeenCalledWith("status", expect.any(Function));
+  expect(fixture.set).toHaveBeenLastCalledWith(null);
+});

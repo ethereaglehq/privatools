@@ -13,6 +13,7 @@ import { EXEMPTION_CODE_SETS } from "@/data/redaction-codes";
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 interface Box {
@@ -49,6 +50,7 @@ export function RedactUI() {
     const setColor = useCallback((v: React.SetStateAction<typeof REDACT_DEFAULTS["color"]>) => setField("color", v), [setField]);
     const setCodeSet = useCallback((v: string) => setField("codeSet", v), [setField]);
     const activeSet = EXEMPTION_CODE_SETS.find(s => s.id === codeSet) ?? null;
+    const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
     const [boxes, setBoxes] = useState<Box[]>([
         { id: makeId(), page: 1, x: 100, y: 700, width: 200, height: 20 },
@@ -205,14 +207,14 @@ export function RedactUI() {
                             </button>
                         </div>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 p-4 items-start">
-                        <div className="space-y-2">
+                    <div className="pdf-coordinate-workspace">
+                        <fieldset className="pdf-coordinate-controls" disabled={state === "processing"}>
                             {boxes.map((b, idx) => {
                                 const isSel = selected === b.id;
                                 return (
                                     <div
                                         key={b.id}
-                                        onClick={() => setSelected(b.id)}
+                                        onClick={() => { setSelected(b.id); setPreviewPage(b.page); }}
                                         className={cn(
                                             "rounded-lg border p-3 cursor-pointer transition-colors",
                                             isSel ? "border-accent bg-accent/[0.06]" : "border-border bg-card hover:border-border-strong"
@@ -239,7 +241,7 @@ export function RedactUI() {
                                                     <label className="font-medium text-[10.5px] text-muted-foreground">{c.label}</label>
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(b.id, el); else rowRefs.current.delete(b.id); } : undefined}
-                                                        type="number" inputMode="numeric" min={c.min}
+                                                        type="number" aria-label={c.label} inputMode="numeric" min={c.min}
                                                         value={b[c.f]}
                                                         onClick={e => e.stopPropagation()}
                                                         onChange={e => update(b.id, c.f, +e.target.value)}
@@ -277,38 +279,10 @@ export function RedactUI() {
                                     {activeSet.citation} — the code is stamped inside each box
                                 </p>
                             )}
-                        </div>
+                        </fieldset>
 
                         {/* Page preview */}
-                        <div>
-                            <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[200px] overflow-hidden">
-                                {boxes.map(b => {
-                                    const isSel = selected === b.id;
-                                    return (
-                                        <div
-                                            key={b.id}
-                                            className={cn(
-                                                "absolute transition-colors",
-                                                isSel ? "ring-1 ring-accent" : ""
-                                            )}
-                                            style={{
-                                                left: `${(b.x / PAGE_W) * 100}%`,
-                                                top: `${(b.y / PAGE_H) * 100}%`,
-                                                width: `${(b.width / PAGE_W) * 100}%`,
-                                                height: `${(b.height / PAGE_H) * 100}%`,
-                                                minWidth: 2, minHeight: 2,
-                                                background: color,
-                                                opacity: 0.85,
-                                            }}
-                                        />
-                                    );
-                                })}
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
-                            </div>
-                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
-                                Permanent · not reversible
-                            </p>
-                        </div>
+                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} regions={boxes.map((box, index) => ({ ...box, color, kind: "redact", label: `Redaction ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={state === "processing"} onDraw={region => { const id = makeId(); setBoxes(items => [...items, { ...region, id }]); setSelected(id); }} />
                     </div>
                 </div>
             )}

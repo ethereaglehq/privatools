@@ -1,18 +1,12 @@
-"""
-Sitemap endpoint — generates sitemap.xml dynamically for all tool pages.
-
-The sitemap body is a deterministic function of `date.today()` and the
-in-process slug catalogues — there is no per-request data, so it is
-safe to memoize the rendered XML for an entire day. We key the cache on
-the date so the lastmod field stays fresh; once the wall-clock rolls
-over to a new UTC day we render once and serve the bytes to every
-subsequent request until the next rollover.
-"""
-from datetime import date, datetime, time, timezone
+"""Sitemap served from the current build, with a deterministic registry fallback."""
+from datetime import date
+from html import escape
+from xml.etree import ElementTree
 from functools import lru_cache
 from fastapi import APIRouter, Request
 
 from ..utils.caching import cache_response
+from .. import seo_meta
 from ..seo_meta import _last_reviewed_for
 
 router = APIRouter()
@@ -210,99 +204,79 @@ _HIGH_PRIORITY_TOOLS: set[str] = {
 }
 
 
-def _entry(url: str, lastmod: str, priority: str, changefreq: str) -> str:
-    return (
-        f"  <url>\n"
-        f"    <loc>{url}</loc>\n"
-        f"    <lastmod>{lastmod}</lastmod>\n"
-        f"    <changefreq>{changefreq}</changefreq>\n"
-        f"    <priority>{priority}</priority>\n"
-        f"  </url>\n"
-    )
+# Dates represent reviewed content changes, never the request date.
+STATIC_LAST_REVIEWED = "2026-09-14"
+GENERATED_SITEMAP = seo_meta._CONTENT_DIR / "sitemap.xml"
+_NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
 
 
-def _tool_priority(slug: str) -> str:
-    return "0.9" if slug in _HIGH_PRIORITY_TOOLS else "0.8"
+def _entries() -> dict[str, str | None]:
+    public_pages = ("/", "/about", "/privacy", "/terms", "/batch", "/pipeline",
+                    "/security", "/support", "/status", "/compare", "/blog", "/tools", "/trust", "/api", "/ai")
+    rows = {BASE_URL + (path if path != "/" else ""): STATIC_LAST_REVIEWED
+            for path in public_pages if path not in seo_meta.NOINDEX_PATHS}
+    for slug, post in seo_meta._blog_posts().items():
+        rows[f"{BASE_URL}/blog/{slug}"] = seo_meta._reviewed_date(post)
+    for slug, comparison in seo_meta._comparisons().items():
+        rows[f"{BASE_URL}/compare/{slug}"] = seo_meta._reviewed_date(comparison)
+    pdf, nonpdf = seo_meta._tool_registries()
+    for prefix, tools in (("tool", pdf), ("tools", nonpdf)):
+        for slug in tools:
+            rows[f"{BASE_URL}/{prefix}/{slug}"] = _last_reviewed_for(slug)
+    return rows
+
+
+def _generated_body(expected: dict[str, str | None]) -> bytes | None:
+    """Only serve a generated sitemap that matches the current public route set."""
+    try:
+        body = GENERATED_SITEMAP.read_bytes()
+        root = ElementTree.fromstring(body)
+        if root.tag != _NS + "urlset":
+            return None
+        seen = set()
+        for node in root:
+            if node.tag != _NS + "url":
+                return None
+            url = node.findtext(_NS + "loc") or ""
+            if url not in expected or url in seen:
+                return None
+            seen.add(url)
+            lastmod = node.findtext(_NS + "lastmod")
+            if lastmod:
+                # Keep the generator's actual content dates, not an arbitrary future date.
+                parsed = date.fromisoformat(lastmod)
+                if parsed > date.today():
+                    return None
+        return body if seen == set(expected) else None
+    except (OSError, ElementTree.ParseError, ValueError):
+        return None
 
 
 @lru_cache(maxsize=8)
-def _build_sitemap_xml(today_iso: str) -> bytes:
-    """Render the sitemap XML for the given ISO date.
+def _render_sitemap(revision: int, generated_mtime: int) -> bytes:
+    rows = _entries()
+    generated = _generated_body(rows)
+    if generated is not None:
+        return generated
+    entries = []
+    for url, lastmod in rows.items():
+        modified = f"<lastmod>{lastmod}</lastmod>" if lastmod else ""
+        entries.append(f"  <url><loc>{escape(url)}</loc>{modified}</url>")
+    return ('<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+            + "\n".join(entries) + "\n</urlset>").encode("utf-8")
 
-    Pure function of the date string and the module-level slug lists.
-    Cached in an LRU keyed on the date — most days we serve from the
-    first entry; older keys age out when the date rolls over. Size 8
-    is more than enough headroom (current + 7 retained days) while
-    keeping the cache small. At ~30-50 KB per entry, the cap is well
-    under 1 MB total.
-    """
-    xml = '<?xml version="1.0" encoding="UTF-8"?>\n'
-    xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
 
-    # Static pages — homepage updated daily. Other pages get today's date
-    # too because we ship multiple improvements per day; sitemap.lastmod
-    # is meant to signal "this content has been touched recently".
-    xml += _entry(BASE_URL, today_iso, "1.0", "daily")
-    xml += _entry(f"{BASE_URL}/about", today_iso, "0.6", "monthly")
-    xml += _entry(f"{BASE_URL}/privacy", "2026-03-29", "0.4", "yearly")
-    xml += _entry(f"{BASE_URL}/terms", "2026-03-29", "0.4", "yearly")
-    xml += _entry(f"{BASE_URL}/batch", today_iso, "0.7", "weekly")
-    xml += _entry(f"{BASE_URL}/pipeline", today_iso, "0.7", "weekly")
-    xml += _entry(f"{BASE_URL}/security", today_iso, "0.6", "monthly")
-    xml += _entry(f"{BASE_URL}/support", today_iso, "0.4", "monthly")
-    xml += _entry(f"{BASE_URL}/status", today_iso, "0.3", "weekly")
-    xml += _entry(f"{BASE_URL}/compare", today_iso, "0.7", "monthly")
-    xml += _entry(f"{BASE_URL}/blog", today_iso, "0.8", "weekly")
-    # All-tools directory hub — a high-value internal-linking surface. Like the
-    # homepage it genuinely changes as the catalogue grows, so today is honest.
-    xml += _entry(f"{BASE_URL}/tools", today_iso, "0.9", "weekly")
-
-    # Blog posts — use actual published date
-    for slug, published in BLOG_POSTS.items():
-        xml += _entry(f"{BASE_URL}/blog/{slug}", published, "0.8", "weekly")
-
-    # Compare pages
-    for slug in COMPARE_PAGES:
-        xml += _entry(f"{BASE_URL}/compare/{slug}", today_iso, "0.8", "monthly")
-
-    # Tool pages — lastmod reflects the tool's real last-reviewed date
-    # (_last_reviewed_for), NOT today. Stamping every URL with today's date on
-    # every render makes Google distrust lastmod as a freshness hint; a stable
-    # per-tool date keeps it meaningful so a genuine content change is believed.
-    # High-volume tools get priority 0.9 (vs 0.8 for long tail).
-    # Dedupe across the source lists so each canonical URL appears exactly once
-    # — duplicate entries are valid XML but waste crawl budget and split signals.
-    seen_pdf: set[str] = set()
-    for slug in (*PDF_TOOLS, *_PDF_V12):
-        if slug in seen_pdf:
-            continue
-        seen_pdf.add(slug)
-        xml += _entry(f"{BASE_URL}/tool/{slug}", _last_reviewed_for(slug), _tool_priority(slug), "weekly")
-    seen_nonpdf: set[str] = set()
-    for slug in (*NON_PDF_TOOLS, *_VIDEO_TOOLS_NEW):
-        if slug in seen_nonpdf:
-            continue
-        seen_nonpdf.add(slug)
-        xml += _entry(f"{BASE_URL}/tools/{slug}", _last_reviewed_for(slug), _tool_priority(slug), "weekly")
-
-    xml += "</urlset>"
-
-    return xml.encode("utf-8")
+def _build_sitemap_xml(_legacy_request_date: str | None = None) -> bytes:
+    """The compatibility argument is intentionally ignored: dates describe content."""
+    return _render_sitemap(seo_meta.blog_content_mtime_ns(), seo_meta._mtime(GENERATED_SITEMAP))
 
 
 @router.get("/sitemap.xml")
 async def sitemap(request: Request):
-    today = date.today()
-    body = _build_sitemap_xml(today.isoformat())
-    # Last-Modified = start of today UTC — a stable validator that only
-    # changes when the sitemap's content can have changed (the cache key
-    # rolls over at midnight, so the timestamp tracks it).
-    last_modified = datetime.combine(today, time.min, tzinfo=timezone.utc)
+    # Content-based ETag is the validator. Avoid a fabricated daily Last-Modified
+    # which could produce a false 304 after a same-day content build.
     return cache_response(
-        body,
-        media_type="application/xml",
-        max_age=3600,             # 1 hour
-        stale_while_revalidate=3600,
-        request=request,
-        last_modified=last_modified,
+        _build_sitemap_xml(), media_type="application/xml", max_age=3600,
+        stale_while_revalidate=3600, request=request,
     )

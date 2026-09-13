@@ -7,6 +7,7 @@ import { Loader2, AlertCircle, Plus, Trash2, CheckCircle2, RotateCcw, FormInput 
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 
 type FieldType = "text" | "checkbox" | "radio" | "combobox" | "listbox" | "signature";
 
@@ -52,6 +53,7 @@ function newField(index: number): DraftField {
 }
 
 export function FormCreatorUI() {
+    const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
@@ -182,14 +184,14 @@ export function FormCreatorUI() {
                             <Plus size={11} /> Add
                         </button>
                     </div>
-                    <div className="p-3 space-y-2">
+                    <div className="pdf-coordinate-workspace"><fieldset className="pdf-coordinate-controls" disabled={status === "processing"}>
                         {fields.map((f, idx) => {
                             const isSel = selected === f.id;
                             const hasOptions = f.type === "radio" || f.type === "combobox" || f.type === "listbox";
                             return (
                                 <div
                                     key={f.id}
-                                    onClick={() => setSelected(f.id)}
+                                    onClick={() => { setSelected(f.id); setPreviewPage(Number(f.page) || 1); }}
                                     className={cn(
                                         "rounded-lg border p-3 cursor-pointer transition-colors space-y-3",
                                         isSel ? "border-accent bg-accent/[0.06]" : "border-border bg-card hover:border-border-strong"
@@ -216,7 +218,7 @@ export function FormCreatorUI() {
                                         >
                                             {FIELD_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
                                         </select>
-                                        <button onClick={(e) => { e.stopPropagation(); removeField(f.id); }} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                        <button type="button" aria-label={`Remove form field ${idx + 1}`} onClick={(e) => { e.stopPropagation(); removeField(f.id); }} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                                             <Trash2 size={12} />
                                         </button>
                                     </div>
@@ -300,7 +302,7 @@ export function FormCreatorUI() {
                                 </div>
                             );
                         })}
-                    </div>
+                    </fieldset><PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} drawLabel="Draw a field" regions={fields.map(field => ({ id: field.id, page: Number(field.page), x: Number(field.x), y: Number(field.y), width: Number(field.width), height: Number(field.height), label: field.name }))} onDraw={region => { const field = { ...newField(fields.length + 1), page: String(region.page), x: String(Math.round(region.x)), y: String(Math.round(region.y)), width: String(Math.round(region.width)), height: String(Math.round(region.height)) }; setFields(items => [...items, field]); setSelected(field.id); }} /></div>
                 </div>
             )}
 

@@ -1,3 +1,4 @@
+import { ToolCopyButton } from "./SpecialistTools";
 /**
  * QrReaderUI — decode QR & barcodes in an uploaded image.
  * Workshop: source preview, decoded code rows with copy, type chips.
@@ -17,7 +18,6 @@ export function QrReaderUI() {
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [codes, setCodes] = useState<QrResult[]>([]);
-    const [copied, setCopied] = useState<number | null>(null);
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
     // Track preview URL via ref so the unmount cleanup runs against the most
@@ -28,7 +28,7 @@ export function QrReaderUI() {
 
     const pick = (fl: FileList) => {
         const f = fl[0];
-        if (!f) return;
+        if (!f || state === "processing") return;
         if (previewRef.current) URL.revokeObjectURL(previewRef.current);
         const url = URL.createObjectURL(f);
         previewRef.current = url;
@@ -40,7 +40,7 @@ export function QrReaderUI() {
     const canProcess = !!file && state !== "processing";
 
     const process = useCallback(async () => {
-        if (!file) return;
+        if (!file || state === "processing") return;
         setState("processing"); setError(null);
         try {
             const res = await uploadFileGetJson<{ codes: QrResult[] }>("/read-qr", file);
@@ -52,13 +52,7 @@ export function QrReaderUI() {
             setError(friendlyError(msg, "Couldn't decode any codes from this image."));
             setState("idle");
         }
-    }, [file]);
-
-    const copyToClipboard = async (text: string, idx: number) => {
-        await navigator.clipboard.writeText(text);
-        setCopied(idx);
-        setTimeout(() => setCopied(null), 1800);
-    };
+    }, [file, state]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
@@ -69,7 +63,7 @@ export function QrReaderUI() {
     }, [canProcess, process]);
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-reader-workspace space-y-4">
             <div
                 onDragOver={e => { e.preventDefault(); setDrag(true); }}
                 onDragLeave={() => setDrag(false)}
@@ -92,7 +86,7 @@ export function QrReaderUI() {
             </div>
 
             {preview && (
-                <div className="rounded-xl border border-border bg-card p-3 flex justify-center">
+                <div className="pt-reader-image rounded-xl border border-border bg-card p-3 flex justify-center">
                     <div className="relative inline-block">
                         <img
                             src={preview}
@@ -137,13 +131,13 @@ export function QrReaderUI() {
             )}
 
             {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
             )}
 
             {codes.length > 0 && (
-                <div className="rounded-xl border border-accent/30 bg-card overflow-hidden animate-fade-up">
+                <div className="pt-reader-result rounded-xl border border-accent/30 bg-card overflow-hidden animate-fade-up">
                     <div className="font-medium px-4 py-2 border-b border-accent/20 bg-paper-2/40 text-[11.5px] text-muted-foreground">
                         Decoded ({codes.length})
                     </div>
@@ -155,9 +149,7 @@ export function QrReaderUI() {
                                     {c.type}
                                 </span>
                                 <p className="flex-1 min-w-0 text-[13px] text-foreground break-all">{c.data}</p>
-                                <button onClick={() => copyToClipboard(c.data, i)} className={cn("h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-accent hover:bg-accent/[0.06] shrink-0", copied === i && "animate-copy-flash")}>
-                                    {copied === i ? <Check size={12} className="text-accent" /> : <Copy size={12} />}
-                                </button>
+                                <ToolCopyButton value={c.data} label="Copy code"/>
                             </div>
                         ))}
                     </div>

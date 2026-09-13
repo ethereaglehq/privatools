@@ -7,6 +7,7 @@ import { Download, Loader2, CheckCircle2, AlertCircle, FormInput, RotateCcw, Sea
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, uploadFileGetJson, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 
 interface FormField {
     name: string;
@@ -156,7 +157,7 @@ export function FillFormUI() {
                 </button>
             </div>
 
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="pdf-coordinate-workspace">{file && <PdfPageStage file={file} />}<div className="pdf-coordinate-controls rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                     <span>Fields ({fields.length})</span>
                     <div className="relative">
@@ -168,9 +169,9 @@ export function FillFormUI() {
                         />
                     </div>
                 </div>
-                <div className="p-3 space-y-1.5 max-h-[60vh] overflow-y-auto">
+                <div className="p-3 space-y-1.5 max-h-[80vh] overflow-y-auto">
                     {filtered.length === 0 && (
-                        <p className="text-[11px] tracking-wider text-muted-foreground text-center py-6">No matching fields</p>
+                        <p className="text-[11px] tracking-wider text-muted-foreground text-center py-6">No fields match your search.</p>
                     )}
                     {filtered.map((field, i) => {
                         const tone = TYPE_CHIP_TONE[field.type] || TYPE_CHIP_TONE.text;
@@ -204,7 +205,7 @@ export function FillFormUI() {
                                         </button>
                                     ) : (field.type === "radio" || field.type === "choice") && field.options ? (
                                         <select
-                                            value={values[field.name] || ""}
+                                            aria-label={field.name} value={values[field.name] || ""}
                                             onChange={e => updateValue(field.name, e.target.value)}
                                             className="w-full rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                         >
@@ -213,11 +214,11 @@ export function FillFormUI() {
                                         </select>
                                     ) : field.type === "signature" || field.type === "button" ? (
                                         <div className="rounded-md border border-dashed border-border bg-paper-2/30 px-3 py-2 text-[12px] text-muted-foreground italic">
-                                            Not editable in this UI
+                                            This field needs a PDF reader. Use E-Sign PDF for a visible signature.
                                         </div>
                                     ) : (
                                         <input
-                                            type="text"
+                                            type="text" aria-label={field.name}
                                             value={values[field.name] || ""}
                                             onChange={e => updateValue(field.name, e.target.value)}
                                             placeholder={`Enter ${field.name}`}
@@ -229,7 +230,7 @@ export function FillFormUI() {
                         );
                     })}
                 </div>
-            </div>
+            </div></div>
 
             {error && (
                 <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">

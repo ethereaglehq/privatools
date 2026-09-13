@@ -43,6 +43,7 @@ const originalRevokeObjectURL = URL.revokeObjectURL;
 
 describe("api form-data helpers", () => {
     afterEach(() => {
+        vi.useRealTimers();
         vi.restoreAllMocks();
         vi.unstubAllGlobals();
         restoreBlobUrlMethod("createObjectURL", originalCreateObjectURL);
@@ -136,6 +137,7 @@ describe("api form-data helpers", () => {
     });
 
     it("forwards processAndDownload timeouts into the XHR progress path", async () => {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
         const xhr = stubSuccessfulXhr();
         Object.defineProperty(URL, "createObjectURL", {
             configurable: true,
@@ -158,6 +160,10 @@ describe("api form-data helpers", () => {
         );
 
         expect(xhr.instances[0]?.timeout).toBe(98_765);
+        // Let the download release its anchor and blob URL before jsdom exits.
+        await vi.advanceTimersByTimeAsync(100);
+        expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:test");
+        expect(document.querySelector('a[download="sample-compressed.pdf"]')).toBeNull();
     });
 
     it("keeps original-based filenames when backend returns generic names", async () => {

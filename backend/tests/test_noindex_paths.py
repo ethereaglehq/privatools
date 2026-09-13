@@ -27,7 +27,7 @@ def test_my_stuff_is_a_known_path():
 def test_my_stuff_is_marked_noindex():
     assert "/my-stuff" in NOINDEX_PATHS
     out = inject_seo(_html(), "/my-stuff")
-    assert 'name="robots" content="noindex,nofollow"' in out
+    assert 'name="robots" content="noindex,follow"' in out
 
 
 def test_my_stuff_has_no_canonical():

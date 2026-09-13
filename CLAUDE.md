@@ -12,14 +12,13 @@ learned by getting it wrong first.
 - **Run the whole backend suite, not the files you touched.** A route-coverage
   test asserts every backend POST is either a registered tool or a named
   account endpoint, so adding an endpoint fails a file you never opened.
-- **The backend suite segfaults on macOS.** Loop per-file to get a clean
-  signal; CI on Linux runs it whole and passes. Two separate crashes:
-  a native-library interaction across modules that kills a whole-suite run
-  around 55%, and `tests/test_phased_routes.py`, which dies **even run alone**
-  in `pyzbar.decode` (`qr_reader_service.read_qr`) on a pool thread — Homebrew
-  zbar under Python 3.13. So a per-file loop reports one failing file with zero
-  failing tests; that is the expected local result, not a regression. Confirm a
-  change to that path in CI rather than locally.
+- **Isolate backend test modules on macOS.** Native-library interactions
+  across modules have killed whole-suite runs; CI on Linux runs it together.
+  Use the pinned Python 3.12 `.venv` locally. The earlier standalone crash in
+  `test_phased_routes.py` is fixed (2026-09-13): QR/barcode decoding now runs
+  in bounded subprocesses with an OpenCV fallback when host zbar is broken.
+  That module must pass locally too; a native crash is no longer an accepted
+  baseline. See `backend/tests/test_qr_reader_isolation.py`.
 - **CI does not run on a plain branch.** `test.yml` and `security.yml` trigger
   on pull requests and pushes to `main`. To verify a branch without a PR:
   `gh workflow run test.yml --ref <branch>`.
@@ -56,9 +55,18 @@ three-digit count appearing in rendered text in any shell component.
 
 ## Accounts
 
-- There is **no email path**. No reset links, no verification. The recovery
-  code issued at signup is the only way back into an account, so anything that
-  drops it silently locks people out.
+- The consumer app defaults to **Clerk**, with email verification and password
+  recovery. Configure the same Clerk publishable key for frontend and backend;
+  localhost needs a development key. Unconfigured sign-in must be shown as
+  unavailable, never silently switched to native recovery-code signup.
+- Clerk password policy is 12–72 characters with breached-password blocking,
+  no mandatory character classes. Username is optional (4–64 characters).
+  Passkeys use device verification; never claim biometrics leave the device.
+- Native credential mutations return 409 when Clerk is configured.
+- Legacy self-hosted accounts are opt-in with `VITE_AUTH_PROVIDER=local`.
+  **Those accounts have no email path**. Their signup/replacement recovery code
+  is the only way back; keep the mandatory save acknowledgement intact.
+  Native-auth tests select this mode explicitly in the Vitest configuration.
 - Password hashing is `hashlib.scrypt` via `auth/hashing_pool.py`, which
   offloads to a thread pool — never call it on the event loop.
 - Per-account lockout lives beside the per-IP limiter. Any endpoint that

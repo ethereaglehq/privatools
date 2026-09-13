@@ -12,8 +12,9 @@
  * `setState`, not a hook.
  */
 
+import { usesClerkAccounts, configuredSocialProviders } from "@/lib/auth-mode";
 import { isClerkEnabled } from "@/lib/clerk/instance";
-import { clerkAccountApi, SOCIAL_PROVIDERS, type SocialProvider } from "@/lib/clerk/accountApi";
+import { clerkAccountApi, SOCIAL_PROVIDERS, type SocialProvider, type SignInResult, type PasswordResetResult } from "@/lib/clerk/accountApi";
 
 export interface ApiKey {
     key_id: string;
@@ -26,6 +27,8 @@ export interface ApiKey {
 export interface AccountUser {
     id: string;
     email: string;
+    username?: string;
+    password_enabled?: boolean;
     created_at: string;
 }
 
@@ -46,7 +49,7 @@ export interface Strength {
 /**
  * The shortest password this deployment will accept.
  *
- * Clerk enforces its own floor server-side (15 at the time of writing), so a
+ * Clerk enforces its own floor server-side (12 in the configured PrivaTools instance), so a
  * UI that promised less would cheerfully accept a password and then be
  * refused. Local auth keeps the 10 it always had.
  */
@@ -60,15 +63,13 @@ export interface Strength {
  * migration itself — so the copy follows the backing store, from one place
  * that all four themes read.
  */
-export const ACCOUNT_COPY = isClerkEnabled()
+export const ACCOUNT_COPY = usesClerkAccounts()
     ? {
         storageHeading: "Clerk holds the sign-in.",
         storage:
-            "They keep your email and password; we never see the password. "
-            + "Deleting your account removes both, and every key here, immediately.",
+            "Clerk manages your email, username and sign-in methods. PrivaTools never receives your account password or biometric data.",
         recovery:
-            "Forgotten your password? Clerk emails you a reset link. Your files are "
-            + "never involved — an account only ever issues API keys.",
+            "Forgot your password? Reset it with an email. There is no recovery code to save. Your file tools are always available without an account.",
     }
     : {
         storageHeading: "We store an email and a hash.",
@@ -87,21 +88,8 @@ export const ACCOUNT_COPY = isClerkEnabled()
  * Google, so the buttons must not be rendered at all rather than rendered and
  * throwing.
  */
-/**
- * Providers actually configured in the Clerk dashboard, in display order.
- *
- * GitHub only, and deliberately. Google was considered and dropped: an
- * unverified Google OAuth app shows "Google hasn't verified this app" before
- * a visitor may continue, which is a poor first impression anywhere and a
- * contradiction on a site whose entire argument is that it can be trusted.
- * Verification is free but slow, so the button stays off rather than shipping
- * a warning screen.
- *
- * The rest of the plumbing is provider-agnostic — adding a provider here is
- * all it takes once its credentials exist in Clerk. A button for an
- * unconfigured provider errors on click, which is worse than no button.
- */
-const CONFIGURED_SOCIAL: ReadonlyArray<SocialProvider> = ["github"];
+/** Only offer social connections that have been enabled in the Clerk dashboard. */
+const CONFIGURED_SOCIAL = configuredSocialProviders();
 
 export const SOCIAL_SIGN_IN = isClerkEnabled()
     ? SOCIAL_PROVIDERS.filter((p) => CONFIGURED_SOCIAL.includes(p.id))
@@ -112,10 +100,10 @@ export const SOCIAL_SIGN_IN = isClerkEnabled()
  * recovery code issued at signup (local auth). Markup branches on this —
  * the two flows ask for different things in a different order.
  */
-export const EMAIL_RESET = isClerkEnabled();
+export const EMAIL_RESET = usesClerkAccounts();
 export type { SocialProvider };
 
-export const MIN_PASSWORD_LENGTH = isClerkEnabled() ? 15 : 10;
+export const MIN_PASSWORD_LENGTH = usesClerkAccounts() ? 12 : 10;
 
 const COMMON = [
     "password", "qwerty", "letmein", "welcome", "admin", "iloveyou",
@@ -163,6 +151,9 @@ export function strengthOf(password: string): Strength {
 export interface AccountState {
     mode: "signin" | "signup" | "recover";
     email: string;
+    username: string;
+    signInVerification: "" | "email_code" | "totp";
+    verificationDestination: string;
     password: string;
     busy: boolean;
     error: string;
@@ -170,6 +161,8 @@ export interface AccountState {
     keys: ApiKey[];
     /** Shown once, immediately after creation. Never retrievable again. */
     freshKey: string;
+    freshKeyCopied: boolean;
+    keysLoading: boolean;
     /** Delete needs a second press; this is the armed state. */
     confirmingDelete: boolean;
     /** Shown once, right after signup. There is no email to resend it to. */
@@ -200,13 +193,15 @@ export interface AccountState {
 }
 
 export const initialAccountState: AccountState = {
-    mode: "signin", email: "", password: "", busy: false, error: "",
-    user: null, keys: [], freshKey: "", confirmingDelete: false,
+    mode: "signin", email: "", username: "", signInVerification: "", verificationDestination: "", password: "", busy: false, error: "",
+    user: null, keys: [], freshKey: "", freshKeyCopied: false, keysLoading: false, confirmingDelete: false,
     recoveryCode: "", recoverySaved: false, showPassword: false, recoveryInput: "",
     rotating: false, rotatePassword: "",
     needsEmailCode: false, emailCode: "", resetEmailSent: false, blocked: false,
 };
 
+// Native sessions deliberately stay on this origin. The deployment proxies
+// /api here; its optional upload/API subdomain does not allow cookie credentials.
 const BASE = "/api";
 
 async function call<T>(path: string, init?: RequestInit): Promise<T> {
@@ -214,12 +209,16 @@ async function call<T>(path: string, init?: RequestInit): Promise<T> {
         ...init,
         headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
         credentials: "same-origin",
+        cache: "no-store",
     });
     let body: unknown = null;
     try { body = await res.json(); } catch { /* empty or non-JSON */ }
     if (!res.ok) {
-        const detail = (body as { detail?: string } | null)?.detail;
-        throw new Error(detail || `Request failed (${res.status})`);
+        const detail = (body as { detail?: unknown } | null)?.detail;
+        const message = typeof detail === "string" ? detail : Array.isArray(detail)
+            ? detail.map(item => typeof item?.msg === "string" ? item.msg : "").filter(Boolean).join(". ")
+            : "";
+        throw new Error(message || `Request failed (${res.status})`);
     }
     return body as T;
 }
@@ -285,19 +284,25 @@ const localAccountApi = {
  * methods local auth cannot honour are declared here and throw — a clear
  * refusal beats a missing property that only fails at the call site.
  */
-export type AccountApi = Omit<typeof localAccountApi, "register"> & {
+export type AccountApi = Omit<typeof localAccountApi, "register" | "login"> & {
     register(
         email: string,
         password: string,
+        username?: string,
     ): Promise<
         | { status: "complete"; user: AccountUser; recovery_code: string }
         | { status: "needs_email_code"; user: null; recovery_code: string }
     >;
+    login(identifier: string, password: string): Promise<SignInResult>;
+    loginWithPasskey(): Promise<SignInResult>;
+    verifySignIn(code: string): Promise<SignInResult>;
+    resendSignInCode(): Promise<void>;
+    resendSignUpCode(): Promise<void>;
     verifyEmailCode(code: string): Promise<{ user: AccountUser }>;
     signInWithSocial(provider: SocialProvider): Promise<void>;
     completeSocialRedirect(): Promise<void>;
     startPasswordReset(email: string): Promise<{ ok: true }>;
-    finishPasswordReset(code: string, newPassword: string): Promise<{ ok: true }>;
+    finishPasswordReset(code: string, newPassword: string): Promise<PasswordResetResult>;
 };
 
 /** Only Clerk emails codes; local auth hands out a recovery code at signup. */
@@ -306,6 +311,10 @@ function notWithLocalAuth(what: string): never {
 }
 
 const localOnlyStubs = {
+    loginWithPasskey: () => notWithLocalAuth("Passkeys"),
+    verifySignIn: () => notWithLocalAuth("Email verification"),
+    resendSignInCode: () => notWithLocalAuth("Email verification"),
+    resendSignUpCode: () => notWithLocalAuth("Email verification"),
     verifyEmailCode: () => notWithLocalAuth("Email verification"),
     startPasswordReset: () => notWithLocalAuth("Password reset by email"),
     finishPasswordReset: () => notWithLocalAuth("Password reset by email"),
@@ -316,7 +325,7 @@ const localOnlyStubs = {
 
 export const accountApi = new Proxy({} as AccountApi, {
     get(_target, prop: string) {
-        const impl: Record<string, unknown> = isClerkEnabled()
+        const impl: Record<string, unknown> = usesClerkAccounts()
             ? (clerkAccountApi as unknown as Record<string, unknown>)
             : ({ ...localAccountApi, ...localOnlyStubs } as unknown as Record<string, unknown>);
         return impl[prop];

@@ -20,13 +20,16 @@ def svg_to_png(input_path: str, scale: float = 2.0) -> str:
         import cairosvg
 
         from .svg_safety import block_external_refs
+        # The low-level surface API forwards the fetcher into the parser;
+        # svg2png does not accept this keyword. CairoSVG expects raw bytes,
+        # while our shared deny-by-default fetcher returns a response dict.
         # block_external_refs denies file:// (LFI) and http(s):// (SSRF) refs
         # in the uploaded SVG; only inline data: URIs are allowed.
-        cairosvg.svg2png(
+        cairosvg.surface.PNGSurface.convert(
             bytestring=svg_data,
             write_to=str(output_path),
             scale=scale,
-            url_fetcher=block_external_refs,
+            url_fetcher=lambda url, resource_type: block_external_refs(url, resource_type)["string"],
         )
         return str(output_path)
     except (ImportError, OSError) as exc:

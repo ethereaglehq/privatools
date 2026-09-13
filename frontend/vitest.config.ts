@@ -6,6 +6,8 @@ export default defineConfig({
   plugins: [react()],
   test: {
     environment: "jsdom",
+    // Existing native-account tests explicitly exercise the supported legacy deployment.
+    env: { VITE_AUTH_PROVIDER: "local", VITE_CLERK_PUBLISHABLE_KEY: "" },
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],

@@ -1,3 +1,5 @@
+import { type Target, convertSubtitles } from "./subtitle-conversion";
+import "./SpecialistTools.css";
 /**
  * SubtitleConverterUI — SRT ↔ VTT (and basic ASS → SRT/VTT) in-browser.
  * Workshop: lab-card with cue counter, format toggle, signal-green CTA.
@@ -28,77 +30,6 @@ Subtitle conversion runs entirely in your browser.
 00:00:08,100 --> 00:00:11,400
 No upload — your captions never touch a server.
 `;
-
-type Target = "srt" | "vtt";
-
-interface Cue { index: number; start: number; end: number; text: string }
-
-function parseTime(t: string): number {
-    const m = t.replace(",", ".").match(/^(\d+):(\d{2}):(\d{2})(?:\.(\d+))?$/);
-    if (!m) return 0;
-    return +m[1] * 3600 + +m[2] * 60 + +m[3] + (+(m[4] || "0") / 1000);
-}
-
-function formatTime(sec: number, sep: "," | "."): string {
-    const h = Math.floor(sec / 3600);
-    const m = Math.floor((sec % 3600) / 60);
-    const s = Math.floor(sec % 60);
-    const ms = Math.round((sec % 1) * 1000);
-    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}${sep}${ms.toString().padStart(3, "0")}`;
-}
-
-function parseSrtVtt(text: string): Cue[] {
-    const body = text.replace(/^WEBVTT[^\n]*\n/, "").trim();
-    const blocks = body.split(/\r?\n\r?\n+/).filter(Boolean);
-    const cues: Cue[] = [];
-    for (const blk of blocks) {
-        const lines = blk.split(/\r?\n/);
-        let idx = cues.length + 1;
-        let timeLine = lines[0];
-        if (/^\d+$/.test(lines[0])) { idx = +lines[0]; timeLine = lines[1] || ""; }
-        const m = timeLine.match(/^([\d:.,]+)\s*-->\s*([\d:.,]+)/);
-        if (!m) continue;
-        const text = lines.slice(/^\d+$/.test(lines[0]) ? 2 : 1).join("\n");
-        cues.push({ index: idx, start: parseTime(m[1]), end: parseTime(m[2]), text });
-    }
-    return cues;
-}
-
-function parseAss(text: string): Cue[] {
-    const lines = text.split(/\r?\n/);
-    const cues: Cue[] = [];
-    for (const line of lines) {
-        if (!line.startsWith("Dialogue:")) continue;
-        const parts = line.slice(9).split(",");
-        if (parts.length < 10) continue;
-        const start = parseTime("0" + parts[1].trim());
-        const end = parseTime("0" + parts[2].trim());
-        const txt = parts.slice(9).join(",").replace(/\\N/g, "\n").replace(/\{[^}]+\}/g, "");
-        cues.push({ index: cues.length + 1, start, end, text: txt });
-    }
-    return cues;
-}
-
-function toSrt(cues: Cue[]): string {
-    return cues.map(c => `${c.index}\n${formatTime(c.start, ",")} --> ${formatTime(c.end, ",")}\n${c.text}`).join("\n\n") + "\n";
-}
-function toVtt(cues: Cue[]): string {
-    return "WEBVTT\n\n" + cues.map(c => `${formatTime(c.start, ".")} --> ${formatTime(c.end, ".")}\n${c.text}`).join("\n\n") + "\n";
-}
-
-/** Pure conversion — same logic (and messages) the single-file UI used. */
-function convertSubtitles(text: string, target: Target): { ok: boolean; output: string; count: number; error: string } {
-    if (!text.trim()) return { ok: false, output: "", count: 0, error: "Upload a subtitle file." };
-    try {
-        const isAss = /^\[Script Info\]/.test(text) || /^Dialogue:/m.test(text);
-        const cues = isAss ? parseAss(text) : parseSrtVtt(text);
-        if (!cues.length) return { ok: false, output: "", count: 0, error: "Couldn't find any cues — is the file valid?" };
-        const output = target === "srt" ? toSrt(cues) : toVtt(cues);
-        return { ok: true, output, count: cues.length, error: "" };
-    } catch (err) {
-        return { ok: false, output: "", count: 0, error: err instanceof Error ? err.message : String(err) };
-    }
-}
 
 let entryCounter = 0;
 function makeEntry(file: File): FileEntry {
@@ -289,7 +220,7 @@ export function SubtitleConverterUI() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-subtitle-workspace space-y-4">
             <div className="rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
                 <ShieldCheck size={16} className="text-accent shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
@@ -371,7 +302,7 @@ export function SubtitleConverterUI() {
             </div>
 
             {invalidEntries.length > 0 && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive space-y-1">
+                <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive space-y-1">
                     {invalidEntries.map(en => (
                         <p key={en.id} className="flex items-center gap-2">
                             <AlertCircle size={13} className="shrink-0" />

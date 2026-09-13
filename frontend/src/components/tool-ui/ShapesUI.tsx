@@ -7,6 +7,7 @@ import { Download, Loader2, AlertCircle, Plus, Trash2, CheckCircle2, Shapes, Rot
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 
 const SHAPE_TYPES = [
     { value: "rectangle", label: "Rectangle" },
@@ -36,6 +37,7 @@ const VB_W = 200;
 const VB_H = (PAGE_H / PAGE_W) * VB_W;
 
 export function ShapesUI() {
+    const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
     const [shapes, setShapes] = useState<Shape[]>([
         { id: makeId(), type: "rectangle", page: 1, x: 100, y: 100, width: 200, height: 100, x2: 300, y2: 100, color: "#0E8A56", fill: "", stroke_width: 2 },
@@ -176,15 +178,15 @@ export function ShapesUI() {
                             <Plus size={11} /> Add
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 p-4 items-start">
-                        <div className="space-y-2">
+                    <div className="pdf-coordinate-workspace">
+                        <fieldset className="pdf-coordinate-controls" disabled={status === "processing"}>
                             {shapes.map((s, idx) => {
                                 const isSel = selected === s.id;
                                 const isLineish = s.type === "line" || s.type === "arrow";
                                 return (
                                     <div
                                         key={s.id}
-                                        onClick={() => setSelected(s.id)}
+                                        onClick={() => { setSelected(s.id); setPreviewPage(s.page); }}
                                         className={cn(
                                             "rounded-lg border p-3 cursor-pointer transition-colors",
                                             isSel ? "border-accent bg-accent/[0.06]" : "border-border bg-card hover:border-border-strong"
@@ -196,7 +198,7 @@ export function ShapesUI() {
                                             </span>
                                             <span className="font-display text-[12.5px] font-medium text-foreground">{SHAPE_TYPES.find(t => t.value === s.type)?.label}</span>
                                             <span className="h-3 w-3 rounded-sm border border-border" style={{ background: s.color }} />
-                                            <button onClick={(e) => { e.stopPropagation(); removeShape(s.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                            <button type="button" aria-label={`Remove shape ${idx + 1}`} onClick={(e) => { e.stopPropagation(); removeShape(s.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                                                 <Trash2 size={12} />
                                             </button>
                                         </div>
@@ -333,20 +335,10 @@ export function ShapesUI() {
                                     </div>
                                 );
                             })}
-                        </div>
+                        </fieldset>
 
                         {/* SVG preview */}
-                        <div>
-                            <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[200px] overflow-hidden">
-                                <svg viewBox={`0 0 ${VB_W} ${VB_H}`} className="absolute inset-0 w-full h-full">
-                                    {shapes.map(s => renderShapePreview(s, selected === s.id))}
-                                </svg>
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
-                            </div>
-                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
-                                Coords in points
-                            </p>
-                        </div>
+                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} regions={shapes.map((shape, index) => ({ ...shape, width: shape.type === "line" || shape.type === "arrow" ? shape.x2 - shape.x : shape.width, height: shape.type === "line" || shape.type === "arrow" ? shape.y2 - shape.y : shape.height, kind: shape.type, label: `${shape.type} ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setShapes(items => [...items, { ...region, id, type: "rectangle", x2: region.x + region.width, y2: region.y + region.height, color: "#0E8A56", fill: "", stroke_width: 2 }]); setSelected(id); }} />
                     </div>
                 </div>
             )}

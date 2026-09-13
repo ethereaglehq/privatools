@@ -126,7 +126,11 @@ describe("static SEO files", () => {
         ].join("\n");
 
         expect(manifest.description).toContain(`${TOTAL_TOOL_COUNT} free`);
-        expect(manifest.screenshots[0]?.label).toContain(`${TOTAL_TOOL_COUNT} Free File Tools`);
+        // Screenshots are optional manifest metadata; when supplied they must
+        // remain real screenshots with accurate catalogue-count labels.
+        for (const screenshot of manifest.screenshots) {
+            expect(screenshot.label).toContain(`${TOTAL_TOOL_COUNT} Free File Tools`);
+        }
         expect(sample.description).toContain(`${TOTAL_TOOL_COUNT} file tools`);
         expect(sample.stats.tools).toBe(TOTAL_TOOL_COUNT);
         expect(surfaces).not.toContain("179");
@@ -136,6 +140,7 @@ describe("static SEO files", () => {
         const toolPageSurfaces = [
             readFileSync(join(root, "src/pages/ToolPage.tsx"), "utf8"),
             readFileSync(join(root, "src/pages/NonPdfToolPage.tsx"), "utf8"),
+            readFileSync(join(root, "src/pages/ComparePage.tsx"), "utf8"),
             readFileSync(join(root, "src/skins/daylight/SkinApp.tsx"), "utf8"),
         ].join("\n");
 

@@ -4,6 +4,7 @@ import { SimpleProcessUI } from "./SimpleProcessUI";
 export function PdfToEpubUI() {
     return (
         <SimpleProcessUI
+            handoffSlug="pdf-to-epub"
             endpoint="/pdf-to-epub"
             accepts=".pdf"
             outputSuffix="converted"

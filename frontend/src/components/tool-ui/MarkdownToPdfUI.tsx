@@ -4,6 +4,7 @@ import { SimpleProcessUI } from "./SimpleProcessUI";
 export function MarkdownToPdfUI() {
     return (
         <SimpleProcessUI
+            handoffSlug="markdown-to-pdf"
             endpoint="/markdown-to-pdf"
             accepts=".md,.markdown,.txt"
             outputSuffix="converted"

@@ -10,6 +10,7 @@
  */
 import type { FileEntry } from "@/hooks/useMultiFileProcessor";
 import { cn } from "@/lib/utils";
+import "./multi-file-queue.css";
 import { formatFileSize } from "@/lib/api";
 import {
     FileText, X, GripVertical, ChevronUp, ChevronDown, Loader2, CheckCircle2,
@@ -32,28 +33,28 @@ interface Props {
 function StatusBadge({ status, error }: { status: FileEntry["status"]; error?: string }) {
     if (status === "queued") {
         return (
-            <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-muted-foreground">
+            <span className="font-medium inline-flex items-center gap-1 text-[11px] text-muted-foreground">
                 <Clock size={10} /> Queued
             </span>
         );
     }
     if (status === "running") {
         return (
-            <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent">
+            <span className="font-medium inline-flex items-center gap-1 text-[11px] text-accent">
                 <Loader2 size={10} className="animate-spin" /> Running
             </span>
         );
     }
     if (status === "done") {
         return (
-            <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent">
+            <span className="font-medium inline-flex items-center gap-1 text-[11px] text-accent">
                 <CheckCircle2 size={10} /> Done
             </span>
         );
     }
     return (
         <span
-            className="font-medium inline-flex items-center gap-1 text-[9.5px] text-destructive"
+            className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive"
             title={error || ""}
         >
             <AlertCircle size={10} /> Failed
@@ -98,10 +99,10 @@ export function MultiFileQueue({
     const handleDragEnd = () => { setDragId(null); setOverId(null); };
 
     return (
-        <div className="space-y-2">
+        <section className="mq-workspace" aria-label="File queue">
             {/* Header row: count, total size, Clear all */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-                <span className="font-medium text-[11.5px] text-muted-foreground">
+            <div className="mq-heading">
+                <span className="mq-summary">
                     {entries.length} file{entries.length === 1 ? "" : "s"} ·{" "}
                     {formatFileSize(totalSize)}
                     {doneCount > 0 && <> · <span className="text-accent">{doneCount} done</span></>}
@@ -137,7 +138,7 @@ export function MultiFileQueue({
                 </div>
             )}
 
-            <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
+            <div className="mq-list">
                 {entries.map((e, i) => {
                     const isOver = overId === e.id && dragId !== e.id;
                     return (
@@ -149,7 +150,7 @@ export function MultiFileQueue({
                             onDrop={handleDrop(e.id)}
                             onDragEnd={handleDragEnd}
                             className={cn(
-                                "group flex items-center gap-2 sm:gap-3 px-3 py-2.5 transition-colors",
+                                "mq-row",
                                 isOver && "bg-accent/[0.08]",
                                 dragId === e.id && "opacity-50",
                                 !isOver && "hover:bg-secondary/30",
@@ -167,7 +168,7 @@ export function MultiFileQueue({
                                     <GripVertical size={13} />
                                 </span>
                             )}
-                            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-6 text-center">
+                            <span className="mq-number">
                                 {String(i + 1).padStart(2, "0")}
                             </span>
                             <div className="h-8 w-8 rounded-md bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">
@@ -175,20 +176,20 @@ export function MultiFileQueue({
                             </div>
                             <div className="min-w-0 flex-1">
                                 <p className="truncate text-[13px] font-medium text-foreground">{e.name}</p>
-                                <p className="font-mono text-[10.5px] tracking-wide text-muted-foreground mt-0.5 truncate">
+                                <p className="mq-file-detail">
                                     {formatFileSize(e.size)}
                                     {e.status === "failed" && e.error && <> · <span className="text-destructive">{e.error}</span></>}
                                 </p>
                             </div>
                             <StatusBadge status={e.status} error={e.error} />
                             {reorderable && !busy && (
-                                <div className="hidden md:flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="mq-order-controls">
                                     <button
                                         type="button"
                                         onClick={() => onReorder(i, i - 1)}
                                         disabled={i === 0}
-                                        aria-label="Move up"
-                                        className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                        aria-label={`Move ${e.name} up`}
+                                        className="mq-order-button"
                                     >
                                         <ChevronUp size={13} />
                                     </button>
@@ -196,8 +197,8 @@ export function MultiFileQueue({
                                         type="button"
                                         onClick={() => onReorder(i, i + 1)}
                                         disabled={i === entries.length - 1}
-                                        aria-label="Move down"
-                                        className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
+                                        aria-label={`Move ${e.name} down`}
+                                        className="mq-order-button"
                                     >
                                         <ChevronDown size={13} />
                                     </button>
@@ -208,7 +209,7 @@ export function MultiFileQueue({
                                 onClick={() => onRemove(e.id)}
                                 disabled={busy}
                                 aria-label={`Remove ${e.name}`}
-                                className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-30 transition-colors"
+                                className="mq-remove-button"
                             >
                                 <X size={13} />
                             </button>
@@ -216,6 +217,6 @@ export function MultiFileQueue({
                     );
                 })}
             </div>
-        </div>
+        </section>
     );
 }

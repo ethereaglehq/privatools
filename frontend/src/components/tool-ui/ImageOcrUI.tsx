@@ -1,3 +1,4 @@
+import { AiTaskWorkspace } from "./AiTaskWorkspace";
 /**
  * ImageOcrUI — extract text from an image with Tesseract OCR.
  * Workshop: source preview, language picker (13 langs), code-editor styled output panel.
@@ -121,7 +122,7 @@ export function ImageOcrUI() {
     // Keep the current blob URL in a ref so the unmount cleanup runs against
     // the latest value without the effect re-binding on every selection.
     const previewRef = useRef<string>("");
-    useEffect(() => () => { if (previewRef.current) URL.revokeObjectURL(previewRef.current); }, []);
+    useEffect(() => () => { cancelRef.current = true; abortRef.current?.abort(); void workerRef.current?.terminate().catch(() => {}); if (previewRef.current) URL.revokeObjectURL(previewRef.current); }, []);
 
     const handleFiles = useCallback((fileList: FileList) => {
         const f = fileList[0];
@@ -129,7 +130,7 @@ export function ImageOcrUI() {
         if (previewRef.current) URL.revokeObjectURL(previewRef.current);
         const url = URL.createObjectURL(f);
         previewRef.current = url;
-        setImgFile({ file: f, preview: url });
+        setImgFile({ file: f, preview: url }); setResult(null); setStatus("idle"); setError(null);
     }, []);
 
     const clear = () => {
@@ -147,6 +148,7 @@ export function ImageOcrUI() {
         try {
             if (engine === "server") {
                 const data = await uploadFileGetJson<OcrResult>("/image-ocr", imgFile.file, { lang, output: "json" });
+                if (cancelRef.current) return;
                 setResult(data);
                 setStatus("done");
                 return;
@@ -203,6 +205,7 @@ export function ImageOcrUI() {
                 if (cancelRef.current) return;
             }
 
+            if (cancelRef.current) return;
             setResult({ text, language: engine === "local" ? lang : "auto", characters: text.length });
             setStatus("done");
         } catch (e: unknown) {
@@ -228,9 +231,8 @@ export function ImageOcrUI() {
 
     const copyText = async () => {
         if (!result) return;
-        await navigator.clipboard.writeText(result.text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1800);
+        try { await navigator.clipboard.writeText(result.text); setCopied(true); setTimeout(() => setCopied(false), 1800); }
+        catch { setCopied(false); setError("Clipboard unavailable. Select the recognized text and copy it manually."); }
     };
 
     const downloadTxt = async () => {
@@ -264,7 +266,7 @@ export function ImageOcrUI() {
     }, [canProcess, process]);
 
     return (
-        <div className="space-y-4">
+        <AiTaskWorkspace kind="ocr" title="From image to editable text" description="Start with a clear image, choose your engine, then review the recognized words." engine={engine} phase={status}>
             {/* Source */}
             {!imgFile ? (
                 <div
@@ -275,7 +277,7 @@ export function ImageOcrUI() {
                     role="button" tabIndex={0}
                     onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); document.getElementById("ocr-file-input")?.click(); } }}
                     className={cn(
-                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "pt-ai-source dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
@@ -288,7 +290,7 @@ export function ImageOcrUI() {
                     <p className="font-medium text-[11.5px] text-muted-foreground">JPG · PNG · WebP · BMP · TIFF · 13 languages</p>
                 </div>
             ) : (
-                <div className="rounded-xl border border-accent/30 bg-card overflow-hidden">
+                <div className="pt-ai-source rounded-xl border border-accent/30 bg-card overflow-hidden">
                     <img src={imgFile.preview} alt={imgFile.file.name} className="w-full max-h-72 object-contain bg-paper-2/40" />
                     <div className="flex items-center gap-3 px-4 py-3 border-t border-border">
                         <div className="flex-1 min-w-0">
@@ -297,7 +299,7 @@ export function ImageOcrUI() {
                                 {(imgFile.file.size / 1024).toFixed(0)} KB
                             </p>
                         </div>
-                        <button onClick={clear} className="h-8 w-8 coarse:h-11 coarse:w-11 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 inline-flex items-center justify-center" aria-label="Remove">
+                        <button disabled={status === "processing"} onClick={clear} className="h-8 w-8 coarse:h-11 coarse:w-11 rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 inline-flex items-center justify-center" aria-label="Remove">
                             <Trash2 size={14} />
                         </button>
                     </div>
@@ -305,7 +307,7 @@ export function ImageOcrUI() {
             )}
 
             {/* Engine: server, the user's own vision key, or tesseract.js here */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="pt-ai-options rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                     Which OCR engine
                 </div>
@@ -410,7 +412,7 @@ export function ImageOcrUI() {
             )}
 
             {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
             )}
@@ -440,7 +442,7 @@ export function ImageOcrUI() {
 
             {/* Result */}
             {result && (
-                <div className="rounded-xl border border-accent/30 bg-card overflow-hidden animate-fade-up">
+                <div className="pt-ai-reading rounded-xl border border-accent/30 bg-card overflow-hidden animate-fade-up">
                     <div className="font-medium flex items-center justify-between px-4 py-2 border-b border-accent/20 bg-paper-2/40 text-[11.5px] text-muted-foreground">
                         <span className="flex items-center gap-1.5">
                             Extracted text
@@ -457,6 +459,7 @@ export function ImageOcrUI() {
                     </div>
                     <textarea
                         readOnly
+                        aria-label="Recognized text"
                         value={result.text}
                         className="w-full min-h-[220px] bg-paper-2/30 text-[13px] text-foreground p-4 font-mono leading-relaxed resize-y outline-none"
                         placeholder="No text detected…"
@@ -481,7 +484,7 @@ export function ImageOcrUI() {
                     )}
                 </div>
             )}
-        </div>
+        </AiTaskWorkspace>
     );
 }
 

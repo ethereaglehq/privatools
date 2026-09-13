@@ -7,6 +7,7 @@ import { Download, Loader2, AlertCircle, PenTool, Type, Image as ImageIcon, Chec
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 import { loadSignature, saveSignature, forgetSignature } from "@/lib/signatureStore";
 
 type SigMode = "draw" | "type" | "upload";
@@ -47,6 +48,7 @@ export function ESignUI() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const isDrawingRef = useRef(false);
     const [hasDrawn, setHasDrawn] = useState(false);
+    const [, refreshInkPreview] = useState(0);
 
     // Retina-aware canvas. Initializes whenever the draw tab is active.
     const initCanvas = useCallback(() => {
@@ -104,13 +106,15 @@ export function ESignUI() {
         if (!ctx) return;
         const { x, y } = getPos(e);
         ctx.lineTo(x, y);
-        ctx.strokeStyle = "hsl(var(--foreground))";
+        ctx.strokeStyle = "#202329";
         ctx.lineWidth = 2.5;
         ctx.stroke();
         setHasDrawn(true);
     };
     const endDraw = () => {
+        const completedStroke = isDrawingRef.current;
         isDrawingRef.current = false;
+        if (completedStroke) refreshInkPreview(value => value + 1);
         // Auto-persist on every stroke completion so the drawn signature
         // is captured progressively (the hasDrawn-driven effect only fires
         // on the first stroke).
@@ -224,8 +228,8 @@ export function ESignUI() {
         setStatus("processing"); setError(null);
         try {
             const res = await uploadFile("/esign-pdf", file, {
-                signature_data: sigData,
-                page_number: pageNumber,
+                signature: sigData,
+                page: pageNumber,
                 x: posX, y: posY,
                 width: sigWidth, height: sigHeight,
             });
@@ -359,7 +363,7 @@ export function ESignUI() {
                                             onTouchMove={e => { e.preventDefault(); draw(e); }}
                                             onTouchEnd={endDraw}
                                             aria-label="Draw your signature"
-                                            className="w-full cursor-crosshair touch-none"
+                                            className="w-full cursor-crosshair touch-none bg-white"
                                         />
                                         {!hasDrawn && (
                                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
@@ -446,8 +450,8 @@ export function ESignUI() {
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                             Placement
                         </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_180px] gap-5 p-4 items-center">
-                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        <div className="pdf-coordinate-workspace">
+                            <div className="pdf-coordinate-controls">
                                 {([
                                     { label: "Page", val: pageNumber, set: setPageNumber, min: 1, max: 999 },
                                     { label: "X",    val: posX,       set: setPosX,       min: 0, max: 1000 },
@@ -466,21 +470,7 @@ export function ESignUI() {
                                 ))}
                             </div>
                             {/* Mini page preview */}
-                            <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[180px] overflow-hidden">
-                                <div
-                                    className="absolute border-2 border-accent bg-accent/15 flex items-center justify-center"
-                                    style={{
-                                        left: `${(posX / PAGE_W) * 100}%`,
-                                        top: `${(posY / PAGE_H) * 100}%`,
-                                        width: `${(sigWidth / PAGE_W) * 100}%`,
-                                        height: `${(sigHeight / PAGE_H) * 100}%`,
-                                        minWidth: 4, minHeight: 4,
-                                    }}
-                                >
-                                    <span className="font-display italic text-accent text-[7px]">sign</span>
-                                </div>
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page {pageNumber}</span>
-                            </div>
+                            <PdfPageStage file={file} page={pageNumber} onPageChange={setPageNumber} regions={[{ id: "signature", page: pageNumber, x: posX, y: posY, width: sigWidth, height: sigHeight, image: getSignatureData() || undefined, label: "Your signature" }]} drawLabel="Place signature" disabled={status === "processing"} onDraw={region => { setPosX(Math.round(region.x)); setPosY(Math.round(region.y)); setSigWidth(Math.round(region.width)); setSigHeight(Math.round(region.height)); }} />
                         </div>
                     </div>
 
@@ -492,7 +482,7 @@ export function ESignUI() {
 
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-3">
-                            <button onClick={process} disabled={status === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                            <button onClick={process} disabled={status === "processing" || (mode === "draw" ? !hasDrawn : mode === "type" ? !typedName.trim() : !sigImage)} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                                 {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Signing…</> : <><PenTool size={13} /> Apply e-signature</>}
                             </button>
                             {status !== "processing" && (

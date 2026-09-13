@@ -1,38 +1,13 @@
 /* eslint-disable */
 // @ts-nocheck
+import { passkeysSupported } from "@/lib/clerk/accountApi";
+import { accountsConfigured, usernameAccountsEnabled, passkeyAccountsEnabled } from "@/lib/auth-mode";
 /**
- * Daylight — the first hand-written skin.
- *
- * The other three ported designs are generated from `design-sources/*.dc.html`
- * and repaired through the generator's correction tables. Daylight was designed
- * *as* an application (the prototype lived and iterated as running code), so it
- * is authored directly: one class component in the codebase's ported-skin shape
- * — a self-contained monolith that owns the whole screen — with none of the
- * splice/bind machinery, because there is nothing to splice.
- *
- * What is real here, and where it comes from:
- *
- *   catalogue      `@/data/tools` + `@/data/non-pdf-tools` — every count and
- *                  list derives from the registry at runtime; no literals.
- *   tool runs      `withRealTools` (extension) mounts the same 112 tool
- *                  components the house design uses via its `realToolUI`
- *                  binding. Daylight draws the chrome; the run panel is real.
- *   local/server   `tool.clientOnly` from the registry — the amber/green chip
- *                  is per-tool truth, not a hand-kept map.
- *   accounts       `withAccounts` (extension) supplies `this.state.acct` and
- *                  the whole flow — signup recovery codes, Clerk email-code
- *                  branch, key issue/revoke, code rotation. The markup below
- *                  only *renders* that state; it re-implements none of it.
- *   vault          `withVault` (extension) drives the real AES-GCM store in
- *                  `lib/localStore/vault` through `this.state.vlt`.
- *   URL bridging   `withPathRoutes` (extension) translates every site path to
- *                  the `#/…` hashes this component routes on — the same bridge
- *                  Aurora and Carbon use, so /tool/<slug> deep links, the
- *                  sitemap and search results all land correctly.
- *
- * Simulated, and labelled as such in their own copy: the Pipeline and Batch
- * run animations (the same fidelity bar as the other three ported designs) and
- * the Status page's uptime strips.
+ * Consumer application shell. Catalogue and counts derive from the registries.
+ * withRealTools mounts the existing processing components; withVault and
+ * withAccounts retain the existing state and persistence contracts.
+ * withPathRoutes bridges public URLs to this shell's hash router.
+ * The approved Home, navigation and search live in ./consumer.
  */
 import React from "react";
 import { tools } from "@/data/tools";
@@ -41,7 +16,7 @@ import {
     ACCOUNT_COPY, MIN_PASSWORD_LENGTH, SOCIAL_SIGN_IN, EMAIL_RESET, describeKey, strengthOf,
 } from "../accountLogic";
 import { describeEntry, vaultApi } from "../vaultLogic";
-import { readThemeChoice, resolveTheme, setThemeChoice } from "@/lib/skinTheme";
+import { readThemeChoice, resolveTheme, setThemeChoice, watchThemeChoice } from "@/lib/skinTheme";
 import { blogPosts } from "@/data/blog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { buttonVariants } from "@/components/ui/button";
@@ -56,21 +31,30 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast as sonnerToast } from "sonner";
-import { storeFileHandoff } from "@/lib/file-handoff";
+import { ConsumerHome } from "./consumer/ConsumerHome";
+import { ConsumerHeader, ConsumerTabBar, ConsumerSearch, ConsumerLogo, FavoriteButton } from "./consumer/ConsumerChrome";
+import consumerCSS from "./consumer/consumer.css?inline";
+import { ExperienceShell, AppearanceControls } from "../experience/ExperienceShell";
+import { ExperienceHome } from "../experience/ExperienceHome";
+import { ToolWorkspace } from "../experience/ToolWorkspace";
+import { CatalogStudio, AboutStudio, SupportStudio, MissingStudio, GuidesStudio } from "../experience/ContentStudio";
+import experienceCSS from "../experience/experience.css?inline";
 import { cn } from "@/lib/utils";
+import { ToolFaq } from "@/components/ToolFaq";
 
-/*
- * The four surfaces below mount the house design's real pages whole — the same
- * pattern withRealTools uses for the 112 tool components. Pipeline's chain
- * runner (server-side chaining with a per-step fallback), Batch's per-file
- * engine with resume, Status's live health checks and My Stuff's localStore
- * management all keep working exactly as built; Daylight draws the chrome and
- * the tokens (palette, type, radius) make them render native.
- */
+/* Purpose-built product pages retain their processing controllers and persistence. */
 const HousePipeline = React.lazy(() => import("@/pages/PipelinePage"));
 const HouseBatch = React.lazy(() => import("@/pages/BatchPage"));
 const HouseMyStuff = React.lazy(() => import("@/pages/MyStuffPage"));
 const HouseStatus = React.lazy(() => import("@/pages/StatusPage"));
+const HouseCompare = React.lazy(() => import("@/pages/ComparePage"));
+const HouseAi = React.lazy(() => import("@/pages/AiPage"));
+const HouseApi = React.lazy(() => import("@/pages/ApiPage"));
+const HouseSettings = React.lazy(() => import("@/pages/AccountSettingsPage"));
+const HouseTrust = React.lazy(() => import("../experience/TrustCenter"));
+const HousePrivacy = React.lazy(() => import("@/pages/PrivacyPage"));
+const HouseTerms = React.lazy(() => import("@/pages/TermsPage"));
+const HouseSecurity = React.lazy(() => import("@/pages/SecurityPage"));
 
 /* ═══════════════════════════ catalogue (real) ═══════════════════════════ */
 
@@ -124,11 +108,14 @@ export function parseHash(hash) {
     if (seg[0] === "tools") return { view: "tools", cat };
     if (seg[0] === "my-stuff" && seg[1] === "vault") return { view: "vault" };
     if (seg[0] === "my-stuff") return { view: "mystuff" };
-    if (seg[0] === "account") return { view: "account", keys: seg[1] === "keys" };
+    if (seg[0] === "account" && seg[1] === "settings") return { view: "settings" };
+    if (seg[0] === "account") return { view: "account", keys: seg[1] === "keys", ...(["sign-in", "sign-up"].includes(seg[1]) ? { authMode: seg[1] === "sign-up" ? "signup" : "signin" } : {}) };
+    if (seg[0] === "settings") return { view: "settings" };
     if (seg[0] === "blog" && seg[1]) return { view: "blog", post: seg[1] };
     if (seg[0] === "blog") return { view: "blog", post: "" };
-    if (seg[0] === "security" || seg[0] === "trust") return { view: "security" };
-    const SIMPLE = ["pipeline", "batch", "compare", "about", "privacy", "terms", "status", "support"];
+    if (seg[0] === "compare") return { view: "compare", competitor: seg[1] || "" };
+    if (seg[0] === "security") return { view: "security" };
+    const SIMPLE = ["pipeline", "batch", "compare", "about", "privacy", "terms", "status", "support", "ai", "api", "trust"];
     if (SIMPLE.includes(seg[0])) return { view: seg[0] };
     return { view: "notfound" };
 }
@@ -206,44 +193,6 @@ const SOCIAL_ICONS = {
     ),
 };
 
-const Logo = ({ size = 23 }) => (
-    // A page held between two registration marks: the file stays where it is.
-    // The 24-grid and stroke weight match public/icons/icon.svg exactly — change
-    // one and the favicon stops matching the header.
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true"
-        stroke="var(--dl-green)" strokeWidth="1.85" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M9.6 6.2h3.6L15.8 8.8v8.4a1.4 1.4 0 0 1-1.4 1.4H9.6a1.4 1.4 0 0 1-1.4-1.4V7.6A1.4 1.4 0 0 1 9.6 6.2Z" />
-        <path d="M13.2 6.3v2.5h2.5" />
-        <path d="M3.6 7.6V4.6a1 1 0 0 1 1-1h3" />
-        <path d="M20.4 16.4v3a1 1 0 0 1-1 1h-3" />
-    </svg>
-);
-
-/** Suggested tools for a dropped file, by extension — every slug is registry-real. */
-const DROP_ROUTES = [
-    [/\.pdf$/i, "PDF", ["merge-pdf", "compress-pdf", "pdf-to-word"]],
-    [/\.(jpe?g|png|webp|heic|gif|bmp|tiff?)$/i, "image", ["image-compressor", "image-converter", "remove-exif"]],
-    [/\.(mp4|mov|webm|mkv|avi)$/i, "video", ["video-converter", "compress-video", "extract-audio"]],
-    [/\.(mp3|wav|m4a|flac|ogg|aac)$/i, "audio", ["transcribe-audio", "audio-converter", "audio-trim"]],
-    [/\.(zip|tar|gz|rar|7z)$/i, "archive", ["extract-archive", "create-zip", "hash-generator"]],
-    [/\.(docx?|xlsx?|pptx?|odt)$/i, "document", ["office-to-pdf", "word-to-pdf", "excel-to-pdf"]],
-    [/.*/, "file", ["create-zip", "hash-generator", "txt-to-pdf"]],
-];
-
-const PAGES_FOR_PALETTE = [
-    ["#/tools", "All tools", "Browse the full catalogue"],
-    ["#/pipeline", "Pipeline", "Chain tools into one pass"],
-    ["#/batch", "Batch", "Same tool, many files"],
-    ["#/my-stuff/vault", "Vault", "Device-local encrypted passwords"],
-    ["#/my-stuff", "My Stuff", "Your activity on this device"],
-    // A real path, not a hash: see _ensureAccountPath in withAccounts.
-    ["/account", "Developer API", "Sign in, keys and quota"],
-    ["#/status", "Status", "Live service state"],
-    ["#/security", "Trust & security", "The promises, verifiable"],
-    ["#/compare", "Compare", "The fine print, side by side"],
-    ["#/support", "Support", "A person reads this"],
-];
-
 const HISTORY_KEY = "privatools.daylight.history";
 
 /* ═══════════════════════════════ styles ═══════════════════════════════ */
@@ -304,13 +253,13 @@ const CSS = `
   }
 }
 .dl-root *, .dl-root *::before, .dl-root *::after { box-sizing:border-box; }
-.dl-root h1, .dl-root h2, .dl-root h3, .dl-root p, .dl-root ul, .dl-root figure { margin:0; }
+:where(.dl-root h1, .dl-root h2, .dl-root h3, .dl-root p, .dl-root ul, .dl-root figure) { margin:0; }
 .dl-root button { font-family:inherit; cursor:pointer; }
 /* Strips the design's default button chrome from buttons that should read as
    plain text. Every dl- control styles itself, so the whole family is exempt:
    this rule's specificity (0,4,1) silently beat all of them, which is why the
    filter chips had no pills and the social buttons no brand fill. */
-.dl-root button:not([class*="bg-"]):not([class*="border"]):not([class*="dl-"]) { color:inherit; background:none; border:0; font-size:inherit; }
+
 .dl-root input[type="checkbox"] { accent-color: var(--dl-green); width:15px; height:15px; }
 .dl-root a { color:inherit; text-decoration:none; }
 /* Prose links stay green; component anchors (buttons, cards, chips) inherit,
@@ -717,7 +666,7 @@ const CSS = `
 .dl-promise .how { font-size:12px; letter-spacing:.09em; text-transform:uppercase; color:var(--dl-green); font-weight:600; margin-top:6px; }
 .dl-promise p { font-size:14.5px; color:var(--dl-muted); max-width:52em; }
 .dl-promise p + p { margin-top:8px; }
-.dl-caveat { background:var(--dl-card); border:1px solid var(--dl-rule); border-left:3px solid var(--dl-amber); border-radius:10px; padding:16px 20px; margin-top:10px; }
+.dl-caveat { background:var(--dl-card); border:1px solid var(--dl-rule); border-radius:10px; padding:16px 20px; margin-top:10px; }
 .dl-caveat b { font-size:13.5px; font-weight:600; }
 .dl-caveat p { font-size:13.5px; color:var(--dl-muted); margin-top:3px; max-width:60em; }
 
@@ -864,21 +813,6 @@ const CSS = `
 }
 `;
 
-/* ═══════════════════════ compare-table data (sourced) ═══════════════════════ */
-
-const CMP_ROWS = [
-    ["Price for everything", ["Free, all of it", true], ["Freemium", "Premium tier"], ["Freemium", "Pro tier"], ["Freemium", "daily caps"], ["Free", ""]],
-    ["Task limits", ["None", true], ["On some tools", ""], ["Limited free tasks", ""], ["3 tasks / hour", ""], ["None", ""]],
-    ["Settings behind paywall", ["Never", true], ["Some", ""], ["Moderate & Strong compression are Pro", ""], ["Some", ""], ["None", ""]],
-    ["Where files go", ["Local-first; disclosed server · Mumbai", true], ["Uploaded to their servers", ""], ["Uploaded to their servers", ""], ["Uploaded to their servers", ""], ["Stays in browser", ""]],
-    ["Retention after processing", ["Zero · this tab only", true], ["Time-limited", ""], ["Time-limited", ""], ["“Deleted after 2 hours”", ""], ["n/a", ""]],
-    ["Account walls", ["Never for tools", true], ["For some features", ""], ["For some features", ""], ["For some features", ""], ["None", ""]],
-    ["Ads & third-party scripts", ["None", true], ["Analytics", ""], ["Analytics", ""], ["Analytics", ""], ["Analytics", ""]],
-    ["AI tools on the free tier", ["On-device models · free", true], ["Cloud AI, paid tiers", ""], ["Cloud AI, paid tiers", ""], ["Not offered", ""], ["Not offered", ""]],
-    ["Bring your own AI key", ["8 providers + self-hosted", true], ["Not offered", ""], ["Not offered", ""], ["Not offered", ""], ["Not offered", ""]],
-    ["Many files per run", ["Up to 25 → one ZIP", true], ["Counts against quotas", ""], ["Counts against quotas", ""], ["Counts against quotas", ""], ["n/a", ""]],
-];
-
 /* ═══════════════════════════ the component ═══════════════════════════ */
 
 export default class DaylightSkinApp extends React.Component {
@@ -888,7 +822,7 @@ export default class DaylightSkinApp extends React.Component {
             aiHub: false,
             ...parseHash(typeof location !== "undefined" ? location.hash : "#/"),
             themeMode: this.readTheme(),
-            q: "", catFilter: "", idxView: "tiles", blogTag: "",
+            q: "", catFilter: parseHash(typeof location !== "undefined" ? location.hash : "#/").cat || "", idxView: "tiles", blogTag: "",
             palOpen: false, palQ: "", palSel: 0,
             dragging: false, dropped: null,
             toast: "",
@@ -919,7 +853,7 @@ export default class DaylightSkinApp extends React.Component {
         const NAMES = {
             tools: "All tools", pipeline: "Pipeline", batch: "Batch",
             mystuff: "My Stuff", vault: "Vault",
-            account: r.keys ? "API keys" : "Account",
+            account: r.keys ? "API keys" : r.authMode === "signup" ? "Create an account" : "Account", settings: "Account settings", ai: "AI studio", api: "Developer API", trust: "Trust center",
             compare: "Compare", blog: "Blog", about: "About",
             privacy: "Privacy", security: "Security & trust", terms: "Terms",
             status: "Status", support: "Support", notfound: "Page not found",
@@ -936,7 +870,7 @@ export default class DaylightSkinApp extends React.Component {
         if (super.componentDidMount) super.componentDidMount();
         this._onHash = () => {
             const r = parseHash(location.hash);
-            this.setState(r, () => {
+            this.setState({ ...r, ...(r.view === "tools" ? { catFilter: r.cat || "" } : {}) }, () => {
                 window.scrollTo(0, 0);
                 document.title = this.titleFor(this.state);
                 this._timers.push(setTimeout(this._armReveals, 60));
@@ -1011,8 +945,8 @@ export default class DaylightSkinApp extends React.Component {
         // mounted house pages, the vault and account forms — handle files
         // themselves. Hijacking there would steal a drop aimed straight at a
         // dropzone; the drop-anywhere hero belongs to the browsing surfaces.
-        this._dropHijackable = () => !["tool", "batch", "pipeline", "mystuff", "vault", "account"].includes(this.state.view);
-        this._onDragEnter = (e) => { if (!this._dropHijackable()) return; e.preventDefault(); this._depth++; if (!this.state.dragging) this.setState({ dragging: true }); };
+        this._dropHijackable = () => !["tool", "batch", "pipeline", "mystuff", "vault", "account", "settings", "ai", "api"].includes(this.state.view);
+        this._onDragEnter = (e) => { if (!this._dropHijackable() || !e.dataTransfer?.types?.includes("Files")) return; e.preventDefault(); this._depth++; if (!this.state.dragging) this.setState({ dragging: true }); };
         this._onDragOver = (e) => e.preventDefault();
         this._onDragLeave = (e) => { if (!this._dropHijackable()) return; e.preventDefault(); this._depth = Math.max(0, this._depth - 1); if (!this._depth) this.setState({ dragging: false }); };
         this._onDrop = (e) => {
@@ -1028,10 +962,8 @@ export default class DaylightSkinApp extends React.Component {
             const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
             this.setState({ dragging: false });
             if (!files.length) return;
-            this._droppedFiles = files; // the real File objects, for the handoff
-            const match = DROP_ROUTES.find(([re]) => re.test(files[0].name));
-            go("");
-            this.setState({ dropped: { files: files.map((f) => ({ name: f.name, size: f.size })), kind: match[1], slugs: match[2] } });
+            go("#/");
+            this.pickHomeFiles(files);
         };
         window.addEventListener("dragenter", this._onDragEnter);
         window.addEventListener("dragover", this._onDragOver);
@@ -1041,6 +973,8 @@ export default class DaylightSkinApp extends React.Component {
         // Paint the stored choice now; index.html already pre-painted it, but a
         // hot-switch from the dock into this skin arrives without a reload.
         document.documentElement.setAttribute("data-theme", resolveTheme(this.state.themeMode));
+        this._stopThemeWatch = watchThemeChoice("daylight", (themeMode) => this.setState({ themeMode }));
+        if (new URLSearchParams(location.search).get("mode") === "signup" && location.pathname.startsWith("/account")) this._setAcct?.({ mode: "signup" });
 
         // A path the bridge could not translate (and no hash to rescue it) is
         // a dead URL — show the 404 view instead of the homepage wearing the
@@ -1068,6 +1002,7 @@ export default class DaylightSkinApp extends React.Component {
         window.removeEventListener("dragleave", this._onDragLeave);
         window.removeEventListener("drop", this._onDrop);
         window.removeEventListener("scroll", this._onScrollReveal);
+        this._stopThemeWatch?.();
         this._io && this._io.disconnect();
         this._raf.forEach(cancelAnimationFrame);
         this._timers.forEach(clearTimeout);
@@ -1080,12 +1015,17 @@ export default class DaylightSkinApp extends React.Component {
     }
     readTheme() { return readThemeChoice("daylight"); }
     cycleTheme = () => {
-        const order = ["system", "light", "dark", "midnight"];
+        const order = ["system", "light", "dark"];
         const next = order[(order.indexOf(this.state.themeMode) + 1) % order.length];
         setThemeChoice("daylight", next);
         this.setState({ themeMode: next });
     };
-    readHistory() { try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch { return []; } }
+    readHistory() {
+        try {
+            const history = JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]");
+            return Array.isArray(history) ? history.filter(item => item && typeof item.s === "string" && BY_SLUG.has(item.s) && Number.isFinite(item.ts)).slice(0, 30) : [];
+        } catch { return []; }
+    }
     logHistory(slug) {
         try {
             const h = [{ s: slug, ts: Date.now() }, ...this.readHistory().filter((e) => e.s !== slug)].slice(0, 30);
@@ -1101,46 +1041,14 @@ export default class DaylightSkinApp extends React.Component {
     /* ═══════════════════════ chrome ═══════════════════════ */
 
     Nav() {
-        const { view } = this.state;
-        const a = this.state.acct || {};
-        const L = ([hash, label, key]) => (
-            <a key={key} href={hash} className={view === key ? "on" : ""}>{label}</a>
-        );
-        return (
-            <header className="dl-header">
-                <div className="dl-nav">
-                    <a className="dl-brand" href="#/"><Logo /> PrivaTools</a>
-                    <nav className="dl-links">
-                        {[["#/tools", "All tools", "tools"], ["#/pipeline", "Pipeline", "pipeline"],
-                        ["#/batch", "Batch", "batch"], ["#/my-stuff/vault", "Vault", "vault"],
-                        ["#/my-stuff", "My Stuff", "mystuff"], ["#/security", "Trust", "security"]].map(L)}
-                    </nav>
-                    <button className="dl-searchpill" onClick={() => this.setState({ palOpen: true, palQ: "", palSel: 0 })} aria-label={`Search ${TOTAL} tools`}>
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="currentColor" strokeWidth="1.5" /><path d="M9.4 9.4 L12.6 12.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                        Search {TOTAL} tools…
-                        <kbd>⌘K</kbd>
-                    </button>
-                    <Tooltip><TooltipTrigger asChild><button className="dl-iconbtn" onClick={() => this.setState({ palOpen: true, palQ: "", palSel: 0 })} aria-label="Search tools">
-                        <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="currentColor" strokeWidth="1.5" /><path d="M9.4 9.4 L12.6 12.6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                    </button></TooltipTrigger><TooltipContent>Search — ⌘K</TooltipContent></Tooltip>
-                    <Tooltip><TooltipTrigger asChild><button className="dl-aibtn" onClick={() => this.setState({ aiHub: true })} aria-label="AI — bring your own key and on-device models">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3z" fill="currentColor"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9L19 15z" fill="currentColor" opacity="0.7"/></svg>
-                        AI
-                    </button></TooltipTrigger><TooltipContent>Bring your own key · on-device models</TooltipContent></Tooltip>
-                    <a className={cn(buttonVariants({ variant: "outline" }), "dl-navcta")} href="/account">{a.user ? "Account" : "Sign in"}</a>
-                    <Tooltip><TooltipTrigger asChild><button className="dl-themebtn" onClick={this.cycleTheme} aria-label={`Theme: ${this.state.themeMode}`}>
-                        {this.state.themeMode === "midnight"
-                            ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M15.4 11.2 A6.8 6.8 0 1 1 6.8 2.6 A5.4 5.4 0 0 0 15.4 11.2 Z" fill="currentColor" /><path d="M13.4 3.2 l.55 1.25 1.25.55 -1.25.55 -.55 1.25 -.55-1.25 -1.25-.55 1.25-.55 Z" fill="currentColor" /></svg>
-                            : this.state.themeMode === "light"
-                            ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="3.6" stroke="currentColor" strokeWidth="1.6" /><path d="M9 1.5 V3.5 M9 14.5 V16.5 M1.5 9 H3.5 M14.5 9 H16.5 M3.7 3.7 L5.1 5.1 M12.9 12.9 L14.3 14.3 M14.3 3.7 L12.9 5.1 M5.1 12.9 L3.7 14.3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
-                            : this.state.themeMode === "dark"
-                                ? <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><path d="M15 10.8 A6.5 6.5 0 1 1 7.2 3 A5.2 5.2 0 0 0 15 10.8 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
-                                : <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.4" stroke="currentColor" strokeWidth="1.6" /><path d="M9 2.6 A6.4 6.4 0 0 1 9 15.4 Z" fill="currentColor" /></svg>}
-                    </button></TooltipTrigger><TooltipContent>Theme: {this.state.themeMode} — click to cycle</TooltipContent></Tooltip>
-                    <AiHubDialog open={this.state.aiHub} onOpenChange={(v) => this.setState({ aiHub: v })} />
-                </div>
-            </header>
-        );
+        return <>
+            <ConsumerHeader view={this.state.view} theme={this.state.themeMode}
+                onTheme={(theme) => { setThemeChoice("daylight", theme); this.setState({ themeMode: theme }); }}
+                onSearch={() => this.setState({ palOpen: true })}
+                onAi={() => this.setState({ aiHub: true })} onInstall={this._installApp}
+                signedIn={Boolean(this.state.acct?.user || this.state.acct?.accountHint)} />
+            <AiHubDialog open={this.state.aiHub} onOpenChange={(aiHub) => this.setState({ aiHub })} />
+        </>;
     }
 
     ToolCard(t, i) {
@@ -1162,8 +1070,8 @@ export default class DaylightSkinApp extends React.Component {
             <footer className="dl-foot">
                 <div className="cols">
                     <div className="brand">
-                        <a className="dl-brand" href="#/"><Logo size={21} /> PrivaTools</a>
-                        <p>{TOTAL} file tools that treat your documents like they’re yours. Free, no account, no watermark — owner-funded, with nothing to sell you.</p>
+                        <a className="dl-brand" href="#/"><ConsumerLogo /> PrivaTools</a>
+                        <p>{TOTAL} tools for PDFs, images, text and everyday work. Free to use, with no account needed for tools.</p>
                         <button type="button" className={cn(buttonVariants({ variant: "outline" }), "finstall")} onClick={this._installApp}>
                             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V9 M4 6.5 L7 9.5 L10 6.5 M2 12.5 H12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
                             Install the app
@@ -1190,7 +1098,7 @@ export default class DaylightSkinApp extends React.Component {
                     </ul></div>
                     <div><h4>Browse</h4><ul>
                         <li><a href="#/tools">All {TOTAL} tools</a></li>
-                        <li><a href="#/pipeline">Pipeline</a></li>
+                        <li><a href="#/pipeline">Workflows & pipelines</a></li>
                         <li><a href="#/batch">Batch</a></li>
                         <li><a href="#/compare">Compare</a></li>
                         <li><a href="#/blog">Blog</a></li>
@@ -1207,33 +1115,14 @@ export default class DaylightSkinApp extends React.Component {
                     </ul></div>
                 </div>
                 <div className="base"><div>
-                    <span>© 2026 PrivaTools · owner-funded · no ads, no third-party scripts, no paid tier</span>
-                    <span>Server jobs: disclosed · Mumbai, IN · deleted after use</span>
+                    <span>© 2026 PrivaTools · owner-funded · no ads · free tools</span>
+                    <span>Processing location is shown before you start.</span>
                 </div></div>
             </footer>
         );
     }
 
-    TabBar() {
-        const { view } = this.state;
-        const Item = ([hash, label, key, d]) => (
-            <a key={key} href={hash} className={view === key ? "on" : ""}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d={d} stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" strokeLinecap="round" /></svg>
-                {label}
-            </a>
-        );
-        return (
-            <nav className="dl-tabbar" aria-label="Primary">
-                {Item(["#/", "Home", "home", "M3.5 9 L10 3.5 L16.5 9 V16.5 H12 V12 H8 V16.5 H3.5 Z"])}
-                {Item(["#/tools", "Tools", "tools", "M3.75 3.75 H8.25 V8.25 H3.75 Z M11.75 3.75 H16.25 V8.25 H11.75 Z M3.75 11.75 H8.25 V16.25 H3.75 Z M11.75 11.75 H16.25 V16.25 H11.75 Z"])}
-                <button className="fab" onClick={() => this.setState({ palOpen: true, palQ: "", palSel: 0 })} aria-label="Search tools">
-                    <svg width="21" height="21" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="currentColor" strokeWidth="1.6" /><path d="M9.4 9.4 L12.6 12.6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>
-                </button>
-                {Item(["#/my-stuff/vault", "Vault", "vault", "M5.75 9.25 H14.25 V15.25 H5.75 Z M7 9 V7 A3 3 0 0 1 13 7 V9"])}
-                {Item(["#/my-stuff", "My Stuff", "mystuff", "M10 3 A7 7 0 1 0 10 17 A7 7 0 1 0 10 3 M10 6.5 V10 L12.5 12"])}
-            </nav>
-        );
-    }
+    TabBar() { return <ConsumerTabBar view={this.state.view} />; }
 
     /** Tick a revealed stat from 0 to its real value. The markup already
      *  holds the final number, so no-JS and reduced-motion read it as-is. */
@@ -1312,405 +1201,29 @@ export default class DaylightSkinApp extends React.Component {
         else this.say("In your browser’s menu, choose “Install PrivaTools”.");
     };
 
-    SysDock() {
-        // Collapsed to a three-dot pill so it never sits on top of content;
-        // hover or keyboard focus expands the detail card in place.
-        return (
-            <div className="dl-sysdock" tabIndex={0}
-                aria-label="Processing paths: local ready · server best effort, Mumbai · offline cached">
-                <div className="dots" aria-hidden="true"><span className="d" /><span className="d warn" /><span className="d" /></div>
-                <div className="rows" aria-hidden="true">
-                    <div className="r"><span className="d" /><b>Local</b><span>Ready</span></div>
-                    <div className="r"><span className="d warn" /><b>Server</b><span>Best effort · Mumbai, IN</span></div>
-                    <div className="r"><span className="d" /><b>Offline</b><span>Cached tools ready</span></div>
-                </div>
-            </div>
-        );
-    }
-
     /* ═══════════════════════ ⌘K palette ═══════════════════════ */
 
-    palResults() {
-        const q = this.state.palQ.trim().toLowerCase();
-        const scored = [];
-        for (const t of ALL_TOOLS) {
-            const name = t.name.toLowerCase();
-            let score = -1;
-            if (!q) score = 1000 - (t.popularity ?? 999);
-            else if (name.startsWith(q)) score = 300;
-            else if (name.includes(q)) score = 200;
-            else if ((t.synonyms || "").toLowerCase().includes(q)) score = 120;
-            else if (t.description.toLowerCase().includes(q)) score = 80;
-            if (score >= 0) scored.push([score - (t.popularity ?? 999) * 0.01, t]);
-        }
-        scored.sort((a, b) => b[0] - a[0]);
-        const toolEntries = scored.slice(0, 8).map(([, t]) => ({ kind: "tool", t }));
-        const pageEntries = q
-            ? PAGES_FOR_PALETTE
-                .filter(([, l, d]) => l.toLowerCase().includes(q) || d.toLowerCase().includes(q))
-                .slice(0, 3).map(([hash, label, desc]) => ({ kind: "page", hash, label, desc }))
-            : [];
-        const recents = !q
-            ? this.state.history.slice(0, 3).map((e) => BY_SLUG.get(e.s)).filter(Boolean)
-                .map((t) => ({ kind: "tool", t, recent: true }))
-            : [];
-        const items = recents.length
-            ? [...recents, ...toolEntries.filter((e) => !recents.some((r) => r.t === e.t))]
-            : [...pageEntries, ...toolEntries];
-        return items.slice(0, 10);
-    }
-
     Palette() {
-        if (!this.state.palOpen) return null;
-        const items = this.palResults();
-        const sel = Math.min(this.state.palSel, Math.max(0, items.length - 1));
-        const goEntry = (entry) => {
-            this.setState({ palOpen: false });
-            if (entry.kind === "page") go(entry.hash);
-            else go(`#/tool/${entry.t.slug}`);
-        };
-        let lastGroup = "";
-        return (
-            <div className="dl-palov" role="dialog" aria-modal="true" aria-label="Search tools"
-                onClick={(e) => { if (e.target === e.currentTarget) this.setState({ palOpen: false }); }}>
-                <div className="dl-pal">
-                    <div className="dl-palin">
-                        <svg width="16" height="16" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="var(--dl-faint)" strokeWidth="1.5" /><path d="M9.4 9.4 L12.6 12.6" stroke="var(--dl-faint)" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                        <input autoFocus value={this.state.palQ} placeholder={`Search ${TOTAL} tools…`}
-                            role="combobox" aria-expanded="true" aria-controls="dl-pallist" aria-activedescendant={items[sel] ? `dl-palopt-${sel}` : undefined}
-                            onChange={(e) => this.setState({ palQ: e.target.value, palSel: 0 })}
-                            onKeyDown={(e) => {
-                                if (e.key === "ArrowDown") { e.preventDefault(); this.setState({ palSel: Math.min(sel + 1, items.length - 1) }); }
-                                else if (e.key === "ArrowUp") { e.preventDefault(); this.setState({ palSel: Math.max(sel - 1, 0) }); }
-                                else if (e.key === "Enter" && items[sel]) goEntry(items[sel]);
-                            }} />
-                        <kbd>esc</kbd>
-                    </div>
-                    <div className="dl-pallist" role="listbox" id="dl-pallist" aria-label="Results">
-                        {items.length === 0 && <div className="dl-palempty">No tool or page matches “{this.state.palQ}”.</div>}
-                        {items.map((entry, i) => {
-                            const group = entry.kind === "page" ? "Pages" : entry.recent ? "Recent" : (items.some((x) => x.recent) ? "Popular" : "Tools");
-                            const header = group !== lastGroup ? <div className="dl-palgroup" key={`g${i}`}>{group}</div> : null;
-                            lastGroup = group;
-                            return (
-                                <React.Fragment key={entry.kind === "page" ? entry.hash : entry.t.slug}>
-                                    {header}
-                                    <div className={`dl-palitem${i === sel ? " sel" : ""}`}
-                                        role="option" id={`dl-palopt-${i}`} aria-selected={i === sel}
-                                        onClick={() => goEntry(entry)}
-                                        onMouseMove={() => { if (this.state.palSel !== i) this.setState({ palSel: i }); }}>
-                                        <b>{entry.kind === "page" ? entry.label : entry.t.name}</b>
-                                        <span>{entry.kind === "page" ? entry.desc : entry.t.description}</span>
-                                        <span className="k">{entry.kind === "page" ? "Page" : (FAMILY_LABEL[entry.t.category] || entry.t.category)}</span>
-                                    </div>
-                                </React.Fragment>
-                            );
-                        })}
-                    </div>
-                    <div className="dl-palfoot"><span>↑↓ navigate</span><span>↵ open</span><span>esc close</span></div>
-                </div>
-            </div>
-        );
+        return <ConsumerSearch open={this.state.palOpen} history={this.state.history}
+            onOpenChange={(palOpen) => this.setState({ palOpen })} />;
     }
 
     /* ═══════════════════════ views ═══════════════════════ */
 
+    pickHomeFiles = (files) => {
+        this._droppedFiles = files;
+        this.setState({ dropped: files.length ? { files: files.map(f => ({ name: f.name, size: f.size })) } : null });
+    };
+
     Home() {
-        const d = this.state.dropped;
-        return (
-            <div className="dl-wrap">
-                <div className="dl-hero">
-                    <div>
-                        <Badge variant="outline" className="dl-herobadge">{TOTAL} free file tools · no sign-up</Badge>
-                        <h1>Drop any file.<br />Keep it <em>private.</em></h1>
-                        <p className="sub">We’ll show you every tool that can handle it — and nothing uploads until you choose one. No account, no watermark, no tricks.</p>
-                        <div style={{ display: "flex", gap: 13, flexWrap: "wrap" }}>
-                            <a className={buttonVariants({ size: "lg" })} href="#/tool/merge-pdf">Try Merge PDF</a>
-                            <a className={buttonVariants({ variant: "outline", size: "lg" })} href="#/tools">Browse all {TOTAL}</a>
-                        </div>
-                        <p className="dl-hint">Or just drop a file anywhere on this page — PDFs, images, video, audio, code, archives · up to 500&nbsp;MB each</p>
-                    </div>
-                    <aside className="dl-receipt" aria-label="What this costs you">
-                        <div className="rh">What it costs<span>Itemised</span></div>
-                        {[["Price", "Free, forever"], ["Account", "None"], ["Watermarks", "None"],
-                        ["Ads & 3rd-party trackers", "None"], ["Daily limits", "None"], ["Your files", "Never stored"]]
-                            .map(([k, v]) => <div className="rr" key={k}><span>{k}</span><b>{v}</b></div>)}
-                        <div className="rf">Owner-funded. That’s the whole model.</div>
-                    </aside>
-                </div>
-
-                <div className="dl-dz" role="button" tabIndex={0} aria-label="Drop any file to see the tools that can handle it"
-                    onClick={() => this._homeFile && this._homeFile.click()}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); this._homeFile && this._homeFile.click(); } }}>
-                    <span className="dl-puck">
-                        <svg width="24" height="24" viewBox="0 0 22 22" fill="none"><path d="M11 15 V4 M11 4 L7 8 M11 4 L15 8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" /><path d="M4 18 H18" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" /></svg>
-                    </span>
-                    <span className="mid">
-                        <b>Drop it here — or anywhere</b>
-                        <p>We’ll match it to the right tools. Nothing has uploaded when we do.</p>
-                    </span>
-                    <span className="kbdhint">press <kbd>⌘K</kbd> to search</span>
-                    <input type="file" multiple hidden ref={(el) => { this._homeFile = el; }} aria-label="Choose files"
-                        onChange={(e) => {
-                            const files = [...e.target.files];
-                            e.target.value = "";
-                            if (!files.length) return;
-                            this._droppedFiles = files;
-                            const match = DROP_ROUTES.find(([re]) => re.test(files[0].name));
-                            this.setState({ dropped: { files: files.map((f) => ({ name: f.name, size: f.size })), kind: match[1], slugs: match[2] } });
-                        }} />
-                </div>
-
-                {d && (
-                    <div className="dl-suggest">
-                        <div className="dl-picked">
-                            {d.files.map((f) => <span key={f.name}>{f.name} <b>{fmtSize(f.size)}</b></span>)}
-                        </div>
-                        <div className="dl-sughead">
-                            Looks like a <b>{d.kind}</b> — nothing has uploaded. Pick a tool and it opens with
-                            {d.files.length > 1 ? " your first file loaded (add the rest inside)." : " your file already loaded."}
-                        </div>
-                        <div className="dl-sugrow"
-                            onClickCapture={(e) => {
-                                const a = e.target.closest && e.target.closest('a[href^="#/tool/"]');
-                                if (!a || !this._droppedFiles || !this._droppedFiles.length) return;
-                                e.preventDefault();
-                                const slug = a.getAttribute("href").replace("#/tool/", "");
-                                // ≤3 MB rides sessionStorage; larger files fall back to a normal open.
-                                storeFileHandoff(this._droppedFiles[0], slug).finally(() => go(`#/tool/${slug}`));
-                            }}>
-                            {d.slugs.map((s, i) => BY_SLUG.has(s) && this.ToolCard(BY_SLUG.get(s), i))}
-                        </div>
-                    </div>
-                )}
-
-                <div className="dl-stats rv">
-                    <div className="dl-stat"><b><span data-count={TOTAL}>{TOTAL}</span></b><span className="cap">tools, every one free</span></div>
-                    <div className="dl-stat"><b><span data-count={PDF_COUNT}>{PDF_COUNT}</span></b><span className="cap">for PDF alone</span></div>
-                    <div className="dl-stat"><b>0</b><span className="cap">accounts, trackers or ads</span></div>
-                    <div className="dl-stat"><b><span data-count="500">500</span><small>&nbsp;MB</small></b><span className="cap">per file, every tool</span></div>
-                </div>
-
-                <section className="dl-sec">
-                    <div className="dl-sec-head">
-                        <div><h2 className="dl-sec-title">Start here</h2><p className="dl-sec-sub">The eight tools people open most</p></div>
-                        <a href="#/tools" style={{ fontSize: 14, fontWeight: 600 }}>All {TOTAL} →</a>
-                    </div>
-                    <div className="dl-grid">{POPULAR.slice(0, 8).map((t, i) => this.ToolCard(t, i))}</div>
-                </section>
-
-                <section className="dl-sec">
-                    <div className="dl-sec-head">
-                        <div><h2 className="dl-sec-title">Every kind of file</h2><p className="dl-sec-sub">Twelve families, {TOTAL} tools — jump straight to yours</p></div>
-                    </div>
-                    <div className="dl-ccards rv">
-                        {FAMILIES.map(([key, label, hue]) => {
-                            const n = ALL_TOOLS.filter((t) => t.category === key).length;
-                            if (!n) return null;
-                            return (
-                                <a key={key} className="dl-ccard" href={`#/tools?cat=${key}`} style={{ "--dl-cc": hue }}>
-                                    <span className="glyph"><Glyph d={FAMILY_GLYPHS[key]} /></span>
-                                    <span><b>{label}</b><span>{n} tools</span></span>
-                                </a>
-                            );
-                        })}
-                    </div>
-                </section>
-
-                <section className="dl-sec">
-                    <div className="dl-vband rv">
-                        <div>
-                            <div className="dl-eyebrow">The vault</div>
-                            <h2 className="dl-sec-title" style={{ fontSize: 31, marginTop: 10 }}>Your secrets, sealed on this device.</h2>
-                            <p style={{ color: "var(--dl-muted)", fontSize: 15.5, maxWidth: "34em", marginTop: 12 }}>
-                                A real password vault — AES-GCM under a key that never leaves this machine, for the
-                                passwords your protected files need. Nothing in it ever reaches a server.
-                            </p>
-                            <div style={{ display: "flex", gap: 12, marginTop: 22, flexWrap: "wrap" }}>
-                                <a className={buttonVariants()} href="#/my-stuff/vault">Open your vault</a>
-                                <a className={buttonVariants({ variant: "outline" })} href="#/security">How it’s protected</a>
-                            </div>
-                        </div>
-                        <div className="dl-vmock" aria-hidden="true">
-                            <div className="vh">
-                                <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="4" y="8" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><path d="M6 8 V6 A3 3 0 0 1 12 6 V8" stroke="currentColor" strokeWidth="1.5" /></svg>
-                                <b>Vault</b><span>this device only</span>
-                            </div>
-                            <div className="vr"><Badge variant="wash">AES</Badge><b>tax-return-2026.pdf</b><span>password</span></div>
-                            <div className="vr"><Badge variant="wash">AES</Badge><b>contract-final.pdf</b><span>password</span></div>
-                            <div className="vr"><Badge variant="wash">AES</Badge><b>scan-archive.zip</b><span>password</span></div>
-                        </div>
-                    </div>
-                </section>
-
-                <section className="dl-sec">
-                    <div className="dl-sec-head">
-                        <div><h2 className="dl-sec-title">The usual catches, removed</h2><p className="dl-sec-sub">What free-tool sites normally do — and what happens here instead</p></div>
-                    </div>
-                    <div className="dl-whypanel">
-                        {[["Free tier adds a watermark", "Clean output, always", "No stamp in your corner, no upsell page between you and your file. The download is just your file."],
-                        ["2 tasks per day, then pay", "No meters running", "No daily limits, no file counters, no “premium” queue. The two-hundredth file is treated like the first."],
-                        ["Sign up to download", "No account wall", "There is nothing to sign up for. Arrive, do the work, leave — the site doesn’t know who you are."]]
-                            .map(([usual, h, body]) => (
-                                <div className="row" key={h}>
-                                    <span className="usual">{usual}</span>
-                                    <div><b>{h}</b><p>{body}</p></div>
-                                </div>
-                            ))}
-                    </div>
-                </section>
-
-                <section className="dl-sec">
-                    <div className="dl-claims rv">
-                        {[["Your device first", "Wherever a tool can run in your browser, it does — the file never leaves your machine."],
-                        ["Honest about servers", "Heavier jobs use our disclosed server — Mumbai, IN — and are deleted after use."],
-                        ["No third-party code", "No CDN injects scripts into your tools. Everything is served from privatools.me."],
-                        ["Works offline", "Install once as an app; cached tools keep working without a connection.", true]]
-                            .map(([t, p, install]) => (
-                                <div className="dl-claim" key={t}>
-                                    <b><Check />{t}</b><p>{p}</p>
-                                    {install && <button type="button" className="dl-claimlink" onClick={this._installApp}>Install the app →</button>}
-                                </div>
-                            ))}
-                    </div>
-                </section>
-
-                <section className="dl-sec">
-                    <div className="dl-band rv">
-                        <div>
-                            <h2>Privacy you can <em>watch,</em> not just trust.</h2>
-                            <p className="lead">Every claim here is a behavior you can check from your own browser — no faith required.</p>
-                            <a className={buttonVariants()} style={{ marginTop: 22, display: "inline-flex" }} href="#/security">Read the promises</a>
-                        </div>
-                        <div>
-                            {[["Local tools make zero upload requests", "Open your network tab and run one — nothing leaves."],
-                            ["Server tools say so before you start", "One disclosed request, isolated processing, deleted after use."],
-                            ["No CDN in the tool path", "Your documents are never handled by third-party scripts."],
-                            ["History without your files", "It holds tool and time only — never files or filenames."]]
-                                .map(([t, p]) => (
-                                    <div className="dl-step" key={t}>
-                                        <span className="dot"><Check size={14} /></span>
-                                        <div><b>{t}</b><p>{p}</p></div>
-                                    </div>
-                                ))}
-                        </div>
-                    </div>
-                </section>
-            </div>
-        );
+        return <ExperienceHome history={this.state.history} onClearHistory={this.clearHistory}
+            files={this._droppedFiles || []} onFiles={this.pickHomeFiles}
+            onBrowse={(q) => { this.setState({ q, catFilter: "" }); go("#/tools"); }}
+            onAi={() => this.setState({ aiHub: true })} />;
     }
 
     Tools() {
-        const { q, catFilter, idxView } = this.state;
-        const ql = q.trim().toLowerCase();
-        const match = (t) =>
-            (!catFilter || t.category === catFilter) &&
-            (!ql || `${t.name} ${t.description} ${t.synonyms || ""} ${FAMILY_LABEL[t.category] || ""}`.toLowerCase().includes(ql));
-        let shown = 0;
-        const sections = FAMILIES.map(([key, label, hue]) => {
-            const all = ALL_TOOLS.filter((t) => t.category === key)
-                .sort((a, b) => (a.popularity ?? 999) - (b.popularity ?? 999));
-            const vis = all.filter(match);
-            shown += vis.length;
-            if (!all.length || !vis.length) return null;
-            return (
-                <div className="dl-catsec" key={key} style={{ "--dl-cc": hue }}>
-                    <h2>
-                        <span className="ic"><Glyph d={FAMILY_GLYPHS[key]} /></span>
-                        {label}
-                        <span className="n">{ql || catFilter ? `${vis.length} of ${all.length}` : all.length} tools</span>
-                    </h2>
-                    {idxView === "tiles" ? (
-                        <div className="dl-tiles">
-                            {vis.map((t) => (
-                                <a key={t.slug} className="dl-tile" href={`#/tool/${t.slug}`} title={t.description} style={{ "--dl-cc": hue }}>
-                                    <span className="ic"><Glyph d={glyphPath(t)} /></span>
-                                    <span style={{ minWidth: 0 }}><b>{t.name}</b><p>{t.description}</p></span>
-                                </a>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="dl-compact">
-                            {vis.map((t) => (
-                                <a key={t.slug} className="dl-crow" href={`#/tool/${t.slug}`} title={t.description} style={{ "--dl-cc": hue }}>
-                                    <span className="dot" /><b>{t.name}</b>
-                                </a>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            );
-        });
-        return (
-            <div className="dl-wrap">
-                <div className="dl-idxhero">
-                    <div className="dl-idxrow">
-                        <div>
-                            <div className="dl-eyebrow">The catalogue</div>
-                            <h1>All {TOTAL} tools</h1>
-                        </div>
-                        <div className="dl-bigsearch">
-                            <svg width="17" height="17" viewBox="0 0 14 14" fill="none"><circle cx="6" cy="6" r="4.4" stroke="var(--dl-faint)" strokeWidth="1.5" /><path d="M9.4 9.4 L12.6 12.6" stroke="var(--dl-faint)" strokeWidth="1.5" strokeLinecap="round" /></svg>
-                            <input id="dl-filter" type="search" placeholder="Search by name or task…" aria-label="Search tools"
-                                value={q} onChange={(e) => this.setState({ q: e.target.value })} />
-                            <kbd>/</kbd>
-                        </div>
-                    </div>
-                    <div className="dl-idxmeta">
-                        <div className="dl-chips">
-                            <button className={`dl-chip${!catFilter ? " on" : ""}`} style={{ "--dl-cc": "var(--dl-green)" }}
-                                onClick={() => this.setState({ catFilter: "" })}>
-                                All <span className="n">{TOTAL}</span>
-                            </button>
-                            {FAMILIES.map(([key, label, hue]) => {
-                                const n = ALL_TOOLS.filter((t) => t.category === key).length;
-                                if (!n) return null;
-                                return (
-                                    <button key={key} className={`dl-chip${catFilter === key ? " on" : ""}`} style={{ "--dl-cc": hue }}
-                                        onClick={() => this.setState({ catFilter: catFilter === key ? "" : key })}>
-                                        <span className="dot" />{label} <span className="n">{n}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                        <span className="dl-count">Showing {shown} of {TOTAL} tools</span>
-                        <Tabs value={idxView} onValueChange={(v) => this.setState({ idxView: v })}>
-                            <TabsList className="h-9">
-                                <TabsTrigger value="tiles">Tiles</TabsTrigger>
-                                <TabsTrigger value="compact">Compact</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
-                </div>
-                <div style={{ paddingTop: 18 }}>
-                    {shown === 0
-                        ? <div className="dl-none">Nothing matches — try a different word, or press <b>⌘K</b> to search with synonyms.</div>
-                        : sections}
-                </div>
-            </div>
-        );
-    }
-
-    ToolRail(current) {
-        return (
-            <nav className="dl-rail" aria-label="Jump to another tool">
-                {FAMILIES.map(([key, label, hue]) => {
-                    const top = ALL_TOOLS.filter((t) => t.category === key)
-                        .sort((a, b) => (a.popularity ?? 999) - (b.popularity ?? 999)).slice(0, 4);
-                    if (!top.length) return null;
-                    return (
-                        <React.Fragment key={key}>
-                            <h5>{label}</h5>
-                            {top.map((t) => (
-                                <a key={t.slug} href={`#/tool/${t.slug}`} className={t.slug === current ? "now" : ""} style={{ "--dl-cc": hue }}>
-                                    <span className="dot" />{t.name}
-                                </a>
-                            ))}
-                        </React.Fragment>
-                    );
-                })}
-            </nav>
-        );
+        return <CatalogStudio query={this.state.q} category={this.state.catFilter} onQuery={q=>this.setState({q})} onCategory={catFilter=>this.setState({catFilter})} />;
     }
 
     Tool(v) {
@@ -1739,56 +1252,17 @@ export default class DaylightSkinApp extends React.Component {
         const related = ALL_TOOLS
             .filter((t) => t.category === tool.category && t.slug !== tool.slug)
             .sort((a, b) => (a.popularity ?? 999) - (b.popularity ?? 999)).slice(0, 4);
-        return (
-            <div className="dl-wrap">
-                <div className="dl-toolwrap">
-                    {this.ToolRail(slug)}
-                    <div>
-                        <Breadcrumb style={{ marginBottom: 10 }}>
-                            <BreadcrumbList>
-                                <BreadcrumbItem><BreadcrumbLink href="#/tools">All tools</BreadcrumbLink></BreadcrumbItem>
-                                <BreadcrumbSeparator />
-                                <BreadcrumbItem><BreadcrumbLink href={`#/tools?cat=${tool.category}`}>{FAMILY_LABEL[tool.category] || tool.category}</BreadcrumbLink></BreadcrumbItem>
-                                <BreadcrumbSeparator />
-                                <BreadcrumbItem><BreadcrumbPage>{tool.name}</BreadcrumbPage></BreadcrumbItem>
-                            </BreadcrumbList>
-                        </Breadcrumb>
-                        <div className="dl-toolhead">
-                            <h1>{tool.name}</h1>
-                            <p className="desc">{tool.description}</p>
-                            <div className="dl-tchips">
-                                <Badge variant="wash" className="dl-tchip">{FAMILY_LABEL[tool.category] || tool.category}</Badge>
-                                {tool.clientOnly
-                                    ? <Badge variant="wash" className="dl-tchip">Runs on your device · nothing uploads</Badge>
-                                    : <Badge variant="warn" className="dl-tchip">Uses our server · deleted after</Badge>}
-                                {tool.byok && <Badge variant="wash" className="dl-tchip">Bring your own AI key · optional</Badge>}
-                                <Badge variant="outline" className="dl-tchip">500 MB per file</Badge>
-                                <Badge variant="outline" className="dl-tchip">No retention</Badge>
-                                <Badge variant="outline" className="dl-tchip">Free, no account</Badge>
-                            </div>
-                        </div>
-                        {/* The real run surface: the same tool component the house design mounts. */}
-                        <div className="dl-toolui">{v.realToolUI}</div>
-                        <p className="dl-toolfine">
-                            {tool.clientOnly
-                                ? "Runs entirely in your browser — this file never leaves your machine, so there is nothing for us to store."
-                                : "Processed in isolated temporary storage on our disclosed server (Mumbai, IN) and deleted after the job — never on third-party clouds. The whole stack is also self-hostable on your own infrastructure."}
-                        </p>
-                        <section className="dl-sec" style={{ paddingTop: 72, paddingBottom: 8 }}>
-                            <h2 className="dl-sec-title" style={{ fontSize: 23, marginBottom: 16 }}>Related tools</h2>
-                            <div className="dl-grid">{related.map((t, i) => this.ToolCard(t, i))}</div>
-                        </section>
-                    </div>
-                </div>
-            </div>
-        );
+        return <ToolWorkspace tool={tool} categoryLabel={FAMILY_LABEL[tool.category] || tool.category}
+            related={related} onFindTool={() => this.setState({ palOpen: true })}>
+            {v.realToolUI}
+        </ToolWorkspace>;
     }
 
     /* ── pipeline (native surface; the run is an illustration, and says so) ── */
 
-    HousePage(Comp, label) {
+    HousePage(Comp, label, props = {}) {
         return (
-            <div className="dl-wrap dl-house">
+            <div className="pt-page-host">
                 <React.Suspense fallback={
                     <div style={{ marginTop: 48, display: "grid", gap: 14 }} aria-label={`Loading ${label}`}>
                         <Skeleton className="h-10 w-64" />
@@ -1797,27 +1271,13 @@ export default class DaylightSkinApp extends React.Component {
                         <Skeleton className="h-40 w-full rounded-[14px]" />
                     </div>
                 }>
-                    <Comp />
+                    <Comp {...props} />
                 </React.Suspense>
             </div>
         );
     }
 
-    NotFound() {
-        return (
-            <div className="dl-wrap">
-                <div className="dl-pghero" style={{ paddingTop: 90, paddingBottom: 50 }}>
-                    <div className="dl-eyebrow">404</div>
-                    <h1>Nothing at this address.<br /><em>The tools are, though.</em></h1>
-                    <p>The link may be old or mistyped. Everything the site offers is one search away — press ⌘K anywhere, or start below.</p>
-                    <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
-                        <a className={buttonVariants()} href="#/">Back to home</a>
-                        <a className={buttonVariants({ variant: "outline" })} href="#/tools">Browse all {TOTAL} tools</a>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    NotFound() { return <MissingStudio />; }
 
     Pipeline() { return this.HousePage(HousePipeline, "Pipeline"); }
 
@@ -1826,136 +1286,46 @@ export default class DaylightSkinApp extends React.Component {
     MyStuff() { return this.HousePage(HouseMyStuff, "My Stuff"); }
 
     Vault() {
-        // Everything here is driven by withVault (extension): real AES-GCM storage.
         const vlt = this.state.vlt || { entries: [], label: "", password: "", busy: false, error: "" };
         const entries = vlt.entries || [];
+        const query = (vlt.search || "").trim().toLowerCase();
+        const visible = entries.filter(entry => entry.label.toLowerCase().includes(query));
+        const LockIcon = BY_SLUG.get("protect-pdf").icon;
         return (
-            <div className="dl-wrap">
-                <div className="dl-heror rv rv-p">
-                    <div className="dl-pghero">
-                        <div className="dl-eyebrow">Device-local</div>
-                        <h1>Your vault.<br /><em>This device only.</em></h1>
-                        <p>A real password vault for the files you protect and unlock here — AES-GCM under a key that cannot leave this browser. Nothing in it ever reaches a server, and we could not read it if it did.</p>
-                    </div>
-                    <div className="dl-herocard">
-                        <h3 style={{ color: "var(--dl-green)", display: "flex", alignItems: "center", gap: 9 }}>
-                            <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><rect x="4" y="8" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" /><path d="M6 8 V6 A3 3 0 0 1 12 6 V8" stroke="currentColor" strokeWidth="1.5" /></svg>
-                            {entries.length} stored
-                        </h3>
-                        <p className="sub2">Encrypted at rest with WebCrypto. Clearing your browser’s site data deletes it permanently — there is no recovery, because there is no copy.</p>
-                    </div>
-                </div>
-
-                {vlt.error && <div className="dl-err" role="alert">{vlt.error}</div>}
-
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) 340px", gap: 40, alignItems: "start", paddingTop: 30 }} className="dl-vaultgrid">
-                    <div>
-                        <div className="dl-vsteps rv">
-                            {[["1", "Store it once", "The password is encrypted on this device with a key that cannot be exported."],
-                            ["2", "Use it without retyping", "Protect PDF and Unlock PDF can read entries directly — decrypted here, never sent."],
-                            ["3", "Gone means gone", "Delete an entry, or clear your browser data, and there is no copy anywhere to recover."]]
-                                .map(([n, t, d]) => (
-                                    <div key={n}><i>{n}</i><b>{t}</b><p>{d}</p></div>
-                                ))}
-                        </div>
-                        <h2 className="dl-sec-title" style={{ fontSize: 22, marginBottom: 14 }}>Stored passwords</h2>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                            {entries.length === 0
-                                ? <div className="dl-empty">Nothing stored yet — add the password for a protected file on the right.</div>
-                                : entries.map((en) => (
-                                    <div className="dl-keyrow" key={en.id}>
-                                        <Badge variant="wash">AES</Badge>
-                                        <span style={{ minWidth: 0 }}>
-                                            <b style={{ display: "block", fontSize: 14 }}>{en.label}</b>
-                                            <code>{vlt.revealedId === en.id ? vlt.revealedValue : "••••••••••••"}</code>
-                                            <span className="kd" style={{ display: "block" }}>{describeEntry(en)}</span>
-                                        </span>
-                                        <button className={buttonVariants({ variant: "ghost", size: "sm" })}
-                                            onClick={() => this._vaultReveal(en.id)}>{vlt.revealedId === en.id ? "Hide" : "Reveal"}</button>
-                                        <span style={{ display: "flex", gap: 2 }}>
-                                            <button className={buttonVariants({ variant: "ghost", size: "sm" })}
-                                                onClick={() => { this._vaultCopy(en.id); this.say("Copied — decrypted on this device only."); }}>Copy</button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger className={buttonVariants({ variant: "ghost", size: "sm" })} aria-label={`Delete ${en.label}`}>Delete</AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Delete “{en.label}”?</AlertDialogTitle>
-                                                        <AlertDialogDescription>This entry is removed from the vault on this device. There is no copy to restore it from.</AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Keep it</AlertDialogCancel>
-                                                        <AlertDialogAction onClick={() => this._vaultDelete(en.id)}>Delete entry</AlertDialogAction>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </span>
-                                    </div>
-                                ))}
-                        </div>
-                        {entries.length > 0 && (
-                            <AlertDialog>
-                                <AlertDialogTrigger className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 14 }}>
-                                    Clear the vault
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Erase every stored password?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            The vault is deleted from this device. There is no copy anywhere —
-                                            that is the point — so there is also no way to get them back.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Keep them</AlertDialogCancel>
-                                        <AlertDialogAction onClick={this._vaultClearNow}>Erase everything</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
-                    </div>
-                    <aside className="dl-panel">
-                        <h3>Store a password</h3>
-                        <form onSubmit={this._vaultAdd}>
-                            <div className="dl-field">
-                                <Label htmlFor="dl-vl">Name</Label>
-                                <Input id="dl-vl"  value={vlt.label || ""} placeholder="e.g. tax-return-2026.pdf"
-                                    onChange={(e) => this._setVault({ label: e.target.value, error: "" })} />
-                            </div>
-                            <div className="dl-field">
-                                <Label htmlFor="dl-vp">Password</Label>
-                                <Input id="dl-vp"  type="password" value={vlt.password || ""} placeholder="The password to keep"
-                                    onChange={(e) => this._setVault({ password: e.target.value, error: "" })} />
-                            </div>
-                            <button className={buttonVariants()} style={{ width: "100%", marginTop: 6 }} disabled={vlt.busy} type="submit">
-                                {vlt.busy ? "Encrypting…" : "Encrypt & store"}
-                            </button>
-                        </form>
-                        <p className="dl-hintl" style={{ marginTop: 12 }}>
-                            Stored with AES-GCM under a non-extractable key in this browser. Protect PDF and Unlock PDF can use these without you retyping them.
-                        </p>
-                        <div className="dl-vimport">
-                            <span>Or start faster:</span>
-                            <label className={cn(buttonVariants({ variant: "outline", size: "sm" }), "cursor-pointer")}>
-                                Import JSON…
-                                <input type="file" accept=".json,application/json" hidden onChange={this._vaultImportFile} />
-                            </label>
-                            <button type="button" className={buttonVariants({ variant: "ghost", size: "sm" })} onClick={this._vaultLoadSample}>
-                                Load 3 sample entries
-                            </button>
-                        </div>
-                        <p className="dl-vimphint">
-                            Format: {"[{\"label\":\"file.pdf\",\"password\":\"…\"}]"} — imported entries are encrypted the moment they land; samples are demo data you can delete.
-                        </p>
+            <div className="dl-wrap pt-studio-page pt-library-page pt-vault-page">
+                <header className="pt-studio-header pt-workflow-header">
+                    <div className="pt-workflow-heading"><p className="pt-studio-kicker">VAULT / ONLY ON THIS DEVICE</p><h1><span className="wf-air-copy">A safe place to remember.</span><span className="wf-play-copy">Keep it under lock.</span></h1><p>A personal place for the passwords you use with your PDFs. Encrypted here, ready when you need them.</p></div>
+                    <a href="/my-stuff" className="wf-library-seal"><LockIcon size={26} /><span>Your password shelf<small>{entries.length} saved on this device</small></span></a>
+                </header>
+                {vlt.error && <div className="wf-notice wf-notice-error" role="alert">{vlt.error}</div>}
+                {vlt.unreadable > 0 && <div className="wf-notice wf-notice-error" role="alert">{vlt.unreadable} entries can’t be read with this browser’s current encryption key.</div>}
+                <div className="wf-vault-layout">
+                    <section className="wf-vault-library wf-work-sheet">
+                        <div className="wf-sheet-heading"><div><p className="wf-section-label">YOUR COLLECTION</p><h2>Stored passwords</h2></div><span className="wf-status-pill">AES-GCM encrypted</span></div>
+                        {entries.length > 0 && <label className="wf-search wf-vault-search"><span>Find</span><input aria-label="Search saved passwords" placeholder="A document or a label…" value={vlt.search || ""} onChange={event => this._setVault({ search: event.target.value })} /></label>}
+                        {entries.length === 0 ? <div className="wf-vault-empty"><div className="wf-vault-object" aria-hidden="true"><LockIcon size={42} strokeWidth={1.3} /><span>••••••••</span></div><h3>Your first password belongs here.</h3><p>Give it a name you’ll recognise. We’ll encrypt it in this browser, so it’s ready for Protect and Unlock PDF.</p><span className="wf-device-note">Nothing stored yet.</span></div> : visible.length === 0 ? <div className="wf-vault-empty"><h3>No matching passwords.</h3><p>Try part of a document name or clear your search.</p><button className="wf-button" onClick={() => this._setVault({ search: "" })}>Show all passwords</button></div> : <div className="wf-vault-entries">{visible.map((entry, index) => <article className="wf-vault-entry" key={entry.id}>
+                            <div className="wf-vault-entry-top"><span className="wf-vault-entry-number">{String(index + 1).padStart(2, "0")}</span><LockIcon size={20} /></div><h3>{entry.label}</h3><code>{vlt.revealedId === entry.id ? vlt.revealedValue : "••••••••••••"}</code><p>{describeEntry(entry)}</p>
+                            <div className="wf-vault-entry-actions"><button className="wf-text-button" onClick={() => this._vaultReveal(entry.id)}>{vlt.revealedId === entry.id ? "Hide" : "Reveal"}</button><button className="wf-text-button" onClick={() => this._vaultCopy(entry.id)}>Copy</button><AlertDialog><AlertDialogTrigger className="wf-text-button wf-danger-text" aria-label={`Delete ${entry.label}`}>Delete</AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete “{entry.label}”?</AlertDialogTitle><AlertDialogDescription>This removes the password from this device. There is no copy to restore it from.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep it</AlertDialogCancel><AlertDialogAction onClick={() => this._vaultDelete(entry.id)}>Delete entry</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div>
+                        </article>)}</div>}
+                        {entries.length > 0 && <div className="wf-vault-clear"><AlertDialog><AlertDialogTrigger className="wf-text-button wf-danger-text">Clear the vault</AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Erase every stored password?</AlertDialogTitle><AlertDialogDescription>The vault is deleted from this device. This cannot be undone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep them</AlertDialogCancel><AlertDialogAction onClick={this._vaultClearNow}>Erase everything</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></div>}
+                    </section>
+                    <aside className="wf-vault-add wf-work-sheet"><div className="wf-rail-heading"><div><p className="wf-section-label">KEEP SOMETHING HANDY</p><h2>Store a password</h2></div></div><p>Use a clear label so the right password is easy to find later.</p><form onSubmit={this._vaultAdd}>
+                        <div className="wf-field"><Label htmlFor="dl-vl">Name</Label><Input id="dl-vl" value={vlt.label || ""} placeholder="e.g. my-tax-return.pdf" disabled={vlt.busy} onChange={event => this._setVault({ label: event.target.value, error: "" })} /></div>
+                        <div className="wf-field"><Label htmlFor="dl-vp">Password</Label><Input id="dl-vp" type="password" autoComplete="new-password" value={vlt.password || ""} placeholder="The password to remember" disabled={vlt.busy} onChange={event => this._setVault({ password: event.target.value, error: "" })} /></div>
+                        <button className="wf-button wf-button-primary" disabled={vlt.busy} type="submit"><LockIcon size={16} />{vlt.busy ? "Encrypting…" : "Encrypt & store"}</button>
+                    </form><p className="wf-device-note">Protected with a non-extractable key stored in this browser. No account needed.</p>
+                        <details className="wf-vault-import"><summary>Bring passwords you already have</summary><p>Import a JSON list. Each entry is encrypted as it is saved.</p><label className="wf-button">Import JSON…<input type="file" accept=".json,application/json" hidden disabled={vlt.busy} onChange={this._vaultImportFile} /></label><code>{"[{\"label\":\"file.pdf\",\"password\":\"…\"}]"}</code><button type="button" className="wf-text-button" disabled={vlt.busy} onClick={this._vaultLoadSample}>Load 3 sample entries</button><small>Samples are demo passwords you can delete.</small></details>
                     </aside>
                 </div>
-                <style>{`@media (max-width: 940px){ .dl-vaultgrid { grid-template-columns:1fr !important; } }`}</style>
+                <div className="wf-vault-facts"><div><span>01</span><h3>Stored right here.</h3><p>Your saved vault stays on this device. Clearing this site’s browser data deletes it permanently.</p></div><div><span>02</span><h3>Ready for your next PDF.</h3><p>Protect and Unlock PDF can use a saved password. Server-based jobs receive the password required for that job.</p></div><div><span>03</span><h3>Private, with clear limits.</h3><p>Encryption protects stored data from casual access. It cannot protect against malicious code running on this page.</p></div></div>
             </div>
         );
     }
 
     /* ── account (REAL via withAccounts; markup only renders its state) ── */
 
-    Account() {
+    Account(embedded = false) {
+        const AccountHeading = embedded ? "h2" : "h1";
         const a = this.state.acct || {};
         // Named delegations: each is a capability the parity test requires this
         // markup to carry — see skin-parity.test.ts "account capability parity".
@@ -1971,28 +1341,47 @@ export default class DaylightSkinApp extends React.Component {
         const strength = a.mode !== "signin" && a.password ? strengthOf(a.password) : null;
 
 
+        // Recovery is a mandatory stop, including after a reset that signs out.
+        if (acctRecoveryCode) {
+            return <section className={`pt-studio-page pt-account-page pt-recovery-page ${embedded ? "is-embedded" : ""}`}>
+                <div className="pt-recovery-story"><p className="pt-workspace-caption">One last thing</p><AccountHeading>Keep a way <br />back in.</AccountHeading><p>A small code. An important safety net. Put it somewhere you can find without signing into this account.</p><div className="pt-recovery-envelope" aria-hidden="true"><span>For your safekeeping</span><b>Your recovery code</b><span>Keep somewhere private</span></div></div>
+                <div className="pt-recovery-sheet dl-reccode">
+                    <span className="pt-workspace-caption">Save this before you continue</span><h2>Save your recovery code now</h2>
+                    <p>It is shown exactly once, and it is the only way back into this account — there is no reset email.</p>
+                    {!a.user && <p>Your password has been reset. Save this new recovery code, then sign in with your new password.</p>}
+                    <code>{acctRecoveryCode}</code>
+                    <div className="pt-inline-actions"><button className="pt-studio-button is-secondary" onClick={acctCopyRecovery}>{a.recoverySaved ? "Copied ✓" : "Copy code"}</button><button className="pt-studio-link" onClick={acctDownloadRecovery}>Download as file</button></div>
+                    <button className="pt-studio-button pt-recovery-continue" onClick={acctAckRecovery}>I’ve saved it</button>
+                </div>
+            </section>;
+        }
+
         if (!a.user) {
-            return (
-                <div className="dl-wrap">
-                    <div className="dl-authwrap">
-                        <div className={a.blocked ? "dl-authcard is-blocked" : "dl-authcard"}>
-                            <span className="dl-marks" aria-hidden="true"><i /><i /><i /><i /></span>
-                            <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><Logo size={30} /></div>
-                            <h2>{a.mode === "signup" ? "Create your account" : a.mode === "recover" ? "Recover your account" : "Sign in to PrivaTools"}</h2>
-                            <p className="sub">Only the developer API needs this — every tool works without an account.</p>
+            return <section className={`pt-studio-page pt-account-page pt-auth-page ${embedded ? "is-embedded" : ""}`}>
+                <div className="pt-auth-story">
+                    <p className="pt-workspace-caption">Your PrivaTools account</p>
+                    <AccountHeading>{a.mode === "signup" ? <>A little account. <br />More possibilities.</> : a.mode === "recover" ? <>Let’s get you <br />back in.</> : <>Welcome to your <br />own little workspace.</>}</AccountHeading>
+                    <p>{a.mode === "recover" ? "Your account is waiting. Follow the steps to reset your password and pick up where you left off." : "For the routines you want to automate, and the projects you want to make your own."}</p>
+                    <div className="pt-auth-object" aria-hidden="true"><div className="pt-auth-object-tab">Your workflow</div><div className="pt-auth-object-sheet"><span>Start with your files</span><div><b>Combine</b><i>→</i><b>Convert</b><i>→</i><b>Done</b></div><span>One less thing on your list.</span></div></div>
+                    <div className="pt-auth-benefits"><div><b>Make room for automation</b><p>Create API keys for your scripts and integrations.</p></div><div><b>Your tools are always open</b><p>Every file tool works without an account.</p></div></div>
+                    <a className="pt-studio-link" href="/tools">Just here for a tool? Explore the toolbox →</a>
+                </div>
+                <div className={`pt-auth-desk ${a.blocked ? "is-blocked" : ""}`}>
+                    {!accountsConfigured() && <div className="pt-auth-unavailable" role="status"><b>Sign-in is temporarily unavailable.</b><p>You can still use every tool without an account.</p><a href="/tools">Continue to the tools →</a></div>}
+                    <div className="pt-auth-form-heading"><h2>{a.mode === "signup" ? "Create your account" : a.mode === "recover" ? "Recover your account" : "Sign in to PrivaTools"}</h2><p>{a.signInVerification ? "One quick check to keep your account safe." : a.needsEmailCode ? "Check your inbox to finish." : a.mode === "signup" ? "Make yourself at home." : a.mode === "recover" ? "A fresh start for your password." : "Good to have you back."}</p></div>
                             <Tabs value={a.mode === "signup" ? "signup" : "signin"}
-                                onValueChange={(m) => this._setAcct({ mode: m, error: "", resetEmailSent: false })}>
+                                onValueChange={(m) => this._acctChooseMode(m)}>
                                 <TabsList className="grid w-full grid-cols-2">
-                                    <TabsTrigger value="signin">Sign in</TabsTrigger>
-                                    <TabsTrigger value="signup">Sign up</TabsTrigger>
+                                    <TabsTrigger value="signin" disabled={a.busy}>Sign in</TabsTrigger>
+                                    <TabsTrigger value="signup" disabled={a.busy}>Sign up</TabsTrigger>
                                 </TabsList>
                             </Tabs>
-                            {a.error && <div className="dl-err" role="alert">{a.error}</div>}
-                            {a.needsEmailCode ? (
-                                <form onSubmit={this._acctVerifyEmail}>
-                                    <p className="dl-sentline">We emailed a code to <b>{a.email}</b>. Enter it to finish signing up.</p>
-                                    <div className="dl-field">
-                                        <Label htmlFor="dl-code">Email code</Label>
+                            {a.error && <div className="pt-form-error" role="alert">{a.error}</div>}
+                            {a.needsEmailCode || a.signInVerification ? (
+                                <form onSubmit={a.signInVerification ? this._acctVerifySignIn : this._acctVerifyEmail}>
+                                    <p className="pt-auth-sent">{a.signInVerification === "totp" ? "Enter the current six-digit code from your authenticator app." : <>We emailed a code to <b>{a.signInVerification ? a.verificationDestination : a.email}</b>. Enter it to {a.signInVerification ? "verify this device" : "finish signing up"}.</>}</p>
+                                    <div className="pt-account-field">
+                                        <Label htmlFor="dl-code">{a.signInVerification === "totp" ? "Authenticator code" : "Email code"}</Label>
                                         <InputOTP id="dl-code" maxLength={6} value={a.emailCode} autoComplete="one-time-code"
                                             onChange={(v) => this._setAcct({ emailCode: v, error: "" })}>
                                             <InputOTPGroup>
@@ -2000,45 +1389,49 @@ export default class DaylightSkinApp extends React.Component {
                                             </InputOTPGroup>
                                         </InputOTP>
                                     </div>
-                                    <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy} type="submit">
-                                        {a.busy ? "Checking…" : "Verify"}
+                                    <button className={cn(buttonVariants(), "pt-auth-submit")} disabled={a.busy} type="submit">
+                                        {a.busy ? "Checking…" : "Verify and continue"}
                                     </button>
+                                    {a.signInVerification !== "totp" && <button type="button" className="pt-studio-link" disabled={a.busy} onClick={this._acctResendCode}>Send a new email code</button>}
+                                    <button type="button" className="pt-studio-link" disabled={a.busy} onClick={() => this._acctChooseMode(a.mode)}>Start again</button>
                                 </form>
                             ) : (
                                 <>
                                     {SOCIAL_SIGN_IN.length > 0 && a.mode !== "recover" && (
                                         <>
-                                            <div className="dl-social">
+                                            <div className="pt-auth-social">
                                                 {SOCIAL_SIGN_IN.filter((sp) => SOCIAL_ICONS[sp.id]).map((sp) => (
-                                                    <button key={sp.id} type="button" className={`dl-sbtn ${sp.id}`} onClick={() => this._acctSocial(sp.id)} disabled={a.busy || a.blocked}>
+                                                    <button key={sp.id} type="button" className={`pt-social-button ${sp.id}`} onClick={() => this._acctSocial(sp.id)} disabled={a.busy || a.blocked}>
                                                         {SOCIAL_ICONS[sp.id]}
                                                         Continue with {sp.label}
                                                     </button>
                                                 ))}
                                             </div>
-                                            <div className="dl-authdiv"><span>or continue with email</span></div>
+                                            <div className="pt-auth-divider"><span>or use your account details</span></div>
                                         </>
                                     )}
+                                    {a.mode === "signin" && passkeyAccountsEnabled() && <div className="pt-auth-passkey"><button type="button" className="pt-social-button" disabled={a.busy || a.blocked || !passkeysSupported()} onClick={this._acctPasskey}><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true"><path d="M8 16v-4a4 4 0 0 1 8 0v5M5 14v-2a7 7 0 0 1 14 0v2M11 20c1-2 1-4 1-8M3 9a10 10 0 0 1 18 0M6 20c1-1 1-2 1-3M16 21c1-1 2-2 2-4"/></svg>Sign in with a passkey</button><p className="pt-account-hint">{passkeysSupported() ? "Use Face ID, Touch ID, Windows Hello or your device PIN." : "Passkeys need a supported browser. You can still use Google or your password."}</p></div>}
                                     <form onSubmit={this._acctSubmit}>
                                         {a.mode === "recover" && EMAIL_RESET && a.resetEmailSent ? (
-                                            <p className="dl-sentline">We emailed a code to <b>{a.email}</b>. Enter it below with your new password.</p>
+                                            <p className="pt-auth-sent">We emailed a code to <b>{a.email}</b>. Enter it below with your new password.</p>
                                         ) : (
-                                            <div className="dl-field">
-                                                <Label htmlFor="dl-email">Email</Label>
-                                                <Input id="dl-email" type="email" required value={a.email}
-                                                    onChange={(e) => this._setAcct({ email: e.target.value, error: "" })} autoComplete="email" />
+                                            <div className="pt-account-field">
+                                                <Label htmlFor="dl-email">{a.mode === "signin" && usernameAccountsEnabled() ? "Email or username" : "Email"}</Label>
+                                                <Input id="dl-email" type={a.mode === "signin" && usernameAccountsEnabled() ? "text" : "email"} required value={a.email}
+                                                    onChange={(e) => this._setAcct({ email: e.target.value, error: "" })} autoComplete={a.mode === "signin" ? "username" : "email"} autoCapitalize="none" spellCheck={false} />
                                             </div>
                                         )}
+                                        {a.mode === "signup" && usernameAccountsEnabled() && <div className="pt-account-field"><Label htmlFor="dl-username">Username <span className="pt-account-hint">(optional)</span></Label><Input id="dl-username" value={a.username || ""} onChange={e => this._setAcct({ username: e.target.value, error: "" })} minLength={4} maxLength={64} autoComplete="username" autoCapitalize="none" spellCheck={false} aria-describedby="dl-username-hint" /><span id="dl-username-hint" className="pt-account-hint">4–64 characters. You can use this instead of your email to sign in.</span></div>}
                                         {a.mode === "recover" && !EMAIL_RESET && (
-                                            <div className="dl-field">
+                                            <div className="pt-account-field">
                                                 <Label htmlFor="dl-rec">Recovery code</Label>
                                                 <Input id="dl-rec" required value={acctRecoveryInput}
                                                     onChange={(e) => this._setAcct({ recoveryInput: e.target.value, error: "" })} />
-                                                <span className="dl-hintl">The code shown once at signup — it’s the only way back in.</span>
+                                                <span className="pt-account-hint">The code shown once at signup — it’s the only way back in.</span>
                                             </div>
                                         )}
                                         {a.mode === "recover" && EMAIL_RESET && a.resetEmailSent && (
-                                            <div className="dl-field">
+                                            <div className="pt-account-field">
                                                 <Label htmlFor="dl-rec">Code from the email</Label>
                                                 <InputOTP id="dl-rec" maxLength={6} value={acctRecoveryInput} autoComplete="one-time-code"
                                                     onChange={(v) => this._setAcct({ recoveryInput: v, error: "" })}>
@@ -2049,31 +1442,23 @@ export default class DaylightSkinApp extends React.Component {
                                             </div>
                                         )}
                                         {!(a.mode === "recover" && EMAIL_RESET && !a.resetEmailSent) && (
-                                            <div className="dl-field">
+                                            <div className="pt-account-field">
                                                 <Label htmlFor="dl-pass">{a.mode === "recover" ? "New password" : "Password"}</Label>
-                                                <div className="dl-inputwrap">
+                                                <div className="pt-secret-input">
                                                     <Input id="dl-pass" type={a.showPassword ? "text" : "password"} required
                                                         minLength={a.mode === "signin" ? undefined : MIN_PASSWORD_LENGTH}
+                                                        maxLength={EMAIL_RESET && a.mode !== "signin" ? 72 : undefined}
                                                         value={a.password}
                                                         onChange={(e) => this._setAcct({ password: e.target.value, error: "" })}
                                                         autoComplete={a.mode === "signin" ? "current-password" : "new-password"} />
-                                                    <button type="button" className="dl-pweye" onClick={() => this._setAcct({ showPassword: !a.showPassword })}
+                                                    <button type="button" className="pt-password-visibility" onClick={() => this._setAcct({ showPassword: !a.showPassword })}
                                                         aria-label={a.showPassword ? "Hide password" : "Show password"} aria-pressed={!!a.showPassword}>
-                                                        {a.showPassword ? (
-                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                                                <path d="M2 12s3.5-6.5 10-6.5c2.04 0 3.82.64 5.3 1.55M22 12s-3.5 6.5-10 6.5c-2.04 0-3.82-.64-5.3-1.55" />
-                                                                <path d="M4 4l16 16" />
-                                                            </svg>
-                                                        ) : (
-                                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-                                                                <path d="M2 12s3.5-6.5 10-6.5S22 12 22 12s-3.5 6.5-10 6.5S2 12 2 12z" />
-                                                                <circle cx="12" cy="12" r="2.8" />
-                                                            </svg>
-                                                        )}
+                                                        {a.showPassword ? "Hide" : "Show"}
                                                     </button>
                                                 </div>
+                                                {a.mode !== "signin" && <span className="pt-account-hint">At least {MIN_PASSWORD_LENGTH} characters. Spaces welcome; no compulsory capitals or symbols.</span>}
                                                 {strength && (
-                                                    <div className="dl-pwmeter">
+                                                    <div className="pt-password-meter">
                                                         <span className="bars" aria-hidden="true">
                                                             {[1, 2, 3].map((n) => (
                                                                 <i key={n} className={strength.score >= n ? `on-${strength.score}` : ""} />
@@ -2085,9 +1470,10 @@ export default class DaylightSkinApp extends React.Component {
                                             </div>
                                         )}
                                         {a.mode === "recover" && EMAIL_RESET && !a.resetEmailSent && (
-                                            <span className="dl-hintl">We’ll email a six-digit code so you can set a new password.</span>
+                                            <span className="pt-account-hint">We’ll email a six-digit code so you can set a new password.</span>
                                         )}
-                                        <button className={cn(buttonVariants(), "dl-authsubmit")} disabled={a.busy || a.blocked} type="submit">
+                                        {a.mode === "signup" && EMAIL_RESET && <div id="clerk-captcha" className="pt-auth-captcha" />}
+                                        <button className={cn(buttonVariants(), "pt-auth-submit")} disabled={a.busy || a.blocked || !accountsConfigured()} type="submit">
                                             {a.busy
                                                 ? (a.mode === "recover" && EMAIL_RESET && !a.resetEmailSent ? "Sending…" : "Working…")
                                                 : a.mode === "signup" ? "Create account"
@@ -2096,136 +1482,48 @@ export default class DaylightSkinApp extends React.Component {
                                         </button>
                                         {a.mode === "recover" && EMAIL_RESET && a.resetEmailSent && (
                                             <button type="button" className={buttonVariants({ variant: "ghost", size: "sm" })}
-                                                onClick={() => this._setAcct({ resetEmailSent: false, error: "" })}>
+                                                disabled={a.busy} onClick={() => this._setAcct({ resetEmailSent: false, recoveryInput: "", password: "", error: "" })}>
                                                 Didn’t get it? Send another code
                                             </button>
                                         )}
                                     </form>
                                 </>
                             )}
-                            {a.mode !== "recover" && !a.needsEmailCode && (
-                                <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 10 }} onClick={acctShowRecover}>
+                            {a.mode !== "recover" && !a.needsEmailCode && !a.signInVerification && (
+                                <button className={buttonVariants({ variant: "ghost", size: "sm" })}  onClick={acctShowRecover}>
                                     {EMAIL_RESET ? "Forgot your password?" : "Lost your password? Recover with your code"}
                                 </button>
                             )}
                             {a.mode === "recover" && !a.needsEmailCode && (
-                                <button className={buttonVariants({ variant: "ghost", size: "sm" })} style={{ marginTop: 10 }}
-                                    onClick={() => this._setAcct({ mode: "signin", error: "", resetEmailSent: false })}>
+                                <button className={buttonVariants({ variant: "ghost", size: "sm" })}
+                                    disabled={a.busy} onClick={() => this._acctChooseMode("signin")}>
                                     ← Back to sign in
                                 </button>
                             )}
-                            <p className="dl-note" style={{ textAlign: "center" }}>
+                            <p className="pt-auth-note" >
                                 {ACCOUNT_COPY.recovery}
                             </p>
-                        </div>
-                        
-                    </div>
+
                 </div>
-            );
+            </section>;
         }
 
-        return (
-            <div className="dl-wrap">
-                {acctRecoveryCode && (
-                    <div className="dl-reccode" style={{ maxWidth: 640, marginTop: 40 }}>
-                        <b style={{ fontSize: 15 }}>Save your recovery code now</b>
-                        <p style={{ fontSize: 13, color: "var(--dl-muted)", marginTop: 4 }}>
-                            It is shown exactly once, and it is the only way back into this account — there is no reset email.
-                        </p>
-                        <code>{acctRecoveryCode}</code>
-                        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                            <button className={buttonVariants({ variant: "outline", size: "sm" })} onClick={acctCopyRecovery}>
-                                {a.recoverySaved ? "Copied ✓" : "Copy code"}
-                            </button>
-                            <button className={buttonVariants({ variant: "outline", size: "sm" })} onClick={acctDownloadRecovery}>Download as file</button>
-                            <button className={buttonVariants({ size: "sm" })} onClick={acctAckRecovery}>I’ve saved it</button>
-                        </div>
-                    </div>
-                )}
-                <div style={{ display: "flex", alignItems: "center", gap: 14, marginTop: 40, flexWrap: "wrap" }}>
-                    <div>
-                        <div className="dl-eyebrow">Developer API</div>
-                        <h1 className="dl-h" style={{ fontSize: 32, marginTop: 8 }}>API keys</h1>
-                        <p style={{ fontSize: 13.5, color: "var(--dl-muted)", marginTop: 4 }}>Signed in as <b>{a.user.email}</b></p>
-                    </div>
-                    <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-                        <button className={buttonVariants({ variant: "outline", size: "sm" })} onClick={this._acctNewKey}>Create key</button>
-                        <button className={buttonVariants({ variant: "ghost", size: "sm" })} onClick={this._acctSignOut}>Sign out</button>
-                    </div>
-                </div>
-                {a.error && <div className="dl-err" role="alert">{a.error}</div>}
-                {a.freshKey && (
-                    <div className="dl-fresh">
-                        <b>Copy this key now — it is shown once.</b>
-                        <code>{a.freshKey}</code>
-                    </div>
-                )}
-                <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 18, maxWidth: 860 }}>
-                    {(a.keys || []).length === 0
-                        ? <div className="dl-empty">No keys yet — create one to call the API.</div>
-                        : a.keys.map((k) => (
-                            <div className="dl-keyrow" key={k.key_id}>
-                                <Badge variant="wash">KEY</Badge>
-                                <code>{describeKey(k)}</code>
-                                <span className="kd">{k.label}</span>
-                                <button className={buttonVariants({ variant: "ghost", size: "sm" })}
-                                    onClick={() => this._acctRevoke(k.key_id)}>Revoke</button>
-                            </div>
-                        ))}
-                </div>
-                <div className="dl-panel" style={{ maxWidth: 640, marginTop: 40 }}>
-                    <h3>Recovery code</h3>
-                    <p style={{ fontSize: 13.5, color: "var(--dl-muted)" }}>
-                        Mislaid your code? You can replace it — the old one stops working the moment a new one is issued.
-                    </p>
-                    {!a.rotating ? (
-                        <button className={buttonVariants({ variant: "outline", size: "sm" })} style={{ marginTop: 12 }} onClick={acctToggleRotate}>
-                            Replace my recovery code
-                        </button>
-                    ) : (
-                        <form onSubmit={this._acctRotate}>
-                            <div className="dl-field">
-                                <Label htmlFor="dl-rotp">Confirm your password</Label>
-                                <Input id="dl-rotp"  type="password" required value={a.rotatePassword}
-                                    onChange={acctSetRotatePassword} autoComplete="current-password" />
-                                <span className="dl-hintl">Required so a stolen session alone can’t mint a code that outlives a password change.</span>
-                            </div>
-                            <div style={{ display: "flex", gap: 10 }}>
-                                <button className={buttonVariants({ size: "sm" })} disabled={a.busy} type="submit">
-                                    {a.busy ? "Working…" : "Issue new code"}
-                                </button>
-                                <button className={buttonVariants({ variant: "ghost", size: "sm" })} type="button" onClick={acctToggleRotate}>Cancel</button>
-                            </div>
-                        </form>
-                    )}
-                </div>
-                <div className="dl-panel" style={{ maxWidth: 640, marginTop: 22, borderColor: "color-mix(in srgb, var(--dl-red) 35%, transparent)" }}>
-                    <h3>Delete this account</h3>
-                    <p style={{ fontSize: 13.5, color: "var(--dl-muted)" }}>
-                        Removes the account and revokes every API key immediately. Your files were never
-                        stored, so there is nothing else to erase.
-                    </p>
-                    <AlertDialog>
-                        <AlertDialogTrigger className={buttonVariants({ variant: "outline", size: "sm" })} style={{ marginTop: 12, color: "var(--dl-red)" }} disabled={a.busy}>
-                            Delete account
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Delete this account for good?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    The account and every API key are removed immediately. Your files were
-                                    never stored, so there is nothing else to erase — and nothing to recover.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Keep my account</AlertDialogCancel>
-                                <AlertDialogAction onClick={this._acctDeleteNow}>Delete for good</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
+        return <section className={`pt-studio-page pt-account-page ${embedded ? "is-embedded" : ""}`}>
+            <header className="pt-account-heading"><div><p className="pt-workspace-caption">Your account</p><AccountHeading>Your keys. <br />Your possibilities.</AccountHeading><p className="pt-account-identity"><span aria-hidden="true">{a.user.email.slice(0, 1).toUpperCase()}</span>Signed in as <b>{a.user.email}</b></p></div><div className="pt-inline-actions"><button className="pt-studio-button" onClick={this._acctNewKey} disabled={a.busy || a.keysLoading || Boolean(a.freshKey)}>Create key</button><button className="pt-studio-link" onClick={this._acctSignOut} disabled={a.busy}>Sign out</button></div></header>
+            {a.error && <div className="pt-form-error" role="alert">{a.error}</div>}
+            {passkeyAccountsEnabled() && <p className="pt-account-passkey-invite"><a className="pt-studio-link" href="/account/settings">Make your next sign-in easier. Add a passkey →</a></p>}
+            {a.freshKey && <section className="pt-account-key-reveal dl-fresh"><div><p className="pt-workspace-caption">Your new connection</p><h2>One key. Many possibilities.</h2><p>Copy this key now — it is shown once. Keep it out of shared documents and public code.</p></div><code>{a.freshKey}</code><div className="pt-inline-actions"><button type="button" className="pt-studio-button" onClick={this._acctCopyKey}>{a.freshKeyCopied ? "Key copied" : "Copy API key"}</button><button type="button" className="pt-studio-button is-secondary" onClick={this._acctAckKey}>I have saved this key</button></div></section>}
+            <div className="pt-account-desk">
+                <section className="pt-account-keys" aria-labelledby="account-keys-heading"><div className="pt-section-title"><div><h2 id="account-keys-heading">API keys</h2><p>Each key connects your workflow to the toolbox.</p></div><button type="button" className="pt-studio-link" disabled={a.busy || a.keysLoading} onClick={() => this._loadKeys()}>Refresh keys</button></div>
+                    {a.keysLoading ? <p className="pt-account-empty" role="status">Loading your API keys…</p> : (a.keys || []).length === 0 ? <div className="pt-account-empty"><span className="pt-account-key-object" aria-hidden="true">API</span><h3>{a.error ? "Your key list is unavailable." : "Your next shortcut starts here."}</h3><p>{a.error ? "Refresh your keys to try again." : "No keys yet — create one to call the API."}</p><a className="pt-studio-link" href="/api">See what you can build →</a></div> : <div className="pt-account-key-list">{a.keys.map((k) => <article className={`pt-account-key ${k.revoked ? "is-revoked" : ""}`} key={k.key_id}><span className="pt-account-key-tag" aria-hidden="true">API</span><div><h3>{k.label || "API key"}</h3><code>{describeKey(k)}</code><p>{k.revoked ? "Access removed" : "Ready for your workflow"}</p></div><button className="pt-studio-link" disabled={a.busy || k.revoked} onClick={() => this._acctRevoke(k.key_id)}>{k.revoked ? "Revoked" : "Revoke"}</button></article>)}</div>}
+                </section>
+                <aside className="pt-account-guide"><p className="pt-workspace-caption">Your first little automation</p><h2>Less repetition. <br />More time for you.</h2><p>Combine PDFs, convert a document, or tidy up a file from your own script.</p><a className="pt-studio-button is-secondary" href="/api">Explore the API →</a><p className="pt-account-guide-note">Your files are processed for the request. Your account is for access, not a cloud file library.</p></aside>
+                <section className="pt-account-care" aria-label="Account care">
+                    {!EMAIL_RESET && <div className="pt-account-recovery"><div><p className="pt-workspace-caption">Keep a way back in</p><h2>Recovery code</h2><p>Mislaid your code? You can replace it — the old one stops working the moment a new one is issued.</p></div>{!a.rotating ? <button className="pt-studio-button is-secondary" onClick={acctToggleRotate}>Replace my recovery code</button> : <form onSubmit={this._acctRotate}><div className="pt-account-field"><Label htmlFor="dl-rotp">Confirm your password</Label><Input id="dl-rotp" type="password" required value={a.rotatePassword} onChange={acctSetRotatePassword} autoComplete="current-password" /><span className="pt-account-hint">Required so a stolen session alone can’t mint a code that outlives a password change.</span></div><div className="pt-inline-actions"><button className="pt-studio-button" disabled={a.busy} type="submit">{a.busy ? "Working…" : "Issue new code"}</button><button className="pt-studio-link" type="button" onClick={acctToggleRotate}>Cancel</button></div></form>}</div>}
+                    <details className="pt-account-delete"><summary>Close your account <span aria-hidden="true">+</span></summary><p>Removes the account and revokes every API key immediately. Tool files are not stored in your account.</p><AlertDialog><AlertDialogTrigger className="pt-studio-link is-danger" disabled={a.busy}>Delete account</AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete this account for good?</AlertDialogTitle><AlertDialogDescription>The account and every API key are removed immediately. Tool files are not stored in your account. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Keep my account</AlertDialogCancel><AlertDialogAction onClick={this._acctDeleteNow}>Delete for good</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></details>
+                </section>
             </div>
-        );
+        </section>;
     }
 
     /* ── trust / security ── */
@@ -2235,7 +1533,6 @@ export default class DaylightSkinApp extends React.Component {
             <div className="dl-wrap">
                 <div className="dl-heror rv rv-p">
                     <div className="dl-pghero">
-                        <div className="dl-eyebrow">The promises</div>
                         <h1>Don’t trust us.<br /><em>Check us.</em></h1>
                         <p>Most tool sites ask you to believe a privacy policy. Ours are behaviors — each one written so you can verify it yourself, from your own browser, in under a minute.</p>
                     </div>
@@ -2302,152 +1599,15 @@ export default class DaylightSkinApp extends React.Component {
     }
 
     Compare() {
-        return (
-            <div className="dl-wrap">
-                <div className="dl-pghero">
-                    <div className="dl-eyebrow">Side by side</div>
-                    <h1>The fine print,<br /><em>compared properly.</em></h1>
-                    <p>Checked against each site’s own public pages, August–September 2026. Their free tiers are what most people actually use — so that’s the column we compare.</p>
-                </div>
-                <div className="dl-cmpscroll" style={{ marginTop: 30 }}>
-                    <table className="dl-cmp">
-                        <thead><tr><th>On the free tier</th><th>PrivaTools</th><th>iLovePDF</th><th>Smallpdf</th><th>Sejda</th><th>ihatepdf</th></tr></thead>
-                        <tbody>
-                            {CMP_ROWS.map(([row, us, ...others]) => (
-                                <tr key={row}>
-                                    <td>{row}</td>
-                                    <td className="us">{us[0]}</td>
-                                    {others.map(([txt, small], i) => (
-                                        <td key={i}>
-                                            {txt === "None" || txt === "Free" || txt === "Stays in browser" || txt === "n/a"
-                                                ? txt : <span className="no">{txt}</span>}
-                                            {small && <small>{small}</small>}
-                                        </td>
-                                    ))}
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-                <p className="dl-note" style={{ marginTop: 14 }}>
-                    Sources: each product’s public tool and pricing pages as read in August 2026. Corrections welcome — <a href="#/support">tell us</a>.
-                </p>
-                <section className="dl-sec" style={{ paddingTop: 60, paddingBottom: 8 }}>
-                    <div className="dl-sec-head"><div>
-                        <h2 className="dl-sec-title">The long-form breakdowns</h2>
-                        <p className="dl-sec-sub">One honest deep-dive per competitor — their strengths included</p>
-                    </div></div>
-                    <div className="dl-bgrid" style={{ paddingTop: 8 }}>
-                        {["privatools-vs-ilovepdf", "privatools-vs-smallpdf", "privatools-vs-sejda", "privatools-vs-ihatepdf"].map((sl) => {
-                            const b = blogPosts.find((x) => x.slug === sl);
-                            return b && (
-                                <a key={sl} className="dl-bpost" href={`#/blog/${sl}`}>
-                                    <div className="bm"><span className="bt">{b.tags[0]}</span><span>{fmtDate(b.publishedAt)}</span><span>{b.readTime}</span></div>
-                                    <h3>{b.title}</h3>
-                                    <p>{b.description}</p>
-                                </a>
-                            );
-                        })}
-                    </div>
-                </section>
-            </div>
-        );
+        return this.HousePage(HouseCompare, "Comparison", { competitorSlug: this.state.competitor || undefined });
     }
 
-    Blog() {
-        const post = blogPosts.find((b) => b.slug === this.state.post);
-        if (post) {
-            const related = (post.relatedTools || []).map((sl) => BY_SLUG.get(sl)).filter(Boolean);
-            const i = POSTS_NEWEST.indexOf(post);
-            const newer = POSTS_NEWEST[i - 1];
-            const older = POSTS_NEWEST[i + 1];
-            return (
-                <div className="dl-wrap">
-                    <Breadcrumb style={{ paddingTop: 36 }}>
-                        <BreadcrumbList>
-                            <BreadcrumbItem><BreadcrumbLink href="#/blog">Blog</BreadcrumbLink></BreadcrumbItem>
-                            <BreadcrumbSeparator />
-                            <BreadcrumbItem><BreadcrumbPage>{post.title}</BreadcrumbPage></BreadcrumbItem>
-                        </BreadcrumbList>
-                    </Breadcrumb>
-                    <div className="dl-artgrid">
-                        <article className="dl-article">
-                            <div className="dl-eyebrow">{post.tags[0]}</div>
-                            <h1>{post.title}</h1>
-                            <div className="am">{fmtDate(post.publishedAt)} · {post.readTime} · {post.author || "Lakshya Lodha"}</div>
-                            {post.tldr && <div className="dl-tldr"><b>TL;DR</b><p>{post.tldr}</p></div>}
-                            {/* Our own authored HTML from src/data/blog.ts — the same body the
-                                server injects for crawlers, so what Google reads is what people see. */}
-                            <div className="dl-artbody" dangerouslySetInnerHTML={{ __html: post.body }} />
-                            <div className="dl-artfoot">
-                                {older && <a href={`#/blog/${older.slug}`}>← {older.title}</a>}
-                                {newer && <a className="nx" href={`#/blog/${newer.slug}`}>{newer.title} →</a>}
-                            </div>
-                        </article>
-                        <aside className="dl-proserail">
-                            {related.length > 0 && (
-                                <div className="dl-panel dl-facts">
-                                    <h3>Tools in this guide</h3>
-                                    <p className="fine">Every one free — no account, no caps.</p>
-                                    {related.map((t) => <a key={t.slug} className={buttonVariants({ variant: "outline" })} href={`#/tool/${t.slug}`}>{t.name} →</a>)}
-                                </div>
-                            )}
-                            <div className="dl-panel dl-facts">
-                                <h3>Verify, don’t trust</h3>
-                                <p className="fine">Claims in our posts come with checks you can run yourself.</p>
-                                <a className={buttonVariants({ variant: "outline" })} href="#/security">The 60-second test →</a>
-                            </div>
-                        </aside>
-                    </div>
-                </div>
-            );
-        }
-
-        const counts = {};
-        for (const b of blogPosts) for (const t of b.tags) counts[t] = (counts[t] || 0) + 1;
-        const TAGS = Object.entries(counts).sort((x, y) => y[1] - x[1]).slice(0, 7).map(([t]) => t);
-        const tag = this.state.blogTag;
-        const posts = tag ? POSTS_NEWEST.filter((b) => b.tags.includes(tag)) : POSTS_NEWEST;
-        const [feat, ...rest] = posts;
-        return (
-            <div className="dl-wrap">
-                <div className="dl-pghero">
-                    <div className="dl-eyebrow">Notes &amp; guides</div>
-                    <h1>The blog</h1>
-                    <p>Short, technical, honest — how private file handling actually works, from the people building it. {blogPosts.length} posts and counting.</p>
-                </div>
-                <div className="dl-btags" role="group" aria-label="Filter posts by topic">
-                    <button className={`dl-chip${tag === "" ? " on" : ""}`} onClick={() => this.setState({ blogTag: "" })}>All · {blogPosts.length}</button>
-                    {TAGS.map((t) => (
-                        <button key={t} className={`dl-chip${tag === t ? " on" : ""}`} onClick={() => this.setState({ blogTag: tag === t ? "" : t })}>{t} · {counts[t]}</button>
-                    ))}
-                </div>
-                {feat && (
-                    <a className="dl-bfeat" href={`#/blog/${feat.slug}`}>
-                        <div className="bm"><span className="bt">{feat.tags[0]}</span><span>{fmtDate(feat.publishedAt)}</span><span>{feat.readTime}</span></div>
-                        <h2>{feat.title}</h2>
-                        <p>{feat.description}</p>
-                        <span className="more">Read the post →</span>
-                    </a>
-                )}
-                <div className="dl-bgrid">
-                    {rest.map((b) => (
-                        <a key={b.slug} className="dl-bpost" href={`#/blog/${b.slug}`}>
-                            <div className="bm"><span className="bt">{b.tags[0]}</span><span>{fmtDate(b.publishedAt)}</span><span>{b.readTime}</span></div>
-                            <h3>{b.title}</h3>
-                            <p>{b.description}</p>
-                        </a>
-                    ))}
-                </div>
-            </div>
-        );
-    }
+    Blog() { return <GuidesStudio slug={this.state.post} tag={this.state.blogTag} onTag={blogTag=>this.setState({blogTag})} />; }
 
     Doc(title, eyebrow, sections, rail) {
         return (
             <div className="dl-wrap">
                 <div className="dl-pghero rv rv-p">
-                    <div className="dl-eyebrow">{eyebrow}</div>
                     <h1>{title}</h1>
                 </div>
                 <div className={rail ? "dl-prosegrid" : undefined}>
@@ -2479,31 +1639,7 @@ export default class DaylightSkinApp extends React.Component {
         );
     }
 
-    About() {
-        return this.Doc("About", "What this is", [
-            ["The short version", `PrivaTools is ${TOTAL} file tools built on one rule: your documents are yours. Wherever a tool can run in your browser, it does; when a server is needed, it says so first, and deletes everything after use.`],
-            ["Who pays for it", "The owner. There are no ads, no trackers, no premium tier and no investors to satisfy — which is why there is nothing on this site that tries to convert you into anything."],
-            ["Where things run", "The site and its processing run from our disclosed server in Mumbai, India. Most tools never touch it — they run entirely on your device."],
-            ["The rule we build by", "If a job can run on your device, it must. The server is a fallback we disclose, never a default we hide — and every promise on this site is written so you can check it yourself."],
-            ["AI without surrender", "AI here comes two private ways. Free on-device models — summarizing, redaction, translation, background removal, speech-to-text, OCR — download once into your browser and then work offline; nothing uploads. And if you want frontier quality, bring your own API key: Chat with PDF and the other AI tools call your provider directly from your browser, never through us. The AI hub in the top bar manages both."],
-        ], <>
-            {this.Facts("At a glance", [
-                ["Tools", `${TOTAL}`],
-                ["Runs", "Browser-first"],
-                ["Server", "Mumbai, IN"],
-                ["Funding", "Owner"],
-                ["Accounts", "API only"],
-                ["Price", "Free"],
-                ["AI", "On-device + your key"],
-            ])}
-            <div className="dl-panel dl-facts">
-                <h3>Check the claims</h3>
-                <p className="fine">Nothing here asks to be believed.</p>
-                <a className={buttonVariants({ variant: "outline" })} href="#/security">How to verify →</a>
-                <a className={buttonVariants({ variant: "outline" })} href="#/compare">Against the others →</a>
-            </div>
-        </>);
-    }
+    About() { return <AboutStudio />; }
 
     Privacy() {
         return this.Doc("Privacy", "Policy", [
@@ -2560,38 +1696,7 @@ export default class DaylightSkinApp extends React.Component {
 
     Status() { return this.HousePage(HouseStatus, "Status"); }
 
-    Support() {
-        return (
-            <div className="dl-wrap">
-                <div className="dl-pghero rv rv-p">
-                    <div className="dl-eyebrow">Support</div>
-                    <h1>A person reads this.<br /><em>Really.</em></h1>
-                    <p>Owner-funded means owner-answered. No ticket deflection, no chatbot maze — say what broke or what’s missing and it gets read.</p>
-                    <div className="dl-supcta">
-                        <a className={buttonVariants()} href="mailto:hello@privatools.me">Email hello@privatools.me</a>
-                        <span>Straight to the owner’s inbox — replies in days, not ticket queues.</span>
-                    </div>
-                </div>
-                <div className="dl-supcards">
-                    <div>
-                        <span className="glyph"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><rect x="2.5" y="4.5" width="15" height="11" rx="2" stroke="currentColor" strokeWidth="1.6" /><path d="M3.5 6 L10 11 L16.5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
-                        <b>Found a bug?</b>
-                        <p>Name the tool and the rough file type — never send the file itself unless you’re comfortable. Most fixes ship within days.</p>
-                    </div>
-                    <div>
-                        <span className="glyph"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7" stroke="currentColor" strokeWidth="1.6" /><path d="M10 6.5 V10 L12.5 12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg></span>
-                        <b>Is something down?</b>
-                        <p>Check the <a href="#/status">status page</a> first — every processing path has its own row.</p>
-                    </div>
-                    <div>
-                        <span className="glyph"><svg width="17" height="17" viewBox="0 0 20 20" fill="none"><path d="M10 3 L17 6.5 V10 C17 14 14 17 10 18 C6 17 3 14 3 10 V6.5 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg></span>
-                        <b>Privacy questions</b>
-                        <p>Start with <a href="#/security">Trust &amp; security</a> — every promise is written so you can verify it yourself.</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
+    Support() { return <SupportStudio />; }
 
     /* ═══════════════════════ render ═══════════════════════ */
 
@@ -2606,28 +1711,29 @@ export default class DaylightSkinApp extends React.Component {
                             : view === "mystuff" ? this.MyStuff()
                                 : view === "vault" ? this.Vault()
                                     : view === "account" ? this.Account()
-                                        : view === "security" ? this.Security()
+                                        : view === "settings" ? this.HousePage(HouseSettings, "Settings", { accountUser: this.state.acct?.user, accountChecking: !this.state.acct?.resolved, appearanceArea: <AppearanceControls expanded /> })
+                                        : view === "ai" ? this.HousePage(HouseAi, "AI studio")
+                                        : view === "api" ? this.HousePage(HouseApi, "Developer API")
+                                        : view === "trust" ? this.HousePage(HouseTrust, "Trust center")
+                                        : view === "security" ? this.HousePage(HouseSecurity, "Security")
                                             : view === "compare" ? this.Compare()
                                                 : view === "blog" ? this.Blog()
                                                     : view === "about" ? this.About()
-                                                        : view === "privacy" ? this.Privacy()
-                                                            : view === "terms" ? this.Terms()
+                                                        : view === "privacy" ? this.HousePage(HousePrivacy, "Privacy")
+                                                            : view === "terms" ? this.HousePage(HouseTerms, "Terms")
                                                                 : view === "status" ? this.Status()
                                                                     : view === "support" ? this.Support()
                                                                         : view === "notfound" ? this.NotFound()
                                                                         : this.Home();
         return (
-            <div className="dl-root">
-                <style>{CSS}</style>
-                {this.Nav()}
-                <main id="dl-main">{body}</main>
-                {this.Footer()}
-                {this.SysDock()}
-                {this.TabBar()}
+            <div className="dl-root consumer-app">
+                <style>{CSS + "\n" + consumerCSS + "\n" + experienceCSS}</style>
+                <ExperienceShell view={view} signedIn={Boolean(this.state.acct?.user || this.state.acct?.accountHint)} onSearch={() => this.setState({ palOpen: true })}>{body}</ExperienceShell>
+                <AiHubDialog open={this.state.aiHub} onOpenChange={(aiHub) => this.setState({ aiHub })} />
                 {this.Palette()}
                 {this.state.dragging && (
                     <div className="dl-dropov" aria-hidden="true">
-                        <div><b>Drop it.</b><p>We’ll show you every tool that can handle it — nothing uploads.</p></div>
+                        <div><b>Choose your next task.</b><p>Drop files to see compatible tools. Nothing uploads yet.</p></div>
                     </div>
                 )}
             </div>

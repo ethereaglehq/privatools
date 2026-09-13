@@ -17,6 +17,11 @@ import type { useClerk } from "@clerk/react";
 
 export type ClerkInstance = ReturnType<typeof useClerk>;
 
+/** Matches the backend's account-only Clerk CSP. Hashes cannot grant it. */
+export function isClerkDocument(pathname = typeof location === "undefined" ? "" : location.pathname): boolean {
+    return /^\/account(?:\/|$)/.test(pathname);
+}
+
 let instance: ClerkInstance | null = null;
 
 /**
@@ -33,6 +38,7 @@ let loadFailed = false;
 /** Called by <ClerkGate> when it sees the script fail. */
 export function markClerkLoadFailed(): void {
     loadFailed = true;
+    for (const resolve of [...waiters]) resolve(null);
 }
 
 export function clerkLoadFailed(): boolean {
@@ -41,15 +47,26 @@ export function clerkLoadFailed(): boolean {
 
 /** Shown wherever the blocked case surfaces, so the wording stays identical. */
 export const CLERK_BLOCKED_MESSAGE =
-    "Sign-in could not load. A browser extension or network filter is blocking clerk.privatools.me — allow it and reload the page. Every tool on the site works without an account.";
+    "Sign-in could not load. Check your connection or allow the sign-in service in your privacy extension, then reload. Every tool works without an account.";
 
 /** Callers parked in whenClerkReady, released as soon as the instance lands. */
-let waiters: ((c: ClerkInstance | null) => void)[] = [];
+const waiters = new Set<(c: ClerkInstance | null) => void>();
+const listeners = new Set<(c: ClerkInstance | null) => void>();
+
+/** React and class-based account surfaces observe the same live session. */
+export function subscribeClerkInstance(listener: (clerk: ClerkInstance | null) => void): () => void {
+    listeners.add(listener);
+    return () => { listeners.delete(listener); };
+}
 
 /** Set by <ClerkBridge>. Not for general use. */
 export function setClerkInstance(next: ClerkInstance | null): void {
     instance = next;
-    if (next) for (const w of waiters.splice(0)) w(next);
+    if (next?.loaded) {
+        loadFailed = false;
+        for (const resolve of [...waiters]) resolve(next);
+    }
+    for (const listener of listeners) listener(next);
 }
 
 /**
@@ -64,30 +81,17 @@ export function setClerkInstance(next: ClerkInstance | null): void {
  * when it simply never arrives — every caller must handle that.
  */
 export async function whenClerkReady(timeoutMs = 15_000): Promise<ClerkInstance | null> {
-    if (!isClerkEnabled() || loadFailed) return null;
-    const deadline = Date.now() + timeoutMs;
-
-    let clerk = instance;
-    if (!clerk) {
-        clerk = await new Promise<ClerkInstance | null>((resolve) => {
-            waiters.push(resolve);
-            setTimeout(() => {
-                const i = waiters.indexOf(resolve);
-                if (i >= 0) { waiters.splice(i, 1); resolve(instance); }
-            }, timeoutMs);
-        });
-    }
-    if (!clerk) return null;
-
-    // Being parked is not the same as being usable. <ClerkBridge> hands over
-    // whatever useClerk() returns, which exists well before clerk-js has
-    // finished loading and built `client` — and every call that touches
-    // `client` throws until it has. Waiting only for the instance made an
-    // OAuth return fail with "Accounts are still starting up".
-    while (!clerk.loaded && !loadFailed && Date.now() < deadline) {
-        await new Promise((r) => setTimeout(r, 50));
-    }
-    return clerk.loaded ? clerk : null;
+    if (!isClerkEnabled() || loadFailed || (!instance && !isClerkDocument())) return null;
+    if (instance?.loaded) return instance;
+    return new Promise(resolve => {
+        const finish = (clerk: ClerkInstance | null) => {
+            clearTimeout(timer);
+            waiters.delete(finish);
+            resolve(clerk);
+        };
+        const timer = setTimeout(() => finish(instance?.loaded ? instance : null), timeoutMs);
+        waiters.add(finish);
+    });
 }
 
 /**

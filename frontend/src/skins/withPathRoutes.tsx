@@ -23,6 +23,7 @@
 
 import type React from "react";
 import { hashForPath } from "./pathRoutes";
+import { documentNavigationFor } from "./cspRoutes";
 
 /*
  * Returns `React.ComponentType<any>` rather than letting the class type escape.
@@ -42,13 +43,16 @@ export function withPathRoutes(Base: any): React.ComponentType<any> {
             // anything pointing here.
             if (super.componentDidMount) super.componentDidMount();
 
-            this._syncHashFromPath();
-            this._onPathNav = () => this._syncHashFromPath();
+            this._onScopedHash = () => this._ensureScopedPath();
+            window.addEventListener("hashchange", this._onScopedHash);
+            if (!this._ensureScopedPath()) this._syncHashFromPath();
+            this._onPathNav = () => { if (!this._ensureScopedPath()) this._syncHashFromPath(); };
             window.addEventListener("popstate", this._onPathNav);
         }
 
         componentWillUnmount() {
             window.removeEventListener("popstate", this._onPathNav);
+            window.removeEventListener("hashchange", this._onScopedHash);
             if (super.componentWillUnmount) super.componentWillUnmount();
         }
 
@@ -68,6 +72,16 @@ export function withPathRoutes(Base: any): React.ComponentType<any> {
             window.dispatchEvent(event);
         }
 
+        /** Covers programmatic hash changes as well as ordinary anchor clicks. */
+        _ensureScopedPath() {
+            const target = documentNavigationFor(window.location.pathname, window.location.hash || "");
+            if (!target) return false;
+            // The hash change already created this history entry. Replace it
+            // with the real page, so Back returns to the user's prior screen.
+            window.location.replace(target);
+            return true;
+        }
+
         /**
          * Translate `/tool/merge-pdf` into `#/tool/merge-pdf`.
          *
@@ -82,8 +96,17 @@ export function withPathRoutes(Base: any): React.ComponentType<any> {
                 const path = window.location.pathname.replace(/\/+$/, "");
                 if (!path || path === "") return;
 
-                const target = hashForPath(path);
-                if (!target) return;
+                // Settings belong to the account origin policy. A history
+                // rewrite would retain /settings' CSP, so use a real request
+                // for this public alias before mounting authentication UI.
+                if (path === "/settings") {
+                    window.location.replace("/account/settings" + window.location.search);
+                    return;
+                }
+
+                const route = hashForPath(path);
+                if (!route) return;
+                const target = route + (path === "/tools" ? window.location.search : "");
 
                 // replaceState, not `location.hash = target`.
                 //

@@ -13,3 +13,26 @@ lo_input_*.pdf
 .env
 .vscode
 .idea
+
+# Local credentials and preview instance settings never enter build context.
+**/.env*
+.secrets/
+.claude/
+.codex/
+.agents/
+frontend/.impeccable/
+
+# Local runtime state and audit evidence are not image inputs. In particular,
+# never send account databases or backups to a remote build context.
+.venv/
+venv/
+data/
+backups/
+docs/
+frontend/dist/
+frontend/playwright-report/
+frontend/test-results/
+.pytest_cache/
+**/*.db
+**/*.db-shm
+**/*.db-wal

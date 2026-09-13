@@ -12,10 +12,14 @@
     <link rel="preload" as="font" type="font/woff2" crossorigin
           href="/fonts/bricolage-grotesque-latin-700-normal.woff2" />
     <title>PrivaTools — Free, Open-Source Privacy-First File Tools</title>
-    <meta name="description" content="Free, open-source file tools — PDF, image, video, and developer utilities. Browser-only when possible; isolated, self-hostable processing when a backend is needed. No accounts.">
+    <meta name="description" content="Free, open-source file tools — PDF, image, video, and developer utilities. Browser-only when possible; isolated, self-hostable processing when needed. No account required for tools.">
     <meta name="author" content="PrivaTools" />
-    <meta name="theme-color" content="#0F1113" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#FAFAF8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#151619" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#edf3f9" media="(prefers-color-scheme: light)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="PrivaTools" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="robots" content="index,follow,max-image-preview:large" />
     <meta property="og:title" content="PrivaTools — Free, Open-Source Privacy-First File Tools">
     <meta property="og:description" content="Free, open-source file tools — PDF, image, video, and developer utilities. Browser-only when possible; isolated backend processing when needed.">
@@ -29,76 +33,77 @@
     <meta name="twitter:title" content="PrivaTools — Free, Open-Source Privacy-First File Tools">
     <meta name="twitter:description" content="Free, open-source file tools. Browser-only when possible; isolated backend processing when needed.">
     <meta name="twitter:image" content="https://privatools.me/og-image.png">
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='5.5' fill='%230F1113'/%3E%3Cg fill='none' stroke='%2338D392' stroke-width='1.85' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M9.6 6.2h3.6L15.8 8.8v8.4a1.4 1.4 0 0 1-1.4 1.4H9.6a1.4 1.4 0 0 1-1.4-1.4V7.6A1.4 1.4 0 0 1 9.6 6.2Z'/%3E%3Cpath d='M13.2 6.3v2.5h2.5'/%3E%3Cpath d='M3.6 7.6V4.6a1 1 0 0 1 1-1h3'/%3E%3Cpath d='M20.4 16.4v3a1 1 0 0 1-1 1h-3'/%3E%3C/g%3E%3C/svg%3E" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/brand/privatools-icon-96.png" />
+    <link rel="icon" type="image/svg+xml" href="/brand/privatools-favicon.svg" />
+    <link rel="alternate" type="application/rss+xml" title="PrivaTools Journal" href="/feed.xml" />
     <link rel="manifest" href="/manifest.json" />
     <link rel="search" type="application/opensearchdescription+xml" title="PrivaTools" href="/opensearch.xml" />
-    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/brand/privatools-icon-180.png" />
     <style>
+      :root { --prepaint-bg:#edf3f9; --prepaint-ink:#23394f; --prepaint-accent:#285cc7; --prepaint-line:#ccd9e7; }
+      html[data-experience="play"] { --prepaint-bg:#fae7eb; --prepaint-ink:#472732; --prepaint-accent:#a32749; --prepaint-line:#c9a4ae; }
+      html[data-theme="dark"] { --prepaint-bg:#151619; --prepaint-ink:#f3f4f7; --prepaint-accent:#91b5ff; --prepaint-line:#383d46; }
+      html[data-experience="play"][data-theme="dark"] { --prepaint-bg:#181818; --prepaint-ink:#f7f4ef; --prepaint-accent:#ff9677; --prepaint-line:#42413f; }
+      html { background:var(--prepaint-bg); }
       #prepaint-brand {
         position: fixed;
         z-index: 95;
         top: 18px;
         left: 16px;
         pointer-events: none;
-        font-family: "Bricolage Grotesque", "Manrope", system-ui, sans-serif;
+        font-family: "Manrope", system-ui, sans-serif;
         font-size: 20px;
         line-height: 1;
         font-weight: 700;
         letter-spacing: -0.03em;
-        color: #15191B;
+        color: var(--prepaint-ink);
       }
-      #prepaint-brand em { font-style: normal; color: #0C7E56; }
+      html[data-experience="play"] #prepaint-brand { font-family:"Bricolage Grotesque", "Manrope", system-ui, sans-serif; }
+      #prepaint-brand em { font-style: normal; color: var(--prepaint-accent); }
       /* The prepaint brand exists only to paint something before hydration.
          SkinAppHost sets .app-ready on mount and it retires. */
       .app-ready #prepaint-brand { display: none; }
-      #prepaint-shell { background: #FAFAF8; color: #15191B; }
-      #prepaint-shell header { border-bottom: 1px solid #E7E5DF; }
-      /* Dark, once the pre-paint script has resolved the stored choice… */
-      html[data-theme="midnight"] #prepaint-shell { background: #000000; color: #F2F3F5; }
-      html[data-theme="midnight"] #prepaint-brand { color: #F2F3F5; }
-      html[data-theme="midnight"] #prepaint-brand em { color: #3EE39C; }
-      html[data-theme="dark"] #prepaint-brand { color: #E8EAED; }
-      html[data-theme="dark"] #prepaint-brand em { color: #38D392; }
-      html[data-theme="dark"] #prepaint-shell { background: #0F1113; color: #E8EAED; }
-      html[data-theme="dark"] #prepaint-shell header { border-bottom-color: #22262B; }
-      /* …and before it has run at all (or with JS off). */
+      #prepaint-shell { background:var(--prepaint-bg); color:var(--prepaint-ink); }
+      #prepaint-shell header { border-bottom:1px solid var(--prepaint-line); }
+      /* Device preference still paints the initial frame when JS is unavailable. */
       @media (prefers-color-scheme: dark) {
-        html:not([data-theme]) #prepaint-brand { color: #E8EAED; }
-        html:not([data-theme]) #prepaint-brand em { color: #38D392; }
-        html:not([data-theme]) #prepaint-shell { background: #0F1113; color: #E8EAED; }
-        html:not([data-theme]) #prepaint-shell header { border-bottom-color: #22262B; }
+        html:not([data-theme]) { --prepaint-bg:#151619; --prepaint-ink:#f3f4f7; --prepaint-accent:#91b5ff; --prepaint-line:#383d46; }
       }
       @media (min-width: 640px) {
         #prepaint-brand { left: 24px; }
       }
     </style>
 
-      <script>
-      /* Pre-paint theme. Runs before <body> renders so a stored choice never
-         flashes the other palette first. Mirrors lib/skinTheme.ts: Daylight
-         paints from `data-theme` on <html>; `system` resolves against the OS. */
+      <script id="experience-prepaint">
+      /* Keep these storage keys and colors in step with lib/experience.ts.
+         Resolve both independent choices before the first visible frame. */
       (function () {
         try {
           var d = document.documentElement;
-          var pref = null;
-          try { pref = window.localStorage.getItem('privatools.daylight.theme'); } catch (e) {}
-          if (pref === 'system') {
-            pref = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-          } else if (pref !== 'light' && pref !== 'dark' && pref !== 'midnight') {
-            pref = 'light';
-          }
-          d.setAttribute('data-theme', pref);
+          function read(key) { try { return window.localStorage.getItem(key); } catch (e) { return null; } }
+          function appearance(value) { return value === 'midnight' ? 'dark' : value === 'system' || value === 'light' || value === 'dark' ? value : null; }
+          var experience = read('privatools.experience') === 'play' ? 'play' : 'air';
+          var pref = appearance(read('privatools.appearance')) || appearance(read('privatools.daylight.theme')) || 'system';
+          var theme = pref === 'system' ? (!window.matchMedia || window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark') : pref;
+          d.setAttribute('data-experience', experience);
+          d.setAttribute('data-appearance', pref);
+          d.setAttribute('data-theme', theme);
+          d.style.colorScheme = theme;
+          var colors = {air:{light:'#edf3f9',dark:'#151619'},play:{light:'#fae7eb',dark:'#181818'}};
+          document.querySelectorAll('meta[name="theme-color"]').forEach(function(meta) { meta.content = colors[experience][theme]; });
         } catch (e) { /* private mode — the CSS media fallback covers it */ }
       })();
     </script>
 </head>
   <body>
+    <!-- Air and Play share the mounted tools and account state. The visitor's
+         chosen experience and appearance are resolved before hydration. -->
     <!-- Pre-hydration skip link — points at the AppShell's `<main id="main-content">`.
          AppShell renders its own once React mounts and removes this one by id;
          leaving both would make a keyboard user Tab past the same affordance
          twice. -->
     <a id="prepaint-skip" href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999] focus:px-4 focus:py-2 focus:bg-foreground focus:text-background focus:rounded-md focus:text-sm">Skip to main content</a>
-    <div id="prepaint-brand" aria-hidden="true">Priva<em>tools</em></div>
+    <div id="prepaint-brand" aria-hidden="true">PrivaTools<em>.</em></div>
     <div id="root">
       <div id="prepaint-shell" style="min-height:100vh;font-family:Manrope,system-ui,sans-serif">
         <header style="height:56px"></header>
@@ -108,88 +113,6 @@
     <!-- Service worker registration lives in src/lib/sw-register.ts so it
          runs in production only and handles updates correctly (skipWaiting +
          controllerchange reload). Don't re-add an inline registration here. -->
-    <!-- First-party analytics proxy — no Google scripts in the browser. Disabled for DNT/GPC/local opt-out. -->
-    <script>
-      (function(){
-        var GA_ID = 'G-B3VWQ44MX1';
-        var OPT_OUT_KEY = 'pt-analytics-opt-out';
-        var CLIENT_ID_KEY = 'pt-analytics-client-id';
-        var sent = false;
-        function storageOptOut(){
-          try { return window.localStorage.getItem(OPT_OUT_KEY) === '1'; }
-          catch (e) { return false; }
-        }
-        function browserPrivacySignal(){
-          var nav = window.navigator || {};
-          var dnt = nav.doNotTrack || nav.msDoNotTrack || window.doNotTrack;
-          return nav.globalPrivacyControl === true || dnt === '1' || dnt === 'yes';
-        }
-        function analyticsDisabled(){
-          return browserPrivacySignal() || storageOptOut();
-        }
-        function setDisableFlag(disabled){
-          window['ga-disable-' + GA_ID] = !!disabled;
-        }
-        function randomId(){
-          var bytes = new Uint32Array(2);
-          if (window.crypto && window.crypto.getRandomValues) {
-            window.crypto.getRandomValues(bytes);
-            return String(bytes[0]) + '.' + String(bytes[1]);
-          }
-          return String(Date.now()) + '.' + String(Math.floor(Math.random() * 1000000000));
-        }
-        function clientId(){
-          try {
-            var existing = window.localStorage.getItem(CLIENT_ID_KEY);
-            if (existing) return existing;
-            var next = randomId();
-            window.localStorage.setItem(CLIENT_ID_KEY, next);
-            return next;
-          } catch (e) {
-            return randomId();
-          }
-        }
-        function sendPageview(){
-          if (sent) return;
-          if (analyticsDisabled()) {
-            setDisableFlag(true);
-            return;
-          }
-          setDisableFlag(false);
-          sent = true;
-          var body = JSON.stringify({
-            path: window.location.pathname,
-            title: document.title,
-            referrer: document.referrer,
-            client_id: clientId()
-          });
-          if (navigator.sendBeacon) {
-            navigator.sendBeacon('/api/analytics/pageview', new Blob([body], { type: 'application/json' }));
-            return;
-          }
-          fetch('/api/analytics/pageview', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: body,
-            keepalive: true,
-            credentials: 'same-origin'
-          }).catch(function(){});
-        }
-        window.ptSetAnalyticsDisabled = function(disabled){
-          var effectiveDisabled = !!disabled || browserPrivacySignal() || storageOptOut();
-          setDisableFlag(effectiveDisabled);
-          if (!effectiveDisabled) sendPageview();
-        };
-        window.addEventListener('storage', function(event){
-          if (event.key === OPT_OUT_KEY) window.ptSetAnalyticsDisabled(storageOptOut());
-        });
-        setDisableFlag(analyticsDisabled());
-        if ('requestIdleCallback' in window) {
-          requestIdleCallback(sendPageview, { timeout: 4000 });
-        } else {
-          window.addEventListener('load', function(){ setTimeout(sendPageview, 1500); });
-        }
-      })();
-    </script>
+    <!-- First-party pageviews and privacy controls are wired once by analyticsBeacon.ts. -->
   </body>
 </html>

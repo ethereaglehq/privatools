@@ -1,220 +1,26 @@
-# robots.txt for PrivaTools
-# https://privatools.me
-
-# ──────────────────────────────────────────────────────────────────
-# Traditional search engines
-# ──────────────────────────────────────────────────────────────────
-User-agent: Googlebot
-Allow: /
-
-User-agent: Googlebot-Image
-Allow: /
-
-User-agent: Googlebot-News
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
-User-agent: DuckDuckBot
-Allow: /
-
-User-agent: Slurp
-Allow: /
-
-User-agent: YandexBot
-Allow: /
-
-User-agent: Baiduspider
-Allow: /
-
-# Social previews
-User-agent: Twitterbot
-Allow: /
-
-User-agent: facebookexternalhit
-Allow: /
-
-User-agent: LinkedInBot
-Allow: /
-
-User-agent: Slackbot
-Allow: /
-
-User-agent: Discordbot
-Allow: /
-
-User-agent: WhatsApp
-Allow: /
-
-User-agent: Pinterestbot
-Allow: /
-
-# ──────────────────────────────────────────────────────────────────
-# AI search & assistant crawlers
-# (allow so ChatGPT, Claude, Perplexity, Gemini, etc. can recommend us)
-# ──────────────────────────────────────────────────────────────────
-User-agent: GPTBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: ChatGPT-User
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: OAI-SearchBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Google-Extended
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: GoogleOther
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: PerplexityBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Perplexity-User
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: ClaudeBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: anthropic-ai
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Claude-Web
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Claude-SearchBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: cohere-ai
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Cohere-Web
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: CCBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Applebot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Applebot-Extended
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Meta-ExternalAgent
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Meta-ExternalFetcher
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: FacebookBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Mistral-AI
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: YouBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: DiffBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: Diffbot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-User-agent: PetalBot
-Allow: /
-Disallow: /api/
-Allow: /api/og-image
-
-# ──────────────────────────────────────────────────────────────────
-# Blocked: aggressive training-only crawlers / archive scrapers
-# ──────────────────────────────────────────────────────────────────
-User-agent: ia_archiver
-Disallow: /
-
-User-agent: Bytespider
-Disallow: /
-
-User-agent: ImagesiftBot
-Disallow: /
-
-User-agent: omgili
-Disallow: /
-
-User-agent: AhrefsBot
-Disallow: /
-
-User-agent: SemrushBot
-Disallow: /
-
-User-agent: MJ12bot
-Disallow: /
-
-User-agent: DotBot
-Disallow: /
-
-# ──────────────────────────────────────────────────────────────────
-# Default: allow everything except API endpoints
-# ──────────────────────────────────────────────────────────────────
+# PrivaTools public pages are crawlable. Private data requires authentication;
+# robots.txt is a discovery preference, never an access-control boundary.
+# Search assistants: OAI-SearchBot, PerplexityBot, Claude-SearchBot and ordinary
+# search bots use the same public-path policy. Training agents retain the
+# existing site policy; training permission is separate from search visibility.
 User-agent: *
 Allow: /
 Disallow: /api/
 Allow: /api/og-image
-Crawl-delay: 1
 
-# ──────────────────────────────────────────────────────────────────
-# Discovery
-# ──────────────────────────────────────────────────────────────────
+# Existing exclusions retained.
+User-agent: ia_archiver
+User-agent: Bytespider
+User-agent: ImagesiftBot
+User-agent: omgili
+User-agent: AhrefsBot
+User-agent: SemrushBot
+User-agent: MJ12bot
+User-agent: DotBot
+Disallow: /
+
 Sitemap: https://privatools.me/sitemap.xml
 
-# AI / LLM discovery (llms.txt convention)
-# Short index:  https://privatools.me/llms.txt
-# Full corpus:  https://privatools.me/llms-full.txt
+# Optional human-readable references, not required search-engine directives:
+# https://privatools.me/llms.txt
+# https://privatools.me/llms-full.txt

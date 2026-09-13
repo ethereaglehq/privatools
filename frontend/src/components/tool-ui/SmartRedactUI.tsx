@@ -1,3 +1,5 @@
+import { modelProgress } from "@/lib/modelProgress";
+import { AiTaskWorkspace } from "./AiTaskWorkspace";
 /**
  * Smart Redact PDF — auto-detects PII (people, organizations, locations,
  * emails, phones, SSNs, credit cards) using a local NER model + regex.
@@ -22,14 +24,14 @@
  * cards, emails, phones) is masked out first, so those specific values never
  * reach the provider. See lib/byok/redactTask.ts.
  */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
 import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { providerById } from "@/lib/byok/providers";
 import { findEntitiesWithByok } from "@/lib/byok/redactTask";
 import { ByokError } from "@/lib/byok/errors";
-import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, ShieldAlert, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
@@ -77,13 +79,9 @@ async function getNer(onProgress: (p: number) => void) {
         env.allowLocalModels = false;
         env.allowRemoteModels = true;
         return pipeline("token-classification", MODEL_ID, {
-            progress_callback: (info: { status: string; progress?: number }) => {
-                if (info.status === "progress" && typeof info.progress === "number") {
-                    onProgress(Math.min(100, Math.max(0, Math.round(info.progress))));
-                } else if (info.status === "ready") onProgress(100);
-            },
+            progress_callback: modelProgress(onProgress, 110 * 1024 * 1024),
         });
-    })();
+    })().catch(error => { pipelinePromise = null; throw error; });
     return pipelinePromise;
 }
 
@@ -171,10 +169,13 @@ export function SmartRedactUI() {
     const [selected, setSelected] = useState<Set<string>>(new Set());
     const [error, setError] = useState<string | null>(null);
 
+    const [resultBlob,setResultBlob] = useState<Blob | null>(null);
     const [hits, setHits] = useState<number | null>(null);
     const [drag, setDrag] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const cancelledRef = useRef(false);
+    const runId = useRef(0);
+    useEffect(() => () => { runId.current++; cancelledRef.current = true;  }, []);
 
     const grouped = useMemo(() => {
         const map = new Map<EntityType, Detection[]>();
@@ -220,6 +221,7 @@ export function SmartRedactUI() {
 
     const scan = useCallback(async () => {
         if (!file) return;
+        const current = ++runId.current;
         setError(null); setDetections([]); setSelected(new Set());
         cancelledRef.current = false;
         try {
@@ -227,7 +229,7 @@ export function SmartRedactUI() {
             const text = await extractPdfText(file, (n, t) =>
                 setProgress(p => ({ ...p, pages: n, totalPages: t }))
             );
-            if (cancelledRef.current) return;
+            if (cancelledRef.current || current !== runId.current) return;
             if (!text.trim()) throw new Error("No extractable text. If this is a scan, run OCR first.");
 
             // Regex pass — fast, no model needed.
@@ -259,7 +261,7 @@ export function SmartRedactUI() {
                     text,
                     knownPii: regexHits.map(h => h.text),
                 });
-                if (cancelledRef.current) return;
+                if (cancelledRef.current || current !== runId.current) return;
                 const byokHits = found
                     // Only keep what actually occurs in the document: the model
                     // is asked to copy exactly, but a paraphrase would silently
@@ -278,7 +280,7 @@ export function SmartRedactUI() {
             const ner = (await getNer(percent =>
                 setProgress(p => ({ ...p, modelPercent: percent }))
             )) as (input: string, opts?: Record<string, unknown>) => Promise<NerToken[]>;
-            if (cancelledRef.current) return;
+            if (cancelledRef.current || current !== runId.current) return;
 
             setStage("scanning");
             // Run NER in chunks so we don't blow past model context window.
@@ -297,17 +299,19 @@ export function SmartRedactUI() {
 
             const nerHits: { text: string; type: EntityType }[] = [];
             for (let i = 0; i < chunks.length; i++) {
-                if (cancelledRef.current) return;
+                if (cancelledRef.current || current !== runId.current) return;
                 const tokens = await ner(chunks[i], { aggregation_strategy: "simple" });
                 nerHits.push(...groupNerTokens(tokens));
             }
 
+            if (current !== runId.current || cancelledRef.current) return;
             const all = dedupeDetections([...regexHits, ...nerHits]);
             setDetections(all);
             // Default-on: select everything found. User can uncheck.
             setSelected(new Set(all.map(keyFor)));
             setStage("review");
         } catch (err) {
+            if (current !== runId.current || cancelledRef.current) return;
             // ByokError carries wording written for a user and, by
             // construction, no key material. The raw error is kept out of
             // console.error because provider errors can echo the request back.
@@ -322,6 +326,7 @@ export function SmartRedactUI() {
 
     const apply = useCallback(async () => {
         if (!file || selected.size === 0) return;
+        const current = ++runId.current; setResultBlob(null);
         setError(null);
         setStage("redacting");
         try {
@@ -335,11 +340,14 @@ export function SmartRedactUI() {
             });
             const hitHeader = res.headers.get("X-Redact-Hits");
             const blob = await res.blob();
+            if (current !== runId.current) return;
+            setResultBlob(blob);
             const baseName = file.name.replace(/\.pdf$/i, "");
             downloadBlob(blob, `${baseName}_redacted.pdf`);
             setHits(hitHeader ? parseInt(hitHeader, 10) : null);
             setStage("done");
         } catch (err) {
+            if (current !== runId.current) return;
             setError(err instanceof Error ? err.message : "Redaction failed");
             setStage("review");
         }
@@ -347,7 +355,7 @@ export function SmartRedactUI() {
 
     if (stage === "done") {
         return (
-            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <AiTaskWorkspace kind="redact" title="Review before you redact" description="Find possible personal information, check every selection, then create a redacted copy." engine={engine} phase={stage}>
                 <div className="relative p-7 sm:p-9 animate-corner-extend">
                     <CornerMarks accent />
                     <div className="flex items-start gap-5">
@@ -357,13 +365,14 @@ export function SmartRedactUI() {
                         <div className="flex-1 min-w-0">
                             <p className="section-mark mb-2">Redacted</p>
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                                {hits !== null ? <><span className="italic text-accent">{hits}</span> match{hits === 1 ? "" : "es"} removed.</> : <><span className="italic text-accent">Redacted</span> PDF downloaded.</>}
+                                {hits !== null ? <><span className="italic text-accent">{hits}</span> match{hits === 1 ? "" : "es"} removed.</> : <><span className="italic text-accent">Redacted</span> PDF ready.</>}
                             </h2>
                             <p className="font-medium mt-2 text-[12px] text-muted-foreground">
-                                {selected.size} item{selected.size === 1 ? "" : "s"} permanently redacted
+                                {selected.size} selected item{selected.size === 1 ? "" : "s"} submitted for redaction. The match count reports the actual removals.
                             </p>
+                            {resultBlob && <button className="pt-lab-button is-primary pt-lab-spaced" onClick={() => downloadBlob(resultBlob, `${file?.name.replace(/\.pdf$/i, "") || "document"}_redacted.pdf`)}><Download size={15}/>Download redacted PDF</button>}
                             <button
-                                onClick={() => { setFile(null); setDetections([]); setSelected(new Set()); setStage("idle"); }}
+                                onClick={() => { setFile(null); setResultBlob(null); setDetections([]); setSelected(new Set()); setStage("idle"); }}
                                 className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
                             >
                                 Redact another PDF
@@ -371,24 +380,24 @@ export function SmartRedactUI() {
                         </div>
                     </div>
                 </div>
-            </div>
+            </AiTaskWorkspace>
         );
     }
 
     return (
-        <div className="space-y-4">
+        <AiTaskWorkspace kind="redact" title="Review before you redact" description="Find possible personal information, check every selection, then create a redacted copy." engine={engine} phase={stage}>
             {/* Browser-AI banner */}
-            <div className="rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
+            <div className="pt-ai-privacy rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
                 <div className="h-9 w-9 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
                     <ShieldAlert size={15} className="text-accent" />
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                        <span className="text-[11px] text-accent font-medium">Browser NER</span>
-                        <span className="font-medium text-[11px] text-muted-foreground">BERT-base · runs locally</span>
+                        <span className="text-[11px] text-accent font-medium">{engine === "byok" ? "Your AI provider" : "Browser NER"}</span>
+                        <span className="font-medium text-[11px] text-muted-foreground">{engine === "byok" ? providerById(byok.provider)?.label ?? "Choose a provider" : "BERT-base · runs locally"}</span>
                     </div>
                     <p className="text-[12.5px] text-foreground leading-relaxed">
-                        <span className="font-medium">Detection happens in your browser.</span> The model + regex passes execute via WebAssembly, so your PDF stays local while PII is found. When you apply, the PDF and your selected strings are sent to our isolated backend for the PyMuPDF redaction, then deleted on response.
+                        {engine === "byok" ? <>Detection sends extracted PDF text directly to your chosen AI provider using your key. When you apply, the PDF and selected strings are sent to the PrivaTools server to remove the content, then deleted on response.</> : <><span className="font-medium">Detection happens in your browser.</span> The model + regex passes execute via WebAssembly, so your PDF stays local while PII is found. When you apply, the PDF and your selected strings are sent to our isolated backend for the PyMuPDF redaction, then deleted on response.</>}
                     </p>
                 </div>
             </div>
@@ -404,7 +413,7 @@ export function SmartRedactUI() {
                     tabIndex={0}
                     aria-label="Upload PDF for smart redaction"
                     className={cn(
-                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "pt-ai-source dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
                     )}
                 >
@@ -420,7 +429,7 @@ export function SmartRedactUI() {
                     <p className="font-medium text-[11.5px] text-muted-foreground">Text-based PDF · OCR first if it's a scan</p>
                 </div>
             ) : (
-                <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
+                <div className="pt-ai-source flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
                     <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                         <FileText size={16} className="text-accent" />
                     </div>
@@ -461,7 +470,7 @@ export function SmartRedactUI() {
                         </div>
                         {(stage === "extracting" || stage === "loading-model" || stage === "scanning") && (
                             <button
-                                onClick={() => { cancelledRef.current = true; setStage("idle"); }}
+                                onClick={() => { runId.current++; cancelledRef.current = true; setStage("idle"); }}
                                 className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
                             >
                                 Cancel
@@ -484,7 +493,7 @@ export function SmartRedactUI() {
             )}
 
             {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
             )}
@@ -515,7 +524,7 @@ export function SmartRedactUI() {
                             >
                                 <span className="block text-[13.5px] font-medium text-foreground">On this device</span>
                                 <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
-                                    Nothing leaves this tab. Downloads a ~256MB model once. Misses
+                                    Nothing leaves this tab. Downloads a ~110 MB model once. Misses
                                     some names and indirect identifiers.
                                 </span>
                             </button>
@@ -686,7 +695,7 @@ export function SmartRedactUI() {
                     </div>
                 </div>
             )}
-        </div>
+        </AiTaskWorkspace>
     );
 }
 

@@ -20,7 +20,7 @@ from functools import lru_cache
 from fastapi import APIRouter, Query, Request
 from PIL import Image, ImageDraw, ImageFont
 
-from ..seo_meta import get_meta_for_path
+from ..seo_meta import get_meta_for_path, _CONTENT_DIR
 from ..utils.caching import cache_response, etag_for
 
 router = APIRouter()
@@ -88,9 +88,18 @@ def _make_og_image(title: str, subtitle: str, category_label: str, category_colo
     except OSError:
         font_title = font_sub = font_brand = font_domain = ImageFont.load_default()
 
-    # Brand tag (top-left) — "PRIVATOOLS · CATEGORY"
-    brand_text = f"PRIVATOOLS · {category_label}".rstrip(" ·")
-    draw.text((60, 56), brand_text, font=font_brand, fill=category_color)
+    # Brand tag (top-left) — "PrivaTools · CATEGORY"
+    brand_text = f"PrivaTools · {category_label}".rstrip(" ·")
+    brand_x = 60
+    try:
+        with Image.open(_CONTENT_DIR / "brand" / "privatools-icon-512.png") as logo_source:
+            logo = logo_source.convert("RGBA")
+            logo.thumbnail((44, 44), Image.Resampling.LANCZOS)
+            img.paste(logo, (60, 44), logo)
+            brand_x = 118
+    except (OSError, ValueError):
+        pass  # Older/self-hosted builds still get the correct text wordmark.
+    draw.text((brand_x, 56), brand_text, font=font_brand, fill=category_color)
 
     # Title — word-wrap at ~28 chars per line, max 3 lines.
     lines = textwrap.wrap(title, width=28)[:3]

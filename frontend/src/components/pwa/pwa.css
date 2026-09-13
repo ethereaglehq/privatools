@@ -1,0 +1,47 @@
+.pwa-trigger{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid hsl(var(--border));background:hsl(var(--background));color:hsl(var(--foreground));border-radius:12px;padding:9px 12px;font:inherit;font-size:12px;font-weight:600;white-space:nowrap;min-height:38px;cursor:pointer;position:relative;transition:background .18s,transform .18s}
+.pwa-trigger:hover{background:hsl(var(--muted));transform:translateY(-1px)}
+.pwa-update-dot{width:6px;height:6px;border-radius:50%;background:hsl(var(--primary))}
+.pwa-dialog.pwa-dialog{width:calc(100vw - 32px);max-width:520px;max-height:calc(100dvh - 40px);overflow-y:auto;gap:0;padding:30px;border:1px solid hsl(var(--border));border-radius:24px;background:hsl(var(--background));color:hsl(var(--foreground));box-shadow:0 24px 100px #0003;animation:pwa-air-enter .25s ease-out}
+.pwa-dialog-emblem{display:grid;place-items:center;width:54px;height:54px;background:hsl(var(--muted));color:hsl(var(--primary));border:1px solid hsl(var(--border));border-radius:16px;margin-bottom:22px}
+.pwa-title.pwa-title{font-size:25px;line-height:1.2;letter-spacing:-.035em;font-weight:650;max-width:370px}
+.pwa-description.pwa-description{font-size:14px;line-height:1.65;color:hsl(var(--muted-foreground));margin-top:12px}
+.pwa-install-section{margin-top:24px}
+.pwa-action{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border:1px solid hsl(var(--border));border-radius:11px;font:inherit;font-size:13px;font-weight:650;cursor:pointer;color:hsl(var(--foreground));background:hsl(var(--background));min-height:42px;transition:transform .18s,background .18s}
+.pwa-action:hover{background:hsl(var(--muted));transform:translateY(-1px)}
+.pwa-action.pwa-primary{background:hsl(var(--primary));color:hsl(var(--primary-foreground));border-color:transparent}
+.pwa-action:disabled{opacity:.55;cursor:default;transform:none}
+.pwa-action:focus-visible,.pwa-trigger:focus-visible,.pwa-notice button:focus-visible{outline:2px solid hsl(var(--ring));outline-offset:3px}
+.pwa-install-section>.pwa-action{width:100%}
+.pwa-manual-install{display:flex;gap:12px;padding:16px;background:hsl(var(--muted));border-radius:14px}
+.pwa-manual-install>span{color:hsl(var(--primary));padding-top:2px}
+.pwa-manual-install strong,.pwa-capabilities strong,.pwa-update-row strong{font-size:13px;line-height:1.5;font-weight:650}
+.pwa-manual-install p,.pwa-capabilities p,.pwa-update-row p{font-size:12px;line-height:1.7;color:hsl(var(--muted-foreground));margin:5px 0 0}
+.pwa-capabilities{display:grid;gap:18px;margin:24px 0}
+.pwa-capabilities>div{display:flex;gap:13px}
+.pwa-capabilities>div>span{flex-shrink:0;color:hsl(var(--muted-foreground));padding-top:3px}
+.pwa-update-row{display:flex;align-items:center;justify-content:space-between;gap:18px;border-top:1px solid hsl(var(--border));padding-top:19px}
+.pwa-update-row .pwa-action{flex-shrink:0}
+.pwa-installed{display:flex;align-items:center;gap:9px;font-size:14px;color:hsl(var(--primary));font-weight:600}
+.pwa-confirm-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:25px}
+.pwa-error{font-size:12px;line-height:1.7;color:hsl(var(--foreground));padding:12px 14px;border:1px solid hsl(var(--border));border-radius:10px;margin:18px 0 0}
+.pwa-notice-stack{position:fixed;z-index:60;bottom:24px;right:24px;display:grid;gap:12px;max-width:360px;pointer-events:none}
+.pwa-notice{position:relative;display:flex;gap:12px;align-items:flex-start;padding:17px 36px 17px 17px;border:1px solid hsl(var(--border));border-radius:18px;background:hsl(var(--background));box-shadow:0 10px 36px #0002;pointer-events:auto;animation:pwa-air-notice .28s ease-out}
+.pwa-notice-icon{flex-shrink:0;color:hsl(var(--primary));margin-top:2px}
+.pwa-notice strong{font-size:13px;font-weight:650}
+.pwa-notice p{font-size:12px;line-height:1.6;margin:5px 0 9px;color:hsl(var(--muted-foreground))}
+.pwa-notice button{color:hsl(var(--foreground));background:none;border:0;padding:0;font:inherit;font-size:12px;font-weight:650;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.pwa-notice .pwa-notice-close{position:absolute;right:7px;top:7px;padding:8px;color:hsl(var(--muted-foreground));text-decoration:none}
+.pwa-spinner{animation:pwa-spin .9s linear infinite}
+html[data-experience="play"] .pwa-trigger{border-radius:100px}
+html[data-experience="play"] .pwa-dialog.pwa-dialog{border-radius:30px;animation-name:pwa-play-enter;animation-duration:.4s;animation-timing-function:cubic-bezier(.2,1.35,.5,1)}
+html[data-experience="play"] .pwa-dialog-emblem{border-radius:20px;transform:rotate(-5deg)}
+html[data-experience="play"] .pwa-action{border-radius:100px}
+html[data-experience="play"] .pwa-action:hover{transform:translateY(-2px) rotate(-.4deg)}
+html[data-experience="play"] .pwa-notice{border-radius:24px;animation:pwa-play-notice .4s cubic-bezier(.2,1.35,.5,1)}
+@keyframes pwa-spin{to{transform:rotate(360deg)}}
+@keyframes pwa-air-enter{from{opacity:0;transform:translate(-50%,-48%)}to{opacity:1;transform:translate(-50%,-50%)}}
+@keyframes pwa-play-enter{from{opacity:0;transform:translate(-50%,-46%) scale(.96) rotate(-1deg)}to{opacity:1;transform:translate(-50%,-50%) scale(1) rotate(0)}}
+@keyframes pwa-air-notice{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pwa-play-notice{from{opacity:0;transform:translateY(15px) scale(.95) rotate(-1deg)}to{opacity:1;transform:translateY(0) scale(1) rotate(0)}}
+@media(max-width:600px){.pwa-trigger{padding:9px;min-width:38px}.pwa-trigger>span{display:none}.pwa-dialog.pwa-dialog{padding:25px 22px}.pwa-title.pwa-title{font-size:23px}.pwa-notice-stack{left:16px;right:16px;bottom:calc(18px + env(safe-area-inset-bottom));max-width:none}.pwa-notice{padding:15px 36px 15px 15px}}
+@media(prefers-reduced-motion:reduce){.pwa-dialog.pwa-dialog,.pwa-notice,.pwa-spinner,html[data-experience="play"] .pwa-dialog.pwa-dialog,html[data-experience="play"] .pwa-notice{animation:none}.pwa-action,.pwa-trigger{transition:none}.pwa-action:hover,.pwa-trigger:hover,html[data-experience="play"] .pwa-action:hover{transform:none}}

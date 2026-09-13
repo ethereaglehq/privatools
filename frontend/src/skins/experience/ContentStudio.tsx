@@ -1,0 +1,72 @@
+import { usesClerkAccounts } from '@/lib/auth-mode';
+import { BlogIndexContent } from '@/pages/BlogPage';
+import { BlogArticleContent } from '@/pages/BlogPostPage';
+import { searchToolList } from '@/lib/tool-search';
+import { useMemo, useState, type CSSProperties } from 'react';
+import type { LucideIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Check, Code2, Feather, FileText, Heart, LifeBuoy, LockKeyhole, Mail, Search, ShieldCheck, SlidersHorizontal, Sparkles, X } from 'lucide-react';
+import { tools } from '@/data/tools';
+import { nonPdfTools } from '@/data/non-pdf-tools';
+import { blogPosts, type BlogPost } from '@/data/blog';
+import { StudioPage, StudioHeader, StudioAction, StudioEmpty } from './Studio';
+import './content.css';
+
+const allTools = [...tools.map(t=>({...t,href:`/tool/${t.slug}`})),...nonPdfTools.map(t=>({...t,href:`/tools/${t.slug}`}))];
+const families = [
+ ['organize','Organize PDFs'],['edit','Edit & annotate'],['optimize','Optimize'],['security','Security'],['to-pdf','Convert to PDF'],['from-pdf','Convert from PDF'],['advanced','Advanced PDF'],['image','Images'],['video-audio','Video & audio'],['developer','Developer'],['archive','Archives'],['document-office','Documents & office'],
+];
+const hues = ['pdf','image','media','code'];
+const toolHref = (slug:string)=>allTools.find(t=>t.slug===slug)?.href || '/tools';
+const date = (value:string)=>new Date(value+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+
+function FileObject({kind='PDF',icon:Icon=FileText}:{kind?:string;icon?:LucideIcon}) {
+ return <div className="pt-content-object" aria-hidden="true"><span className="pt-object-back"/><span className="pt-object-paper"><Icon size={34} strokeWidth={1.25}/><i/><i/><b>{kind}</b></span><span className="pt-object-seal"><Check size={18}/></span></div>;
+}
+
+export function CatalogStudio({query,category,onQuery,onCategory}:{query:string;category:string;onQuery:(v:string)=>void;onCategory:(v:string)=>void}) {
+ const [compact,setCompact]=useState(false);
+ const needle=query.trim().toLowerCase();
+ const visible=useMemo(()=>searchToolList(allTools,needle).filter(t=>!category||t.category===category),[category,needle]);
+ const popular=['merge-pdf','compress-pdf','image-converter'].map(slug=>allTools.find(t=>t.slug===slug)).filter(Boolean);
+ return <StudioPage className="pt-catalog-page"><StudioHeader kicker={`${allTools.length} tools. A little less effort.`} title={<><span className="pt-air-copy">What would you like<br/>to get done?</span><span className="pt-play-copy">Big ideas.<br/>Little tools.</span></>} description="Make a PDF smaller. Give an image a new shape. Find the right tool for whatever's next." visual={<FileObject kind="LET’S GO" icon={Sparkles}/>}/>
+ <div className="pt-catalog-search"><Search size={22}/><input id="dl-filter" type="search" aria-label="Search tools" value={query} placeholder="Try ‘img’, ‘md to pdf’ or ‘compress’…" onChange={e=>onQuery(e.target.value)}/>{query?<button type="button" aria-label="Clear search" onClick={()=>onQuery('')}><X size={18}/></button>:<kbd>/</kbd>}<span>{allTools.length} possibilities</span></div>
+ {!query&&!category&&<div className="pt-catalog-shortcuts"><span>A good place to start</span>{popular.map((t,i)=>t&&<a href={t.href} key={t.slug} style={{'--catalog-tone':`var(--pt-${hues[i]})`,'--catalog-ink':`var(--pt-${hues[i]}-ink)`} as CSSProperties}><t.icon size={20}/><b>{t.name}</b><ArrowUpRight size={16}/></a>)}</div>}
+ <div className="pt-catalog-layout"><nav className="pt-catalog-categories" aria-label="Tool categories"><p>Your toolbox</p><button type="button" aria-pressed={!category} onClick={()=>onCategory('')}>Everything<span>{allTools.length}</span></button>{families.map(([key,label])=><button type="button" key={key} aria-pressed={category===key} onClick={()=>onCategory(category===key?'':key)}>{label}<span>{allTools.filter(t=>t.category===key).length}</span></button>)}</nav><div className="pt-catalog-results"><div className="pt-catalog-results-top"><span role="status">{visible.length} {visible.length===1?'tool':'tools'}{needle?` for “${query}”`:category?` for ${families.find(([key])=>key===category)?.[1].toLowerCase()}`:' ready when you are'}</span><button type="button" aria-pressed={compact} onClick={()=>setCompact(!compact)}><SlidersHorizontal size={15}/>{compact?'Roomy view':'Compact view'}</button></div>
+ {visible.length===0?<StudioEmpty icon={Search} title="That one’s still hiding." description="Try a shorter search or look through another category."><StudioAction onClick={()=>{onQuery('');onCategory('')}}>Show all tools</StudioAction></StudioEmpty>:families.map(([key,label],index)=>{const group=visible.filter(t=>t.category===key);return group.length>0&&<section className="pt-catalog-group" key={key} style={{'--catalog-tone':`var(--pt-${hues[index%4]})`,'--catalog-ink':`var(--pt-${hues[index%4]}-ink)`} as CSSProperties}><div className="pt-catalog-group-heading"><h2>{label}</h2><span>{group.length}</span></div><div className="pt-catalog-grid" data-compact={compact}>{group.map(t=><a className="pt-catalog-tool" href={t.href} key={t.slug}><span className="pt-catalog-tool-icon"><t.icon size={23} strokeWidth={1.6}/></span><div><h3>{t.name}</h3><p>{t.description}</p></div><ArrowUpRight className="pt-catalog-tool-arrow" size={17}/></a>)}</div></section>})}</div></div>
+ </StudioPage>;
+}
+
+export function AboutStudio() {
+ return <StudioPage className="pt-about-page"><StudioHeader kicker="A calmer corner of the internet" title={<><span className="pt-air-copy">Your files deserve<br/>a little space.</span><span className="pt-play-copy">For the things<br/>you’re making.</span></>} description="PrivaTools makes everyday file jobs feel easy, while keeping you in control of what happens to your files." actions={<StudioAction href="/tools">Find your next tool</StudioAction>} visual={<FileObject kind="YOURS" icon={Heart}/>}/>
+ <section className="pt-about-manifesto"><span className="pt-about-margin">THE IDEA</span><h2>Useful should<br/>feel effortless.</h2><div><p>Combining a few PDFs shouldn’t feel like signing up for a new way of life. Neither should resizing an image, converting a video or tidying up some code.</p><p>So we’re building a home for {allTools.length} practical tools. Free to use, open to inspect, and thoughtful about where your files go.</p></div></section>
+ <div className="pt-about-principles">{[{icon:Feather,title:'Start with your device.',copy:'Whenever a tool can run in your browser, it does. Server-based tasks disclose their processing path before you begin.'},{icon:LockKeyhole,title:'Leave a smaller footprint.',copy:'Server jobs use isolated temporary storage in Mumbai, India. Files are deleted after processing; local tools keep files on your device.'},{icon:Code2,title:'Keep the workings open.',copy:'The project is owner-funded and open source. No ads or paid tool tier. You can read the code, check the claims, or self-host it.'}].map(({icon:Icon,title,copy},i)=><article key={title}><span className="pt-principle-index">0{i+1}</span><Icon size={26} strokeWidth={1.4}/><h3>{title}</h3><p>{copy}</p></article>)}</div>
+ <section className="pt-about-choice"><div><span className="pt-studio-kicker">One toolbox. Your kind of space.</span><h2>Some days call for Air.<br/>Some days call for Play.</h2><p>A quiet workspace or a little more personality. Use the switch above to make yourself comfortable. Your work stays right where it is.</p></div><div className="pt-about-pair" aria-hidden="true"><div><Feather size={24}/><strong>Air</strong><small>A little clarity.</small></div><div><Sparkles size={24}/><strong>Play</strong><small>A little possibility.</small></div></div></section>
+ <div className="pt-about-bottom"><ShieldCheck size={30}/><div><h3>You don’t have to take our word for it.</h3><p>Read the processing details, privacy choices and limits for yourself.</p></div><StudioAction href="/trust" variant="secondary">Visit the trust center</StudioAction></div>
+ </StudioPage>;
+}
+
+const questions=[
+ {topic:'Files & tools',q:'Where do my files go?',a:'It depends on the tool. Browser tools process files on your device. Server tools use isolated temporary storage and delete files after processing. Check the disclosure in each workspace before running a task.'},
+ {topic:'Files & tools',q:'A file won’t process. What should I try?',a:'Check that its format matches the tool’s accepted types and that the file opens normally on your device. For server tools, check service status. If it still fails, tell us the tool name, file type and error message.'},
+ {topic:'Files & tools',q:'Can I process more than one file?',a:'Batch runs the same task across multiple files. Pipeline chains several supported steps together for one document. Each workspace shows its supported tasks and input requirements.'},
+ {topic:'My device',q:'Where can I find saved passwords?',a:'Open Vault from the navigation. Saved PDF passwords are encrypted in this browser. They do not sync across devices. Clearing this site’s browser data permanently removes them.'},
+ {topic:'My device',q:'Can I install PrivaTools?',a:'Use Install in the footer if your browser offers it. On iPhone or iPad, open Safari’s Share menu and choose Add to Home Screen. Some tools work offline after they have been loaded; server tools still need a connection.'},
+ {topic:'Account & API',q:'Do I need an account?',a:'No account is required for the tools. A developer account lets you create and manage API keys. Your saved files, preferences and password vault remain on this device.'},
+ {topic:'Account & API',q:'How do I recover my account?',a:usesClerkAccounts()?'Choose “Forgot your password?” on the sign-in page. Enter your email, then use the code in your inbox to set a new password. If you signed in with Google or GitHub, continue with that same provider. There is no recovery code to keep at signup.':'Use the saved recovery code for your legacy local account. This deployment does not send reset emails.'},
+ {topic:'AI',q:'How does AI processing work?',a:'Supported local models download into your browser and run there. With your own provider key, AI requests go directly to that provider. Some tools also need server processing to prepare documents or apply approved edits; the workspace explains those steps.'},
+];
+export function SupportStudio() {
+ const [query,setQuery]=useState('');const [topic,setTopic]=useState('');const [message,setMessage]=useState('');
+ const visible=questions.filter(q=>`${q.topic} ${q.q} ${q.a}`.toLowerCase().includes(query.toLowerCase()));
+ return <StudioPage className="pt-support-page"><StudioHeader kicker="A helping hand" title={<><span className="pt-air-copy">Let’s make it<br/>work for you.</span><span className="pt-play-copy">A little stuck?<br/>We’ve got you.</span></>} description="Find a quick answer, check the service, or write to the person building PrivaTools." visual={<FileObject kind="HELLO" icon={LifeBuoy}/>}/>
+ <div className="pt-support-layout"><section className="pt-support-answers"><label className="pt-support-search"><Search size={20}/><input type="search" aria-label="Search help" placeholder="What can we help with?" value={query} onChange={e=>setQuery(e.target.value)}/></label><div className="pt-support-faqs">{visible.map(item=><details key={item.q}><summary><div><small>{item.topic}</small><h2>{item.q}</h2></div><span>+</span></summary><p>{item.a}</p></details>)}{!visible.length&&<StudioEmpty icon={Search} title="Let’s ask a person." description="No answer matches that search. Send us a little context using the note here."/>}</div></section><aside className="pt-support-contact"><div className="pt-support-stamp"><Mail size={27}/></div><span className="pt-studio-kicker">A note goes a long way</span><h2>Tell us what’s up.</h2><p>Include the tool name and what you expected to happen. Keep private files out of your message.</p><form onSubmit={e=>{e.preventDefault();window.location.href=`mailto:hello@privatools.me?subject=${encodeURIComponent('PrivaTools · '+(topic||'Help'))}&body=${encodeURIComponent(message)}`}}><label htmlFor="support-topic">I’m writing about</label><select id="support-topic" value={topic} onChange={e=>setTopic(e.target.value)}><option value="">Choose a topic</option><option>A tool isn’t working</option><option>An idea for PrivaTools</option><option>My account or API</option><option>A privacy question</option></select><label htmlFor="support-message">Your note</label><textarea id="support-message" required rows={5} value={message} onChange={e=>setMessage(e.target.value)} placeholder="The tool I was using was…"/><StudioAction type="submit">Open email draft <ArrowUpRight size={15}/></StudioAction><small>Opens your email app. Nothing is sent here.</small></form><a href="mailto:hello@privatools.me">hello@privatools.me</a></aside></div>
+ <div className="pt-support-links"><a href="/status"><span className="pt-status-dot"/><div><strong>Check service status</strong><span>Live checks for the processing service.</span></div><ArrowUpRight size={21}/></a><a href="/security"><ShieldCheck size={22}/><div><strong>Report a security issue</strong><span>Find our reporting details and scope.</span></div><ArrowUpRight size={21}/></a></div>
+ </StudioPage>;
+}
+
+export function MissingStudio(){return <StudioPage className="pt-missing-page"><FileObject kind="404" icon={Search}/><StudioHeader kicker="A small detour" title="This page wandered off." description="The address may have changed, but your next tool is easy to find." actions={<><StudioAction href="/tools">Explore the tools</StudioAction><StudioAction href="/" variant="secondary">Back home</StudioAction></>}/></StudioPage>}
+
+export function GuidesStudio({slug,tag,onTag}:{slug?:string;tag:string;onTag:(v:string)=>void}){
+ return slug ? <BlogArticleContent key={slug} slug={slug}/> : <BlogIndexContent tag={tag} onTagChange={onTag}/>;
+}
+function GuideCard({post,featured}:{post:BlogPost;featured:boolean}){return <a className="pt-guide-card" data-featured={featured} href={`/blog/${post.slug}`}><div className="pt-guide-card-art" aria-hidden="true"><BookOpen strokeWidth={1} size={featured?78:45}/><span>{post.tags[0]}</span></div><div className="pt-guide-card-content"><span className="pt-guide-card-meta">{date(post.publishedAt)} · {post.readTime}</span><h2>{post.title}</h2><p>{post.description}</p><span className="pt-guide-read">Read the guide <ArrowRight size={17}/></span></div></a>}

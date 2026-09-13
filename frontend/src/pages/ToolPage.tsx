@@ -83,6 +83,7 @@ const LazyTranslatePdfUI = lazyNamed(() => import("@/components/tool-ui/Translat
 const LazyVerifySignatureUI = lazyNamed(() => import("@/components/tool-ui/VerifySignatureUI"), "VerifySignatureUI");
 const LazySanitizeUI = lazyNamed(() => import("@/components/tool-ui/SanitizeUI"), "SanitizeUI");
 const LazyUnlockUI = lazyNamed(() => import("@/components/tool-ui/UnlockUI"), "UnlockUI");
+const LazyLongImageUI = lazyNamed(() => import("@/components/tool-ui/LongImageUI"), "LongImageUI");
 const LazyPdfToImageUI = lazyNamed(() => import("@/components/tool-ui/PdfToImageUI"), "PdfToImageUI");
 const LazyImageToPdfUI = lazyNamed(() => import("@/components/tool-ui/ImageToPdfUI"), "ImageToPdfUI");
 const LazyJpgToPdfUI  = lazyNamed(() => import("@/components/tool-ui/NamedImageToPdfVariants"), "JpgToPdfUI");
@@ -321,6 +322,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "invert-colors": return <LazyInvertColorsUI />;
     case "crop-pdf": return <LazyCropUI />;
     case "pdf-to-epub": return <LazyPdfToEpubUI />;
+    case "pdf-to-long-image": return <LazyLongImageUI />;
     case "pdf-to-image": return <LazyPdfToImageUI />;
     case "pdf-to-text": return <LazyPdfToTextUI />;
     case "image-to-pdf": return <LazyImageToPdfUI />;
@@ -384,6 +386,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "batch-compress-pdf":
       return <LazyMultiFileUI
         endpoint="/batch-compress-pdf"
+        handoffSlug="batch-compress-pdf"
         accepts=".pdf,application/pdf"
         outputFilename="compressed-pdfs.zip"
         fileLabel="PDFs"

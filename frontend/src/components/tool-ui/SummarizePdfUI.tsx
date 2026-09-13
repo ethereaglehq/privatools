@@ -1,3 +1,6 @@
+import { modelProgress } from "@/lib/modelProgress";
+import { ToolCopyButton } from "./SpecialistTools";
+import { AiTaskWorkspace } from "./AiTaskWorkspace";
 /**
  * Summarize PDF — runs entirely in the browser.
  *
@@ -63,15 +66,9 @@ async function getPipeline(onProgress: (p: number) => void) {
         env.allowLocalModels = false;
         env.allowRemoteModels = true;
         return pipeline("summarization", MODEL_ID, {
-            progress_callback: (info: { status: string; progress?: number }) => {
-                if (info.status === "progress" && typeof info.progress === "number") {
-                    onProgress(Math.min(100, Math.max(0, Math.round(info.progress))));
-                } else if (info.status === "ready") {
-                    onProgress(100);
-                }
-            },
+            progress_callback: modelProgress(onProgress, 250 * 1024 * 1024),
         });
-    })();
+    })().catch(error => { pipelinePromise = null; throw error; });
     return pipelinePromise;
 }
 
@@ -151,11 +148,10 @@ export function SummarizePdfUI() {
     const [drag, setDrag] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const cancelledRef = useRef(false);
+    const runId = useRef(0);
+    const abortRef = useRef<AbortController | null>(null);
 
-    // Reset cancellation flag whenever a new run starts.
-    useEffect(() => {
-        if (stage === "idle" || stage === "done" || stage === "error") cancelledRef.current = false;
-    }, [stage]);
+    useEffect(() => () => { runId.current++; cancelledRef.current = true; abortRef.current?.abort(); }, []);
 
     const onPick = useCallback((fl: FileList | null) => {
         if (!fl || !fl[0]) return;
@@ -171,6 +167,8 @@ export function SummarizePdfUI() {
 
     const run = useCallback(async () => {
         if (!file) return;
+        const current = ++runId.current; cancelledRef.current = false;
+        const controller = new AbortController(); abortRef.current?.abort(); abortRef.current = controller;
         setError(null);
         setSummary("");
         setProgress({ pages: 0, totalPages: 0, chunks: 0, totalChunks: 0, modelPercent: 0 });
@@ -178,9 +176,9 @@ export function SummarizePdfUI() {
             // 1. Extract text
             setStage("extracting");
             const text = await extractPdfText(file, (n, total) =>
-                setProgress(p => ({ ...p, pages: n, totalPages: total }))
+                { if (current === runId.current && !cancelledRef.current) setProgress(p => ({ ...p, pages: n, totalPages: total })); }
             );
-            if (cancelledRef.current) return;
+            if (cancelledRef.current || current !== runId.current) return;
             if (!text.trim()) {
                 throw new Error("No extractable text found in this PDF. If it's a scan, run OCR first, then try again.");
             }
@@ -205,10 +203,11 @@ export function SummarizePdfUI() {
                     model: model || provider?.models[0] || "",
                     text,
                     length,
+                    signal: controller.signal,
                     onProgress: (done, total) =>
-                        setProgress(p => ({ ...p, chunks: done, totalChunks: total })),
+                        { if (current === runId.current && !cancelledRef.current) setProgress(p => ({ ...p, chunks: done, totalChunks: total })); },
                 });
-                if (cancelledRef.current) return;
+                if (cancelledRef.current || current !== runId.current) return;
                 setSummary(out);
                 setStage("done");
                 return;
@@ -217,9 +216,9 @@ export function SummarizePdfUI() {
             // 2b. Load the on-device model (cached after first run)
             setStage("loading-model");
             const summarizer = (await getPipeline(percent =>
-                setProgress(p => ({ ...p, modelPercent: percent }))
+                { if (current === runId.current && !cancelledRef.current) setProgress(p => ({ ...p, modelPercent: percent })); }
             )) as (input: string, opts: { max_length: number; min_length: number }) => Promise<Array<{ summary_text: string }>>;
-            if (cancelledRef.current) return;
+            if (cancelledRef.current || current !== runId.current) return;
 
             // 3. Chunk + summarize
             setStage("summarizing");
@@ -229,8 +228,9 @@ export function SummarizePdfUI() {
 
             const partials: string[] = [];
             for (let i = 0; i < chunks.length; i++) {
-                if (cancelledRef.current) return;
+                if (cancelledRef.current || current !== runId.current) return;
                 const out = await summarizer(chunks[i], opts);
+                if (cancelledRef.current || current !== runId.current) return;
                 partials.push(out[0]?.summary_text ?? "");
                 setProgress(p => ({ ...p, chunks: i + 1 }));
             }
@@ -247,9 +247,12 @@ export function SummarizePdfUI() {
                 final = `Overview\n${overview}\n\nSection summaries\n${partials.map((p, i) => `${i + 1}. ${p}`).join("\n\n")}`;
             }
 
+            if (current !== runId.current || cancelledRef.current) return;
+            if (!final.trim()) throw new Error("The model returned no summary. Try a longer text document or another model.");
             setSummary(final.trim());
             setStage("done");
         } catch (err) {
+            if (current !== runId.current || cancelledRef.current) return;
             // A ByokError already carries wording aimed at the user and, by
             // construction, no key material. Anything else falls back to its
             // own message. console.error is deliberately not given the raw
@@ -264,11 +267,10 @@ export function SummarizePdfUI() {
     }, [file, length, engine, model, byok.ready, byok.provider]);
 
     const cancel = () => {
-        cancelledRef.current = true;
+        cancelledRef.current = true; runId.current++; abortRef.current?.abort();
         setStage("idle");
     };
 
-    const copy = () => navigator.clipboard.writeText(summary).catch(() => {});
 
     const download = () => {
         const blob = new Blob([summary], { type: "text/plain;charset=utf-8" });
@@ -277,9 +279,9 @@ export function SummarizePdfUI() {
     };
 
     return (
-        <div className="space-y-4">
+        <AiTaskWorkspace kind="summary" title="Find the essentials" description="Choose your PDF, decide where the model runs, then shape the length of your summary." engine={engine} phase={stage}>
             {/* Browser-AI banner — this is the moat */}
-            <div className="rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
+            <div className="pt-ai-privacy pt-ai-privacy rounded-xl border border-accent/30 bg-accent/[0.05] px-4 py-3 flex items-start gap-3">
                 <div className="h-9 w-9 rounded-lg bg-accent/15 border border-accent/30 flex items-center justify-center shrink-0">
                     <Sparkles size={15} className="text-accent" />
                 </div>
@@ -291,7 +293,7 @@ export function SummarizePdfUI() {
                         <span className="font-medium text-[11px] text-muted-foreground">
                             {engine === "byok"
                                 ? `${providerById(byok.provider)?.label ?? "no provider selected"} · your account`
-                                : "distilbart-cnn-6-6 · ~250 MB · cached"}
+                                : "distilbart-cnn-6-6 · ~250 MB · downloads when needed"}
                         </span>
                     </div>
                     {/*
@@ -329,7 +331,7 @@ export function SummarizePdfUI() {
                     tabIndex={0}
                     aria-label="Upload PDF to summarize"
                     className={cn(
-                        "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                        "pt-ai-source dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
                         drag
                             ? "border-accent bg-accent/[0.06]"
                             : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
@@ -347,7 +349,7 @@ export function SummarizePdfUI() {
                     <p className="font-medium text-[11.5px] text-muted-foreground">Best on text PDFs · OCR first if it's a scan</p>
                 </div>
             ) : (
-                <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
+                <div className="pt-ai-source flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
                     <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
                         <FileText size={16} className="text-accent" />
                     </div>
@@ -368,8 +370,8 @@ export function SummarizePdfUI() {
             )}
 
             {/* Engine: on-device model vs the user's own API key */}
-            {file && stage === "idle" && (
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
+            {file && (stage === "idle" || stage === "error") && (
+                <div className="pt-ai-options rounded-xl border border-border bg-card overflow-hidden">
                     <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                         Which model
                     </div>
@@ -434,8 +436,8 @@ export function SummarizePdfUI() {
             )}
 
             {/* Length selector */}
-            {file && stage === "idle" && (
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
+            {file && (stage === "idle" || stage === "error") && (
+                <div className="pt-ai-length rounded-xl border border-border bg-card overflow-hidden">
                     <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                         Summary length
                     </div>
@@ -504,15 +506,15 @@ export function SummarizePdfUI() {
             )}
 
             {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
             )}
 
             {/* Action */}
-            {file && stage === "idle" && (
+            {file && (stage === "idle" || stage === "error") && (
                 <div className="flex items-center gap-3 pt-1 flex-wrap">
-                    <button onClick={run} className="btn-accent">
+                    <button onClick={run} disabled={engine === "byok" && !byok.ready} className="btn-accent">
                         <Sparkles size={13} /> Summarize this PDF
                     </button>
                     <button
@@ -526,19 +528,14 @@ export function SummarizePdfUI() {
 
             {/* Result */}
             {stage === "done" && summary && (
-                <div className="rounded-2xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
+                <div className="pt-ai-reading rounded-2xl border border-accent/30 bg-accent/[0.04] overflow-hidden">
                     <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border bg-paper-2/40">
                         <div className="font-medium flex items-center gap-2 text-[11.5px] text-accent">
                             <CheckCircle2 size={12} />
                             Summary ready
                         </div>
                         <div className="flex items-center gap-1">
-                            <button
-                                onClick={copy}
-                                className="font-medium inline-flex items-center gap-1 h-7 px-2 rounded border border-border bg-card text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
-                            >
-                                <Copy size={10} /> Copy
-                            </button>
+                            <ToolCopyButton value={summary} />
                             <button
                                 onClick={download}
                                 className="font-medium inline-flex items-center gap-1 h-7 px-2 rounded border border-border bg-card text-[11.5px] text-muted-foreground hover:text-foreground transition-colors"
@@ -565,7 +562,7 @@ export function SummarizePdfUI() {
                     </div>
                 </div>
             )}
-        </div>
+        </AiTaskWorkspace>
     );
 }
 

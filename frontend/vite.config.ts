@@ -2,33 +2,7 @@ import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import fs from "fs";
-
-const BASE_URL = "https://privatools.me";
-
-// High-volume tools that get a priority bump in the sitemap. Mirrors the
-// `_HIGH_PRIORITY_TOOLS` set in backend/app/routes/sitemap.py — both lists
-// should stay aligned so the static `dist/sitemap.xml` and the live
-// `/sitemap.xml` route produce the same crawl-budget signal.
-const HIGH_PRIORITY_TOOLS = new Set([
-  "merge-pdf", "split-pdf", "compress-pdf",
-  "pdf-to-word", "pdf-to-excel", "pdf-to-jpg",
-  "jpg-to-pdf", "word-to-pdf", "image-to-pdf",
-  "edit-pdf", "sign-pdf", "ocr-pdf",
-  "protect-pdf", "unlock-pdf", "rotate-pdf",
-  "redact-pdf", "watermark",
-  "image-compressor", "image-converter", "heic-to-jpg",
-  "remove-background", "video-to-gif",
-]);
-
-// /compare/<competitor> landing pages. Must stay in sync with
-// _STATIC_META keys in backend/app/seo_meta.py and COMPARE_PAGES in
-// backend/app/routes/sitemap.py — every URL in here resolves to a real
-// SSR-rendered comparison article.
-const COMPARE_SLUGS = [
-  "ilovepdf", "smallpdf", "adobe-acrobat", "sejda", "pdf24",
-  "foxit", "lightpdf", "stirling-pdf", "dochub", "pdfescape", "nitro-pdf",
-  "tinywow", "ihatepdf",
-];
+import { createHash } from "node:crypto";
 
 function manualChunks(id: string): string | undefined {
   const normalized = id.split(path.sep).join("/");
@@ -67,94 +41,36 @@ function manualChunks(id: string): string | undefined {
   return undefined;
 }
 
-/**
- * Build-time sitemap generator. Reads tool slugs from the data files and emits
- * /dist/sitemap.xml covering home, static pages, every tool, every blog post,
- * and every comparison landing page. Replaces the hand-maintained one
- * referenced from robots.txt.
- *
- * Priority scheme (matches backend/app/routes/sitemap.py):
- *   1.0  homepage
- *   0.9  high-volume tools (merge, compress, pdf-to-word, ...)
- *   0.8  long-tail tools + /blog index + per-tool /blog post + compare pages
- *   0.7  /pipeline, /batch
- *   0.6  /about
- *   0.4  /privacy, /terms
- */
-function sitemapPlugin(): Plugin {
+/** Every deployed asset graph gets a fresh offline shell and an update notice. */
+function serviceWorkerVersionPlugin(): Plugin {
+  let outputDirectory = path.resolve(__dirname, "dist");
   return {
-    name: "privatools-sitemap",
+    name: "privatools-service-worker-version",
     apply: "build",
-    closeBundle: async () => {
-      // Lazy-read TS data files via regex (no need to spin up TS).
-      const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8");
-      const slugs = (src: string) =>
-        Array.from(src.matchAll(/^\s*slug:\s*"([^"]+)"/gm)).map(m => m[1]);
-
-      const pdfSlugs = Array.from(new Set(slugs(read("src/data/tools.ts"))));
-      const nonPdfSlugs = Array.from(new Set(slugs(read("src/data/non-pdf-tools.ts"))));
-
-      // Blog data file holds: type definitions (`slug: string;`), the post
-      // entries themselves, and the helper signatures at the bottom. We
-      // want only the post slugs + their `publishedAt` dates.
-      const blogSrc = read("src/data/blog.ts");
-      const blogPosts: { slug: string; publishedAt: string }[] = [];
-      const postRe = /slug:\s*"([^"]+)"[\s\S]*?publishedAt:\s*"([^"]+)"/g;
-      let m: RegExpExecArray | null;
-      while ((m = postRe.exec(blogSrc)) !== null) {
-        if (m[1] !== "string") {
-          blogPosts.push({ slug: m[1], publishedAt: m[2] });
-        }
+    configResolved(config) {
+      outputDirectory = path.resolve(config.root, config.build.outDir);
+    },
+    writeBundle() {
+      const workerPath = path.join(outputDirectory, "sw.js");
+      const worker = fs.readFileSync(workerPath, "utf8");
+      const digest = createHash("sha256")
+        .update(fs.readFileSync(path.join(outputDirectory, "index.html")))
+        .update(fs.readdirSync(path.join(outputDirectory, "assets")).sort().join("\n"))
+        .update(fs.readFileSync(path.join(outputDirectory, "manifest.json")))
+        .update(worker);
+      for (const asset of [
+        "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png",
+        "brand/privatools-icon-96.png", "brand/privatools-favicon.svg", "brand/privatools-icon-180.png",
+        "experience/air-mist.png", "experience/air-graphite.png",
+      ]) {
+        digest.update(fs.readFileSync(path.join(outputDirectory, asset)));
       }
-
-      const today = new Date().toISOString().slice(0, 10);
-      type Url = { loc: string; priority: string; changefreq: string; lastmod: string };
-      const urls: Url[] = [
-        { loc: `${BASE_URL}/`,         priority: "1.0", changefreq: "daily",   lastmod: today },
-        { loc: `${BASE_URL}/about`,    priority: "0.6", changefreq: "monthly", lastmod: today },
-        { loc: `${BASE_URL}/compare`,  priority: "0.7", changefreq: "monthly", lastmod: today },
-        { loc: `${BASE_URL}/pipeline`, priority: "0.7", changefreq: "weekly",  lastmod: today },
-        { loc: `${BASE_URL}/batch`,    priority: "0.7", changefreq: "weekly",  lastmod: today },
-        { loc: `${BASE_URL}/blog`,     priority: "0.8", changefreq: "weekly",  lastmod: today },
-        { loc: `${BASE_URL}/privacy`,  priority: "0.4", changefreq: "yearly",  lastmod: "2026-03-29" },
-        { loc: `${BASE_URL}/terms`,    priority: "0.4", changefreq: "yearly",  lastmod: "2026-03-29" },
-        ...COMPARE_SLUGS.map(s => ({
-          loc: `${BASE_URL}/compare/${s}`,
-          priority: "0.8",
-          changefreq: "monthly",
-          lastmod: today,
-        } satisfies Url)),
-        ...blogPosts.map(p => ({
-          loc: `${BASE_URL}/blog/${p.slug}`,
-          priority: "0.6",
-          changefreq: "weekly",
-          lastmod: p.publishedAt,
-        } satisfies Url)),
-        ...pdfSlugs.map(s => ({
-          loc: `${BASE_URL}/tool/${s}`,
-          priority: HIGH_PRIORITY_TOOLS.has(s) ? "0.9" : "0.8",
-          changefreq: "weekly",
-          lastmod: today,
-        } satisfies Url)),
-        ...nonPdfSlugs.map(s => ({
-          loc: `${BASE_URL}/tools/${s}`,
-          priority: HIGH_PRIORITY_TOOLS.has(s) ? "0.9" : "0.8",
-          changefreq: "weekly",
-          lastmod: today,
-        } satisfies Url)),
-      ];
-
-      const xml =
-        `<?xml version="1.0" encoding="UTF-8"?>\n` +
-        `<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-        urls.map(u =>
-          `  <url>\n    <loc>${u.loc}</loc>\n    <lastmod>${u.lastmod}</lastmod>\n` +
-          `    <changefreq>${u.changefreq}</changefreq>\n    <priority>${u.priority}</priority>\n  </url>`
-        ).join("\n") +
-        `\n</urlset>\n`;
-
-      fs.writeFileSync(path.resolve(__dirname, "dist/sitemap.xml"), xml, "utf8");
-      console.log(`[sitemap] wrote ${urls.length} URLs`);
+      const version = `v2.${digest.digest("hex").slice(0, 16)}`;
+      if (!worker.includes('const CACHE_VERSION = "v2.0.0";')) {
+        throw new Error("Service worker version marker is missing.");
+      }
+      fs.writeFileSync(workerPath, worker.replace('const CACHE_VERSION = "v2.0.0";', `const CACHE_VERSION = "${version}";`));
+      console.log(`[pwa] offline shell ${version}`);
     },
   };
 }
@@ -166,7 +82,7 @@ export default defineConfig({
     strictPort: false,
     hmr: { overlay: false },
     proxy: {
-      "/api": {
+      "/api/": {
         // Override when the backend runs somewhere else, e.g.
         //   VITE_DEV_API_TARGET=http://localhost:8001 npm run dev
         target: process.env.VITE_DEV_API_TARGET || "http://localhost:8000",
@@ -174,7 +90,7 @@ export default defineConfig({
       },
     },
   },
-  plugins: [react(), sitemapPlugin()],
+  plugins: [react(), serviceWorkerVersionPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

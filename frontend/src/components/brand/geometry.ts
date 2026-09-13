@@ -1,0 +1,5 @@
+/** Folded-paper P. Shared geometry for the website and generated app assets. */
+export const brandGeometry = [
+  { slug: 'fold', path: 'M1 7C1 3.7 3.7 1 7 1H26C38.2 1 47 9.4 47 20.8C47 32.2 38.2 40 26.2 40H17V35.7C17 31.1 20.3 28.8 24.8 28.8H27C30.6 28.8 32 26.5 32 23.3V18.6C32 15.4 30 14 26.8 14H15.7L1 7Z' },
+  { slug: 'stem', path: 'M1 9.3L14.7 16.8V43.6C14.7 46 13.6 47.7 11.5 48.9L3.6 53.4C2.2 54.2 1 53.5 1 51.9V9.3Z' },
+] as const;

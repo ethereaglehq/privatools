@@ -1,398 +1,571 @@
-/**
- * MergeUI — combine multiple PDFs into one.
- *
- * Workshop aesthetic: drag-to-reorder numbered cards (01, 02, 03 …),
- * page-range per file shown as mono input, output filename preview
- * derived from the first file. Drop zone uses the standard workshop
- * pattern with corner registration marks.
- */
-import { useState, useRef, useCallback, useEffect } from "react";
+/** A page-aware merge workspace. Preview locally, then explicitly merge on the server. */
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
     FileText, Upload, X, Loader2, CheckCircle2, GripVertical, Plus,
-    AlertCircle, ChevronUp, ChevronDown, Download, ArrowRight, Sparkles,
+    AlertCircle, ChevronUp, ChevronDown, Download, Sparkles, Server,
+    ChevronLeft, ChevronRight, Check, SlidersHorizontal, Info, BookmarkPlus,
 } from "lucide-react";
-import { cn, friendlyError, isValidPageRange } from "@/lib/utils";
-import { uploadFiles, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { cn, friendlyError } from "@/lib/utils";
+import {
+    uploadFiles, downloadBlob, formatFileSize, buildOutputFilename,
+    MAX_FILE_SIZE, MAX_FILES_PER_REQUEST,
+} from "@/lib/api";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
-import { consumeFileHandoff } from "@/lib/file-handoff";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { ResultHandoff } from "./ResultHandoff";
+import { mergePageSelection, mergeOutputFilename, moveMergeFile, toggleMergePage, mergeSourceMap, compactMergePages, saveMergeWorkflow, type MergeSourceMap } from "./merge-model";
+import { openMergePreview, type MergePreviewDocument } from "./merge-preview";
+import "./merge-workspace.css";
 
-interface MergeFile { id: string; name: string; size: string; file: File; pages: string; }
+interface MergeFile {
+    id: string;
+    file: File;
+    pages: string;
+    document: MergePreviewDocument | null;
+    preview: "loading" | "ready" | "unavailable";
+    previewNote?: string;
+}
+
+// Previews must not make the existing 100-file / 500 MB merge capability unusable
+// on smaller devices. Files outside this local rendering budget still merge.
+const MAX_PREVIEW_DOCUMENTS = 8;
+const MAX_PREVIEW_BYTES = 64 * 1024 * 1024;
+
+type MergeResult = MergeSourceMap & { blob: Blob; filename: string; sourceCount: number; selectedCount: number | null; excludedCount: number | null };
+type Phase = "idle" | "processing" | "done";
 
 export function MergeUI() {
     const [files, setFiles] = useState<MergeFile[]>([]);
-    const [state, setState] = useState<"idle" | "processing" | "done">("idle");
+    const filesRef = useRef<MergeFile[]>([]);
+    const [phase, setPhase] = useState<Phase>("idle");
     const [error, setError] = useState<string | null>(null);
-    const [resultBlob, setResultBlob] = useState<Blob | null>(null);
+    const [notice, setNotice] = useState("");
+    const [result, setResult] = useState<MergeResult | null>(null);
+    const [filename, setFilename] = useState<string | null>(null);
     const [drag, setDrag] = useState(false);
-    const [dragIdx, setDragIdx] = useState<number | null>(null);
-    const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
-    const ref = useRef<HTMLInputElement>(null);
+    const [draggedId, setDraggedId] = useState<string | null>(null);
+    const [loadingSample, setLoadingSample] = useState(false);
+    const [processingMessage, setProcessingMessage] = useState("Sending PDFs and waiting for the merged file…");
+    const [panelBodyHeight, setPanelBodyHeight] = useState(0);
+    const [savedWorkflow, setSavedWorkflow] = useState<string | null>(null);
+    const [workflowError, setWorkflowError] = useState<string | null>(null);
+    const mobile = useIsMobile();
+    const inputRef = useRef<HTMLInputElement>(null);
+    const settingsBodyRef = useRef<HTMLDivElement>(null);
+    const resultHeading = useRef<HTMLHeadingElement>(null);
+    const activeRequest = useRef<AbortController | null>(null);
+    const alive = useRef(true);
+    const activeFiles = useRef(new Set<string>());
+    const openDocuments = useRef(new Map<string, MergePreviewDocument>());
+    const previewQueue = useRef(Promise.resolve());
+    const handoff = useRef<Promise<File[]> | null>(null);
 
-    const add = useCallback((fl: FileList | File[]) => {
-        setFiles(p => [
-            ...p,
-            ...Array.from(fl).map(f => ({
-                id: Math.random().toString(36).slice(2),
-                name: f.name,
-                size: formatFileSize(f.size),
-                file: f,
-                pages: "",
-            })),
-        ]);
-        setState("idle");
-        setError(null);
+    useEffect(() => {
+        alive.current = true;
+        const documents = openDocuments.current;
+        return () => {
+            alive.current = false;
+            activeRequest.current?.abort();
+            activeRequest.current = null;
+            for (const document of documents.values()) void document.destroy();
+            documents.clear();
+        };
     }, []);
+
+    const replaceFiles = useCallback((next: MergeFile[]) => {
+        filesRef.current = next;
+        setFiles(next);
+    }, []);
+
+    const invalidateResult = useCallback(() => {
+        setResult(null);
+        setPhase("idle");
+        setError(null);
+        setSavedWorkflow(null);
+        setWorkflowError(null);
+    }, []);
+
+    const add = useCallback((input: FileList | File[]) => {
+        if (activeRequest.current) return;
+        const incoming = Array.from(input);
+        if (!incoming.length) return;
+        const invalid = incoming.find(file => !file.name.toLowerCase().endsWith(".pdf"));
+        if (invalid) {
+            setError(`“${invalid.name}” is not a PDF. Choose only PDF files; this selection was not added.`);
+            return;
+        }
+        const empty = incoming.find(file => file.size === 0);
+        if (empty) { setError(`“${empty.name}” is empty. Choose a PDF with content; this selection was not added.`); return; }
+        const oversized = incoming.find(file => file.size > MAX_FILE_SIZE);
+        if (oversized) { setError(`“${oversized.name}” exceeds 500 MB. Choose a smaller PDF; this selection was not added.`); return; }
+        if (filesRef.current.length + incoming.length > MAX_FILES_PER_REQUEST) {
+            setError(`You can merge up to ${MAX_FILES_PER_REQUEST} PDFs at a time. Remove some files before adding this selection.`);
+            return;
+        }
+        invalidateResult();
+        const entries: MergeFile[] = incoming.map(file => ({
+            id: crypto.randomUUID(), file, pages: "", document: null, preview: "loading",
+        }));
+        for (const entry of entries) activeFiles.current.add(entry.id);
+        replaceFiles([...filesRef.current, ...entries]);
+        setNotice(`${incoming.length} PDF${incoming.length === 1 ? "" : "s"} added. Files stay on this device until you choose Merge.`);
+        // Open files sequentially so a large batch does not start many PDF workers at once.
+        for (const entry of entries) {
+            previewQueue.current = previewQueue.current.then(async () => {
+                if (!alive.current || !activeFiles.current.has(entry.id)) return;
+                const previewBytes = filesRef.current.reduce((total, file) => total + (openDocuments.current.has(file.id) ? file.file.size : 0), 0);
+                if (openDocuments.current.size >= MAX_PREVIEW_DOCUMENTS || previewBytes + entry.file.size > MAX_PREVIEW_BYTES) {
+                    replaceFiles(filesRef.current.map(file => file.id === entry.id ? {
+                        ...file, preview: "unavailable", previewNote: "Preview skipped to keep memory use low. This PDF is still included in the merge.",
+                    } : file));
+                    return;
+                }
+                try {
+                    const document = await openMergePreview(entry.file);
+                    if (!alive.current || !activeFiles.current.has(entry.id)) { void document.destroy(); return; }
+                    openDocuments.current.set(entry.id, document);
+                    replaceFiles(filesRef.current.map(file => file.id === entry.id ? { ...file, document, preview: "ready" } : file));
+                } catch {
+                    if (alive.current && activeFiles.current.has(entry.id)) {
+                        replaceFiles(filesRef.current.map(file => file.id === entry.id ? { ...file, preview: "unavailable" } : file));
+                    }
+                }
+            });
+        }
+    }, [invalidateResult, replaceFiles]);
 
     useEffect(() => {
         let cancelled = false;
-        consumeFileHandoff("merge-pdf").then(file => {
-            if (!cancelled && file) add([file]);
-        });
+        // Keep the same promise through StrictMode's effect replay; consumption is one-shot.
+        handoff.current ??= consumeFileHandoffs("merge-pdf");
+        void handoff.current.then(incoming => { if (!cancelled && incoming.length) add(incoming); });
         return () => { cancelled = true; };
     }, [add]);
 
-    // Try-with-sample affordance — loads the bundled PDF twice so the merge
-    // demo actually has at least two inputs to combine.
-    const [loadingSample, setLoadingSample] = useState(false);
     const trySample = useCallback(async () => {
-        if (loadingSample) return;
+        if (loadingSample || activeRequest.current) return;
         setLoadingSample(true);
+        setError(null);
         try {
-            const a = await loadSamplePdf();
-            // Make a second copy with a distinct filename so the file list
-            // visually shows two entries to merge.
-            const b = new File([await a.arrayBuffer()], "privatools-sample-2.pdf", { type: "application/pdf", lastModified: Date.now() });
-            add([a, b]);
-            toast.message("Two sample PDFs loaded", { description: "Reorder them and press Merge.", duration: 2400 });
-        } catch (e) {
-            console.error(e);
-            toast.error("Couldn't load sample PDFs.");
+            const first = await loadSamplePdf();
+            const second = new File([await first.arrayBuffer()], "privatools-sample-2.pdf", { type: "application/pdf" });
+            if (alive.current) add([first, second]);
+        } catch {
+            if (alive.current) setError("The sample PDFs could not load. Try again, or choose PDFs from your device.");
         } finally {
-            setLoadingSample(false);
+            if (alive.current) setLoadingSample(false);
         }
     }, [loadingSample, add]);
 
-    const updatePages = (id: string, pages: string) =>
-        setFiles(prev => prev.map(f => (f.id === id ? { ...f, pages } : f)));
+    const removeFile = (id: string) => {
+        if (activeRequest.current) return;
+        invalidateResult();
+        const removed = filesRef.current.find(file => file.id === id);
+        activeFiles.current.delete(id);
+        const document = openDocuments.current.get(id);
+        if (document) void document.destroy();
+        openDocuments.current.delete(id);
+        replaceFiles(filesRef.current.filter(file => file.id !== id));
+        setNotice(`${removed?.file.name ?? "PDF"} removed.`);
+    };
 
-    const outputName = files[0] ? buildOutputFilename(files[0].file.name, "merged", "pdf") : "merged.pdf";
+    const reset = () => {
+        activeRequest.current?.abort();
+        activeRequest.current = null;
+        activeFiles.current.clear();
+        for (const document of openDocuments.current.values()) void document.destroy();
+        openDocuments.current.clear();
+        replaceFiles([]);
+        setFilename(null);
+        invalidateResult();
+        setNotice("Selection cleared. Choose PDFs to start another merge.");
+        inputRef.current?.focus();
+    };
 
-    const allRangesValid = files.every(f => isValidPageRange(f.pages));
-    const canProcess = files.length >= 2 && allRangesValid && state !== "processing";
+    const moveFile = (from: number, to: number) => {
+        if (activeRequest.current) return;
+        const current = filesRef.current;
+        const next = moveMergeFile(current, from, to);
+        if (next === current) return;
+        invalidateResult();
+        replaceFiles(next);
+        setNotice(`${current[from].file.name} moved to position ${to + 1}.`);
+    };
+
+    const updatePages = (id: string, pages: string) => {
+        if (activeRequest.current) return;
+        invalidateResult();
+        replaceFiles(filesRef.current.map(file => file.id === id ? { ...file, pages } : file));
+    };
+
+    const selections = useMemo(() => files.map(file => mergePageSelection(file.pages, file.document?.numPages ?? null)), [files]);
+    const countsKnown = files.length > 0 && files.every(file => file.document) && selections.every(selection => selection.pages !== null);
+    const selectedCount = countsKnown ? selections.reduce((sum, selection) => sum + selection.pages!.length, 0) : null;
+    const totalCount = countsKnown ? files.reduce((sum, file) => sum + file.document!.numPages, 0) : null;
+    const excludedCount = totalCount !== null && selectedCount !== null ? totalCount - selectedCount : null;
+    const previewsLoading = files.some(file => file.preview === "loading");
+    const allRangesValid = selections.every(selection => !selection.error);
+    const busy = phase === "processing";
+    const fallbackName = files[0] ? buildOutputFilename(files[0].file.name, "merged", "pdf") : "Combined.pdf";
+    const outputName = mergeOutputFilename(filename ?? fallbackName, fallbackName);
+    const canProcess = files.length >= 2 && allRangesValid && !previewsLoading && !busy && !result;
 
     const process = useCallback(async () => {
-        if (!canProcess) return;
-        setState("processing");
+        if (!canProcess || activeRequest.current) return;
+        const controller = new AbortController();
+        activeRequest.current = controller;
+        setPanelBodyHeight(settingsBodyRef.current?.getBoundingClientRect().height ?? 0);
+        setPhase("processing");
+        setResult(null);
         setError(null);
+        setNotice("");
+        setProcessingMessage("Sending PDFs and waiting for the merged file…");
+        const snapshot = { filename: outputName, sourceCount: files.length, selectedCount, excludedCount,
+            ...mergeSourceMap(files.map(file => ({ filename: file.file.name, total: file.document?.numPages ?? null, range: file.pages }))) };
         try {
-            const anyRange = files.some(f => f.pages.trim() !== "" && f.pages.trim().toLowerCase() !== "all");
-            const params: Record<string, string> | undefined = anyRange
-                ? { page_ranges: JSON.stringify(files.map(f => (f.pages.trim() || "all"))) }
-                : undefined;
-            const res = await uploadFiles("/merge", files.map(f => f.file), params);
-            const blob = await res.blob();
-            downloadBlob(blob, outputName);
-            setResultBlob(blob);
-            setState("done");
-            emitToolSuccess("Merge PDF");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Merge failed";
-            setError(friendlyError(msg, "Couldn't merge those PDFs."));
-            setState("idle");
+            const params = { page_ranges: JSON.stringify(files.map(file => file.pages.trim() || "all")) };
+            const response = await uploadFiles("/merge", files.map(file => file.file), params, {
+                signal: controller.signal,
+                onRetry: (attempt, total) => {
+                    if (activeRequest.current === controller) setProcessingMessage(`Connection interrupted. Retrying (${attempt} of ${total})…`);
+                },
+            });
+            if (controller.signal.aborted || activeRequest.current !== controller) return;
+            setProcessingMessage("Receiving your merged PDF…");
+            const blob = await response.blob();
+            if (controller.signal.aborted || activeRequest.current !== controller || !alive.current) return;
+            if (!blob.size) throw new Error("The server returned an empty PDF. Try merging again.");
+            setResult({ blob, ...snapshot });
+            setPhase("done");
+            setNotice("Your merged PDF is ready to download.");
+        } catch (cause) {
+            if (controller.signal.aborted || activeRequest.current !== controller || !alive.current) return;
+            setError(friendlyError(cause instanceof Error ? cause.message : "", "Could not merge these PDFs. Try again."));
+            setPhase("idle");
+        } finally {
+            if (activeRequest.current === controller) activeRequest.current = null;
         }
-    }, [canProcess, files, outputName]);
+    }, [canProcess, files, outputName, selectedCount, excludedCount]);
+
+    const cancel = () => {
+        activeRequest.current?.abort();
+        activeRequest.current = null;
+        setPhase("idle");
+        setResult(null);
+        setNotice("Request cancelled. Your selection is ready to edit. Server processing may finish independently.");
+    };
 
     useEffect(() => {
-        const handler = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) {
-                e.preventDefault();
-                process();
+        const handler = (event: KeyboardEvent) => {
+            if ((event.metaKey || event.ctrlKey) && event.key === "Enter" && canProcess) {
+                event.preventDefault();
+                void process();
             }
         };
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
     }, [canProcess, process]);
 
-    const moveFile = (fromIndex: number, toIndex: number) => {
-        setFiles(prev => {
-            if (toIndex < 0 || toIndex >= prev.length) return prev;
-            const next = [...prev];
-            const [moved] = next.splice(fromIndex, 1);
-            next.splice(toIndex, 0, moved);
-            return next;
-        });
-    };
+    useEffect(() => { if (phase === "done") resultHeading.current?.focus(); }, [phase]);
 
-    if (state === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks accent />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Merged</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            {files.length} PDFs <span className="italic text-accent">merged</span>.
-                        </h2>
-                        <p className="font-medium mt-2 text-[12px] text-muted-foreground">
-                            {outputName} · downloaded
-                        </p>
-                        <button
-                            onClick={() => { setFiles([]); setState("idle"); setResultBlob(null); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            Merge more files
-                        </button>
-                        <ResultHandoff blob={resultBlob} filename={outputName} fromSlug="merge-pdf" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
+    const previewOrder = useMemo(() => files.flatMap((file, index) =>
+        (selections[index].pages ?? []).map(page => ({ file, page }))), [files, selections]);
 
     return (
-        <div className="space-y-4">
-            {/* Dropzone */}
-            <div
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
-                onClick={() => ref.current?.click()}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-                role="button"
-                tabIndex={0}
-                aria-label="Upload file"
-                className={cn(
-                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 px-6 text-center group",
-                    drag
-                        ? "border-accent bg-accent/[0.06]"
-                        : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-                )}
-            >
-                <CornerMarks />
-                <input ref={ref} type="file" accept=".pdf" multiple className="hidden" onChange={e => { e.target.files && add(e.target.files); e.target.value = ""; }} />
-                <div className={cn(
-                    "h-12 w-12 rounded-xl flex items-center justify-center transition-colors",
-                    drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15"
-                )}>
-                    <Upload size={20} className="text-accent" strokeWidth={1.75} />
-                </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">
-                    {files.length === 0 ? "Add PDFs to merge" : "Add more PDFs"}
-                </p>
-                <p className="font-medium text-[11.5px] text-muted-foreground">
-                    Drag &amp; drop, or click — as many files as you need
-                </p>
-            </div>
-
-            {/* Try with sample affordance — only before any file is added. */}
-            {files.length === 0 && (
-                <div className="flex items-center justify-center">
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); trySample(); }}
-                        disabled={loadingSample}
-                        className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
-                    >
-                        {loadingSample ? (
-                            <><Loader2 size={11} className="animate-spin" /> Loading sample…</>
-                        ) : (
-                            <><Sparkles size={11} className="text-accent" /> Try with sample PDFs</>
-                        )}
+        <div
+            className={cn("merge-workbench", drag && "merge-workbench--drag", result && "merge-workbench--done")}
+            onDragOver={event => {
+                if (!busy && event.dataTransfer.types.includes("Files")) { event.preventDefault(); setDrag(true); }
+            }}
+            onDragLeave={event => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDrag(false); }}
+            onDrop={event => {
+                if (event.dataTransfer.files.length) { event.preventDefault(); setDrag(false); if (!busy) add(event.dataTransfer.files); }
+            }}
+        >
+            <input
+                ref={inputRef} type="file" accept=".pdf,application/pdf" multiple
+                className="sr-only" tabIndex={-1} aria-label="Choose PDFs to merge" disabled={busy}
+                onChange={event => { if (event.target.files) add(event.target.files); event.target.value = ""; }}
+            />
+            <p className="sr-only" role="status" aria-live="polite">{notice}</p>
+            {error && <div className="merge-error" role="alert"><AlertCircle size={20} /><p>{error}</p></div>}
+            {files.length === 0 ? (
+                <div className="merge-empty">
+                    <div className="merge-empty-icon"><FileText size={35} strokeWidth={1.6} /><Plus size={20} /></div>
+                    <h2>Bring your PDFs together.</h2>
+                    <p>Choose two or more PDFs. Preview the pages, arrange your files, and make one document.</p>
+                    <button type="button" className="merge-button merge-button--primary" onClick={() => inputRef.current?.click()}>
+                        <Upload size={20} /> Choose PDFs
                     </button>
+                    <p className="merge-empty-hint">Or drop PDFs here · Up to {MAX_FILES_PER_REQUEST} files, 500 MB each</p>
+                    <button className="merge-text-button" type="button" disabled={loadingSample} onClick={() => void trySample()}>
+                        {loadingSample ? <Loader2 size={17} className="merge-spinner" /> : <Sparkles size={17} />}
+                        {loadingSample ? "Loading sample PDFs…" : "Try with sample PDFs"}
+                    </button>
+                    <div className="merge-empty-privacy"><Server size={19} /><p>Preview on this device. Files are sent to PrivaTools for temporary processing only when you choose Merge.</p></div>
                 </div>
-            )}
-
-            {/* Error */}
-            {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                    <AlertCircle size={13} className="shrink-0" />
-                    {error}
+            ) : (
+                <div className="merge-layout">
+                    <section className="merge-content" aria-label={result ? "Merged PDF preview" : "PDF files and page order"}>
+                        {result ? (
+                            <>
+                                <div className="merge-result-heading"><CheckCircle2 size={30} /><h2 tabIndex={-1} ref={resultHeading}>Your PDF is ready</h2></div>
+                                <p className="merge-lead">{result.selectedCount !== null ? `${result.selectedCount} selected pages, together in one file.` : "Your selected pages, together in one file."}</p>
+                                <ResultPreview result={result} />
+                                {result.excludedPages.map((source, index) => <p className="merge-notice" key={index}><Info size={17} /><span>Page{source.pages.length === 1 ? "" : "s"} {compactMergePages(source.pages)} of {source.filename} {source.pages.length === 1 ? "was" : "were"} excluded.</span></p>)}
+                            </>
+                        ) : (
+                            <>
+                                <div className="merge-section-heading">
+                                    <div><h2>Your files</h2><p>{files.length} file{files.length === 1 ? "" : "s"}{selectedCount !== null ? ` · ${selectedCount} of ${totalCount} pages` : ` · ${formatFileSize(files.reduce((sum, file) => sum + file.file.size, 0))}`}</p></div>
+                                    <button className="merge-button merge-button--small" type="button" disabled={busy} onClick={() => inputRef.current?.click()}><Plus size={18} />Add PDFs</button>
+                                </div>
+                                <p className="merge-help">Move files into order. Select thumbnails or enter page ranges in Merge settings.</p>
+                                <ol className="merge-files">
+                                    {files.map((file, index) => (
+                                        <li key={file.id}
+                                            className={cn("merge-file", draggedId === file.id && "merge-file--dragging")}
+                                            onDragOver={event => { if (draggedId && !busy) event.preventDefault(); }}
+                                            onDrop={event => {
+                                                if (!draggedId || busy) return;
+                                                event.preventDefault(); event.stopPropagation();
+                                                moveFile(files.findIndex(item => item.id === draggedId), index); setDraggedId(null);
+                                            }}>
+                                            <div className="merge-file-heading">
+                                                <span className="merge-drag-handle" draggable={!busy}
+                                                    onDragStart={event => { setDraggedId(file.id); event.dataTransfer.setData("text/plain", file.id); event.dataTransfer.effectAllowed = "move"; }}
+                                                    onDragEnd={() => setDraggedId(null)} title="Drag to reorder" aria-hidden="true"><GripVertical size={20} /></span>
+                                                <div className="merge-file-name"><h3 title={file.file.name}>{file.file.name}</h3><p>{file.document ? `${file.document.numPages} source page${file.document.numPages === 1 ? "" : "s"}` : formatFileSize(file.file.size)}{selections[index].pages ? ` · ${selections[index].pages!.length} selected` : ""}</p></div>
+                                                <div className="merge-file-actions">
+                                                    <button type="button" disabled={busy || index === 0} className="merge-icon-button" onClick={() => moveFile(index, index - 1)} aria-label={`Move ${file.file.name} up`}><ChevronUp size={18} /></button>
+                                                    <button type="button" disabled={busy || index === files.length - 1} className="merge-icon-button" onClick={() => moveFile(index, index + 1)} aria-label={`Move ${file.file.name} down`}><ChevronDown size={18} /></button>
+                                                    <button type="button" disabled={busy} className="merge-icon-button" onClick={() => removeFile(file.id)} aria-label={`Remove ${file.file.name}`}><X size={18} /></button>
+                                                </div>
+                                            </div>
+                                            <SourcePages file={file} selected={selections[index].pages} disabled={busy || !!selections[index].error}
+                                                onToggle={page => {
+                                                    const next = toggleMergePage(file.pages, file.document!.numPages, page);
+                                                    if (next === null) { toast.message("Keep at least one page per file", { description: "Use Remove to leave a whole PDF out of the merge." }); return; }
+                                                    updatePages(file.id, next);
+                                                }} />
+                                        </li>
+                                    ))}
+                                </ol>
+                                {countsKnown && previewOrder.length > 0 && <PageOrderPreview pages={previewOrder} />}
+                                {notice && <p className="merge-notice merge-selection-notice"><Info size={17} aria-hidden="true" />{notice}</p>}
+                            </>
+                        )}
+                    </section>
+                    <aside className="merge-settings" aria-label={result ? "Download merged PDF" : "Merge settings"} aria-busy={busy}>
+                        <div ref={settingsBodyRef} className="merge-settings-body" style={{ minHeight: phase === "idle" ? undefined : panelBodyHeight }}>
+                            {(!result || !mobile) && <h2>{result ? "Ready to download" : busy ? "Making your PDF" : "Merge settings"}</h2>}
+                            {result ? (
+                                mobile ? <details className="merge-result-details"><summary>Merge details</summary><ResultSummary result={result} /></details> : <ResultSummary result={result} />
+                            ) : busy ? (
+                                <div className="merge-processing" role="status" aria-live="polite">
+                                    <Loader2 size={30} className="merge-spinner" />
+                                    <p>{processingMessage}</p>
+                                    <div className="merge-processing-detail"><CheckCircle2 size={18} /><span>{files.length} PDFs selected{selectedCount !== null ? ` · ${selectedCount} pages to include` : ""}</span></div>
+                                    <p className="merge-help">Keep this tab open. The server does not report page-by-page progress.</p>
+                                </div>
+                            ) : (
+                                <div className="merge-ranges">
+                                    <h3>Pages to include</h3>
+                                    <p className="merge-help" id="merge-range-help">Blank includes all pages. Use 1-3,5, end, or 2-end. Pages follow the order you enter.</p>
+                                    {files.map((file, index) => <div className="merge-field" key={file.id}>
+                                        <label htmlFor={`merge-pages-${file.id}`}>{file.file.name}</label>
+                                        <input id={`merge-pages-${file.id}`} type="text" value={file.pages} placeholder="All pages"
+                                            onChange={event => updatePages(file.id, event.target.value)} spellCheck={false} autoComplete="off"
+                                            aria-invalid={!!selections[index].error} aria-describedby={`merge-range-help${selections[index].error ? ` merge-range-error-${file.id}` : ""}`} />
+                                        {selections[index].error && <p className="merge-field-error" id={`merge-range-error-${file.id}`}>{selections[index].error}</p>}
+                                    </div>)}
+                                    {excludedCount !== null && excludedCount > 0 && <p className="merge-help">{excludedCount} source page{excludedCount === 1 ? " is" : "s are"} excluded.</p>}
+                                </div>
+                            )}
+                            {!result && <div className="merge-field merge-filename-field">
+                                <label htmlFor="merge-output-filename">Output filename</label>
+                                <input id="merge-output-filename" type="text" value={filename ?? fallbackName} disabled={busy} maxLength={185}
+                                    onChange={event => { invalidateResult(); setFilename(event.target.value); }}
+                                    onBlur={() => { if (filename !== null) setFilename(mergeOutputFilename(filename, fallbackName)); }} spellCheck={false} />
+                            </div>}
+                        </div>
+                        <div className="merge-action-area">
+                            <div className="merge-processing-location"><Server size={23} /><div>
+                                <strong>{result ? "Processed by PrivaTools" : "Processing: temporary server upload"}</strong>
+                                <p>{result ? "The result is ready in this browser. Source files and the server result are removed after the response." : "Choosing Merge sends these PDFs to PrivaTools. Server copies are removed after the response."}</p>
+                            </div></div>
+                            {result ? <button className="merge-button merge-button--primary" type="button" onClick={() => { downloadBlob(result.blob, result.filename); emitToolSuccess("Merge PDF"); }}><Download size={20} />Download PDF</button>
+                                : busy ? <button className="merge-button" type="button" onClick={cancel}>Cancel request</button>
+                                    : <button className="merge-button merge-button--primary" type="button" disabled={!canProcess} onClick={() => void process()}>
+                                        {previewsLoading ? <><Loader2 size={19} className="merge-spinner" />Reading PDFs…</>
+                                            : files.length < 2 ? "Add one more PDF"
+                                                : selectedCount !== null ? `Merge ${selectedCount} pages` : `Merge ${files.length} PDFs`}
+                                    </button>}
+                            {result ? <>
+                                <button className="merge-button merge-button--quiet" type="button" onClick={() => { invalidateResult(); setNotice("Adjust the pages or order, then merge again to create an updated PDF."); }}><SlidersHorizontal size={18} />Adjust pages</button>
+                                <div className="merge-save-workflow">
+                                    <button className="merge-text-button" type="button" disabled={!!savedWorkflow} onClick={() => {
+                                        try { setSavedWorkflow(saveMergeWorkflow()); setWorkflowError(null); }
+                                        catch { setWorkflowError("This browser could not save the workflow. Free some site storage or allow local storage, then try again."); }
+                                    }}>{savedWorkflow ? <Check size={18} /> : <BookmarkPlus size={18} />}{savedWorkflow ? "Workflow saved" : "Save workflow"}</button>
+                                    <p className="merge-help">Saves the Merge PDF operation on this device. Choose files, page ranges, order, and filename again each time.</p>
+                                    {savedWorkflow && <p className="merge-help" role="status">“{savedWorkflow}” is available in <a href="/">your home workspace</a>.</p>}
+                                    {workflowError && <p className="merge-field-error" role="alert">{workflowError}</p>}
+                                </div>
+                                <button className="merge-text-button" type="button" onClick={reset}>Start another merge</button>
+                            </> : busy ? <p className="merge-action-help">Cancelling stops this request. A merge already running on the server may still finish.</p> : <>
+                                {!allRangesValid && <p className="merge-field-error">Check the highlighted page ranges before merging.</p>}
+                                <button className="merge-text-button" type="button" onClick={reset}>Clear selection</button>
+                                {canProcess && <p className="merge-action-help">Shortcut: Ctrl / ⌘ + Enter</p>}
+                            </>}
+                        </div>
+                    </aside>
+                    {result && <div className="merge-handoff"><ResultHandoff blob={result.blob} filename={result.filename} fromSlug="merge-pdf" /></div>}
                 </div>
-            )}
-
-            {/* File list */}
-            {files.length > 0 && (
-                <>
-                    <div className="flex items-center justify-between px-1 flex-wrap gap-1">
-                        <span className="font-medium text-[11.5px] text-muted-foreground">
-                            Sequence — {files.length} file{files.length !== 1 ? "s" : ""} ·{" "}
-                            <span className="text-foreground/85 tabular-nums">{formatFileSize(files.reduce((s, f) => s + f.file.size, 0))}</span>
-                        </span>
-                        <span className="font-medium text-[11px] text-muted-foreground">
-                            Drag to reorder · leave pages blank for all
-                        </span>
-                    </div>
-
-                    <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
-                        {files.map((f, i) => (
-                            <div
-                                key={f.id}
-                                draggable
-                                onDragStart={() => setDragIdx(i)}
-                                onDragOver={e => { e.preventDefault(); setDragOverIdx(i); }}
-                                onDragEnd={() => {
-                                    if (dragIdx !== null && dragOverIdx !== null && dragIdx !== dragOverIdx) {
-                                        moveFile(dragIdx, dragOverIdx);
-                                    }
-                                    setDragIdx(null); setDragOverIdx(null);
-                                }}
-                                className={cn(
-                                    "group flex items-center gap-2 sm:gap-3 px-3 py-2.5 transition-all animate-queue-row-enter",
-                                    dragIdx === i ? "dragging" : "hover:bg-paper-2/30",
-                                    dragOverIdx === i && dragIdx !== i ? "border-t-2 border-accent" : ""
-                                )}
-                            >
-                                {/* Drag handle */}
-                                <span className="hidden sm:inline-flex h-7 w-7 coarse:h-11 coarse:w-11 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 cursor-grab active:cursor-grabbing shrink-0">
-                                    <GripVertical size={13} />
-                                </span>
-                                {/* Sequence number */}
-                                <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-7 text-center">
-                                    {String(i + 1).padStart(2, "0")}
-                                </span>
-                                {/* Icon */}
-                                <div className="h-8 w-8 rounded-md bg-accent/10 border border-accent/25 flex items-center justify-center shrink-0">
-                                    <FileText size={13} className="text-accent" />
-                                </div>
-                                {/* Filename */}
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-mono text-[10.5px] tracking-wide text-muted-foreground mt-0.5">{f.size}</p>
-                                </div>
-                                {/* Pages */}
-                                <div className="hidden sm:flex items-center gap-1.5 shrink-0">
-                                    <label htmlFor={`pages-${f.id}`} className="font-medium text-[9.5px] text-muted-foreground">Pages</label>
-                                    <input
-                                        id={`pages-${f.id}`}
-                                        type="text"
-                                        value={f.pages}
-                                        onChange={e => updatePages(f.id, e.target.value)}
-                                        placeholder="all"
-                                        title='Page range: "all", "1-3,5", "2-end"'
-                                        spellCheck={false}
-                                        aria-invalid={!isValidPageRange(f.pages)}
-                                        className={cn(
-                                            "w-20 h-7 px-2 rounded-md border bg-paper-2/50 font-mono text-[11px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 transition-colors",
-                                            isValidPageRange(f.pages)
-                                                ? "border-border focus:border-accent focus:ring-accent/20"
-                                                : "border-destructive/60 focus:border-destructive focus:ring-destructive/20"
-                                        )}
-                                    />
-                                </div>
-                                {/* Reorder controls */}
-                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button
-                                        type="button"
-                                        onClick={() => moveFile(i, i - 1)}
-                                        disabled={i === 0}
-                                        className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                                        aria-label="Move file up"
-                                    >
-                                        <ChevronUp size={13} />
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => moveFile(i, i + 1)}
-                                        disabled={i === files.length - 1}
-                                        className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:hover:bg-transparent transition-colors"
-                                        aria-label="Move file down"
-                                    >
-                                        <ChevronDown size={13} />
-                                    </button>
-                                </div>
-                                <button
-                                    onClick={() => setFiles(p => p.filter(x => x.id !== f.id))}
-                                    className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                                    aria-label="Remove file"
-                                >
-                                    <X size={13} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Output preview */}
-                    <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                        <div className="h-9 w-9 rounded-lg bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0">
-                            <Download size={14} className="text-accent" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="font-medium text-[11.5px] text-accent">Output preview</p>
-                            <p className="font-mono text-[13px] text-foreground mt-0.5 truncate">{outputName}</p>
-                        </div>
-                        <ArrowRight size={14} className="text-accent shrink-0" />
-                    </div>
-
-                    {/* Action */}
-                    <div className="flex items-center gap-3 pt-1 flex-wrap">
-                        <button
-                            type="button"
-                            onClick={process}
-                            disabled={!canProcess}
-                            className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed"
-                        >
-                            {state === "processing"
-                                ? <><Loader2 size={13} className="animate-spin" /> Merging…</>
-                                : files.length < 2
-                                    ? <><Download size={13} /> Add 1 more file</>
-                                    : <><Download size={13} /> Merge {files.length} PDFs</>}
-                        </button>
-                        {canProcess && (
-                            <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
-                        )}
-                        {!allRangesValid && (
-                            <span className="font-medium text-[11.5px] text-destructive">
-                                Invalid page range on one or more files
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            onClick={() => ref.current?.click()}
-                            className="inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border bg-card text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <Plus size={11} /> Add more
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setFiles([])}
-                            className="font-medium text-[12px] tracking-wider text-muted-foreground hover:text-foreground transition-colors px-2 py-1 ml-auto"
-                        >
-                            Clear all
-                        </button>
-                    </div>
-                </>
             )}
         </div>
     );
 }
 
-function CornerMarks({ accent }: { accent?: boolean }) {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    const color = accent ? "bg-accent" : "bg-accent/70";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}>
-                <span className={`absolute top-0 left-0 h-px w-3 ${color}`} />
-                <span className={`absolute top-0 left-0 w-px h-3 ${color}`} />
-            </span>
-            <span className={`${cls} -top-1 -right-1`}>
-                <span className={`absolute top-0 right-0 h-px w-3 ${color}`} />
-                <span className={`absolute top-0 right-0 w-px h-3 ${color}`} />
-            </span>
-            <span className={`${cls} -bottom-1 -left-1`}>
-                <span className={`absolute bottom-0 left-0 h-px w-3 ${color}`} />
-                <span className={`absolute bottom-0 left-0 w-px h-3 ${color}`} />
-            </span>
-            <span className={`${cls} -bottom-1 -right-1`}>
-                <span className={`absolute bottom-0 right-0 h-px w-3 ${color}`} />
-                <span className={`absolute bottom-0 right-0 w-px h-3 ${color}`} />
-            </span>
-        </>
-    );
+function ResultSummary({ result }: { result: MergeResult }) {
+    return <>
+        <p className="merge-output-name">{result.filename}</p>
+        <dl className="merge-summary">
+            <div><dt>Source files</dt><dd>{result.sourceCount}</dd></div>
+            {result.selectedCount !== null && <div><dt>Included pages</dt><dd>{result.selectedCount}</dd></div>}
+            {result.excludedCount !== null && <div><dt>Excluded pages</dt><dd>{result.excludedCount}</dd></div>}
+            <div><dt>File size</dt><dd>{formatFileSize(result.blob.size)}</dd></div>
+        </dl>
+        <p className="merge-help">Review the pages, then save your PDF.</p>
+    </>;
+}
+
+function PdfThumbnail({ document, page, label, large = false }: { document: MergePreviewDocument; page: number; label: string; large?: boolean }) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+    useEffect(() => {
+        let disposed = false;
+        let renderTask: ReturnType<Awaited<ReturnType<MergePreviewDocument["getPage"]>>["render"]> | undefined;
+        setStatus("loading");
+        void (async () => {
+            try {
+                const pdfPage = await document.getPage(page);
+                if (disposed || !canvasRef.current) return;
+                const canvas = canvasRef.current;
+                const initial = pdfPage.getViewport({ scale: 1 });
+                const target = large ? 750 : 220;
+                const viewport = pdfPage.getViewport({ scale: target / Math.max(initial.width, initial.height) });
+                canvas.width = Math.ceil(viewport.width);
+                canvas.height = Math.ceil(viewport.height);
+                renderTask = pdfPage.render({ canvas, viewport });
+                await renderTask.promise;
+                if (!disposed) setStatus("ready");
+            } catch { if (!disposed) setStatus("error"); }
+        })();
+        return () => { disposed = true; renderTask?.cancel(); };
+    }, [document, page, large]);
+    return <span className={cn("merge-page-image", large && "merge-page-image--large")}>
+        <canvas ref={canvasRef} role="img" aria-label={label} className={status === "ready" ? "" : "merge-canvas-pending"} />
+        {status === "loading" && <span className="merge-page-placeholder" aria-label="Loading page preview"><Loader2 size={20} className="merge-spinner" /></span>}
+        {status === "error" && <span className="merge-page-placeholder"><FileText size={25} /><span>Page {page}<br />Preview unavailable</span></span>}
+    </span>;
+}
+
+function SourcePages({ file, selected, disabled, onToggle }: { file: MergeFile; selected: number[] | null; disabled: boolean; onToggle: (page: number) => void }) {
+    const [start, setStart] = useState(0);
+    const pageCount = file.document?.numPages ?? 0;
+    const pageSize = 2;
+    if (file.preview === "loading") return <p className="merge-preview-status"><Loader2 className="merge-spinner" size={18} />Reading pages on this device…</p>;
+    if (!file.document) return <p className="merge-preview-status"><FileText size={20} />{file.previewNote || "Preview unavailable. You can still send this PDF to merge; password-protected PDFs must be unlocked first."}</p>;
+    return <div className="merge-source-pages">
+        <div className="merge-source-page-list">
+            {Array.from({ length: Math.min(pageSize, pageCount - start) }, (_, offset) => start + offset + 1).map(page => {
+                const included = !!selected?.includes(page);
+                return <button key={page} type="button" className={cn("merge-page-toggle", !included && "merge-page-toggle--excluded")}
+                    disabled={disabled} aria-pressed={included} aria-label={`${included ? "Exclude" : "Include"} page ${page} of ${file.file.name}`}
+                    onClick={() => onToggle(page)}>
+                    <PdfThumbnail document={file.document!} page={page} label={`Page ${page} of ${file.file.name}`} />
+                    <span className="merge-page-caption"><span className="merge-check-box">{included && <Check size={13} />}</span>Page {page}{!included && <span>Excluded</span>}</span>
+                </button>;
+            })}
+        </div>
+        {pageCount > pageSize && <div className="merge-page-pager">
+            <button className="merge-icon-button" type="button" disabled={start === 0} onClick={() => setStart(value => Math.max(0, value - pageSize))} aria-label={`Previous pages of ${file.file.name}`}><ChevronLeft size={18} /></button>
+            <span>Pages {start + 1}–{Math.min(start + pageSize, pageCount)} of {pageCount}</span>
+            <button className="merge-icon-button" type="button" disabled={start + pageSize >= pageCount} onClick={() => setStart(value => value + pageSize)} aria-label={`Next pages of ${file.file.name}`}><ChevronRight size={18} /></button>
+        </div>}
+    </div>;
+}
+
+function PageOrderPreview({ pages }: { pages: { file: MergeFile; page: number }[] }) {
+    const [offset, setOffset] = useState(0);
+    const start = Math.min(offset, Math.max(0, Math.floor((pages.length - 1) / 6) * 6));
+    return <section className="merge-order" aria-label="Preview of page order">
+        <h3>Preview of page order</h3>
+        <ol className="merge-order-list">
+            {pages.slice(start, start + 6).map(({ file, page }, index) => <li key={`${file.id}-${page}`}>
+                <span className="merge-order-number">{start + index + 1}</span>
+                <PdfThumbnail document={file.document!} page={page} label={`Output page ${start + index + 1}: ${file.file.name}, page ${page}`} />
+                <span title={file.file.name}>{file.file.name}</span><small>Page {page}</small>
+            </li>)}
+        </ol>
+        {pages.length > 6 && <div className="merge-page-pager">
+            <button className="merge-icon-button" type="button" disabled={start === 0} onClick={() => setOffset(start - 6)} aria-label="Previous output pages"><ChevronLeft size={18} /></button>
+            <span>{start + 1}–{Math.min(start + 6, pages.length)} of {pages.length} pages</span>
+            <button className="merge-icon-button" type="button" disabled={start + 6 >= pages.length} onClick={() => setOffset(start + 6)} aria-label="Next output pages"><ChevronRight size={18} /></button>
+        </div>}
+    </section>;
+}
+
+function ResultPreview({ result }: { result: MergeResult }) {
+    const [document, setDocument] = useState<MergePreviewDocument | null>(null);
+    const [previewError, setPreviewError] = useState<string | null>(null);
+    const [start, setStart] = useState(0);
+    const mobile = useIsMobile();
+    const pageSize = mobile ? 1 : 2;
+    useEffect(() => {
+        let disposed = false;
+        let opened: MergePreviewDocument | null = null;
+        if (result.blob.size > MAX_PREVIEW_BYTES) {
+            setPreviewError("This PDF is ready. To keep memory use low, download it to review the pages on your device.");
+            return;
+        }
+        void openMergePreview(result.blob).then(pdf => {
+            opened = pdf;
+            if (disposed) { void pdf.destroy(); return; }
+            setDocument(pdf);
+        }).catch(() => { if (!disposed) setPreviewError("The preview could not load. Download the PDF to review it on your device."); });
+        return () => { disposed = true; if (opened) void opened.destroy(); };
+    }, [result.blob]);
+    const total = document?.numPages ?? result.selectedCount;
+    const sourceFor = (page: number) => result.outputPages?.length === total ? result.outputPages[page - 1] : null;
+    const captionFor = (page: number) => {
+        const source = sourceFor(page);
+        return source ? `${page} · ${source.filename}, page ${source.page}` : `Page ${page}`;
+    };
+    return <div className="merge-result-preview">
+        <div className="merge-result-file"><FileText size={24} /><div><h3>{result.filename}</h3><p>{total !== null ? `${total} pages · ` : ""}PDF · {formatFileSize(result.blob.size)}</p></div></div>
+        {document ? <>
+            <div className="merge-result-pages">
+                {Array.from({ length: Math.min(pageSize, document.numPages - start) }, (_, offset) => start + offset + 1).map(page => <figure key={page}>
+                    <PdfThumbnail document={document} page={page} label={`Merged PDF, ${captionFor(page)}`} large /><figcaption>{captionFor(page)}</figcaption>
+                </figure>)}
+            </div>
+            {document.numPages > pageSize && <div className="merge-page-pager">
+                <button className="merge-icon-button" type="button" disabled={start === 0} onClick={() => setStart(value => Math.max(0, value - pageSize))} aria-label="Previous result pages"><ChevronLeft size={20} /></button>
+                <span>{start + 1}{pageSize > 1 ? `–${Math.min(start + pageSize, document.numPages)}` : ""} of {document.numPages}</span>
+                <button className="merge-icon-button" type="button" disabled={start + pageSize >= document.numPages} onClick={() => setStart(value => value + pageSize)} aria-label="Next result pages"><ChevronRight size={20} /></button>
+            </div>}
+            {mobile && <div className="merge-result-strip" role="group" aria-label="Choose a result page">
+                {Array.from({ length: Math.min(6, document.numPages - Math.floor(start / 6) * 6) }, (_, index) => Math.floor(start / 6) * 6 + index + 1).map(page => <button
+                    key={page} type="button" className="merge-result-thumbnail" aria-label={`Show ${captionFor(page)}`} aria-pressed={start === page - 1} onClick={() => setStart(page - 1)}>
+                    <PdfThumbnail document={document} page={page} label={`Thumbnail, ${captionFor(page)}`} />
+                    <span>{sourceFor(page)?.filename || `Page ${page}`}</span><small>{sourceFor(page) ? `Source page ${sourceFor(page)!.page}` : `Output page ${page}`}</small>
+                </button>)}
+            </div>}
+        </> : <p className="merge-preview-status">{previewError ? <><FileText size={21} />{previewError}</> : <><Loader2 size={20} className="merge-spinner" />Loading your merged PDF preview…</>}</p>}
+    </div>;
 }

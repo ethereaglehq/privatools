@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as db from "@/lib/localStore/db";
 import { _resetForTests } from "@/lib/localStore/crypto";
@@ -46,16 +46,20 @@ describe("ByokPanel", () => {
     hook.result.current.selectProvider("anthropic");
     await waitFor(() => expect(hook.result.current.provider).toBe("anthropic"));
     render(<ByokPanel byok={hook.result.current} />);
-    const field = screen.getAllByPlaceholderText(/API key/i)[0] as HTMLInputElement;
+    const field = screen.getAllByLabelText("Anthropic (Claude) API key")[0] as HTMLInputElement;
     expect(field.type).toBe("password");
     expect(field.autocomplete).toBe("off");
   });
 
-  it("lists every provider from the registry", async () => {
+  it("offers familiar providers first and discloses the rest without changing the selection", async () => {
     await mountWithHook();
     expect(screen.getByText("Anthropic (Claude)")).toBeInTheDocument();
     expect(screen.getByText("OpenAI")).toBeInTheDocument();
     expect(screen.getByText("Google Gemini")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /DeepSeek/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Explore all 9 providers" }));
+    expect(screen.getByRole("button", { name: /DeepSeek/ })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Fewer providers" })).toHaveAttribute("aria-expanded", "true");
   });
 
   it("explains the CSP limit on custom endpoints instead of letting it fail silently", async () => {
@@ -74,9 +78,23 @@ describe("ByokPanel", () => {
     hook.result.current.selectProvider("anthropic");
     await waitFor(() => expect(hook.result.current.provider).toBe("anthropic"));
     const { container } = render(<ByokPanel byok={hook.result.current} />);
-    const field = screen.getAllByPlaceholderText(/API key/i)[0];
+    const field = screen.getAllByLabelText("Anthropic (Claude) API key")[0];
     await user.type(field, "sk-ant-TYPED-SECRET-VALUE");
     await user.click(screen.getAllByRole("button", { name: /save/i })[0]);
     await waitFor(() => expect(container.innerHTML).not.toContain("TYPED-SECRET-VALUE"));
+  });
+
+  it("retains an unsaved key and explains a storage failure without echoing the exception", async () => {
+    const user = userEvent.setup();
+    const hook = renderHook(() => useByok());
+    await waitFor(() => expect(hook.result.current.loading).toBe(false));
+    const save = vi.fn().mockRejectedValue(new Error("Rejected sk-PRIVATE-UNSAVED"));
+    render(<ByokPanel byok={{ ...hook.result.current, provider: "openai", save }} />);
+    const field = screen.getByLabelText("OpenAI API key");
+    await user.type(field, "sk-PRIVATE-UNSAVED");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("could not be saved");
+    expect(field).toHaveValue("sk-PRIVATE-UNSAVED");
+    expect(screen.queryByText("Rejected sk-PRIVATE-UNSAVED")).not.toBeInTheDocument();
   });
 });

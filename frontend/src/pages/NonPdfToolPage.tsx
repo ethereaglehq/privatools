@@ -30,6 +30,8 @@ function lazyNamed<T extends AnyModule, K extends keyof T>(
   })) as unknown as T[K] extends ComponentType<infer P> ? ComponentType<P> : never;
 }
 
+const LazyRemoveImageWatermarkUI = lazyNamed(() => import("@/components/tool-ui/MediaInspectors"), "RemoveImageWatermarkUI");
+const LazyViewExifUI = lazyNamed(() => import("@/components/tool-ui/MediaInspectors"), "ViewExifUI");
 const LazyImageCompressorUI = lazyNamed(() => import("@/components/tool-ui/ImageCompressorUI"), "ImageCompressorUI");
 const LazyImageConverterUI = lazyNamed(() => import("@/components/tool-ui/ImageConverterUI"), "ImageConverterUI");
 const LazyRemoveExifUI = lazyNamed(() => import("@/components/tool-ui/RemoveExifUI"), "RemoveExifUI");
@@ -162,6 +164,8 @@ function ToolLoadingCard() {
 
 export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string; toolName: string; outputLabel: string; accepts: string }) {
   switch (slug) {
+    case "remove-image-watermark": return <LazyRemoveImageWatermarkUI />;
+    case "view-exif": return <LazyViewExifUI />;
     case "image-compressor": return <LazyImageCompressorUI />;
     case "image-converter": return <LazyImageConverterUI />;
     case "remove-exif": return <LazyRemoveExifUI />;
@@ -211,6 +215,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "audio-merge":
       return <LazyMultiFileUI
         endpoint="/audio-merge"
+        handoffSlug="audio-merge"
         accepts="audio/*,.mp3,.wav,.ogg,.flac,.aac,.m4a"
         outputFilename="merged.mp3"
         fileLabel="audio files"
@@ -220,6 +225,7 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
     case "video-merge":
       return <LazyMultiFileUI
         endpoint="/video-merge"
+        handoffSlug="video-merge"
         accepts="video/*,.mp4,.mov,.avi,.mkv,.webm"
         outputFilename="merged.mp4"
         fileLabel="videos"

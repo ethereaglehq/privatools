@@ -18,13 +18,18 @@ describe("daylight route parser", () => {
         expect(parseHash("#/blog")).toEqual({ view: "blog", post: "" });
         expect(parseHash("#/blog/some-post")).toEqual({ view: "blog", post: "some-post" });
         expect(parseHash("#/security")).toEqual({ view: "security" });
-        for (const p of ["pipeline", "batch", "compare", "about", "privacy", "terms", "status", "support"]) {
+        expect(parseHash("#/compare/ilovepdf")).toEqual({ view: "compare", competitor: "ilovepdf" });
+        expect(parseHash("#/compare")).toEqual({ view: "compare", competitor: "" });
+        for (const p of ["pipeline", "batch", "about", "privacy", "terms", "status", "support"]) {
             expect(parseHash(`#/${p}`)).toEqual({ view: p });
         }
     });
 
-    it("keeps the skin-internal trust alias", () => {
-        expect(parseHash("#/trust")).toEqual({ view: "security" });
+    it("opens dedicated trust, AI, API, and account surfaces", () => {
+        for (const view of ["trust", "ai", "api", "settings"]) expect(parseHash(`#/${view}`)).toEqual({ view });
+        expect(parseHash("#/account/settings")).toEqual({ view: "settings" });
+        expect(parseHash("#/account/sign-in")).toEqual({ view: "account", keys: false, authMode: "signin" });
+        expect(parseHash("#/account/sign-up")).toEqual({ view: "account", keys: false, authMode: "signup" });
     });
 
     it("falls back to home for the empty route, never to a crash", () => {

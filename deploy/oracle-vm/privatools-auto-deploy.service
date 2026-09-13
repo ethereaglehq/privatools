@@ -14,6 +14,8 @@ Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 Environment=REPO_DIR=/home/ubuntu/privatools
 Environment=REMOTE=origin
 Environment=BRANCH=main
+# Reviewed release tags only; never implicitly ship an untagged branch.
+Environment=DEPLOY_MODE=tag
 # /readyz, not /api/health. Both carry build_sha, so either one confirms the
 # new revision is live — but /api/health is a liveness probe that returns 200
 # whenever the process is up, while /readyz runs the real dependency checks
@@ -25,4 +27,3 @@ Environment=BRANCH=main
 Environment=HEALTH_URL=http://127.0.0.1:8000/readyz
 ExecStart=/usr/local/bin/privatools-auto-deploy
 TimeoutStartSec=45min
-

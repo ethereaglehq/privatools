@@ -32,6 +32,10 @@ export const EXACT_ROUTES: readonly string[] = [
     "/support",
     "/account",
     "/my-stuff",
+    "/ai",
+    "/api",
+    "/trust",
+    "/settings",
 ];
 
 /**
@@ -62,6 +66,7 @@ export const PATH_ROUTE_PREFIXES: readonly string[] = [
  * mounting a design.
  */
 export function hashForPath(path: string): string {
+    if (path.replace(/\/+$/, "") === "/settings") return "#/account/settings";
     const nonPdfTool = path.match(/^\/tools\/(.+)$/);
     if (nonPdfTool) return "#/tool/" + nonPdfTool[1];
 

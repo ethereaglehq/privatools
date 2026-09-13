@@ -15,7 +15,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from ..utils.exceptions import ToolTimeoutError, ValidationError
+from ..utils.exceptions import DependencyError, ToolTimeoutError, ValidationError
 from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
@@ -28,13 +28,14 @@ VIDEO_OUTPUT_FORMATS = {"mp4", "mov", "webm", "mkv", "avi"}
 # ─── helpers ─────────────────────────────────────────────────────────────
 
 
-def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT) -> None:
+def _run_ffmpeg(args: list[str], timeout: int = FFMPEG_TIMEOUT, *, cwd: str | None = None) -> None:
     """Run ffmpeg with full args list; raise typed exception on failure."""
     try:
         proc = subprocess.run(
             ["ffmpeg", "-y", "-loglevel", "error", *args],
             capture_output=True, timeout=timeout, text=True,
             check=False,  # we handle returncode ourselves
+            **({"cwd": cwd} if cwd is not None else {}),
         )
     except subprocess.TimeoutExpired as exc:
         raise ToolTimeoutError(
@@ -74,7 +75,7 @@ def video_to_pdf(input_path: str, frames: int = 12) -> str:
     """
     from reportlab.lib.pagesizes import letter
     from reportlab.platypus import Image as RLImage
-    from reportlab.platypus import SimpleDocTemplate
+    from reportlab.platypus import PageBreak, SimpleDocTemplate
 
     if frames < 1 or frames > 100:
         raise ValidationError("frames must be between 1 and 100")
@@ -98,18 +99,22 @@ def video_to_pdf(input_path: str, frames: int = 12) -> str:
 
         page_w, page_h = letter
         margin = 36
-        max_w = page_w - 2 * margin
+        # ReportLab's frame also has 6 px padding on each edge.
+        max_w = page_w - 2 * margin - 12
+        max_h = page_h - 2 * margin - 12
 
         doc = SimpleDocTemplate(str(output_path), pagesize=letter,
                                 topMargin=margin, bottomMargin=margin,
                                 leftMargin=margin, rightMargin=margin)
         story = []
         from PIL import Image as PILImage
-        for f in files:
+        for index, f in enumerate(files):
             with PILImage.open(f) as im:
                 w, h = im.size
-            ratio = max_w / w
-            story.append(RLImage(str(f), width=max_w, height=h * ratio))
+            ratio = min(max_w / w, max_h / h)
+            if index:
+                story.append(PageBreak())
+            story.append(RLImage(str(f), width=w * ratio, height=h * ratio))
         doc.build(story)
         return str(output_path)
     finally:
@@ -315,38 +320,29 @@ def audio_merge(input_paths: list[str]) -> str:
 
 
 def burn_subtitles(video_path: str, srt_path: str) -> str:
-    """Burn-in subtitles from `srt_path` onto `video_path`.
-
-    The .srt path is interpolated inline into ffmpeg's `subtitles=` filter
-    expression, which uses ':' as an argument separator, ',' as a filter
-    separator, '\\' as an escape and quotes for protection — every one of
-    those needs special handling, or a path containing `:`, `,`, or `\\`
-    (entirely possible since temp filenames are random) silently produces
-    a bogus filter and ffmpeg fails.
-
-    We copy the srt file to a sanitized path inside the temp dir and use
-    that — much simpler and lets us avoid the escape-rule maze entirely.
-    """
-    output_path = temp_output("video_subs", "mp4")
-
-    # Re-stage the .srt at a path that contains nothing the ffmpeg filter
-    # syntax treats as special (alphanumerics + underscore + dot only).
-    safe_srt_path = temp_output("subs", "srt")
-    shutil.copy2(srt_path, str(safe_srt_path))
-
+    """Render timed SRT captions, preferring libass with a plain-text fallback."""
     try:
-        _run_ffmpeg([
-            "-i", video_path,
-            "-vf", f"subtitles={safe_srt_path}",
-            "-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
-            "-c:a", "copy",
-            "-movflags", "+faststart",
-            str(output_path),
-        ])
+        filters = subprocess.run(["ffmpeg", "-hide_banner", "-filters"], capture_output=True, timeout=10, text=True, check=False)
+    except (FileNotFoundError, subprocess.TimeoutExpired) as exc:
+        raise DependencyError("Subtitle rendering requires FFmpeg on this server.") from exc
+    if filters.returncode != 0:
+        raise DependencyError("The server could not check FFmpeg subtitle support. Please retry later.")
+    native = any(len(line.split()) > 1 and line.split()[1] == "subtitles" for line in filters.stdout.splitlines())
+    overlay = any(len(line.split()) > 1 and line.split()[1] == "overlay" for line in filters.stdout.splitlines())
+    if not native and not overlay:
+        raise DependencyError("Subtitle rendering requires FFmpeg with libass or the overlay filter.")
+    output_path = temp_output("video_subs", "mp4")
+    try:
+        if not native:
+            from .subtitle_renderer import render_plain_subtitles
+            render_plain_subtitles(video_path, srt_path, str(output_path), _run_ffmpeg)
+        else:
+            # A relative fixed filename also handles configured temp directories
+            # containing colons/quotes; those must never enter filter syntax.
+            with tempfile.TemporaryDirectory(prefix="subtitle_native_") as folder:
+                shutil.copy2(srt_path, Path(folder) / "captions.srt")
+                _run_ffmpeg(["-i", str(Path(video_path).resolve()), "-vf", "subtitles=captions.srt", "-map", "0:v:0", "-map", "0:a?", "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac", "-movflags", "+faststart", str(output_path.resolve())], cwd=folder)
         return str(output_path)
-    finally:
-        # The sanitized copy is only useful for the duration of this call.
-        try:
-            safe_srt_path.unlink(missing_ok=True)
-        except OSError:
-            pass
+    except Exception:
+        output_path.unlink(missing_ok=True)
+        raise

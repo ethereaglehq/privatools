@@ -1,3 +1,5 @@
+import { modelProgress } from "@/lib/modelProgress";
+import { AiTaskWorkspace } from "./AiTaskWorkspace";
 /**
  * TranslatePdfUI — translate a PDF's text without it leaving the device.
  *
@@ -14,7 +16,7 @@
  * because there is no PDF writer in the browser bundle. It is labelled as such
  * at the point of use rather than in a policy page.
  */
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
     Loader2, AlertCircle, CheckCircle2, Languages, RotateCcw, Download,
     FileText, Copy, Check, Ban,
@@ -69,13 +71,7 @@ async function getTranslator(modelId: string, onProgress: (pct: number) => void)
         env.allowLocalModels = false;
         env.allowRemoteModels = true;
         return pipeline("translation", modelId, {
-            progress_callback: (info: { status: string; progress?: number }) => {
-                if (info.status === "progress" && typeof info.progress === "number") {
-                    onProgress(Math.min(100, Math.max(0, Math.round(info.progress))));
-                } else if (info.status === "ready") {
-                    onProgress(100);
-                }
-            },
+            progress_callback: modelProgress(onProgress, 107 * 1024 * 1024),
         });
     })();
     pipelineCache.set(modelId, promise);
@@ -131,6 +127,8 @@ export function TranslatePdfUI() {
     const [copied, setCopied] = useState(false);
     const [savingPdf, setSavingPdf] = useState(false);
     const cancelRef = useRef(false);
+    const runId = useRef(0);
+    useEffect(() => () => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); }, []);
 
     const targets = targetsFor(source);
     const validPair = modelIdFor(source, target) !== null;
@@ -142,7 +140,7 @@ export function TranslatePdfUI() {
     };
 
     const reset = () => {
-        cancelRef.current = false;
+        runId.current++; cancelRef.current = true; abortRef.current?.abort();
         setFile(null); setPhase("idle"); setPages([]); setError(null);
         setModelPct(0); setChunkProgress({ done: 0, total: 0 });
         setPageProgress({ done: 0, total: 0 });
@@ -151,6 +149,7 @@ export function TranslatePdfUI() {
     const translate = useCallback(async () => {
         const modelId = modelIdFor(source, target);
         if (!file) return;
+        const current = ++runId.current;
         if (engine === "local" && !modelId) return;
         cancelRef.current = false;
         setError(null); setPages([]);
@@ -159,7 +158,7 @@ export function TranslatePdfUI() {
             setPhase("extracting");
             const raw = await extractPages(file, (n, total) =>
                 setPageProgress({ done: n, total }));
-            if (cancelRef.current) return;
+            if (cancelRef.current || current !== runId.current) return;
 
             const withText = raw
                 .map((text, i) => ({ page: i + 1, text }))
@@ -180,7 +179,7 @@ export function TranslatePdfUI() {
                 setChunkProgress({ done: 0, total: withText.length });
                 const out: TranslatedPage[] = [];
                 for (let i = 0; i < withText.length; i++) {
-                    if (cancelRef.current) return;
+                    if (cancelRef.current || current !== runId.current) return;
                     const pg = withText[i];
                     const translated = await translateWithByok({
                         providerId: byok.provider,
@@ -191,6 +190,7 @@ export function TranslatePdfUI() {
                         targetLanguage: byokTarget,
                         signal: controller.signal,
                     });
+                    if (current !== runId.current || cancelRef.current) return;
                     out.push({ page: pg.page, source: pg.text, translated });
                     setPages([...out]);
                     setChunkProgress({ done: i + 1, total: withText.length });
@@ -202,7 +202,7 @@ export function TranslatePdfUI() {
             setPhase("loading-model");
             const translator = await getTranslator(modelId, setModelPct) as
                 (input: string) => Promise<Array<{ translation_text?: string }>>;
-            if (cancelRef.current) return;
+            if (cancelRef.current || current !== runId.current) return;
 
             setPhase("translating");
             const jobs = withText.map(p => ({ ...p, chunks: chunkForTranslation(p.text) }));
@@ -214,9 +214,12 @@ export function TranslatePdfUI() {
             for (const job of jobs) {
                 const parts: string[] = [];
                 for (const chunk of job.chunks) {
-                    if (cancelRef.current) return;
+                    if (cancelRef.current || current !== runId.current) return;
                     const result = await translator(chunk);
-                    parts.push(result?.[0]?.translation_text ?? "");
+                    if (current !== runId.current || cancelRef.current) return;
+                    const translated = result?.[0]?.translation_text?.trim();
+                    if (!translated) throw new Error("The model returned no translation. Try a shorter page or another language pair.");
+                    parts.push(translated);
                     done += 1;
                     setChunkProgress({ done, total: totalChunks });
                 }
@@ -225,7 +228,7 @@ export function TranslatePdfUI() {
             }
             setPhase("done");
         } catch (e: unknown) {
-            if (cancelRef.current) return;
+            if (cancelRef.current || current !== runId.current) return;
             const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "Translation failed";
             setError(friendlyError(msg, "Couldn't translate that PDF."));
             setPhase("idle");
@@ -241,7 +244,7 @@ export function TranslatePdfUI() {
         const base = (file?.name ?? "document").replace(/\.pdf$/i, "");
         downloadBlob(
             new Blob([asText()], { type: "text/plain;charset=utf-8" }),
-            `${base}_${target}.txt`,
+            `${base}_${engine === "byok" ? byokTarget.toLowerCase().replace(/[^a-z0-9]+/g,"-") : target}.txt`,
         );
     };
 
@@ -261,7 +264,7 @@ export function TranslatePdfUI() {
         try {
             const txt = new File([asText()], `${base}.txt`, { type: "text/plain" });
             const res = await uploadFile("/txt-to-pdf", txt, { font_size: 11 });
-            downloadBlob(await res.blob(), `${base}_${target}.pdf`);
+            downloadBlob(await res.blob(), `${base}_${engine === "byok" ? byokTarget.toLowerCase().replace(/[^a-z0-9]+/g,"-") : target}.pdf`);
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't render that as a PDF."));
@@ -275,7 +278,7 @@ export function TranslatePdfUI() {
     if (phase === "done") {
         const words = pages.reduce((n, p) => n + p.translated.split(/\s+/).filter(Boolean).length, 0);
         return (
-            <div className="space-y-3 animate-fade-up">
+            <AiTaskWorkspace kind="translate" title="A document in your language" description="Choose a language pair and a translator. Review the translated text before saving it." engine={engine} phase={phase}>
                 <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden">
                     <div className="p-7">
                         <div className="flex items-start gap-5">
@@ -338,19 +341,20 @@ export function TranslatePdfUI() {
                         ))}
                     </div>
                 </div>
-            </div>
+            </AiTaskWorkspace>
         );
     }
 
     return (
-        <div className="space-y-4">
+        <AiTaskWorkspace kind="translate" title="A document in your language" description="Choose a language pair and a translator. Review the translated text before saving it." engine={engine} phase={phase}>
             <FileUploadZone
+                className="pt-ai-source"
                 file={file}
-                onFileSelect={setFile}
-                onClear={reset}
+                onFileSelect={value => { if (!busy) { setFile(value); setError(null); } }}
+                onClear={() => { if (!busy) reset(); }}
                 accept=".pdf"
                 label="Drop PDF to translate"
-                hint="Runs entirely in your browser — the file is never uploaded"
+                hint={engine === "local" ? "PDF text is read and translated on this device" : "PDF text is sent directly to your chosen AI provider"}
             />
 
             {error && (
@@ -360,7 +364,7 @@ export function TranslatePdfUI() {
             )}
 
             {/* Engine: on-device model vs the user's own API key */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="pt-ai-options rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                     Which translator
                 </div>
@@ -496,7 +500,7 @@ export function TranslatePdfUI() {
                         />
                     </div>
                     <button
-                        onClick={() => { cancelRef.current = true; abortRef.current?.abort(); setPhase("idle"); }}
+                        onClick={() => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); setPhase("idle"); }}
                         className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors"
                     >
                         <Ban size={11} /> Cancel
@@ -513,6 +517,6 @@ export function TranslatePdfUI() {
                     <Languages size={13} /> Translate
                 </button>
             )}
-        </div>
+        </AiTaskWorkspace>
     );
 }

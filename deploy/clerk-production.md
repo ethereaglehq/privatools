@@ -1,112 +1,107 @@
-# Turning Clerk on in production
+# Clerk accounts for PrivaTools
 
-Everything in the codebase is ready. What remains needs a Clerk **production**
-instance, which cannot be created from the CLI — it is a dashboard flow, and it
-needs DNS records on `privatools.me`.
+The consumer app defaults to Clerk. Email/password, optional usernames, Google
+and GitHub connections, passkeys and email password reset use the same Air/Play
+interface. File tools remain available without signing in. Missing Clerk
+configuration shows an honest unavailable state; it never silently creates a
+native recovery-code account.
 
-Until it is done, production behaves exactly as it does today: no publishable
-key, so the SDK is never downloaded, the provider is never mounted, and accounts
-use the local scrypt path. There is no half-configured state.
+## Current dashboard configuration
 
-## What the code already does
+Verified on 2026-09-13 in the existing PrivaTools application; production Google configuration completed and password settings rechecked on 2026-09-14:
 
-| | |
-|---|---|
-| `Dockerfile` | takes `VITE_CLERK_PUBLISHABLE_KEY` as a build arg, empty by default |
-| `release.yml` | passes it from the repo **variable** `CLERK_PUBLISHABLE_KEY` |
-| `docker-compose.yml` | passes `CLERK_PUBLISHABLE_KEY` and `CLERK_WEBHOOK_SECRET` at runtime |
-| `app/main.py` | derives the Frontend API host from the key for the CSP |
-| `app/auth/clerk_session.py` | verifies tokens against that host's JWKS |
-| `app/routes/clerk_webhook.py` | verifies `user.deleted` and removes the user's API keys |
+| Setting | Production | Development |
+| --- | --- | --- |
+| Optional username at signup and username sign-in | Enabled | Enabled |
+| Username length | 4–64 | 4–64 |
+| Passkey sign-in and enrollment | Enabled | Enabled |
+| Password minimum | 12 | 12 |
+| Reject compromised passwords | On | On |
+| Compulsory capitals, numbers or symbols | None | None |
+| Device Trust | Retained | Retained |
+| Google | Enabled with custom PrivaTools OAuth credentials | Enabled with shared development credentials |
+| GitHub | Enabled | Enabled with shared development credentials |
 
-`CLERK_SECRET_KEY` is deliberately not plumbed anywhere. Verification uses
-Clerk's public JWKS and nothing here calls their Backend API, so shipping the
-secret into the container would put a real credential where nothing reads it.
+The dashboard's separate Mobile Biometric setting applies to native iOS/Android
+apps. The website and installed PWA use passkeys: device biometrics, screen lock
+or a security key, depending on the browser. Users enroll their own passkeys
+from Account Settings after creating or signing into an account.
 
-## 1. Create the production instance
+## Local development
 
-In the Clerk dashboard, on application `app_3IJ3f9WdU1NrlrWGuKA1FjPxsO3`, use
-**Create production instance**. It will ask for the domain: `privatools.me`.
+Copy `frontend/.env.example` to `frontend/.env.local` and set the **public**
+`pk_test_…` key. Development and Production have separate users. A Google signup
+on localhost appears under **Development → Users**, not Production.
 
-Clerk then issues DNS records to add — typically CNAMEs for `clerk`,
-`accounts`, `clkmail`, and two DKIM names. Add them in **Cloudflare**, and set
-each to **DNS only (grey cloud)**. Proxying them breaks the ACME challenge and
-Clerk's certificate issuance, and the failure is slow and unhelpful.
+The local backend launcher reads only `VITE_CLERK_PUBLISHABLE_KEY` from that file,
+and only when it is a development key. It never imports a secret key or production
+environment file. An explicit backend `CLERK_PUBLISHABLE_KEY` takes precedence.
+The frontend and backend must refer to the same instance.
 
-Wait for Clerk to report the domain verified before continuing.
+## Production build and runtime
 
-## 2. Copy the settings across from development
+Set the public `pk_live_…` key as the GitHub repository variable
+`CLERK_PUBLISHABLE_KEY`, and as `CLERK_PUBLISHABLE_KEY` in the server environment.
+The existing release workflow passes it into the frontend build. Docker Compose
+also passes matching build arguments when building locally.
 
-The development instance is already configured the way we want, and a
-production instance starts from defaults:
+`VITE_CLERK_SOCIAL_PROVIDERS` controls which verified providers appear. The release
+workflow reads repository variable `CLERK_SOCIAL_PROVIDERS`, defaulting to
+`google,github` now that production Google configuration and hosted sign-in are
+verified. Explicit repository-variable or Compose/build overrides still take
+precedence; inspect an existing `github`-only override before releasing. Username and passkey feature flags are also build arguments; match
+them to the instance settings before deploying a different Clerk application.
 
-```bash
-npx clerk@latest config pull --instance dev  --output /tmp/clerk-dev.json
-npx clerk@latest config patch --instance prod --file /tmp/clerk-dev.json --yes
-```
+Do not deploy a localhost build containing the development key. A frontend build
+must use the production key for the production domain.
 
-Check afterwards that these survived, because they are the ones that matter:
+The backend validates Clerk tokens with public JWKS. It does not need
+`CLERK_SECRET_KEY`. Native register, login, recover, password-change and recovery
+rotation endpoints return 409 when Clerk is configured, before hashing or writes.
+Existing native records and keys are not deleted. Explicit legacy installations
+can still use `VITE_AUTH_PROVIDER=local` with no Clerk key.
 
-- `connection_oauth_google.enabled`, `connection_oauth_github.enabled`,
-  `connection_oauth_apple.enabled` — all `true`
-- `auth_attack_protection.bot_protection.captcha_enabled` — `true`. This is the
-  Turnstile check, and it is the only thing standing between a free API and
-  someone scripting accounts to farm quota.
-- `auth_email.verify_at_sign_up` — `true`
-- `auth_password.min_length` — 15, which `MIN_PASSWORD_LENGTH` mirrors
+## Google OAuth configuration
 
-**OAuth credentials do not carry over.** Development uses Clerk's shared
-credentials; production requires your own OAuth apps for Google, GitHub and
-Apple, each with the callback URL Clerk shows on the provider's settings page.
-Apple additionally needs a paid Apple Developer account.
+The existing production Google connection is enabled at **Configure → SSO
+connections → Google**. Its verified callback is:
 
-## 3. Point the build at it
+`https://clerk.privatools.me/v1/oauth_callback`
 
-Add the publishable key as a repository **variable** (not a secret — it is
-public and appears in the bundle of every Clerk site):
+After the owner's specific approval, project **PrivaTools** (`privatools-508520`)
+was created under the PrivaTools Google account. The **PrivaTools Web** client
+uses `https://privatools.me` as its JavaScript origin and the callback above.
+Homepage, Privacy and Terms URLs and the authorized `privatools.me` domain are
+saved. Google audience is External with publishing status **In production**.
+No billing, trial, paid service or paid upgrade was enabled.
 
-```bash
-gh variable set CLERK_PUBLISHABLE_KEY --body "pk_live_…"
-```
+The owner explicitly approved transferring the new client ID and secret directly
+into Clerk. The Google connection is enabled for sign-up and sign-in and requests
+only `openid`, email and basic profile. No Drive/Gmail scopes were added. The
+secret is held in provider configuration, not this repository or a `VITE_` variable.
+Existing GitHub and other connection settings were preserved.
 
-The next release tag bakes it in. Nothing before that tag changes.
+Provider configuration and an actual hosted production Google sign-in are
+verified. The flow started at `https://accounts.privatools.me/sign-in`, completed
+the Google chooser/consent and returned to the currently deployed account page.
+Clerk production user details confirmed the Google identity is verified and
+linked. The callback destination is still the older website: the new Air/Play
+release is not deployed, and its production key/account/API integration must
+still be checked. No new release variables or secrets were changed in this
+defaults update.
+Keep provider verification evidence privately; do not commit account records or OAuth credentials.
+See [Clerk's Google setup guide](https://clerk.com/docs/guides/configure/auth-strategies/social-connections/google).
 
-## 4. Set the webhook secret on the VM
+## Account deletion and verification
 
-In Clerk, add an endpoint pointing at `https://privatools.me/api/clerk/webhook`
-subscribed to **`user.deleted`**, then put its signing secret in the VM's
-`.env` beside the compose file:
+Configure a Clerk webhook for `user.deleted` at
+`https://privatools.me/api/clerk/webhook`, and set `CLERK_WEBHOOK_SECRET` on the
+server. This removes local API keys when an identity is deleted through Clerk.
+Application-initiated deletion first removes local API access, then deletes the
+Clerk identity. The webhook remains necessary for deletion initiated in Clerk
+or another client; without it those deletions cannot notify this key store.
 
-```bash
-CLERK_PUBLISHABLE_KEY=pk_live_…
-CLERK_WEBHOOK_SECRET=whsec_…
-```
-
-Then `docker compose up -d` to pick them up.
-
-This one is not optional. Clerk owns the identity and the API keys live here,
-with nothing linking them at rest — so without the webhook, deleting an account
-in Clerk leaves its keys authenticating and spending quota for a user who no
-longer exists. The account page offers a delete button, so it is reachable by
-design.
-
-## 5. Check it
-
-```bash
-# the CSP should name the production FAPI host on /account, and nowhere else
-curl -sI https://privatools.me/account     | grep -o 'clerk[^ ;]*' | sort -u
-curl -sI https://privatools.me/tool/merge-pdf | grep -c clerk   # expect 0
-
-# the webhook must refuse an unsigned call
-curl -s -o /dev/null -w '%{http_code}\n' -X POST https://privatools.me/api/clerk/webhook   # expect 400
-```
-
-Then sign up once with Google, issue an API key, delete the account in Clerk,
-and confirm the key is gone.
-
-## Backups first
-
-`app-data` holds every account and every API key. The nightly backup
-(`privatools-backup.timer`) exists and is verified, but it writes to
-`/home/ubuntu/backups/privatools` on the same VM — it survives a lost container,
-not a lost VM. Sort out an off-host copy before inviting anyone to sign up.
+Before release, verify signed-in key access, sign-out, email recovery, new-device
+verification and a real passkey on the HTTPS origin. Passkeys and Google provider
+screens require the account owner to complete device/account prompts. The local
+automated tests use synthetic identities and do not enroll credentials.

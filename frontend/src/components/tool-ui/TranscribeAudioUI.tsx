@@ -1,3 +1,7 @@
+import { transcriptTime as fmtTime, transcriptSrt as toSrt } from "@/lib/speechTranscript";
+import { modelProgress } from "@/lib/modelProgress";
+import { ToolCopyButton } from "./SpecialistTools";
+import { AiTaskWorkspace } from "./AiTaskWorkspace";
 /**
  * TranscribeAudioUI — speech to text, two ways:
  *
@@ -39,11 +43,7 @@ async function getAsr(hfId: string, onProgress: (pct: number) => void) {
         env.allowLocalModels = false;
         env.allowRemoteModels = true;
         return pipeline("automatic-speech-recognition", hfId, {
-            progress_callback: (info: { status: string; progress?: number }) => {
-                if (info.status === "progress" && typeof info.progress === "number") {
-                    onProgress(Math.min(100, Math.max(0, Math.round(info.progress))));
-                } else if (info.status === "ready") onProgress(100);
-            },
+            progress_callback: modelProgress(onProgress, 41 * 1024 * 1024),
         } as never);
     })();
     asrCache.set(hfId, promise);
@@ -65,30 +65,19 @@ async function decodeTo16kMono(file: File): Promise<Float32Array> {
     }
 }
 
-function fmtTime(s: number): string {
-    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
-    const ms = Math.round((sec % 1) * 1000);
-    const pad = (n: number, w = 2) => String(Math.floor(n)).padStart(w, "0");
-    return `${pad(h)}:${pad(m)}:${pad(sec)},${String(ms).padStart(3, "0")}`;
-}
-
-function toSrt(segs: Segment[]): string {
-    return segs.map((s, i) => `${i + 1}\n${fmtTime(s.start)} --> ${fmtTime(s.end)}\n${s.text.trim()}\n`).join("\n");
-}
-
 export function TranscribeAudioUI() {
     const byok = useByok();
     const [file, setFile] = useState<File | null>(null);
     const [engine, setEngine] = useState<"local" | "byok">("local");
     const [whisper, setWhisper] = useState<WhisperSize>("tiny");
     const [byokModel, setByokModel] = useState("");
-    const [phase, setPhase] = useState<"idle" | "loading-model" | "transcribing" | "done">("idle");
+    const [phase, setPhase] = useState<"idle" | "decoding" | "loading-model" | "transcribing" | "done">("idle");
     const [modelPct, setModelPct] = useState(0);
     const [text, setText] = useState("");
     const [segments, setSegments] = useState<Segment[]>([]);
     const [error, setError] = useState<string | null>(null);
-    const [copied, setCopied] = useState(false);
     const cancelRef = useRef(false);
+    const runId = useRef(0);
     const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
@@ -96,15 +85,16 @@ export function TranscribeAudioUI() {
         consumeFileHandoff("transcribe-audio").then(f => { if (!cancelled && f) setFile(f); });
         return () => { cancelled = true; };
     }, []);
-    useEffect(() => () => abortRef.current?.abort(), []);
+    useEffect(() => () => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); }, []);
 
     const byokProviderOk = byok.ready && supportsTranscription(providerById(byok.provider) ?? { shape: "anthropic" } as never);
 
     const run = useCallback(async () => {
         if (!file) return;
+        const current = ++runId.current;
         if (file.size > MAX_FILE_SIZE) { setError(`That file is ${formatFileSize(file.size)}. The maximum is ${MAX_FILE_SIZE_LABEL}.`); return; }
         cancelRef.current = false;
-        setError(null); setText(""); setSegments([]); setCopied(false);
+        setError(null); setText(""); setSegments([]);
         try {
             if (engine === "byok") {
                 if (!byokProviderOk) throw new Error("Pick a provider with a transcription API (OpenAI, Groq, or self-hosted) and save a key first.");
@@ -121,36 +111,40 @@ export function TranscribeAudioUI() {
                     baseUrl: getBaseUrl(byok.provider),
                     signal: controller.signal,
                 });
-                if (cancelRef.current) return;
+                if (cancelRef.current || current !== runId.current) return;
+                if (!out.trim()) throw new Error("The provider returned no transcript. Try a clearer recording or another model.");
                 setText(out);
                 setPhase("done");
                 return;
             }
-            // Local Whisper
+            // Validate and decode before downloading a model.
+            setPhase("decoding");
+            const audio = await decodeTo16kMono(file);
+            if (cancelRef.current || current !== runId.current) return;
             setPhase("loading-model");
             setModelPct(0);
             const asr = await getAsr(WHISPER[whisper].hfId, setModelPct) as (
                 audio: Float32Array,
                 opts: Record<string, unknown>,
             ) => Promise<{ text?: string; chunks?: Array<{ timestamp: [number, number | null]; text: string }> }>;
-            if (cancelRef.current) return;
+            if (cancelRef.current || current !== runId.current) return;
             setPhase("transcribing");
-            const audio = await decodeTo16kMono(file);
-            if (cancelRef.current) return;
             const result = await asr(audio, {
                 chunk_length_s: 30,
                 stride_length_s: 5,
                 return_timestamps: true,
             });
-            if (cancelRef.current) return;
+            if (cancelRef.current || current !== runId.current) return;
             const segs: Segment[] = (result.chunks ?? [])
                 .filter(c => c.text.trim())
                 .map(c => ({ start: c.timestamp[0] ?? 0, end: c.timestamp[1] ?? (c.timestamp[0] ?? 0) + 5, text: c.text }));
+            const transcript = (result.text ?? segs.map(s => s.text).join(" ")).trim();
+            if (!transcript) throw new Error("No speech was detected. Try a clearer recording or a different model.");
             setSegments(segs);
-            setText((result.text ?? segs.map(s => s.text).join(" ")).trim());
+            setText(transcript);
             setPhase("done");
         } catch (e: unknown) {
-            if (cancelRef.current) return;
+            if (cancelRef.current || current !== runId.current) return;
             const msg = e instanceof ByokError ? e.userMessage
                 : e instanceof Error && /decodeAudioData|decoding/i.test(e.message) ? "Couldn't decode that file — convert it to MP3 or WAV first (the Audio Converter tool does this)."
                 : e instanceof Error ? e.message : "Transcription failed";
@@ -160,19 +154,19 @@ export function TranscribeAudioUI() {
     }, [file, engine, whisper, byokModel, byok.provider, byokProviderOk]);
 
     const stem = (file?.name ?? "recording").replace(/\.[^.]+$/, "");
-    const busy = phase === "loading-model" || phase === "transcribing";
+    const busy = phase === "decoding" || phase === "loading-model" || phase === "transcribing";
 
     if (phase === "done") {
         const words = text.split(/\s+/).filter(Boolean).length;
         return (
-            <div className="space-y-3 animate-fade-up">
+            <AiTaskWorkspace kind="transcribe" title="Keep the words that matter" description="Turn a recording into a transcript you can read, copy or download." engine={engine} phase={phase}>
                 <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] p-6">
                     <div className="flex items-start gap-4">
                         <div className="h-12 w-12 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
                             <CheckCircle2 size={22} className="text-accent" strokeWidth={1.75} />
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="section-mark mb-1.5">Transcribed</p>
+                            <p className="section-mark mb-1.5">{words ? "Transcribed" : "No speech recognized"}</p>
                             <h2 className="font-display text-[24px] font-bold text-foreground tracking-[-0.025em] leading-tight">
                                 <span className="italic text-accent">{words.toLocaleString()}</span> words
                             </h2>
@@ -192,10 +186,7 @@ export function TranscribeAudioUI() {
                                         <Download size={13} /> Subtitles (.srt)
                                     </button>
                                 )}
-                                <button onClick={() => { void navigator.clipboard.writeText(text).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }).catch(() => {}); }}
-                                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
-                                    {copied ? <><Check size={13} className="text-accent" /> Copied</> : <><Copy size={13} /> Copy</>}
-                                </button>
+                                <ToolCopyButton value={text} label="Copy transcript"/>
                                 <button onClick={() => { setPhase("idle"); setFile(null); setText(""); setSegments([]); }}
                                     className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
                                     <RotateCcw size={12} /> Transcribe another
@@ -217,27 +208,28 @@ export function TranscribeAudioUI() {
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-[13.5px] leading-relaxed text-foreground whitespace-pre-wrap">{text}</p>
+                            <p className="text-[13.5px] leading-relaxed text-foreground whitespace-pre-wrap">{text || "Try a clearer recording or another model. The audio may be silent or contain no recognizable speech."}</p>
                         )}
                     </div>
                 </div>
-            </div>
+            </AiTaskWorkspace>
         );
     }
 
     return (
-        <div className="space-y-4">
+        <AiTaskWorkspace kind="transcribe" title="Keep the words that matter" description="Turn a recording into a transcript you can read, copy or download." engine={engine} phase={phase}>
             <FileUploadZone
+                className="pt-ai-source"
                 file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                onFileSelect={value => { if (!busy) { setFile(value); setError(null); } }}
+                onClear={() => { if (!busy) setFile(null); }}
                 accept=".mp3,.wav,.m4a,.ogg,.opus,.webm,.flac,.aac"
                 label="Drop a recording to transcribe"
                 hint="Meetings, voice notes, interviews · MP3, WAV, M4A, OGG, FLAC"
             />
 
             {/* Engine */}
-            <div className="rounded-xl border border-border bg-card overflow-hidden">
+            <div className="pt-ai-options rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                     Where the AI runs
                 </div>
@@ -257,7 +249,7 @@ export function TranscribeAudioUI() {
                                 engine === "byok" ? "border-accent bg-accent/[0.07]" : "border-border hover:border-accent/40")}>
                             <span className="block text-[13.5px] font-medium text-foreground">My own API key</span>
                             <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
-                                Much better accuracy. OpenAI, Groq, or self-hosted — the audio goes to them, not to us.
+                                Quality depends on your model. OpenAI, Groq, or self-hosted — audio goes directly to your provider.
                             </span>
                         </button>
                     </div>
@@ -305,6 +297,7 @@ export function TranscribeAudioUI() {
             {busy && (
                 <div className="rounded-xl border border-accent/30 bg-accent/[0.05] p-4 space-y-2 animate-fade-in">
                     <p className="font-medium text-[12px] text-accent">
+                        {phase === "decoding" && "Checking and decoding your recording…"}
                         {phase === "loading-model" && `Downloading Whisper ${WHISPER[whisper].label} — ${modelPct}%`}
                         {phase === "transcribing" && (engine === "byok" ? "Transcribing with your key…" : "Listening — this runs entirely in your browser…")}
                     </p>
@@ -313,7 +306,7 @@ export function TranscribeAudioUI() {
                             <div className="h-full rounded-full bg-accent transition-[width] duration-300" style={{ width: `${modelPct}%` }} />
                         </div>
                     )}
-                    <button onClick={() => { cancelRef.current = true; abortRef.current?.abort(); setPhase("idle"); }}
+                    <button onClick={() => { runId.current++; cancelRef.current = true; abortRef.current?.abort(); setPhase("idle"); }}
                         className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors">
                         <Ban size={11} /> Cancel
                     </button>
@@ -332,6 +325,6 @@ export function TranscribeAudioUI() {
                     <FileAudio size={12} /> Provider APIs usually cap uploads around 25 MB — trim or convert long recordings first.
                 </p>
             )}
-        </div>
+        </AiTaskWorkspace>
     );
 }

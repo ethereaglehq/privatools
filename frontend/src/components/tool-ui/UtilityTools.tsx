@@ -1,3 +1,4 @@
+import { parseYaml, writeYaml } from "./config-codecs";
 /**
  * Six client-only utility tools — instant, no server roundtrip:
  *   - PasswordGeneratorUI
@@ -9,43 +10,14 @@
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { LabNote, ToolCopyButton } from "./SpecialistTools";
 import { randomInt } from "@/lib/randomInt";
 import { Copy, RefreshCw, Check, AlertCircle, Sparkles, ListPlus } from "lucide-react";
 
 // ─── shared bits ─────────────────────────────────────────────────────────
 
-function CopyButton({ value }: { value: string }) {
-    const [copied, setCopied] = useState(false);
-    return (
-        <button
-            type="button"
-            className={cn(
-                "inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors disabled:opacity-50",
-                copied && "animate-copy-flash"
-            )}
-            disabled={!value}
-            onClick={() => {
-                if (!value) return;
-                navigator.clipboard.writeText(value).catch(() => {});
-                setCopied(true);
-                setTimeout(() => setCopied(false), 1200);
-            }}
-        >
-            {copied ? <Check size={13} className="text-accent" /> : <Copy size={13} />}
-            {copied ? "Copied" : "Copy"}
-        </button>
-    );
-}
-
-function ClientToolBanner({ label }: { label: string }) {
-    return (
-        <div className="rounded-lg border border-accent/30 bg-accent/[0.05] px-3 py-2 flex items-center gap-2.5">
-            <span className="text-[11px] text-accent font-medium">Browser-only</span>
-            <span className="opacity-50 hidden sm:inline">—</span>
-            <p className="text-[12.5px] text-foreground leading-snug">{label}</p>
-        </div>
-    );
-}
+const CopyButton = ToolCopyButton;
+function ClientToolBanner({ label }: { label: string }) { return <LabNote>{label}</LabNote>; }
 
 // ─── 1. Password Generator ───────────────────────────────────────────────
 
@@ -91,23 +63,23 @@ export function PasswordGeneratorUI() {
     useEffect(() => { generate(); }, [generate]);
 
     const strength = useMemo(() => {
-        const sets = [upper, lower, digits, symbols].filter(Boolean).length;
-        const entropy = pwd.length * Math.log2(sets * (excludeAmbig ? 22 : 26));
-        if (entropy < 60)  return { label: "Weak",     color: "bg-red-500"     };
-        if (entropy < 80)  return { label: "Decent",   color: "bg-amber-500"   };
-        if (entropy < 100) return { label: "Strong",   color: "bg-lime-500"    };
-        return            { label: "Very strong", color: "bg-emerald-500" };
+        const poolSize = (upper ? (excludeAmbig ? 24 : 26) : 0) + (lower ? (excludeAmbig ? 24 : 26) : 0) + (digits ? (excludeAmbig ? 8 : 10) : 0) + (symbols ? 22 : 0);
+        const entropy = poolSize > 0 ? pwd.length * Math.log2(poolSize) : 0;
+        if (entropy < 60)  return { score: entropy, label: "Weak",     color: "bg-red-500"     };
+        if (entropy < 80)  return { score: entropy, label: "Decent",   color: "bg-amber-500"   };
+        if (entropy < 100) return { score: entropy, label: "Strong",   color: "bg-lime-500"    };
+        return            { score: entropy, label: "Very strong", color: "bg-emerald-500" };
     }, [pwd, upper, lower, digits, symbols, excludeAmbig]);
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-utility pt-utility-passwordgenerator space-y-4">
             <ClientToolBanner label="Generated client-side with crypto.getRandomValues — never sent to a server." />
 
             {/* Output console — big, mono, prominent */}
             <div className="relative rounded-2xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between text-[11.5px] text-muted-foreground">
                     <span>Password — {pwd.length} char{pwd.length !== 1 ? "s" : ""}</span>
-                    <span className="text-accent">{strength.label}</span>
+                    <span className="text-accent">{strength.label} · estimated</span>
                 </div>
                 <div className="px-4 py-5">
                     <p
@@ -119,7 +91,7 @@ export function PasswordGeneratorUI() {
                 </div>
                 {/* Strength meter */}
                 <div className="h-1 bg-paper-2 relative">
-                    <div className={cn("h-full transition-all", strength.color)} style={{ width: `${Math.min(100, pwd.length * 4)}%` }} />
+                    <div className={cn("h-full transition-all", strength.color)} style={{ width: `${Math.min(100, strength.score / 1.28)}%` }} />
                 </div>
                 <div className="px-4 py-2 flex items-center gap-2 bg-paper-2/30 flex-wrap">
                     <button
@@ -259,8 +231,8 @@ export function UuidGeneratorUI() {
     useEffect(() => { generate(); }, [generate]);
 
     return (
-        <div className="space-y-4">
-            <ClientToolBanner label="UUIDs are generated with crypto.randomUUID() in your browser." />
+        <div className="pt-specialist pt-utility pt-utility-uuidgenerator space-y-4">
+            <ClientToolBanner label="Random UUIDs and timestamp-based IDs are generated with browser cryptography. No server is involved." />
 
             {/* Options bar */}
             <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -279,15 +251,15 @@ export function UuidGeneratorUI() {
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="font-medium text-[11.5px] text-muted-foreground">Variant</span>
-                        <div role="tablist" aria-label="Variant" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5">
+                        <div role="group" aria-label="Variant" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5">
                             {(["v4", "v7-like"] as const).map(v => {
                                 const active = variant === v;
                                 return (
                                     <button
                                         key={v}
                                         type="button"
-                                        role="tab"
-                                        aria-selected={active}
+
+                                        aria-pressed={active}
                                         onClick={() => setVariant(v)}
                                         className={cn(
                                             "inline-flex items-center h-7 px-2.5 text-[12px] font-medium rounded transition-colors",
@@ -381,7 +353,7 @@ export function LoremIpsumUI() {
     }, [units, count, startWithLorem, variant, reroll]);
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-utility pt-utility-loremipsum space-y-4">
             <ClientToolBanner label="Generated client-side — no external API." />
 
             {/* Options bar */}
@@ -392,15 +364,15 @@ export function LoremIpsumUI() {
                 <div className="p-4 flex items-center gap-4 flex-wrap">
                     <div className="flex items-center gap-2">
                         <span className="font-medium text-[11.5px] text-muted-foreground">Units</span>
-                        <div role="tablist" aria-label="Units" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5">
+                        <div role="group" aria-label="Units" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5">
                             {(["paragraphs", "sentences", "words"] as const).map(u => {
                                 const active = units === u;
                                 return (
                                     <button
                                         key={u}
                                         type="button"
-                                        role="tab"
-                                        aria-selected={active}
+
+                                        aria-pressed={active}
                                         onClick={() => setUnits(u)}
                                         className={cn(
                                             "inline-flex items-center h-7 px-2.5 text-[12px] font-medium rounded transition-colors capitalize",
@@ -466,7 +438,7 @@ export function LoremIpsumUI() {
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                     Generated · {count} {units}
                 </div>
-                <textarea
+                <textarea aria-label="Generated text"
                     readOnly
                     value={text}
                     className="block w-full h-[40vh] p-4 bg-transparent font-display text-[16px] leading-[1.7] text-foreground resize-none outline-none"
@@ -490,11 +462,11 @@ export function WordCounterUI() {
         const words = (t.match(/\S+/g) || []).length;
         const chars = t.length;
         const charsNoSpace = t.replace(/\s/g, "").length;
-        const sentenceMatches = t.match(/[^.!?\n]+[.!?]+/g) || [];
+        const sentenceMatches = t.match(/[^.!?\n]+(?:[.!?]+|$)/g) || [];
         const sentences = sentenceMatches.length;
         const paragraphs = t.trim() ? t.trim().split(/\n\s*\n/).length : 0;
         const lines = t === "" ? 0 : t.split("\n").length;
-        const readingMin = Math.max(1, Math.round(words / 220));  // 220 wpm avg
+        const readingMin = words ? Math.max(1, Math.ceil(words / 220)) : 0;  // 220 wpm avg
         // Longest sentence (by words)
         let longestSentenceLen = 0;
         let passiveCount = 0;
@@ -520,7 +492,7 @@ export function WordCounterUI() {
     );
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-utility pt-utility-wordcounter space-y-4">
             <ClientToolBanner label="All counting happens in your browser — paste sensitive text without worry." />
 
             {/* Stats grid */}
@@ -611,7 +583,7 @@ export function WordCounterUI() {
                         )}
                     </div>
                 </div>
-                <textarea
+                <textarea aria-label="Text to count"
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Paste or type text here…"
@@ -667,7 +639,7 @@ export function ColorConverterUI() {
     const contrastLabel = bestContrast >= 7 ? "AAA" : bestContrast >= 4.5 ? "AA" : bestContrast >= 3 ? "AA Large" : "Fail";
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-utility pt-utility-colorconverter space-y-4">
             <ClientToolBanner label="Color math runs in your browser, instantly." />
 
             {/* Big swatch + input */}
@@ -703,6 +675,7 @@ export function ColorConverterUI() {
                             <input
                                 type="text"
                                 value={hex}
+                                aria-label="Hex color"
                                 onChange={e => setHex(e.target.value)}
                                 className="mt-1 block w-full font-mono text-[16px] px-3 py-2 rounded-md border border-border bg-card text-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                 spellCheck={false}
@@ -750,7 +723,7 @@ export function ColorConverterUI() {
                     </div>
                 </div>
             ) : (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />Invalid hex color
                 </div>
             )}
@@ -798,26 +771,26 @@ export function UrlEncoderUI() {
             const eq = piece.indexOf("=");
             const k = eq >= 0 ? piece.slice(0, eq) : piece;
             const v = eq >= 0 ? piece.slice(eq + 1) : "";
-            try { pairs.push([decodeURIComponent(k), decodeURIComponent(v)]); }
+            try { pairs.push([decodeURIComponent(k.replace(/\+/g," ")), decodeURIComponent(v.replace(/\+/g," "))]); }
             catch { pairs.push([k, v]); }
         }
         return pairs.length > 0 ? pairs : null;
     }, [input, mode]);
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-utility pt-utility-urlencoder space-y-4">
             <ClientToolBanner label="URL/base64 conversion is pure JavaScript — your strings never leave your browser." />
             {/* Mode tabs */}
-            <div role="tablist" aria-label="Encoder mode" className="inline-flex rounded-lg border border-border bg-paper-2/40 p-0.5">
+            <div role="group" aria-label="Encoder mode" className="inline-flex rounded-lg border border-border bg-paper-2/40 p-0.5">
                 {(["encode", "decode", "jwt"] as const).map(m => {
                     const active = mode === m;
                     return (
                         <button
                             key={m}
-                            role="tab"
+
                             type="button"
                             onClick={() => setMode(m)}
-                            aria-selected={active}
+                            aria-pressed={active}
                             className={cn(
                                 "inline-flex items-center h-8 px-3.5 text-[13px] font-medium rounded transition-colors",
                                 active ? "bg-card text-foreground shadow-sm border border-border" : "text-muted-foreground hover:text-foreground"
@@ -835,7 +808,7 @@ export function UrlEncoderUI() {
                         <span>Input</span>
                         {input && <span>{input.length} char{input.length !== 1 ? "s" : ""}</span>}
                     </div>
-                    <textarea
+                    <textarea aria-label="URL encoder source"
                         value={input}
                         onChange={e => setInput(e.target.value)}
                         placeholder={mode === "jwt" ? "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature…" : "Paste text here…"}
@@ -897,6 +870,7 @@ export function JwtDecoderUI() {
         try {
             const header = JSON.parse(b64urlDecode(parts[0]));
             const payload = JSON.parse(b64urlDecode(parts[1]));
+            if (!header || typeof header !== "object" || Array.isArray(header) || !payload || typeof payload !== "object" || Array.isArray(payload)) return {error:"JWT header and payload must be JSON objects."};
             return { header, payload, signature: parts[2] };
         } catch (e: any) {
             return { error: `Could not parse: ${e.message || e}` };
@@ -910,8 +884,8 @@ export function JwtDecoderUI() {
     const iat = claims && typeof claims.iat === "number" ? (claims.iat as number) : null;
 
     return (
-        <div className="space-y-4">
-            <ClientToolBanner label="JWT tokens never leave the browser — decoded locally with atob()." />
+        <div className="pt-specialist pt-utility pt-utility-jwtdecoder space-y-4">
+            <ClientToolBanner label="Read the header and claims on your device. Decoding does not verify a token or its signature." />
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                     <span>Token</span>
@@ -919,6 +893,7 @@ export function JwtDecoderUI() {
                 </div>
                 <textarea
                     value={token}
+                    aria-label="JWT token"
                     onChange={e => setToken(e.target.value)}
                     placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.signature…"
                     spellCheck={false}
@@ -943,13 +918,13 @@ export function JwtDecoderUI() {
                                 {iat !== null && (
                                     <div className="p-4">
                                         <p className="font-medium text-[11px] text-muted-foreground">Issued</p>
-                                        <p className="font-mono text-[13px] text-foreground mt-1">{new Date(iat * 1000).toISOString()}</p>
+                                        <p className="font-mono text-[13px] text-foreground mt-1">{(Number.isFinite(new Date(iat * 1000).getTime()) ? new Date(iat * 1000).toISOString() : "Date outside supported range")}</p>
                                     </div>
                                 )}
                                 {exp !== null && (
                                     <div className="p-4">
                                         <p className="font-medium text-[11px] text-muted-foreground">Expires</p>
-                                        <p className="font-mono text-[13px] text-foreground mt-1">{new Date(exp * 1000).toISOString()}</p>
+                                        <p className="font-mono text-[13px] text-foreground mt-1">{(Number.isFinite(new Date(exp * 1000).getTime()) ? new Date(exp * 1000).toISOString() : "Date outside supported range")}</p>
                                     </div>
                                 )}
                                 {exp !== null && (
@@ -960,7 +935,7 @@ export function JwtDecoderUI() {
                                             exp > now ? "text-accent" : "text-destructive"
                                         )}>
                                             {exp > now
-                                                ? `Valid · expires in ${formatRelative(exp - now)}`
+                                                ? `Not expired · expires in ${formatRelative(exp - now)}`
                                                 : `Expired · ${formatRelative(now - exp)} ago`}
                                         </p>
                                     </div>
@@ -993,23 +968,22 @@ export function RegexTesterUI() {
     const [pattern, setPattern] = useState("");
     const [flags, setFlags] = useState("g");
     const [text, setText] = useState("");
-    const result = useMemo(() => {
-        if (!pattern) return { kind: "idle" as const };
-        try {
-            const re = new RegExp(pattern, flags);
-            const matches: { match: string; index: number; groups: string[] }[] = [];
-            if (flags.includes("g")) {
-                for (const m of text.matchAll(re)) {
-                    matches.push({ match: m[0], index: m.index ?? 0, groups: m.slice(1) });
-                }
-            } else {
-                const m = re.exec(text);
-                if (m) matches.push({ match: m[0], index: m.index, groups: m.slice(1) });
-            }
-            return { kind: "ok" as const, matches };
-        } catch (e: any) {
-            return { kind: "err" as const, error: e.message || String(e) };
-        }
+    type RegexResult = {kind:"idle" | "busy"} | {kind:"err";error:string} | {kind:"ok";matches:{match:string;index:number;groups:(string | undefined)[]}[];truncated:boolean};
+    const [result, setResult] = useState<RegexResult>({kind:"idle"});
+    useEffect(() => {
+        if (!pattern) { setResult({kind:"idle"}); return; }
+        setResult({kind:"busy"});
+        let worker: Worker | undefined, timer: ReturnType<typeof setTimeout> | undefined;
+        const debounce = setTimeout(() => {
+            try {
+                worker = new Worker(new URL("./regex.worker.ts", import.meta.url), {type:"module"});
+                timer = setTimeout(() => { worker?.terminate(); setResult({kind:"err",error:"This pattern took too long. Simplify it or use a shorter test string."}); }, 1000);
+                worker.onmessage = event => { clearTimeout(timer); worker?.terminate(); setResult(event.data as RegexResult); };
+                worker.onerror = () => { clearTimeout(timer); worker?.terminate(); setResult({kind:"err",error:"Couldn't start the pattern checker in this browser."}); };
+                worker.postMessage({pattern, flags, text});
+            } catch { setResult({kind:"err",error:"This browser cannot run the isolated pattern checker."}); }
+        }, 180);
+        return () => { clearTimeout(debounce); clearTimeout(timer); worker?.terminate(); };
     }, [pattern, flags, text]);
 
     const highlighted = useMemo(() => {
@@ -1026,19 +1000,20 @@ export function RegexTesterUI() {
     }, [result, text]);
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-utility pt-utility-regextester space-y-4">
             <ClientToolBanner label="JavaScript RegExp running in your browser — patterns and text never leave." />
 
             {/* Pattern + flags — code-editor feel */}
             <div className="rounded-xl border border-border bg-card overflow-hidden font-mono">
                 <div className="px-3 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[10.5px] text-muted-foreground">
                     <span>Pattern</span>
-                    <span>{result.kind === "ok" ? `${result.matches.length} match${result.matches.length !== 1 ? "es" : ""}` : result.kind === "err" ? "invalid" : ""}</span>
+                    <span>{result.kind === "ok" ? `${result.matches.length} match${result.matches.length !== 1 ? "es" : ""}` : result.kind === "err" ? "invalid" : result.kind === "busy" ? "Checking…" : ""}</span>
                 </div>
                 <div className="flex items-center px-3 py-2 gap-1 text-[14px] text-foreground">
                     <span className="text-muted-foreground select-none">/</span>
                     <input
                         value={pattern}
+                        aria-label="Regular expression"
                         onChange={e => setPattern(e.target.value)}
                         placeholder={String.raw`\d{3}-\d{3}-\d{4}`}
                         className="flex-1 bg-transparent outline-none text-foreground placeholder:text-muted-foreground"
@@ -1077,7 +1052,7 @@ export function RegexTesterUI() {
                         {text && <span className="font-medium text-[11.5px]">{text.length} char{text.length !== 1 ? "s" : ""}</span>}
                     </div>
                 </div>
-                <textarea
+                <textarea aria-label="Regex test text"
                     value={text}
                     onChange={e => setText(e.target.value)}
                     placeholder="Paste the text to test against…"
@@ -1088,7 +1063,7 @@ export function RegexTesterUI() {
 
             {/* Result */}
             {result.kind === "err" && (
-                <div className="rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 flex items-start gap-2">
+                <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 flex items-start gap-2">
                     <AlertCircle size={13} className="text-destructive mt-px shrink-0" />
                     <p className="font-mono text-[12.5px] text-destructive">{result.error}</p>
                 </div>
@@ -1098,7 +1073,7 @@ export function RegexTesterUI() {
                     {/* Highlighted matches */}
                     <div className="rounded-xl border border-accent/30 bg-card overflow-hidden">
                         <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-accent">
-                            {result.matches.length} match{result.matches.length === 1 ? "" : "es"}
+                            {result.matches.length} match{result.matches.length === 1 ? "" : "es"}{result.truncated ? " · first 1,000 shown" : ""}
                         </div>
                         <div className="px-3 py-3 font-mono text-[13px] text-foreground whitespace-pre-wrap break-words leading-relaxed">
                             {typeof highlighted === "string" ? (
@@ -1143,6 +1118,7 @@ export function RegexTesterUI() {
 
 export function TimestampConverterUI() {
     const [input, setInput] = useState(String(Math.floor(Date.now() / 1000)));
+    const [unit,setUnit] = useState<"auto" | "seconds" | "ms">("auto");
     const parsed = useMemo(() => {
         const s = input.trim();
         if (!s) return null;
@@ -1150,21 +1126,22 @@ export function TimestampConverterUI() {
         if (/^-?\d+$/.test(s)) {
             const n = Number(s);
             // If 10 digits or fewer → seconds; 13 → ms
-            const ms = Math.abs(n) > 1e12 ? n : n * 1000;
+            const isMs = unit === "ms" || (unit === "auto" && Math.abs(n) >= 1e11);
+            const ms = isMs ? n : n * 1000;
             const d = new Date(ms);
             if (isNaN(d.getTime())) return { error: "Number out of range for a date" };
-            return { d, source: Math.abs(n) > 1e12 ? "ms" : "seconds" };
+            return { d, source: isMs ? "milliseconds" : "seconds" };
         }
         // Otherwise treat as ISO 8601 / parseable string
         const d = new Date(s);
         if (isNaN(d.getTime())) return { error: "Could not parse as a date" };
         return { d, source: "iso" };
-    }, [input]);
+    }, [input, unit]);
 
     const setNow = () => setInput(String(Math.floor(Date.now() / 1000)));
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-utility pt-utility-timestampconverter space-y-4">
             <ClientToolBanner label="Parsing happens in your browser. No data is transmitted." />
 
             {/* Input */}
@@ -1181,6 +1158,7 @@ export function TimestampConverterUI() {
                 </div>
                 <input
                     value={input}
+                    aria-label="Timestamp or date"
                     onChange={e => setInput(e.target.value)}
                     placeholder="1704067200 or 2024-01-01T00:00:00Z"
                     spellCheck={false}
@@ -1188,6 +1166,7 @@ export function TimestampConverterUI() {
                 />
             </div>
 
+            <label className="pt-lab-select-label">Interpret numbers as<select aria-label="Timestamp unit" value={unit} onChange={e => setUnit(e.target.value as typeof unit)}><option value="auto">Auto detect</option><option value="seconds">Unix seconds</option><option value="ms">Unix milliseconds</option></select><span className="pt-lab-caption">Auto uses milliseconds for 12 or more digits. Choose a unit for dates near the epoch.</span></label>
             {parsed && "error" in parsed && (
                 <div className="flex items-center gap-2 rounded-lg border border-copper/30 bg-copper-soft/40 px-3 py-2.5 text-[13px] text-foreground">
                     <AlertCircle size={13} className="text-copper shrink-0" />{parsed.error}
@@ -1252,120 +1231,6 @@ function relTime(ms: number): string {
 // configs (scalars, lists, nested objects, quoted strings, comments). It is
 // NOT a full YAML 1.2 parser (no anchors, tags, multi-doc streams) — those
 // are rare in practice and the UI banner is honest about the scope.
-function jsonToYaml(value: unknown, indent = 0): string {
-    const pad = "  ".repeat(indent);
-    if (value === null || value === undefined) return "null";
-    if (typeof value === "string") {
-        if (value === "" || /^[\s"'#&*!|>%@`,[\]{}:?-]/.test(value) || /[:#\n]/.test(value)) {
-            return JSON.stringify(value);
-        }
-        return value;
-    }
-    if (typeof value === "number" || typeof value === "boolean") return String(value);
-    if (Array.isArray(value)) {
-        if (value.length === 0) return "[]";
-        return value.map(item => {
-            const rendered = jsonToYaml(item, indent + 1);
-            if (rendered.includes("\n")) {
-                return `${pad}-\n${rendered}`;
-            }
-            return `${pad}- ${rendered}`;
-        }).join("\n");
-    }
-    if (typeof value === "object") {
-        const entries = Object.entries(value as Record<string, unknown>);
-        if (entries.length === 0) return "{}";
-        return entries.map(([k, v]) => {
-            const key = /^[A-Za-z_][\w-]*$/.test(k) ? k : JSON.stringify(k);
-            const rendered = jsonToYaml(v, indent + 1);
-            if (typeof v === "object" && v !== null && Object.keys(v as object).length > 0) {
-                return `${pad}${key}:\n${rendered}`;
-            }
-            return `${pad}${key}: ${rendered}`;
-        }).join("\n");
-    }
-    return String(value);
-}
-
-function yamlToJsonObject(text: string): unknown {
-    // Strip BOM + trailing whitespace
-    const lines = text.replace(/^\ufeff/, "").split(/\r?\n/);
-    // Remove document marker and trailing markers
-    const cleaned: { indent: number; raw: string }[] = [];
-    for (const raw of lines) {
-        if (raw.trim() === "" || raw.trim().startsWith("#")) continue;
-        if (raw.trim() === "---" || raw.trim() === "...") continue;
-        const noComment = raw.replace(/(\s+#.*)$/, "");
-        const indent = noComment.match(/^ */)![0].length;
-        cleaned.push({ indent, raw: noComment.slice(indent) });
-    }
-    if (cleaned.length === 0) return null;
-
-    let i = 0;
-    function parseScalar(s: string): unknown {
-        const v = s.trim();
-        if (v === "" || v === "~" || v === "null") return null;
-        if (v === "true") return true;
-        if (v === "false") return false;
-        if (/^-?\d+$/.test(v)) return Number(v);
-        if (/^-?\d+\.\d+$/.test(v)) return Number(v);
-        if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
-            try { return JSON.parse(v.replace(/^'(.*)'$/s, '"$1"')); } catch { return v.slice(1, -1); }
-        }
-        if (v.startsWith("[") && v.endsWith("]")) {
-            try { return JSON.parse(v); } catch { /* fall through */ }
-        }
-        if (v.startsWith("{") && v.endsWith("}")) {
-            try { return JSON.parse(v); } catch { /* fall through */ }
-        }
-        return v;
-    }
-    function parseNode(baseIndent: number): unknown {
-        if (i >= cleaned.length) return null;
-        const first = cleaned[i];
-        if (first.indent < baseIndent) return null;
-        // List
-        if (first.raw.startsWith("- ") || first.raw === "-") {
-            const arr: unknown[] = [];
-            while (i < cleaned.length && cleaned[i].indent === first.indent && (cleaned[i].raw === "-" || cleaned[i].raw.startsWith("- "))) {
-                const r = cleaned[i].raw;
-                if (r === "-") {
-                    i++;
-                    arr.push(parseNode(first.indent + 2));
-                } else {
-                    const after = r.slice(2);
-                    if (after.includes(": ") || after.endsWith(":")) {
-                        // inline map item — rewrite as nested map starting here
-                        cleaned[i] = { indent: first.indent + 2, raw: after };
-                        arr.push(parseNode(first.indent + 2));
-                    } else {
-                        arr.push(parseScalar(after));
-                        i++;
-                    }
-                }
-            }
-            return arr;
-        }
-        // Map
-        const obj: Record<string, unknown> = {};
-        while (i < cleaned.length && cleaned[i].indent === first.indent) {
-            const r = cleaned[i].raw;
-            const colon = r.indexOf(":");
-            if (colon === -1) break;
-            const key = r.slice(0, colon).trim().replace(/^["'](.*)["']$/, "$1");
-            const rest = r.slice(colon + 1).trim();
-            i++;
-            if (rest === "") {
-                obj[key] = parseNode(first.indent + 2);
-            } else {
-                obj[key] = parseScalar(rest);
-            }
-        }
-        return obj;
-    }
-    return parseNode(0);
-}
-
 export function YamlToJsonConverterUI() {
     return <YamlJsonConverterUI reverse={false} />;
 }
@@ -1383,9 +1248,9 @@ function YamlJsonConverterUI({ reverse = false }: { reverse?: boolean } = {}) {
         try {
             if (reverse) {
                 const obj = JSON.parse(text);
-                return { ok: true as const, out: jsonToYaml(obj) };
+                return { ok: true as const, out: writeYaml(obj) };
             }
-            const obj = yamlToJsonObject(text);
+            const obj = parseYaml(text);
             return { ok: true as const, out: JSON.stringify(obj, null, 2) };
         } catch (e) {
             return { ok: false as const, error: e instanceof Error ? e.message : String(e) };
@@ -1396,8 +1261,8 @@ function YamlJsonConverterUI({ reverse = false }: { reverse?: boolean } = {}) {
     const toLabel = reverse ? "YAML output" : "JSON output";
 
     return (
-        <div className="space-y-5">
-            <ClientToolBanner label="Parsing happens entirely in your browser — no upload, no server." />
+        <div className="pt-specialist pt-utility pt-utility-config space-y-5">
+            <ClientToolBanner label="Common YAML mappings, lists and scalars, processed on your device. Unsupported advanced syntax shows an error; comments are omitted." />
             <div className="grid md:grid-cols-2 gap-4">
                 <div>
                     <label className="text-[11px] font-semibold text-muted-foreground" htmlFor="yamljson-input">{fromLabel}</label>
@@ -1499,7 +1364,7 @@ export function CaseConverterUI() {
     ];
     const hasMultiline = input.includes("\n");
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-utility pt-utility-caseconverter space-y-4">
             <ClientToolBanner label="Conversion runs locally — your text never leaves the browser." />
 
             {/* Input */}
@@ -1518,7 +1383,7 @@ export function CaseConverterUI() {
                         </label>
                     )}
                 </div>
-                <textarea
+                <textarea aria-label="Text to change case"
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     spellCheck={false}

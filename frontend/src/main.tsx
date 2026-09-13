@@ -4,16 +4,21 @@ import App from "./App.tsx";
 import "./index.css";
 import "./styles/skin-fonts.css";
 import "./styles/skins.css";
+import "./skins/experience/tokens.css";
+import "./skins/experience/experience.css";
+import "./skins/experience/secondary-pages.css";
+import "./skins/experience/workflows.css";
 import { registerServiceWorker } from "./lib/sw-register";
+import { isClerkDocument } from "./lib/clerk/instance";
 
 /**
- * Clerk is opt-in, and neither mounted nor downloaded without a key.
+ * Clerk is the account provider; it is neither mounted nor downloaded without a key.
  *
  * `clerk init` wrapped <App /> in ClerkProvider unconditionally, which would
  * take the whole site down for anyone building without Clerk keys: the provider
  * throws on a missing publishable key and sits above every route. Wrong blast
  * radius for a feature the site itself calls optional — the README advertises
- * `docker compose up --build` with no configuration, and every one of the 219
+ * `docker compose up --build` with no configuration, and all
  * tools works signed out.
  *
  * The import is lazy for a second reason. Statically imported, @clerk/react put
@@ -31,7 +36,9 @@ const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
     | string
     | undefined;
 
-const ClerkGate = clerkPublishableKey
+// Tool documents deliberately lack Clerk's CSP permissions. Account links
+// request a real account document before starting identity services.
+const ClerkGate = clerkPublishableKey && isClerkDocument()
     ? lazy(() => import("./lib/clerk/ClerkGate"))
     : null;
 

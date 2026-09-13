@@ -25,7 +25,7 @@
  */
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import {
-    Download, CheckCircle2, AlertCircle, Type, Eraser, Square, Circle as CircleIcon,
+    Download, Loader2, CheckCircle2, AlertCircle, Type, Eraser, Square, Circle as CircleIcon,
     Minus, Highlighter, Undo2, Redo2, Trash2, Copy, ChevronRight, ZoomIn,
     ZoomOut, X, ChevronLeft, MousePointer2, Image as ImageIcon, Layers,
     Pen, MoveUpRight, ListTree,
@@ -33,7 +33,7 @@ import {
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
-import { createPortal } from "react-dom";
+import "./pdf/pdf-workspace.css";
 import { useEditHistory } from "@/hooks/useEditHistory";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
@@ -132,10 +132,12 @@ export function EditPdfUI() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(0);
     const [pdfDoc, setPdfDoc] = useState<any>(null);
+    const [renderingPage, setRenderingPage] = useState(true);
     const [pageSize, setPageSize] = useState({ w: 595, h: 842 });
 
     const [gesture, setGesture] = useState<GestureKind>(null);
     const gestureRef = useRef<{ start: { x: number; y: number }; initial: Edit | null }>({ start: { x: 0, y: 0 }, initial: null });
+    const editorScrollRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const overlayRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -145,12 +147,15 @@ export function EditPdfUI() {
     useEffect(() => {
         if (!file) return;
         let cancelled = false;
+        let loaded: { destroy: () => Promise<void> } | undefined;
+        setPdfDoc(null);
         (async () => {
             try {
                 const pdfjsLib = await loadPdfjs();
                 const buf = await file.arrayBuffer();
-                const doc = await pdfjsLib.getDocument({ data: buf }).promise;
-                if (cancelled) return;
+                const doc = await pdfjsLib.getDocument({ data: buf, isEvalSupported: false }).promise;
+                loaded = doc;
+                if (cancelled) { await doc.destroy(); return; }
                 setPdfDoc(doc);
                 setTotalPages(doc.numPages);
                 setCurrentPage(1);
@@ -161,13 +166,21 @@ export function EditPdfUI() {
                 }
             }
         })();
-        return () => { cancelled = true; };
+        return () => { cancelled = true; if (loaded) void loaded.destroy(); };
     }, [file]);
+
+    const fitPage = useCallback(() => {
+        const available = editorScrollRef.current?.clientWidth;
+        if (available) setZoom(Math.max(1, Math.min(150, Math.floor((available - 36) / pageSize.w / 1.5 * 100))));
+    }, [pageSize.w]);
+    useEffect(() => { if (pdfDoc) { const frame = requestAnimationFrame(fitPage); return () => cancelAnimationFrame(frame); } }, [pdfDoc, fitPage]);
 
     /* ─── Render current page ─── */
     useEffect(() => {
         if (!pdfDoc || !canvasRef.current) return;
         let cancelled = false;
+        let renderTask: { cancel: () => void } | undefined;
+        setRenderingPage(true);
         (async () => {
             try {
                 const page = await pdfDoc.getPage(currentPage);
@@ -178,10 +191,13 @@ export function EditPdfUI() {
                 cv.width = vp.width;
                 cv.height = vp.height;
                 setPageSize({ w: page.getViewport({ scale: 1 }).width, h: page.getViewport({ scale: 1 }).height });
-                await page.render({ canvasContext: cv.getContext("2d")!, viewport: vp }).promise;
-            } catch (e) { /* render aborted by page change — ignore */ }
+                const task = page.render({ canvas: cv, canvasContext: cv.getContext("2d")!, viewport: vp });
+                renderTask = task;
+                await task.promise;
+                if (!cancelled) setRenderingPage(false);
+            } catch (e) { if (!cancelled) { setRenderingPage(false); setError(friendlyError(String(e), "This page could not be previewed.")); } }
         })();
-        return () => { cancelled = true; };
+        return () => { cancelled = true; renderTask?.cancel(); };
     }, [pdfDoc, currentPage, zoom]);
 
     /* ─── File pick ─── */
@@ -534,20 +550,20 @@ export function EditPdfUI() {
 
     /* ═══ Full-viewport editor ═══ */
     const editor = (
-        <div className="fixed inset-0 z-[100] flex flex-col" style={{ background: "hsl(224 20% 7%)" }}>
+        <div className="pdf-full-editor" aria-label="Visual PDF editor">
 
             {/* ─── Hidden file input for image insert ─── */}
             <input ref={fileInputRef} type="file" accept="image/png,image/jpeg,image/webp" className="hidden"
                 onChange={e => { const f = e.target.files?.[0]; if (f) onImageFileChosen(f); e.target.value = ""; }} />
 
             {/* ─── Header ─── */}
-            <div className="flex items-center gap-3 px-4 h-12 shrink-0" style={{ background: "hsl(224 18% 10%)", borderBottom: "1px solid hsl(224 15% 16%)" }}>
+            <div className="pdf-editor-header" style={{ background: "hsl(var(--card))", borderBottom: "1px solid hsl(var(--border))" }}>
                 <button onClick={() => { setFile(null); setState("idle"); history.reset([]); setSelectedId(null); setPdfDoc(null); }}
-                    className="p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.06] transition-all" title="Close editor (no edits saved)">
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition-all" title="Close editor (no edits saved)" aria-label="Close PDF editor">
                     <X size={16} />
                 </button>
-                <div className="w-px h-5" style={{ background: "hsl(224 15% 16%)" }} />
-                <span className="text-sm font-medium text-white/80 truncate max-w-[180px]">{file?.name}</span>
+                <div className="w-px h-5" style={{ background: "hsl(var(--border))" }} />
+                <span className="text-sm font-medium text-foreground truncate max-w-[180px]">{file?.name}</span>
                 <div className="flex-1" />
 
                 {/* Pages sidebar toggle */}
@@ -556,7 +572,7 @@ export function EditPdfUI() {
                         title={showThumbs ? "Hide page thumbnails" : "Show page thumbnails"}
                         aria-pressed={showThumbs}
                         className={cn("p-1.5 rounded-lg transition-colors",
-                            showThumbs ? "text-white bg-white/[0.08]" : "text-white/40 hover:text-white hover:bg-white/[0.06]")}>
+                            showThumbs ? "text-accent bg-accent/10" : "text-muted-foreground hover:text-foreground hover:bg-secondary")}>
                         <Layers size={14} />
                     </button>
                 )}
@@ -567,58 +583,59 @@ export function EditPdfUI() {
                         title="All edits — click one to jump to it"
                         aria-pressed={showEditsList}
                         className={cn("flex items-center gap-1.5 px-2 py-1.5 rounded-lg text-[11px] font-medium transition-colors",
-                            showEditsList ? "text-white bg-white/[0.08]" : "text-white/40 hover:text-white hover:bg-white/[0.06]")}>
+                            showEditsList ? "text-accent bg-accent/10" : "text-muted-foreground hover:text-foreground hover:bg-secondary")}>
                         <ListTree size={14} />
                         {edits.length}
                     </button>
                 )}
 
                 {/* Undo / Redo */}
-                <div className="flex items-center gap-0.5 rounded-lg px-1 py-0.5" style={{ background: "hsl(224 15% 14%)" }}>
+                <div className="flex items-center gap-0.5 rounded-lg px-1 py-0.5" style={{ background: "hsl(var(--paper-2))" }}>
                     <button onClick={history.undo} disabled={!history.canUndo}
                         title="Undo (⌘Z)"
-                        className="p-1.5 text-white/40 hover:text-white disabled:opacity-20 transition-colors rounded"><Undo2 size={14} /></button>
+                        className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors rounded"><Undo2 size={14} /></button>
                     <button onClick={history.redo} disabled={!history.canRedo}
                         title="Redo (⌘⇧Z)"
-                        className="p-1.5 text-white/40 hover:text-white disabled:opacity-20 transition-colors rounded"><Redo2 size={14} /></button>
+                        className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors rounded"><Redo2 size={14} /></button>
                 </div>
 
                 {/* Page nav */}
                 {totalPages > 1 && (
-                    <div className="flex items-center gap-0.5 rounded-lg px-1 py-0.5" style={{ background: "hsl(224 15% 14%)" }}>
-                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}
-                            className="p-1 text-white/40 hover:text-white disabled:opacity-20 transition-colors rounded"><ChevronLeft size={14} /></button>
-                        <span className="text-[11px] text-white/50 font-medium min-w-[70px] text-center">Page {currentPage} / {totalPages}</span>
-                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}
-                            className="p-1 text-white/40 hover:text-white disabled:opacity-20 transition-colors rounded"><ChevronRight size={14} /></button>
+                    <div className="flex items-center gap-0.5 rounded-lg px-1 py-0.5" style={{ background: "hsl(var(--paper-2))" }}>
+                        <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1} aria-label="Previous editor page"
+                            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors rounded"><ChevronLeft size={14} /></button>
+                        <span className="text-[11px] text-muted-foreground font-medium min-w-[70px] text-center">Page {currentPage} / {totalPages}</span>
+                        <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages} aria-label="Next editor page"
+                            className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-20 transition-colors rounded"><ChevronRight size={14} /></button>
                     </div>
                 )}
 
+                <button type="button" onClick={fitPage} className="text-[11px] text-muted-foreground rounded-md border border-border px-2" aria-label="Fit PDF page to width">Fit page</button>
                 {/* Zoom */}
-                <div className="flex items-center gap-0.5 rounded-lg px-1 py-0.5" style={{ background: "hsl(224 15% 14%)" }}>
-                    <button onClick={() => setZoom(z => Math.max(50, z - 10))} className="p-1 text-white/40 hover:text-white transition-colors rounded"><ZoomOut size={14} /></button>
-                    <span className="text-[11px] text-white/50 font-medium min-w-[36px] text-center">{zoom}%</span>
-                    <button onClick={() => setZoom(z => Math.min(200, z + 10))} className="p-1 text-white/40 hover:text-white transition-colors rounded"><ZoomIn size={14} /></button>
+                <div className="flex items-center gap-0.5 rounded-lg px-1 py-0.5" style={{ background: "hsl(var(--paper-2))" }}>
+                    <button onClick={() => setZoom(z => Math.max(1, z - 10))} aria-label="Zoom out" className="p-1 text-muted-foreground hover:text-foreground transition-colors rounded"><ZoomOut size={14} /></button>
+                    <span className="text-[11px] text-muted-foreground font-medium min-w-[36px] text-center">{zoom}%</span>
+                    <button onClick={() => setZoom(z => Math.min(200, z + 10))} aria-label="Zoom in" className="p-1 text-muted-foreground hover:text-foreground transition-colors rounded"><ZoomIn size={14} /></button>
                 </div>
 
-                <div className="w-px h-5" style={{ background: "hsl(224 15% 16%)" }} />
+                <div className="w-px h-5" style={{ background: "hsl(var(--border))" }} />
 
                 {/* Apply */}
                 <div className="flex items-center gap-3 flex-wrap">
                     <button onClick={process} disabled={!canProcess}
                         className={cn("flex items-center gap-1.5 rounded-lg px-5 py-1.5 text-sm font-semibold transition-all",
-                            canProcess ? "text-white shadow-lg" : "text-white/20 cursor-not-allowed")}
-                        style={canProcess ? { background: "hsl(216 90% 60%)", boxShadow: "0 0 20px -4px hsl(216 90% 60% / 0.4)" } : { background: "hsl(224 15% 14%)" }}>
+                            canProcess ? "text-accent-foreground shadow-sm" : "text-muted-foreground cursor-not-allowed")}
+                        style={canProcess ? { background: "hsl(var(--accent))", boxShadow: "0 0 20px -4px hsl(var(--accent) / .25)" } : { background: "hsl(var(--paper-2))" }}>
                         Apply changes <ChevronRight size={14} />
                     </button>
                     {canProcess && (
-                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-white/60 bg-white/10 rounded px-1.5 py-0.5">⌘↵</kbd>
+                        <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary rounded px-1.5 py-0.5">⌘↵</kbd>
                     )}
                 </div>
             </div>
 
             {/* ─── Toolbar ─── */}
-            <div className="flex items-center justify-center gap-1 px-4 h-10 shrink-0" style={{ background: "hsl(224 15% 14%)", borderBottom: "1px solid hsl(224 15% 16%)" }}>
+            <div className="pdf-editor-tools" style={{ background: "hsl(var(--paper-2))", borderBottom: "1px solid hsl(var(--border))" }}>
                 {TOOLS.map(t => {
                     const Icon = t.icon;
                     const active = activeTool === t.id;
@@ -628,21 +645,21 @@ export function EditPdfUI() {
                             aria-label={`${t.label} tool — ${t.hint}`}
                             aria-pressed={active}
                             className={cn("flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all",
-                                active ? "text-white" : "text-white/35 hover:text-white/60")}
-                            style={active ? { background: "hsl(216 90% 60% / 0.15)", color: "hsl(216 90% 70%)" } : {}}>
+                                active ? "text-accent" : "text-muted-foreground hover:text-muted-foreground")}
+                            style={active ? { background: "hsl(var(--accent) / .12)", color: "hsl(var(--accent))" } : {}}>
                             <Icon size={14} />{t.label}
                             <kbd className="hidden md:inline font-mono text-[9px] opacity-50 ml-0.5">{t.shortcut}</kbd>
                         </button>
                     );
                 })}
                 <div className="flex-1" />
-                <span className="text-[10px] text-white/25">
+                <span className="pdf-editor-hint">
                     {edits.length ? `${edits.length} edit${edits.length !== 1 ? "s" : ""} queued · Apply when ready` : `${TOOLS.find(t => t.id === activeTool)?.hint}`}
                 </span>
             </div>
 
             {/* ─── Body — thumbnails + canvas ─── */}
-            <div className="flex-1 flex overflow-hidden">
+            <div className="pdf-editor-body">
 
                 {/* Thumbnails sidebar */}
                 {totalPages > 1 && showThumbs && (
@@ -650,7 +667,8 @@ export function EditPdfUI() {
                 )}
 
                 {/* Canvas */}
-                <div className="flex-1 overflow-auto" style={{ background: "hsl(224 20% 12%)" }}>
+                {(!pdfDoc || renderingPage) && <div className="pdf-editor-loading" role="status"><Loader2 size={20} className="animate-spin" /><span>Opening your page…</span></div>}
+                <div ref={editorScrollRef} className="pdf-editor-scroll" aria-busy={!pdfDoc || renderingPage} style={{ background: "hsl(var(--paper-2))" }}>
                     <div className="flex items-start justify-center min-h-full py-8 px-4">
                         <div className="relative" style={{ boxShadow: "0 8px 60px rgba(0,0,0,0.4)", lineHeight: 0 }}>
                             <canvas ref={canvasRef} className="block rounded-sm" />
@@ -696,9 +714,9 @@ export function EditPdfUI() {
             {/* Edits list panel */}
             {showEditsList && edits.length > 0 && (
                 <div className="absolute right-4 top-14 w-[260px] max-h-[60vh] overflow-y-auto rounded-xl shadow-2xl z-40"
-                    style={{ background: "hsl(224 18% 10%)", border: "1px solid hsl(224 15% 16%)" }}>
-                    <div className="px-3 py-2 text-[10.5px] font-semibold tracking-wider uppercase text-white/40 sticky top-0"
-                        style={{ background: "hsl(224 18% 10%)", borderBottom: "1px solid hsl(224 15% 16%)" }}>
+                    style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}>
+                    <div className="px-3 py-2 text-[10.5px] font-semibold tracking-wider uppercase text-muted-foreground sticky top-0"
+                        style={{ background: "hsl(var(--card))", borderBottom: "1px solid hsl(var(--border))" }}>
                         {edits.length} edit{edits.length === 1 ? "" : "s"} · all pages
                     </div>
                     {edits.map((ed, i) => {
@@ -717,17 +735,17 @@ export function EditPdfUI() {
                         return (
                             <div key={ed.id}
                                 className={cn("flex items-center gap-2.5 px-3 py-2 cursor-pointer transition-colors group",
-                                    ed.id === selectedId ? "bg-white/[0.08]" : "hover:bg-white/[0.04]")}
+                                    ed.id === selectedId ? "bg-accent/10" : "hover:bg-secondary")}
                                 onClick={() => { setCurrentPage(ed.page); setSelectedId(ed.id); }}>
-                                <Icon size={13} className="text-white/40 shrink-0" />
+                                <Icon size={13} className="text-muted-foreground shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-[12px] text-white/80 truncate">{label}</p>
-                                    <p className="text-[10px] text-white/35">Page {ed.page} · #{i + 1}</p>
+                                    <p className="text-[12px] text-foreground truncate">{label}</p>
+                                    <p className="text-[10px] text-muted-foreground">Page {ed.page} · #{i + 1}</p>
                                 </div>
                                 <button
                                     onClick={e => { e.stopPropagation(); removeEdit(ed.id); }}
                                     title="Delete this edit"
-                                    className="opacity-0 group-hover:opacity-100 p-1 rounded text-white/40 hover:text-red-400 transition-all">
+                                    className="opacity-0 group-hover:opacity-100 p-1 rounded text-muted-foreground hover:text-red-400 transition-all">
                                     <Trash2 size={12} />
                                 </button>
                             </div>
@@ -741,14 +759,14 @@ export function EditPdfUI() {
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2 rounded-xl px-5 py-3 text-sm shadow-2xl z-50"
                     style={{ background: "hsl(0 72% 20%)", border: "1px solid hsl(0 60% 30%)", color: "hsl(0 60% 80%)" }}>
                     <AlertCircle size={15} className="shrink-0" />{error}
-                    <button onClick={() => setError(null)} className="ml-2 hover:text-white"><X size={14} /></button>
+                    <button onClick={() => setError(null)} className="ml-2 hover:text-foreground"><X size={14} /></button>
                 </div>
             )}
 
             {/* Processing overlay */}
             {state === "processing" && (
                 <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-                    <div className="rounded-2xl p-8 w-[360px] shadow-2xl" style={{ background: "hsl(224 18% 10%)", border: "1px solid hsl(224 15% 16%)" }}>
+                    <div className="rounded-2xl p-8 w-[360px] shadow-2xl" style={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}>
                         <ProcessingBar label="Applying edits to your PDF…" />
                     </div>
                 </div>
@@ -756,7 +774,7 @@ export function EditPdfUI() {
         </div>
     );
 
-    return createPortal(editor, document.body);
+    return editor;
 }
 
 /* ────────────── Cursor by tool ────────────── */
@@ -856,7 +874,7 @@ function EditRenderer({ edit, pageSize, scale, isSelected, activeTool, onSelect,
                         placeholder="Type your text" onClick={e => e.stopPropagation()}
                         className="outline-none px-1.5 py-0.5 rounded min-w-[120px]"
                         style={{
-                            fontSize: sz, color: te.color, border: "2px solid hsl(216 90% 60%)", background: "hsl(216 90% 60% / 0.08)",
+                            fontSize: sz, color: te.color, border: "2px solid hsl(var(--accent))", background: "hsl(216 90% 60% / 0.08)",
                             fontFamily: te.font_family.includes("Courier") ? "monospace" : te.font_family.includes("Times") ? "serif" : "sans-serif",
                             fontWeight: te.font_family.includes("Bold") ? 700 : 400,
                         }} />
@@ -1133,7 +1151,7 @@ function LineEndpointHandle({ editId, which, left, top }: { editId: string; whic
 /* ────────────── Floating prop toolbars ────────────── */
 function FloatingToolbar({ children, onDuplicate, onDelete }: { children: React.ReactNode; onDuplicate: () => void; onDelete: () => void; }) {
     return (
-        <div className="absolute -top-11 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-xl border border-border bg-white shadow-xl px-1.5 py-1 z-40 whitespace-nowrap"
+        <div className="absolute -top-11 left-1/2 -translate-x-1/2 flex items-center gap-0.5 rounded-xl border border-border bg-card shadow-xl px-1.5 py-1 z-40 whitespace-nowrap"
             onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
             {children}
             <Divider />
@@ -1191,7 +1209,7 @@ function OpacitySlider({ value, onChange }: { value: number; onChange: (v: numbe
 /* ────────────── Page thumbnails sidebar ────────────── */
 function PageThumbs({ pdfDoc, totalPages, currentPage, onJump, edits }: { pdfDoc: any; totalPages: number; currentPage: number; onJump: (p: number) => void; edits: Edit[] }) {
     return (
-        <div className="w-[120px] shrink-0 overflow-y-auto p-2 space-y-2" style={{ background: "hsl(224 18% 9%)", borderRight: "1px solid hsl(224 15% 16%)" }}>
+        <div className="w-[120px] shrink-0 overflow-y-auto p-2 space-y-2" style={{ background: "hsl(var(--paper-2))", borderRight: "1px solid hsl(var(--border))" }}>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                 <Thumb key={p} pdfDoc={pdfDoc} pageNum={p} active={p === currentPage} editCount={edits.filter(e => e.page === p).length} onClick={() => onJump(p)} />
             ))}
@@ -1218,11 +1236,11 @@ function Thumb({ pdfDoc, pageNum, active, editCount, onClick }: { pdfDoc: any; p
         return () => { cancelled = true; };
     }, [pdfDoc, pageNum]);
     return (
-        <button onClick={onClick}
+        <button onClick={onClick} aria-label={`Go to editor page ${pageNum}`} aria-current={active ? "page" : undefined}
             className={cn("relative block w-full rounded overflow-hidden border-2 transition-all",
-                active ? "border-accent shadow-lg" : "border-transparent hover:border-white/20")}>
+                active ? "border-accent shadow-lg" : "border-transparent hover:border-accent/40")}>
             <canvas ref={canvasRef} className="block w-full" />
-            <div className="flex items-center justify-between px-1.5 py-1 text-[10px] font-medium" style={{ background: active ? "hsl(216 90% 60%)" : "hsl(224 15% 14%)", color: active ? "white" : "rgba(255,255,255,0.5)" }}>
+            <div className="flex items-center justify-between px-1.5 py-1 text-[10px] font-medium" style={{ background: active ? "hsl(var(--accent))" : "hsl(var(--paper-2))", color: active ? "hsl(var(--accent-foreground))" : "hsl(var(--muted-foreground))" }}>
                 <span>{pageNum}</span>
                 {editCount > 0 && <span className="rounded-full bg-accent text-white text-[9px] w-4 h-4 flex items-center justify-center">{editCount}</span>}
             </div>
@@ -1247,7 +1265,7 @@ function TextToolbar({ edit, onUpdate, onDuplicate, onDelete }: {
     edit: TextEdit; onUpdate: (field: string, value: any) => void; onDuplicate: () => void; onDelete: () => void;
 }) {
     return (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex items-center gap-0.5 rounded-xl border border-border bg-white shadow-xl px-1.5 py-1 z-30 whitespace-nowrap"
+        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 flex items-center gap-0.5 rounded-xl border border-border bg-card shadow-xl px-1.5 py-1 z-30 whitespace-nowrap"
             onClick={e => e.stopPropagation()} onPointerDown={e => e.stopPropagation()}>
             <button onClick={() => {
                 const base = edit.font_family.replace("-Bold", "");

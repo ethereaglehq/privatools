@@ -23,15 +23,16 @@ import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
     Plus, X, Play, Download, Loader2, CheckCircle, AlertCircle,
-    FileText, Layers, ArrowRight, Search, Trash2,
+    FileText, ArrowRight, Search, Trash2,
     ChevronLeft, ChevronRight, Sparkles, RotateCw, GripVertical,
-    BookmarkPlus, Bookmark, Square, RefreshCw, ArrowDown, Share2,
+    BookmarkPlus, Bookmark, Square, RefreshCw, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { downloadBlob, formatErrorForClipboard, postFormData } from "@/lib/api";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
+import "@/skins/experience/workflows.css";
 
 /**
  * Pipeline-safe tools — those that take a PDF and return a PDF without
@@ -200,6 +201,15 @@ export default function PipelinePage() {
     const [errorReport, setErrorReport] = useState<string | null>(null);
     const [paletteSearch, setPaletteSearch] = useState("");
     const [paletteOpen, setPaletteOpen] = useState(false);  // mobile only
+    const [compactPalette, setCompactPalette] = useState(() => typeof window !== "undefined" && window.innerWidth <= 800);
+    const paletteRef = useRef<HTMLElement>(null);
+    const closePalette = useCallback(() => setPaletteOpen(false), []);
+    useFocusTrap(paletteRef, paletteOpen && compactPalette, { onEscape: closePalette });
+    useEffect(() => {
+        const update = () => setCompactPalette(window.innerWidth <= 800);
+        window.addEventListener("resize", update);
+        return () => window.removeEventListener("resize", update);
+    }, []);
     const [savedPipelines, setSavedPipelines] = useState<SavedPipeline[]>(loadSavedPipelines);
     const [shareCopied, setShareCopied] = useState(false);
     const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
@@ -259,11 +269,13 @@ export default function PipelinePage() {
     }, [resultUrl]);
 
     const setInputFile = useCallback((nextFile: File | null) => {
+        if (processing) return;
         setFile(nextFile);
         resetRunState();
-    }, [resetRunState]);
+    }, [resetRunState, processing]);
 
     const addStep = (tool: (typeof pipelineTools)[0]) => {
+        if (processing) return;
         setSteps((prev) => [...prev, { tool }]);
         // Structural edits invalidate cached step output and final results.
         resetRunState();
@@ -272,6 +284,11 @@ export default function PipelinePage() {
     };
 
     const loadRecipe = (slugs: string[]) => {
+        if (processing) return;
+        if (slugs.length === 1 && slugs[0] === "merge-pdf") {
+            window.location.hash = "#/tool/merge-pdf";
+            return;
+        }
         const stepObjs: PipelineStep[] = slugs
             .map(s => pipelineTools.find(t => t.slug === s))
             .filter((t): t is (typeof pipelineTools)[0] => Boolean(t))
@@ -281,11 +298,13 @@ export default function PipelinePage() {
     };
 
     const removeStep = (idx: number) => {
+        if (processing) return;
         setSteps(p => p.filter((_, i) => i !== idx));
         resetRunState();
     };
 
     const moveStep = (idx: number, dir: -1 | 1) => {
+        if (processing) return;
         setSteps(prev => {
             const arr = [...prev];
             const newIdx = idx + dir;
@@ -297,19 +316,20 @@ export default function PipelinePage() {
     };
 
     const reorderStep = (from: number, to: number) => {
+        if (processing) return;
         if (from === to) return;
         setSteps(prev => {
             const arr = [...prev];
             const [item] = arr.splice(from, 1);
-            // Adjust insertion index after splice removal.
-            const dest = from < to ? to - 1 : to;
-            arr.splice(dest, 0, item);
+            // Dropping onto a card moves the dragged step to that position.
+            arr.splice(to, 0, item);
             return arr;
         });
         resetRunState();
     };
 
     const clearAll = () => {
+        if (processing) return;
         setSteps([]);
         setFile(null);
         resetRunState();
@@ -514,615 +534,92 @@ export default function PipelinePage() {
     }, [stepStatuses, steps.length]);
 
     return (
-        <div className="h-full flex flex-col lg:flex-row">
-            {/* ─── Main editor ─────────────────────────────────────────── */}
-            <div className="flex-1 min-w-0 flex flex-col">
+        <div className="pt-studio-page pt-workflow-page pt-pipeline-page" data-running={processing}>
+            <header className="pt-workflow-header pt-studio-header">
+                <div className="pt-workflow-heading">
+                    <p className="pt-studio-kicker">PIPELINE / YOUR PDF ROUTINE</p>
+                    <h1><span className="wf-air-copy">Good work, on repeat.</span><span className="wf-play-copy">Put your tools in a row.</span></h1>
+                    <p>One PDF. A few thoughtful steps. Build a routine you can come back to.</p>
+                </div>
+                <div className="wf-header-actions">
+                    <button className="wf-button" onClick={clearAll} disabled={processing || (!steps.length && !file)}><Trash2 size={15} /> Clear</button>
+                    {processing ? <button className="wf-button wf-button-danger" onClick={cancelRun}><Square size={14} /> Cancel <span>{currentStep + 1}/{steps.length}</span></button>
+                        : <button className="wf-button wf-button-primary" onClick={() => runPipeline(0)} disabled={!canRun}><Play size={15} /> Run pipeline</button>}
+                </div>
+            </header>
 
-                {/* Workspace header — file name, controls */}
-                <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-border bg-paper-2/30">
-                    <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <span className="font-medium text-[11px] text-accent">Pipeline</span>
-                            <span className="font-medium text-[11px] text-muted-foreground">{steps.length} step{steps.length !== 1 ? "s" : ""}</span>
-                            {/* Auto-saved indicator — quiet confidence cue */}
-                            {steps.length > 0 && !processing && (
-                                <span className="font-medium text-[11px] text-muted-foreground" title="Saved locally, restored on reload">
-                                    · auto-saved
-                                </span>
-                            )}
+            <section className="wf-recipe-shelf" aria-label="Quick recipes">
+                <div className="wf-shelf-label"><Sparkles size={18} /><div><h2>A good place to start</h2><p>Pick a recipe, then make it yours.</p></div></div>
+                <div className="wf-recipes">
+                    {RECIPES.map((recipe, index) => <button key={recipe.name} className="pt-pipeline-recipe" data-recipe-tone={index} disabled={processing} onClick={() => loadRecipe(recipe.slugs)}>
+                        <span className="wf-recipe-top"><span className="wf-recipe-number">0{index + 1}</span><ArrowRight size={16} /></span>
+                        <strong>{recipe.name}</strong><p>{recipe.description}</p><span className="wf-recipe-count">{recipe.slugs.length} steps</span>
+                    </button>)}
+                </div>
+            </section>
+
+            <div className="wf-pipeline-layout">
+                <section className="pt-pipeline-main wf-work-sheet" aria-label="Workflow canvas">
+                    <div className="wf-sheet-heading"><div><p className="wf-section-label">THE CANVAS</p><h2>Your workflow</h2></div><span className="wf-status-pill"><span />{processing ? "Working through your steps" : steps.length ? `${steps.length} steps · saved on this device` : "Ready when you are"}</span></div>
+                    {error && <div className="wf-notice wf-notice-error" role="alert"><AlertCircle size={18} /><div><strong>{error}</strong>{failedIdx >= 0 && <p>Earlier steps are kept. Continue from step {failedIdx + 1}.</p>}<div className="wf-inline-actions">{failedIdx >= 0 && file && <button onClick={() => runPipeline(failedIdx)}><RotateCw size={14} /> Retry from {failedIdx + 1}</button>}{errorReport && <button onClick={() => navigator.clipboard.writeText(errorReport).catch(() => {})}>Copy report</button>}</div></div><button aria-label="Dismiss" onClick={() => { setError(null); setErrorReport(null); }}><X size={16} /></button></div>}
+                    <div className="pt-pipeline-builder">
+                        <div className="wf-input-stage"><span className="wf-stage-label">START WITH A FILE</span>
+                            <FlowNode kind="endpoint" title={file ? file.name : "Choose your PDF"} subtitle={file ? `${(file.size / 1024).toFixed(0)} KB · ready to work` : "Drop it here, or browse your device"} onClick={() => inputRef.current?.click()} onDrop={setInputFile} onClear={file ? () => setInputFile(null) : undefined} disabled={processing} state={file ? "ready" : "empty"} />
+                            <input ref={inputRef} disabled={processing} type="file" accept=".pdf" className="hidden" onChange={event => setInputFile(event.target.files?.[0] || null)} />
                         </div>
-                        <h1 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight truncate" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            {steps.length > 0
-                                ? steps.map(s => s.tool.name).join(" → ")
-                                : <span className="text-muted-foreground italic font-medium">Untitled pipeline</span>}
-                        </h1>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                        <button
-                            onClick={() => setPaletteOpen(true)}
-                            className="lg:hidden inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-foreground hover:bg-secondary/60"
-                        >
-                            <Plus size={13} /> Add step
-                        </button>
-                        {/* Save pipeline */}
-                        {steps.length > 0 && !processing && (
-                            <button
-                                onClick={saveCurrentPipeline}
-                                className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-                                title="Save this pipeline for later"
-                            >
-                                <BookmarkPlus size={12} /> Save
-                            </button>
-                        )}
-                        {steps.length > 0 && !processing && (
-                            <button
-                                onClick={shareCurrentPipeline}
-                                className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-                                title="Copy shareable pipeline URL"
-                            >
-                                <Share2 size={12} /> {shareCopied ? "Copied" : "Share"}
-                            </button>
-                        )}
-                        <button
-                            onClick={clearAll}
-                            disabled={steps.length === 0 && !file}
-                            className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                            title="Clear pipeline"
-                        >
-                            <Trash2 size={12} /> Clear
-                        </button>
-                        {/* Cancel during run, otherwise Run */}
-                        {processing ? (
-                            <button
-                                onClick={cancelRun}
-                                className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[13px] font-semibold bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/15 transition-colors"
-                                title="Cancel pipeline"
-                            >
-                                <Square size={11} className="fill-current" />
-                                <span className="hidden sm:inline">Cancel</span>
-                                <span className="font-mono text-[11px] opacity-80">{currentStep + 1}/{steps.length}</span>
-                            </button>
-                        ) : (
-                            <button
-                                onClick={() => runPipeline(0)}
-                                disabled={!canRun}
-                                className={cn(
-                                    "inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[13px] font-semibold transition-colors",
-                                    canRun
-                                        ? "bg-accent text-accent-foreground hover:brightness-105 shadow-sm"
-                                        : "bg-secondary text-muted-foreground cursor-not-allowed"
-                                )}
-                            >
-                                <Play size={13} /> Run pipeline
-                            </button>
-                        )}
-                    </div>
-                </header>
-
-                {/* Canvas */}
-                <div className="flex-1 bg-paper-2/20 relative">
-                    {/* Grid pattern */}
-                    <div
-                        aria-hidden="true"
-                        className="absolute inset-0 pointer-events-none opacity-50"
-                        style={{
-                            backgroundImage: "radial-gradient(circle at 1px 1px, hsl(var(--foreground) / 0.06) 1px, transparent 0)",
-                            backgroundSize: "22px 22px",
-                        }}
-                    />
-
-                    <div className="relative px-5 py-10 min-h-full flex flex-col items-center">
-                        {/* Error banner — with retry CTA when we know which step failed */}
-                        {error && (
-                            <div className="w-full max-w-3xl flex items-start gap-3 px-4 py-3 rounded-lg border border-destructive/30 bg-destructive/10 mb-6 animate-fade-up">
-                                <AlertCircle size={14} className="text-destructive shrink-0 mt-0.5" />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[13px] text-destructive font-medium">{error}</p>
-                                    {failedIdx >= 0 && (
-                                        <p className="text-[11.5px] text-muted-foreground mt-1">
-                                            Earlier steps stay completed. Hit retry to resume from step {failedIdx + 1}.
-                                        </p>
-                                    )}
-                                </div>
-                                {failedIdx >= 0 && file && (
-                                    <button
-                                        onClick={() => runPipeline(failedIdx)}
-                                        className="shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-destructive/15 text-destructive border border-destructive/30 text-[12px] font-semibold hover:bg-destructive/20 transition-colors"
-                                    >
-                                        <RotateCw size={11} /> Retry from {failedIdx + 1}
-                                    </button>
-                                )}
-                                {errorReport && (
-                                    <button
-                                        onClick={() => navigator.clipboard.writeText(errorReport).catch(() => {})}
-                                        className="hidden sm:inline-flex shrink-0 items-center h-8 px-3 rounded-md border border-border bg-card text-[12px] font-semibold text-muted-foreground hover:text-destructive hover:bg-secondary/60 transition-colors"
-                                    >
-                                        Copy report
-                                    </button>
-                                )}
-                                <button
-                                    onClick={() => { setError(null); setErrorReport(null); }}
-                                    className="shrink-0 h-7 w-7 inline-flex items-center justify-center rounded text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    aria-label="Dismiss"
-                                >
-                                    <X size={12} />
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Result banner */}
-                        {resultUrl && resultBlob && (
-                            <div className="w-full max-w-3xl flex items-center gap-3 px-4 py-3 rounded-lg border border-accent/30 bg-accent/10 mb-6 animate-fade-up">
-                                <CheckCircle size={15} className="text-accent shrink-0 animate-success-pop" />
-                                <span className="text-[13.5px] font-medium text-foreground flex-1">
-                                    Pipeline complete. <span className="font-mono text-[12px] text-muted-foreground ml-1">{(resultBlob.size / 1024).toFixed(0)} KB</span>
-                                </span>
-                                <a
-                                    href={resultUrl}
-                                    download={outputName}
-                                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md bg-accent text-accent-foreground text-[12.5px] font-semibold hover:brightness-105 transition-all"
-                                >
-                                    <Download size={11} /> Download
-                                </a>
-                                <button
-                                    onClick={() => runPipeline(0)}
-                                    className="inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border text-[12.5px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-                                    title="Run again with same input"
-                                >
-                                    <RefreshCw size={11} /> Run again
-                                </button>
-                            </div>
-                        )}
-
-                        {/* Chain — horizontal flow when wide, vertical when narrow */}
-                        <div className="w-full max-w-3xl">
-                            {/* Track 1: input node */}
-                            <FlowNode
-                                kind="endpoint"
-                                title={file ? file.name : "Drop a PDF"}
-                                subtitle={file ? `${(file.size / 1024).toFixed(0)} KB · input` : "Click or drop a file here"}
-                                onClick={() => inputRef.current?.click()}
-                                onDrop={setInputFile}
-                                onClear={file ? () => setInputFile(null) : undefined}
-                                state={file ? "ready" : "empty"}
-                            />
-                            <input ref={inputRef} type="file" accept=".pdf" className="hidden" onChange={(e) => setInputFile(e.target.files?.[0] || null)} />
-
+                        <div className="pt-pipeline-chain">
                             {steps.length > 0 && <Connector active={processing && currentStep === 0} done={stepStatuses[0] === "done"} />}
-
-                            {/* Steps */}
-                            {steps.map((step, i) => {
+                            {steps.map((step, index) => {
                                 const Icon = step.tool.icon;
-                                const status = stepStatuses[i];
-                                const isRunning = status === "running";
-                                const isDone = status === "done";
-                                const hasError = status === "error";
-                                const isDragOver = dragOverIdx === i && draggingIdx !== null && draggingIdx !== i;
-                                return (
-                                    <div key={`${step.tool.slug}-${i}`}>
-                                        {/* Drop indicator above this row */}
-                                        {isDragOver && draggingIdx !== null && draggingIdx > i && (
-                                            <div className="h-0.5 bg-accent rounded-full mb-1 mx-2 animate-fade-in" aria-hidden="true" />
-                                        )}
-                                        <div
-                                            draggable={!processing}
-                                            onDragStart={(e) => {
-                                                if (processing) return;
-                                                setDraggingIdx(i);
-                                                e.dataTransfer.effectAllowed = "move";
-                                                // Required for Firefox to start the drag.
-                                                try { e.dataTransfer.setData("text/plain", String(i)); } catch {}
-                                            }}
-                                            onDragOver={(e) => {
-                                                if (draggingIdx === null) return;
-                                                e.preventDefault();
-                                                e.dataTransfer.dropEffect = "move";
-                                                setDragOverIdx(i);
-                                            }}
-                                            onDragLeave={() => {
-                                                if (dragOverIdx === i) setDragOverIdx(null);
-                                            }}
-                                            onDrop={(e) => {
-                                                e.preventDefault();
-                                                if (draggingIdx === null || draggingIdx === i) return;
-                                                reorderStep(draggingIdx, i);
-                                                setDraggingIdx(null);
-                                                setDragOverIdx(null);
-                                            }}
-                                            onDragEnd={() => {
-                                                setDraggingIdx(null);
-                                                setDragOverIdx(null);
-                                            }}
-                                            className={cn(
-                                                "group relative flex items-center gap-3 px-4 py-3 rounded-xl border bg-card transition-all",
-                                                `cat-${step.tool.category}`,
-                                                draggingIdx === i && "opacity-40 scale-[0.98]",
-                                                isRunning && "border-accent/60 bg-accent/[0.04] shadow-[0_0_0_3px_hsl(var(--accent)/0.18),0_8px_24px_-8px_hsl(var(--accent)/0.30)]",
-                                                isDone && "border-accent/30",
-                                                hasError && "border-destructive/40 bg-destructive/[0.04]",
-                                                !isRunning && !isDone && !hasError && "border-border hover:border-border-strong",
-                                                !processing && "cursor-grab active:cursor-grabbing"
-                                            )}
-                                        >
-                                            {/* Drag handle — desktop only, visible cue for reorder */}
-                                            {!processing && (
-                                                <GripVertical
-                                                    size={13}
-                                                    className="hidden lg:block text-muted-foreground group-hover:text-muted-foreground shrink-0 -ml-1.5 transition-colors"
-                                                    aria-hidden="true"
-                                                />
-                                            )}
-                                            {/* Step number */}
-                                            <div className={cn(
-                                                "flex h-9 w-9 items-center justify-center rounded-lg font-mono text-[12px] font-semibold shrink-0",
-                                                isRunning ? "bg-accent text-accent-foreground" :
-                                                isDone    ? "bg-accent/20 text-accent" :
-                                                hasError  ? "bg-destructive/15 text-destructive" :
-                                                            "bg-paper-2 text-muted-foreground border border-border"
-                                            )}>
-                                                {String(i + 1).padStart(2, "0")}
-                                            </div>
-
-                                            <span className="icon-tile icon-tile-sm shrink-0">
-                                                <Icon size={14} strokeWidth={1.75} />
-                                            </span>
-
-                                            <div className="flex-1 min-w-0">
-                                                <p className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em] truncate leading-tight">
-                                                    {step.tool.name}
-                                                </p>
-                                                <p className={cn(
-                                                    "font-medium text-[11.5px] truncate",
-                                                    hasError ? "text-destructive" : "text-muted-foreground"
-                                                )}>
-                                                    {isRunning ? "Running…" :
-                                                     isDone    ? "Done" :
-                                                     hasError  ? (stepErrors[i] || "Failed") :
-                                                                 "Queued"}
-                                                </p>
-                                            </div>
-
-                                            {isRunning && <Loader2 size={15} className="shrink-0 text-accent animate-spin" />}
-                                            {isDone && !isRunning && <CheckCircle size={15} className="shrink-0 text-accent animate-success-pop" />}
-                                            {hasError && <AlertCircle size={15} className="shrink-0 text-destructive" />}
-
-                                            {!processing && (
-                                                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    {hasError && file && (
-                                                        <button
-                                                            onClick={() => runPipeline(i)}
-                                                            className="h-7 px-2 inline-flex items-center gap-1 rounded text-[10.5px] font-semibold text-destructive hover:bg-destructive/10"
-                                                            title={`Retry from step ${i + 1}`}
-                                                        >
-                                                            <RotateCw size={10} /> Retry
-                                                        </button>
-                                                    )}
-                                                    {i > 0 && (
-                                                        <button onClick={() => moveStep(i, -1)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/70" title="Move up" aria-label="Move step up">
-                                                            <ChevronLeft size={12} className="rotate-90" />
-                                                        </button>
-                                                    )}
-                                                    {i < steps.length - 1 && (
-                                                        <button onClick={() => moveStep(i, 1)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/70" title="Move down" aria-label="Move step down">
-                                                            <ChevronRight size={12} className="rotate-90" />
-                                                        </button>
-                                                    )}
-                                                    <button onClick={() => removeStep(i)} className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10" title="Remove" aria-label="Remove step">
-                                                        <X size={12} />
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                        {/* Drop indicator below this row */}
-                                        {isDragOver && draggingIdx !== null && draggingIdx < i && (
-                                            <div className="h-0.5 bg-accent rounded-full mt-1 mx-2 animate-fade-in" aria-hidden="true" />
-                                        )}
-                                        {i < steps.length - 1 && (
-                                            <Connector
-                                                active={processing && currentStep === i + 1}
-                                                done={stepStatuses[i + 1] === "done"}
-                                            />
-                                        )}
-                                    </div>
-                                );
+                                const status = stepStatuses[index] || "queued";
+                                return <div key={`${step.tool.slug}-${index}`} className="wf-chain-item">
+                                    <article className={cn("pt-pipeline-step", draggingIdx === index && "wf-step-dragging", dragOverIdx === index && draggingIdx !== index && "wf-step-drop-target")} data-step-state={status} data-node-tone={index % 3} draggable={!processing}
+                                        onDragStart={event => { if (processing) return; setDraggingIdx(index); event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", String(index)); }}
+                                        onDragOver={event => { if (draggingIdx === null || processing) return; event.preventDefault(); setDragOverIdx(index); }}
+                                        onDragLeave={() => setDragOverIdx(null)}
+                                        onDrop={event => { event.preventDefault(); if (draggingIdx !== null) reorderStep(draggingIdx, index); setDraggingIdx(null); setDragOverIdx(null); }}
+                                        onDragEnd={() => { setDraggingIdx(null); setDragOverIdx(null); }}>
+                                        <div className="pt-step-number">{status === "done" ? <CheckCircle size={22} /> : String(index + 1).padStart(2, "0")}</div>
+                                        <div className="wf-step-copy"><span className="wf-step-category"><Icon size={14} /> {step.tool.category}</span><h3>{step.tool.name}</h3><p>{status === "running" ? "Working on this step…" : status === "done" ? "Finished and passed to the next step" : status === "error" ? (stepErrors[index] || "This step needs another try") : "Uses the output from the previous step"}</p></div>
+                                        {status === "running" && <Loader2 size={20} className="animate-spin" />}
+                                        {!processing && <div className="pt-step-controls">
+                                            <GripVertical className="wf-drag-handle" size={16} aria-hidden="true" />
+                                            {status === "error" && file && <button onClick={() => runPipeline(index)} aria-label={`Retry from step ${index + 1}`}><RotateCw size={16} /></button>}
+                                            <button disabled={index === 0} onClick={() => moveStep(index, -1)} aria-label="Move step up"><ChevronLeft size={16} className="rotate-90" /></button>
+                                            <button disabled={index === steps.length - 1} onClick={() => moveStep(index, 1)} aria-label="Move step down"><ChevronRight size={16} className="rotate-90" /></button>
+                                            <button onClick={() => removeStep(index)} aria-label="Remove step"><X size={16} /></button>
+                                        </div>}
+                                    </article>
+                                    <Connector active={processing && currentStep === index + 1} done={index === steps.length - 1 ? !!resultUrl : stepStatuses[index + 1] === "done"} />
+                                </div>;
                             })}
-
-                            {steps.length > 0 && (
-                                <Connector
-                                    active={processing && currentStep === steps.length - 1 && stepStatuses[steps.length - 1] === "running"}
-                                    done={!!resultUrl}
-                                />
-                            )}
-
-                            {/* Output node */}
-                            <FlowNode
-                                kind="endpoint"
-                                title={resultUrl ? outputName : "Final output"}
-                                subtitle={resultBlob ? `${(resultBlob.size / 1024).toFixed(0)} KB · output` : steps.length === 0 ? "Add steps to define the output" : "Run pipeline to generate"}
-                                state={resultUrl ? "ready" : "empty"}
-                                outputIcon={!!resultUrl}
-                                href={resultUrl || undefined}
-                                downloadName={outputName}
-                            />
-
-                            {/* Inline "Add step" — mobile only since desktop has palette rail */}
-                            {!processing && steps.length > 0 && (
-                                <button
-                                    onClick={() => setPaletteOpen(true)}
-                                    className="lg:hidden mt-4 w-full inline-flex items-center justify-center gap-2 h-11 rounded-xl border border-dashed border-border-strong text-[13px] font-medium text-muted-foreground hover:border-accent hover:text-accent hover:bg-accent/[0.04] transition-colors"
-                                >
-                                    <Plus size={13} /> Add step
-                                </button>
-                            )}
-
-                            {/* Empty state — onboarding flow with sample pipelines */}
-                            {steps.length === 0 && (
-                                <div className="mt-6 animate-fade-up">
-                                    <div className="text-center px-5 py-8 rounded-xl border border-dashed border-border-strong bg-paper-2/30 mb-5 relative">
-                                        <CornerMarks />
-                                        <div className="h-12 w-12 mx-auto mb-3 rounded-xl bg-accent/10 border border-accent/30 flex items-center justify-center">
-                                            <Layers size={20} className="text-accent" />
-                                        </div>
-                                        <p className="font-display text-[18px] font-semibold text-foreground mb-1 tracking-[-0.015em]">
-                                            Build a workflow, run many tools in sequence
-                                        </p>
-                                        <p className="text-[13px] text-muted-foreground max-w-md mx-auto leading-relaxed">
-                                            Each step processes the output of the previous one. Drop a PDF above, pick a sample to get started, or build your own from the palette.
-                                        </p>
-                                    </div>
-
-                                    {/* Sample pipelines — quick-start chips */}
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                        {RECIPES.map((r, idx) => (
-                                            <button
-                                                key={r.name}
-                                                onClick={() => loadRecipe(r.slugs)}
-                                                className={cn(
-                                                    "group text-left rounded-xl border border-border bg-card hover:border-accent/50 hover:bg-accent/[0.03] transition-all p-3.5",
-                                                    "animate-fade-up",
-                                                    `stagger-${idx + 1}`
-                                                )}
-                                            >
-                                                <div className="flex items-center gap-1.5 mb-1.5">
-                                                    <Sparkles size={11} className="text-accent" />
-                                                    <p className="font-display text-[14px] font-semibold text-foreground tracking-[-0.015em]">{r.name}</p>
-                                                    <ArrowRight size={11} className="text-muted-foreground/40 ml-auto group-hover:text-accent group-hover:translate-x-0.5 transition-all" />
-                                                </div>
-                                                <p className="text-[12px] text-muted-foreground leading-snug mb-2">{r.description}</p>
-                                                <div className="flex items-center gap-1 flex-wrap">
-                                                    {r.slugs.map((s, sidx) => {
-                                                        const t = pipelineTools.find(p => p.slug === s);
-                                                        if (!t) return null;
-                                                        return (
-                                                            <span key={s} className="inline-flex items-center">
-                                                                <span className="font-mono text-[10px] text-muted-foreground bg-paper-2 px-1.5 py-0.5 rounded">
-                                                                    {t.name}
-                                                                </span>
-                                                                {sidx < r.slugs.length - 1 && <ArrowRight size={9} className="text-muted-foreground/50 mx-1" />}
-                                                            </span>
-                                                        );
-                                                    })}
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-
-                                    {/* Saved pipelines — only shown if user has any */}
-                                    {savedPipelines.length > 0 && (
-                                        <div className="mt-6">
-                                            <div className="flex items-center gap-2 mb-2 px-1">
-                                                <Bookmark size={11} className="text-accent" />
-                                                <span className="text-[11px] font-semibold text-muted-foreground">Your saved pipelines</span>
-                                            </div>
-                                            <div className="space-y-1.5">
-                                                {savedPipelines.map(sp => (
-                                                    <div
-                                                        key={sp.name}
-                                                        className="group flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:border-accent/40 transition-colors"
-                                                    >
-                                                        <button
-                                                            onClick={() => loadRecipe(sp.slugs)}
-                                                            className="flex-1 flex items-center gap-2 min-w-0 text-left"
-                                                        >
-                                                            <Bookmark size={11} className="text-accent shrink-0" fill="currentColor" />
-                                                            <div className="flex-1 min-w-0">
-                                                                <p className="font-display text-[13px] font-semibold text-foreground tracking-[-0.015em] truncate">{sp.name}</p>
-                                                                <p className="font-mono text-[10px] text-muted-foreground truncate">
-                                                                    {sp.slugs.length} step{sp.slugs.length !== 1 ? "s" : ""} · saved {timeAgo(sp.savedAt)}
-                                                                </p>
-                                                            </div>
-                                                            <ArrowDown size={11} className="text-muted-foreground/40 group-hover:text-accent rotate-[-90deg] transition-colors shrink-0" />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); deleteSavedPipeline(sp.name); }}
-                                                            className="opacity-0 group-hover:opacity-100 h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                                                            title="Delete saved pipeline"
-                                                            aria-label={`Delete ${sp.name}`}
-                                                        >
-                                                            <X size={11} />
-                                                        </button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                            {steps.length === 0 && <div className="pt-pipeline-empty"><div className="wf-empty-flow" aria-hidden="true"><span>01</span><i /><span>02</span><i /><span><CheckCircle size={22} /></span></div><h3>Give your PDF a clear path.</h3><p>Start with a recipe above, or choose your first tool. You can change the order at any time.</p><button className="wf-button" onClick={() => { setPaletteOpen(true); document.getElementById("pipeline-tool-search")?.focus(); }}><Plus size={16} /> Choose a step</button></div>}
+                            {steps.length > 0 && <button className="wf-add-step" disabled={processing} onClick={() => { setPaletteOpen(true); document.getElementById("pipeline-tool-search")?.focus(); }}><Plus size={17} /> Add another step</button>}
+                        </div>
+                        <div className={cn("wf-output-stage", resultUrl && "wf-output-ready")}>
+                            <div className="wf-output-icon">{resultUrl ? <CheckCircle size={23} /> : <Download size={23} />}</div><div><span className="wf-stage-label">THE FINISH LINE</span><h3>{resultUrl ? "Your PDF is ready." : "One finished PDF"}</h3><p>{resultBlob ? `${(resultBlob.size / 1024).toFixed(0)} KB · ${outputName}` : "Every step comes together in one download."}</p></div>
+                            {resultUrl && <div className="wf-output-actions"><a className="wf-button wf-button-primary" href={resultUrl} download={outputName}><Download size={15} /> Download</a><button className="wf-text-button" onClick={() => runPipeline(0)}><RefreshCw size={14} /> Run again</button></div>}
                         </div>
                     </div>
-                </div>
+                </section>
+
+                {paletteOpen && compactPalette && <div className="wf-palette-backdrop" aria-hidden="true" onClick={closePalette} />}
+                <aside ref={paletteRef} role={paletteOpen && compactPalette ? "dialog" : undefined} aria-modal={paletteOpen && compactPalette ? true : undefined} className={cn("pt-pipeline-palette wf-setup-rail", paletteOpen && "wf-palette-open")} aria-label="Tool palette">
+                    <div className="wf-rail-heading"><div><p className="wf-section-label">MAKE IT YOURS</p><h2>Add a step</h2></div><button className="wf-palette-close" aria-label="Close palette" onClick={() => setPaletteOpen(false)}><X size={19} /></button></div>
+                    <p className="wf-rail-description">Choose a tool to add it to the end of your workflow.</p>
+                    <div className="wf-search"><Search size={17} /><input id="pipeline-tool-search" aria-label="Search pipeline tools" placeholder={`Filter ${pipelineTools.length} tools…`} value={paletteSearch} onChange={event => setPaletteSearch(event.target.value)} />{paletteSearch && <button aria-label="Clear search" onClick={() => setPaletteSearch("")}><X size={15} /></button>}</div>
+                    <div className="wf-palette-tools">
+                        {paletteSearch.trim() ? <div>{filteredPalette.map(tool => <PaletteToolButton key={tool.slug} tool={tool} onAdd={addStep} disabled={processing} />)}{!filteredPalette.length && <p className="wf-rail-description">No matching tools. Try another search.</p>}</div>
+                            : CATEGORY_ORDER.map((group, index) => { const items = pipelineTools.filter(tool => group.cats.has(tool.category)); return items.length > 0 && <details className="wf-tool-group" key={group.id} open={index === 0}><summary>{group.label}<span>{items.length}</span></summary>{items.map(tool => <PaletteToolButton key={tool.slug} tool={tool} onAdd={addStep} disabled={processing} />)}</details>; })}
+                    </div>
+                    <div className="wf-saved-section"><div className="wf-subheading"><Bookmark size={17} /><h3>Your saved routines</h3></div>
+                        {savedPipelines.length ? savedPipelines.map(saved => <div className="wf-saved-routine" key={saved.name}><button disabled={processing} onClick={() => loadRecipe(saved.slugs)}><strong>{saved.name}</strong><span>{saved.slugs.length} steps · {timeAgo(saved.savedAt)}</span></button><button disabled={processing} aria-label={`Delete ${saved.name}`} onClick={() => deleteSavedPipeline(saved.name)}><X size={15} /></button></div>) : <p>Save a workflow and it will be waiting here next time.</p>}
+                        <div className="wf-inline-actions"><button disabled={processing || !steps.length} onClick={saveCurrentPipeline}><BookmarkPlus size={15} /> Save</button><button disabled={processing || !steps.length} onClick={shareCurrentPipeline}><Share2 size={15} /> {shareCopied ? "Copied" : "Share"}</button></div>
+                    </div>
+                    <p className="wf-device-note">The recipe stays in this browser. Your PDF is uploaded only when you run it.</p>
+                </aside>
             </div>
-
-            {/* ─── Tool palette (right rail on desktop, drawer on mobile) ── */}
-            <aside
-                className={cn(
-                    "border-l border-border bg-paper-2/40 flex flex-col",
-                    "lg:w-80 lg:flex",
-                    paletteOpen ? "fixed inset-y-11 right-0 z-50 w-[88vw] max-w-sm flex animate-slide-in-right" : "hidden lg:flex",
-                )}
-                aria-label="Tool palette"
-            >
-                <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-                    <div className="flex items-center gap-2">
-                        <p className="section-mark">Palette</p>
-                    </div>
-                    <button
-                        onClick={() => setPaletteOpen(false)}
-                        className="lg:hidden h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                        aria-label="Close palette"
-                    >
-                        <X size={14} />
-                    </button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto">
-                    {/* Saved pipelines section in palette — recall affordance for repeat users */}
-                    {savedPipelines.length > 0 && (
-                        <div className="px-4 pt-4 pb-2 border-b border-border/60">
-                            <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2">
-                                    <Bookmark size={11} className="text-accent" fill="currentColor" />
-                                    <span className="text-[11px] font-semibold text-muted-foreground">Saved · {savedPipelines.length}</span>
-                                </div>
-                                {steps.length > 0 && (
-                                    <button
-                                        onClick={saveCurrentPipeline}
-                                        className="font-medium text-[9.5px] text-accent hover:underline"
-                                        title="Save current pipeline"
-                                    >
-                                        + Save
-                                    </button>
-                                )}
-                            </div>
-                            <div className="space-y-1 mb-3">
-                                {savedPipelines.slice(0, 4).map(sp => (
-                                    <div key={sp.name} className="group flex items-center gap-1.5">
-                                        <button
-                                            onClick={() => loadRecipe(sp.slugs)}
-                                            className="flex-1 text-left px-2 py-1.5 rounded text-[12px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 truncate transition-colors"
-                                            title={`${sp.slugs.length} steps`}
-                                        >
-                                            <span className="text-accent mr-1.5"></span>{sp.name}
-                                        </button>
-                                        <button
-                                            onClick={() => deleteSavedPipeline(sp.name)}
-                                            className="opacity-0 group-hover:opacity-100 h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all shrink-0"
-                                            aria-label={`Delete ${sp.name}`}
-                                        >
-                                            <X size={10} />
-                                        </button>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Recipes */}
-                    <div className="px-4 pt-4 pb-2">
-                        <div className="flex items-center gap-2 mb-3">
-                            <Sparkles size={11} className="text-accent" />
-                            <span className="text-[11px] font-semibold text-muted-foreground">Quick recipes</span>
-                        </div>
-                        <div className="space-y-1.5">
-                            {RECIPES.map(r => (
-                                <button
-                                    key={r.name}
-                                    onClick={() => loadRecipe(r.slugs)}
-                                    className="group block w-full text-left rounded-lg border border-border bg-card hover:border-accent/40 hover:bg-card transition-colors p-3"
-                                >
-                                    <p className="font-display text-[13.5px] font-semibold text-foreground tracking-[-0.015em] mb-0.5">{r.name}</p>
-                                    <p className="text-[12px] text-muted-foreground leading-snug mb-2">{r.description}</p>
-                                    <div className="flex items-center gap-1 flex-wrap">
-                                        {r.slugs.map((s, idx) => {
-                                            const t = pipelineTools.find(p => p.slug === s);
-                                            if (!t) return null;
-                                            return (
-                                                <span key={s} className="inline-flex items-center">
-                                                    <span className="font-mono text-[10px] text-muted-foreground bg-paper-2 px-1.5 py-0.5 rounded">
-                                                        {t.name}
-                                                    </span>
-                                                    {idx < r.slugs.length - 1 && <ArrowRight size={9} className="text-muted-foreground/50 mx-1" />}
-                                                </span>
-                                            );
-                                        })}
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* All tools — grouped by category */}
-                    <div className="px-4 pt-4 pb-4">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Layers size={11} className="text-accent" />
-                            <span className="text-[11px] font-semibold text-muted-foreground">All tools · {pipelineTools.length}</span>
-                        </div>
-                        <div className="relative mb-3">
-                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                            <input
-                                className="w-full h-8 pl-7 pr-7 rounded-md border border-border bg-card text-[12.5px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
-                                placeholder={`Filter ${pipelineTools.length}…`}
-                                value={paletteSearch}
-                                onChange={e => setPaletteSearch(e.target.value)}
-                            />
-                            {paletteSearch && (
-                                <button
-                                    onClick={() => setPaletteSearch("")}
-                                    className="absolute right-1.5 top-1/2 -translate-y-1/2 h-5 w-5 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                    aria-label="Clear search"
-                                >
-                                    <X size={10} />
-                                </button>
-                            )}
-                        </div>
-                        {paletteSearch.trim() ? (
-                            // Flat results when searching
-                            <div className="space-y-px">
-                                {filteredPalette.map(t => (
-                                    <PaletteToolButton key={t.slug} tool={t} onAdd={addStep} />
-                                ))}
-                                {filteredPalette.length === 0 && (
-                                    <p className="text-[11px] text-muted-foreground px-2 py-2">No tools match "{paletteSearch}".</p>
-                                )}
-                            </div>
-                        ) : (
-                            // Grouped by category when idle
-                            <div className="space-y-3">
-                                {CATEGORY_ORDER.map(group => {
-                                    const groupTools = pipelineTools.filter(t => group.cats.has(t.category));
-                                    if (groupTools.length === 0) return null;
-                                    return (
-                                        <div key={group.id}>
-                                            <p className="px-2 mb-1 text-[9.5px] font-medium text-muted-foreground">
-                                                {group.label} · {groupTools.length}
-                                            </p>
-                                            <div className="space-y-px">
-                                                {groupTools.map(t => (
-                                                    <PaletteToolButton key={t.slug} tool={t} onAdd={addStep} />
-                                                ))}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </aside>
-
-            {/* Workshop name dialog — replaces window.prompt */}
-            {nameDialog && (
-                <NameDialog
-                    title={nameDialog.title}
-                    label={nameDialog.label}
-                    initial={nameDialog.initial}
-                    onCancel={() => setNameDialog(null)}
-                    onConfirm={(value) => {
-                        nameDialog.onConfirm(value);
-                        setNameDialog(null);
-                    }}
-                />
-            )}
+            {nameDialog && <NameDialog title={nameDialog.title} label={nameDialog.label} initial={nameDialog.initial} onCancel={() => setNameDialog(null)} onConfirm={value => { nameDialog.onConfirm(value); setNameDialog(null); }} />}
         </div>
     );
 }
@@ -1287,9 +784,10 @@ function timeAgo(ts: number) {
 /** Endpoint node — file input / final output card. */
 function FlowNode({
     kind, title, subtitle, state, outputIcon,
-    onClick, onClear, onDrop, href, downloadName,
+    onClick, onClear, onDrop, href, downloadName, disabled = false,
 }: {
     kind: "endpoint";
+    disabled?: boolean;
     title: string;
     subtitle: string;
     state: "empty" | "ready";
@@ -1321,7 +819,7 @@ function FlowNode({
     );
 
     const baseClass = cn(
-        "relative flex items-center gap-3 px-4 py-3 rounded-xl transition-colors w-full text-left",
+        "pt-pipeline-endpoint relative flex items-center gap-3 px-4 py-3 rounded-xl transition-colors w-full text-left",
         empty
             ? "border-2 border-dashed border-border-strong bg-paper-2/30 hover:border-accent/50 hover:bg-accent/[0.04] cursor-pointer"
             : "border border-accent/40 bg-card",
@@ -1340,18 +838,20 @@ function FlowNode({
         <button
             type="button"
             onClick={onClick}
+            disabled={disabled}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => {
                 e.preventDefault();
                 setDragOver(false);
+                if (disabled) return;
                 const f = e.dataTransfer.files?.[0];
                 if (f && onDrop) onDrop(f);
             }}
             className={baseClass}
         >
             {inner}
-            {onClear && (
+            {onClear && !disabled && (
                 <span
                     role="button"
                     tabIndex={0}
@@ -1369,17 +869,19 @@ function FlowNode({
 
 /** Palette tool button — extracted for reuse between grouped + filtered views. */
 function PaletteToolButton({
-    tool, onAdd,
+    tool, onAdd, disabled = false,
 }: {
     tool: (typeof pipelineTools)[0];
     onAdd: (t: (typeof pipelineTools)[0]) => void;
+    disabled?: boolean;
 }) {
     const Ic = tool.icon;
     return (
         <button
+            disabled={disabled}
             onClick={() => onAdd(tool)}
             className={cn(
-                "group flex items-center gap-2 w-full px-2 h-8 rounded-md text-[12.5px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 active:bg-secondary transition-colors duration-150",
+                "pt-palette-tool group flex items-center gap-2 w-full px-2 h-8 rounded-md text-[12.5px] text-muted-foreground hover:text-foreground hover:bg-secondary/60 active:bg-secondary transition-colors duration-150",
                 `cat-${tool.category}`
             )}
         >
@@ -1396,7 +898,7 @@ function PaletteToolButton({
 /** Vertical connector between flow nodes. Animated when active. */
 function Connector({ active, done }: { active: boolean; done?: boolean }) {
     return (
-        <div className="relative h-10 flex items-center justify-center" aria-hidden="true">
+        <div className="pt-pipeline-connector relative h-10 flex items-center justify-center" data-active={active} data-done={done} aria-hidden="true">
             {/* Vertical connector line */}
             <svg
                 width="2"

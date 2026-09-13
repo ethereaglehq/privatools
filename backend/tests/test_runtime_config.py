@@ -96,3 +96,18 @@ class TestInjectRuntimeConfig:
     def test_leaves_a_verification_token_untouched(self):
         token = "google-site-verification: googleeeafcf26aae2100f.html"
         assert inject_runtime_config(token, "https://api.privatools.me") == token
+
+
+def test_google_tag_runtime_gate_is_off_until_explicitly_verified(monkeypatch):
+    from app.runtime_config import google_analytics_enabled_for_path
+    monkeypatch.delenv('GA_BROWSER_TAG_ENABLED', raising=False)
+    assert not google_analytics_enabled_for_path('/')
+    monkeypatch.setenv('GA_BROWSER_TAG_ENABLED', 'true')
+    assert google_analytics_enabled_for_path('/')
+    assert google_analytics_enabled_for_path('/tool/merge-pdf')
+    for path in ('/account', '/account/settings', '/settings', '/my-stuff', '/my-stuff/vault'):
+        assert not google_analytics_enabled_for_path(path)
+    shell = '<html><head></head><body></body></html>'
+    assert 'privatools:google-analytics' not in inject_runtime_config(shell, '')
+    assert 'privatools:google-analytics' in inject_runtime_config(shell, '', analytics_enabled=True)
+    assert inject_runtime_config('google-site-verification: synthetic', '', analytics_enabled=True) == 'google-site-verification: synthetic'

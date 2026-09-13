@@ -1,3 +1,4 @@
+import "./SpecialistTools.css";
 /**
  * BarcodeGeneratorUI — generate Code128 / 39 / EAN / UPC / ISBN / QR.
  * Workshop: type gallery + data input + preview with format-aware validation.
@@ -60,6 +61,7 @@ export function BarcodeGeneratorUI() {
     const canProcess = !validationError && status !== "processing";
 
     const generate = useCallback(async () => {
+        if (status === "processing") return;
         const v = validateBarcodeInput(barcodeType, data);
         if (v) { setError(v); return; }
         setStatus("processing"); setError(null);
@@ -79,7 +81,7 @@ export function BarcodeGeneratorUI() {
             setError(friendlyError(msg, "Couldn't generate that barcode."));
             setStatus("idle");
         }
-    }, [barcodeType, data, previewUrl]);
+    }, [barcodeType, data, previewUrl, status]);
 
     useEffect(() => {
         const h = (e: KeyboardEvent) => {
@@ -113,7 +115,7 @@ export function BarcodeGeneratorUI() {
 
     if (status === "done" && previewUrl) {
         return (
-            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="pt-specialist pt-barcode-result rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
                 <div className="relative p-7 sm:p-9 animate-corner-extend">
                     <CornerMarks />
                     <div className="flex items-start gap-5">
@@ -149,7 +151,7 @@ export function BarcodeGeneratorUI() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-barcode-workspace space-y-4">
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                     Format
@@ -162,7 +164,7 @@ export function BarcodeGeneratorUI() {
                                 key={t.value}
                                 onClick={() => setBarcodeType(t.value)}
                                 aria-pressed={active}
-                                aria-label={`Barcode format ${t.label}`}
+                                disabled={status === "processing"} aria-label={`Barcode format ${t.label}`}
                                 className={cn(
                                     "min-h-[60px] rounded-lg border p-3 text-left transition-colors",
                                     active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40"
@@ -185,7 +187,7 @@ export function BarcodeGeneratorUI() {
                 </div>
                 <div className="p-4 space-y-2">
                     <input
-                        type="text" value={data} onChange={e => setData(e.target.value)}
+                        disabled={status === "processing"} type="text" value={data} onChange={e => setData(e.target.value)}
                         placeholder={barcodeType === "qr" ? "https://example.com" : "Barcode value"}
                         aria-label={`Barcode data for ${BARCODE_TYPES.find(t => t.value === barcodeType)?.label}`}
                         aria-invalid={!!validationError && data.length > 0}
@@ -207,7 +209,7 @@ export function BarcodeGeneratorUI() {
             </div>
 
             {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
             )}

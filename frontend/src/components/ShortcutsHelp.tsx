@@ -7,6 +7,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Command, X, Keyboard } from "lucide-react";
+import { SHOW_SHORTCUTS_EVENT } from "@/lib/events";
 
 interface Shortcut { keys: string[]; label: string; }
 interface ShortcutGroup { title: string; items: Shortcut[]; }
@@ -16,7 +17,6 @@ const GROUPS: ShortcutGroup[] = [
         title: "Navigation",
         items: [
             { keys: ["⌘", "K"], label: "Open command palette" },
-            { keys: ["⌘", "B"], label: "Toggle sidebar" },
             { keys: ["⌘", "/"], label: "Open this help" },
             { keys: ["?"],      label: "Open this help (no modifier)" },
             { keys: ["Esc"],    label: "Close palette or modal" },
@@ -68,8 +68,13 @@ export function ShortcutsHelp() {
             }
             if (e.key === "Escape") setOpen(false);
         };
+        const show = () => setOpen(true);
         window.addEventListener("keydown", onKey);
-        return () => window.removeEventListener("keydown", onKey);
+        window.addEventListener(SHOW_SHORTCUTS_EVENT, show);
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            window.removeEventListener(SHOW_SHORTCUTS_EVENT, show);
+        };
     }, []);
 
     // Save focus on open, restore on close — keyboard users land back
@@ -132,7 +137,7 @@ export function ShortcutsHelp() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="shortcuts-title"
-                className="fixed inset-x-0 top-[16vh] z-[201] mx-auto w-full max-w-lg px-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-200"
+                className="fixed inset-x-0 top-[8vh] z-[201] mx-auto max-h-[84dvh] overflow-y-auto w-full max-w-lg px-5 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-4 duration-200"
             >
                 <div
                     className="rounded-2xl border border-border-strong overflow-hidden shadow-[0_30px_60px_-20px_rgba(20,15,5,0.35)] dark:shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)]"
@@ -144,7 +149,7 @@ export function ShortcutsHelp() {
                         <button
                             ref={closeBtnRef}
                             onClick={close}
-                            className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
+                            className="h-11 w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
                             aria-label="Close shortcuts help"
                         >
                             <X size={11} aria-hidden="true" />

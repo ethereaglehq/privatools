@@ -32,22 +32,18 @@ export const FEATURES: Feature[] = [
     { id: "tool", label: "Tool page", path: "/tool/:slug", why: "where nearly all traffic lands" },
     { id: "pipeline", label: "Pipeline", path: "/pipeline", why: "chain tools in sequence" },
     { id: "batch", label: "Batch", path: "/batch", why: "one tool over many files" },
+    { id: "ai", label: "AI studio", path: "/ai", why: "configure providers and downloaded models" },
+    { id: "api", label: "API reference", path: "/api", why: "documented endpoints and explicit usage checks" },
+    { id: "trust", label: "Trust center", path: "/trust", why: "explain actual processing paths and privacy controls" },
+    { id: "settings", label: "Settings", path: "/account/settings", why: "appearance and account management" },
+    { id: "sign-in", label: "Sign in", path: "/account/sign-in", why: "canonical authentication entry" },
+    { id: "sign-up", label: "Sign up", path: "/account/sign-up", why: "canonical registration entry" },
 
     // ── the user's own space ──────────────────────────────────────────────
     { id: "my-stuff", label: "My Stuff", path: "/my-stuff", why: "local activity, defaults, assets" },
     { id: "vault", label: "Vault", path: "/my-stuff/vault", why: "real AES-GCM password vault (localStore/crypto)" },
 
-    // BYOK, translate and saved signatures were listed here as missing
-    // surfaces. They are not: each lives inside a tool — ByokPanel inside the
-    // AI tools, translate as the `translate-pdf` tool, signatures inside
-    // ESignUI — and every theme reaches all of them through the catalogue. The
-    // "tool" entry above already covers them, so requiring separate routes
-    // would have meant building three redundant pages per theme.
-    //
-    // A standalone place to manage saved AI keys across tools would be a real
-    // addition, but it does not exist in ANY theme today, including the house
-    // design. That is a product gap, not a parity gap, and belongs in the
-    // roadmap rather than here.
+    // AI provider and model management now has its own shared page.
 
     // ── accounts and the developer API ────────────────────────────────────
     { id: "account", label: "Account", path: "/account", why: "sign in / sign up" },
@@ -80,7 +76,7 @@ export const NATIVE_SURFACES: Record<string, string[]> = {
         // behavior comes from the mixins in its extension file.
         "home", "tools", "tool", "pipeline", "batch", "my-stuff",
         "compare", "blog", "about", "privacy", "security", "terms",
-        "status", "support",
+        "status", "support", "ai", "api", "trust", "settings",
     ],
 };
 
@@ -95,7 +91,7 @@ export function missingFrom(skin: string): Feature[] {
  * Filled in as each is built; `PENDING` below is what is still outstanding.
  */
 export const EXTENSION_SURFACES: Record<string, string[]> = {
-    daylight: ["account", "api-keys", "vault"],
+    daylight: ["account", "api-keys", "vault", "sign-in", "sign-up"],
 };
 
 /**

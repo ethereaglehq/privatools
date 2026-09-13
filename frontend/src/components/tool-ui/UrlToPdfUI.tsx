@@ -1,3 +1,5 @@
+import { normalizeWebpageUrl } from "./webpage-url";
+import "./SpecialistTools.css";
 /**
  * UrlToPdfUI — fetch a URL & render to PDF via WeasyPrint.
  * Workshop: monospaced URL input with globe prefix, lab note about JS-rendering caveat.
@@ -6,23 +8,18 @@ import { useState, useEffect, useCallback } from "react";
 import { Globe, Download, Loader2, AlertCircle, ExternalLink, RotateCcw } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
-
 export function UrlToPdfUI() {
     const [url, setUrl] = useState("");
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [resultBlob, setResultBlob] = useState<Blob | null>(null);
 
-    const isValidUrl = (s: string) => {
-        try { new URL(s); return s.startsWith("http://") || s.startsWith("https://"); }
-        catch { return false; }
-    };
-
     const convert = useCallback(async () => {
+        if (status === "processing") return;
         const trimmed = url.trim();
         if (!trimmed) { setError("Please enter a URL"); return; }
-        const finalUrl = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
-        if (!isValidUrl(finalUrl)) { setError("Please enter a valid URL (e.g. https://example.com)"); return; }
+        const finalUrl = normalizeWebpageUrl(trimmed);
+        if (!finalUrl) { setError("Please enter a valid URL (e.g. https://example.com)"); return; }
 
         setStatus("processing"); setError(null);
         try {
@@ -39,7 +36,7 @@ export function UrlToPdfUI() {
             setError(friendlyError(msg, "Couldn't fetch that URL as a PDF."));
             setStatus("idle");
         }
-    }, [url]);
+    }, [url, status]);
 
     // Cmd+Enter to submit
     useEffect(() => {
@@ -57,7 +54,7 @@ export function UrlToPdfUI() {
         if (!resultBlob) return;
         let filename = "webpage.pdf";
         try {
-            const domain = new URL(url.trim().startsWith("http") ? url.trim() : `https://${url.trim()}`).hostname;
+            const domain = new URL(normalizeWebpageUrl(url) || "").hostname;
             filename = `${domain.replace(/\./g, "_")}.pdf`;
         } catch { /* keep default */ }
         downloadBlob(resultBlob, filename);
@@ -67,7 +64,7 @@ export function UrlToPdfUI() {
 
     if (status === "done") {
         return (
-            <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
+            <div className="pt-specialist pt-webpage-result rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
                 <div className="relative p-7 sm:p-9 animate-corner-extend">
                     <CornerMarks />
                     <div className="flex items-start gap-5">
@@ -98,7 +95,7 @@ export function UrlToPdfUI() {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-webpage-workspace space-y-4">
             <div className="rounded-xl border border-border bg-card overflow-hidden">
                 <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
                     Webpage URL
@@ -107,7 +104,7 @@ export function UrlToPdfUI() {
                     <div className="relative">
                         <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/60" aria-hidden="true" />
                         <input
-                            type="text" value={url}
+                            disabled={status === "processing"} type="text" value={url}
                             onChange={e => { setUrl(e.target.value); setError(null); }}
                             onKeyDown={e => { if (e.key === "Enter" && url.trim()) convert(); }}
                             placeholder="https://example.com"
@@ -124,7 +121,7 @@ export function UrlToPdfUI() {
             </div>
 
             {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                <div role="alert" className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
                     <AlertCircle size={13} className="shrink-0" />{error}
                 </div>
             )}
