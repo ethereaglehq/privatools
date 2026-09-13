@@ -46,7 +46,7 @@ cd privatools
 docker compose up --build
 ```
 
-Open **http://localhost:8080** — that's it!
+Open **http://localhost:8000** — that's it!
 
 ### Option 2: Manual setup
 
@@ -54,30 +54,54 @@ Open **http://localhost:8080** — that's it!
 git clone https://github.com/ethereaglehq/privatools.git
 cd privatools
 
-# Backend
-pip install -r requirements.txt
-uvicorn backend.app.main:app --reload --port 8000
+# Install the pinned Python environment (requires uv) and frontend packages.
+npm run setup:backend
+npm --prefix frontend ci
 
-# Frontend (new terminal)
-cd frontend && npm install && npm run dev
+# Build Air + Play and serve the frontend and API together.
+npm start
 ```
 
-To run the backend test suite locally, install the dev requirements:
+Open **http://127.0.0.1:8000**. The same-origin server supports real uploads,
+native account sessions, API keys, downloads, scoped security policies and the
+production PWA. Local accounts persist in `data/local/`; job files use
+`temp/local/` and are deleted after responses or by the cleanup worker. Both
+directories are ignored by Git. The launcher does not load production secrets.
+
+For active development, run `npm run backend:dev` and `npm run frontend` in
+separate terminals. Vite runs on port 5173 and proxies `/api/` to port 8000;
+the public `/api` documentation page remains a frontend route. Preview the PWA
+on port 8000 after rebuilding. To change the local backend port, use
+`npm run backend -- --port 8001` (set `VITE_DEV_API_TARGET` when using Vite).
+
+The consumer UI uses Clerk for Google, username/password and passkey sign-in,
+with password recovery by email. Configure matching public frontend/backend
+instance keys; localhost uses a Development instance with a separate user list.
+Without a key, tools work and account controls show an unavailable state.
+Existing self-hosted native accounts require explicit `VITE_AUTH_PROVIDER=local`
+and no Clerk key. See [the Clerk deployment guide](deploy/clerk-production.md).
+AI provider calls
+require the user's own provider key; browser models are installed from the AI
+studio as needed.
+
+To run the backend test suite with the installed environment:
 
 ```bash
-pip install -r requirements-dev.txt
-python -m pytest backend/tests -q
+.venv/bin/python -m pytest backend/tests -q
 ```
+
+On macOS, native-library interactions may require running each test module in
+a separate Python process; Linux CI runs the complete suite together.
 
 ### System dependencies (for full feature set)
 
 ```bash
 # macOS
-brew install tesseract ffmpeg qpdf
+brew install tesseract ffmpeg qpdf poppler pango cairo zbar
 brew install --cask libreoffice
 
 # Ubuntu / Debian
-sudo apt install tesseract-ocr ffmpeg qpdf libreoffice
+sudo apt install tesseract-ocr ffmpeg qpdf libreoffice poppler-utils libzbar0 libcairo2 libpango-1.0-0 libpangocairo-1.0-0
 ```
 
 ---
@@ -175,8 +199,10 @@ curl -X POST https://privatools.me/api/v1/compress \
 Unlike the unversioned `/api/*` routes above, v1 always requires a key: it
 meters real compute, and an open metered endpoint is a free compute farm.
 
-Recovery matters here because there is no password-reset email — signup hands
-you a one-time recovery code, and that code is the only way back in.
+Clerk accounts recover access by email; users do not need to save a recovery
+code. When Clerk is configured, native password/recovery endpoints are retired.
+Explicit legacy self-hosted deployments retain their existing account records
+and recovery-code flow.
 
 Developer clients live under `packages/`:
 

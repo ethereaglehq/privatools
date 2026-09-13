@@ -1,6 +1,13 @@
 services:
   privatools:
-    build: .
+    build:
+      context: .
+      args:
+        VITE_AUTH_PROVIDER: ${VITE_AUTH_PROVIDER:-clerk}
+        VITE_CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:-}
+        VITE_CLERK_SOCIAL_PROVIDERS: ${VITE_CLERK_SOCIAL_PROVIDERS:-google,github}
+        VITE_CLERK_USERNAME_ENABLED: ${VITE_CLERK_USERNAME_ENABLED:-true}
+        VITE_CLERK_PASSKEYS_ENABLED: ${VITE_CLERK_PASSKEYS_ENABLED:-true}
     # The deploy pulls the cosign-signed image release.yml builds on each tag
     # (PRIVATOOLS_IMAGE=ghcr.io/...:vX.Y.Z) and runs it with `up --no-build`,
     # avoiding a heavy rebuild on the VM. Defaults to the locally-built name for
@@ -58,6 +65,12 @@ services:
       # never saw the value at all.
       - GA4_MEASUREMENT_ID=${GA4_MEASUREMENT_ID:-}
       - GA4_API_SECRET=${GA4_API_SECRET:-}
+      # Browser tag: enable only after the public Google configuration is verified.
+      # Regional defaults also require the trusted nginx boundary and a reviewed
+      # positive country allowlist. See deploy/analytics.md.
+      - GA_BROWSER_TAG_ENABLED=${GA_BROWSER_TAG_ENABLED:-false}
+      - GA_TRUSTED_COUNTRY_HEADER=${GA_TRUSTED_COUNTRY_HEADER:-false}
+      - GA_DEFAULT_ON_COUNTRIES=${GA_DEFAULT_ON_COUNTRIES:-}
     restart: unless-stopped
     # Bound container stdout/stderr on disk. The default json-file driver is
     # unbounded — a 5xx storm or a left-on DEBUG session would fill the VM disk,

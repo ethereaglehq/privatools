@@ -7,8 +7,7 @@
  * tool pages paid for an identity provider that was switched off, on a site
  * whose whole pitch is that you can use it without an account.
  *
- * So it is loaded only where it is configured. Production has no key today, and
- * takes the plain `<App />` path with none of this fetched at all.
+ * Deployments without a key take the plain `<App />` path.
  */
 
 import { useEffect, type ReactNode } from "react";
@@ -39,12 +38,17 @@ export default function ClerkGate({
             const r = e.reason as { message?: string } | string | undefined;
             seen(typeof r === "string" ? r : r?.message ?? "");
         };
-        const onError = (e: ErrorEvent) => seen(e.message ?? "");
+        const onError = (e: Event) => {
+            const script = e.target;
+            if (script instanceof HTMLScriptElement && /clerk(?:\.browser)?\.js(?:\?|$)/.test(script.src)) {
+                seen("Failed to load Clerk");
+            } else seen((e as ErrorEvent).message ?? "");
+        };
         window.addEventListener("unhandledrejection", onRejection);
-        window.addEventListener("error", onError);
+        window.addEventListener("error", onError, true);
         return () => {
             window.removeEventListener("unhandledrejection", onRejection);
-            window.removeEventListener("error", onError);
+            window.removeEventListener("error", onError, true);
         };
     }, []);
 

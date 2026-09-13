@@ -45,7 +45,7 @@ describe("no surface leaks the key", () => {
 
   it("the key never appears in the request URL", async () => {
     const f = vi.spyOn(globalThis, "fetch").mockResolvedValue(
-      { ok: true, status: 200, json: async () => ({ content: [{ type: "text", text: "x" }] }) } as unknown as Response);
+      { ok: true, status: 200, json: async () => ({ candidates: [{ content: { parts: [{ text: "x" }] } }] }) } as unknown as Response);
     await complete({
       providerId: "gemini", apiKey: "AIzaDO-NOT-LEAK-ME-123456789012",
       model: "gemini-2.0-flash", messages: [{ role: "user", content: "hi" }],

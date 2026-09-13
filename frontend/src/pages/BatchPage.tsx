@@ -1,5 +1,5 @@
 /**
- * Batch — CI-build-style dashboard.
+ * Batch — a consumer workspace with task setup and a readable file queue.
  *
  * Layout:
  *   ┌─ Header: selected tool · progress meter · run button ─┐
@@ -20,11 +20,13 @@ import {
     Zap, History, Filter,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import "@/skins/experience/workflows.css";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { getToolEndpoint, getFilenameFromContentDisposition, guessExtensionFromContentType } from "@/lib/tool-endpoints";
 import { setBatchActive, clearBatchActive } from "@/lib/persistence";
 import { chooseDownloadFilename, formatErrorForClipboard, postFormData } from "@/lib/api";
+import { buildBatchForm } from "@/lib/batch-request";
 
 const BATCH_TOOL_SLUGS = new Set([
     // PDF — split / page ops
@@ -149,6 +151,8 @@ function fileAccepts(file: File, accepts: string): boolean {
 
 export default function BatchPage() {
     const [selectedTool, setSelectedTool] = useState(batchableTools[0]);
+    const [highlightQuery, setHighlightQuery] = useState("");
+    const [subtitleTarget, setSubtitleTarget] = useState<"srt" | "vtt">("vtt");
     const [files, setFiles] = useState<BatchFile[]>([]);
     const [processing, setProcessing] = useState(false);
     const [toolSearch, setToolSearch] = useState("");
@@ -191,7 +195,7 @@ export default function BatchPage() {
      * silently dropping mismatched files.
      */
     const addFiles = useCallback((newFiles: FileList | null) => {
-        if (!newFiles) return;
+        if (!newFiles || processing) return;
         const arr = Array.from(newFiles);
         const accepted = arr.filter(f => fileAccepts(f, selectedTool.accepts));
         const rejected = arr.length - accepted.length;
@@ -203,7 +207,7 @@ export default function BatchPage() {
             if (rejectedFlashRef.current) window.clearTimeout(rejectedFlashRef.current);
             rejectedFlashRef.current = window.setTimeout(() => setRejectedCount(0), 6000);
         }
-    }, [selectedTool.accepts]);
+    }, [selectedTool.accepts, processing]);
 
     const removeFile = (idx: number) => {
         setFiles(prev => {
@@ -256,20 +260,30 @@ export default function BatchPage() {
         });
 
         try {
-            const resp = await postFormData(selectedTool.endpoint, () => {
-                const formData = new FormData();
-                formData.append("file", originalFile);
-                formData.append("files", originalFile);
-                return formData;
-            }, {
-                signal,
-                timeoutMs: 300_000,
-            });
+            if (selectedTool.slug === "highlight-pdf" && !highlightQuery.trim()) {
+                throw new Error("Enter the text to highlight before processing these PDFs.");
+            }
+            let resp: Pick<Response, "blob" | "headers">;
+            if (selectedTool.slug === "subtitle-converter") {
+                const { convertSubtitles } = await import("@/components/tool-ui/subtitle-conversion");
+                const converted = convertSubtitles(await originalFile.text(), subtitleTarget);
+                if (!converted.ok) throw new Error(converted.error);
+                if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
+                const blob = new Blob([converted.output], { type: subtitleTarget === "vtt" ? "text/vtt" : "application/x-subrip" });
+                const filename = `${originalFile.name.replace(/\.[^.]+$/, "")}.${subtitleTarget}`;
+                resp = { blob: async () => blob, headers: new Headers({ "content-type": blob.type,
+                    "content-disposition": `attachment; filename*=UTF-8''${encodeURIComponent(filename)}` }) };
+            } else {
+                resp = await postFormData(selectedTool.endpoint,
+                    () => buildBatchForm(selectedTool.slug, originalFile, highlightQuery),
+                    { signal, timeoutMs: 300_000 });
+            }
             const blob = await resp.blob();
             const url = URL.createObjectURL(blob);
             const serverFilename = getFilenameFromContentDisposition(resp.headers.get("content-disposition"));
             const fallbackFilename = buildFallbackFilename(originalFile, resp.headers.get("content-type"));
-            const downloadName = chooseDownloadFilename(fallbackFilename, serverFilename);
+            const downloadName = selectedTool.slug === "subtitle-converter" && serverFilename
+                ? serverFilename : chooseDownloadFilename(fallbackFilename, serverFilename);
             const durationMs = Math.round(performance.now() - startedAt);
 
             updater(prev => {
@@ -309,7 +323,7 @@ export default function BatchPage() {
                 return next;
             });
         }
-    }, [selectedTool.endpoint, selectedTool.name, selectedTool.slug, buildFallbackFilename]);
+    }, [selectedTool.endpoint, selectedTool.name, selectedTool.slug, buildFallbackFilename, highlightQuery, subtitleTarget]);
 
     /**
      * Run the queue. Picks up only files in {pending, error} state — done
@@ -320,7 +334,7 @@ export default function BatchPage() {
         const targets = files.map((f, i) => ({ f, i })).filter(({ f }) =>
             f.status === "pending" || f.status === "error"
         );
-        if (targets.length === 0 || processing) return;
+        if (targets.length === 0 || processing || (selectedTool.slug === "highlight-pdf" && !highlightQuery.trim())) return;
 
         const controller = new AbortController();
         abortRef.current = controller;
@@ -462,387 +476,51 @@ export default function BatchPage() {
 
     const ToolIcon = selectedTool.icon;
     const runnableCount = pendingCount + errorCount;
-    const canRun = runnableCount > 0 && !processing;
+    const canRun = runnableCount > 0 && !processing && (selectedTool.slug !== "highlight-pdf" || !!highlightQuery.trim());
 
     return (
-        <div className="h-full flex flex-col">
-            {/* Header — workspace bar */}
-            <header className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 border-b border-border bg-paper-2/30">
-                <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="font-medium text-[11px] text-accent">Batch</span>
-                        <span className="font-medium text-[11px] text-muted-foreground">{files.length} file{files.length !== 1 ? "s" : ""}</span>
-                        {doneCount > 0 && <span className="font-medium text-[11px] text-accent">{doneCount} done</span>}
-                        {errorCount > 0 && <span className="font-medium text-[11px] text-destructive">{errorCount} failed</span>}
-                        {etaSeconds > 0 && (
-                            <span className="font-medium text-[11px] text-muted-foreground">
-                                · ~{etaSeconds < 60 ? `${etaSeconds}s` : `${Math.ceil(etaSeconds / 60)}m`} left
-                            </span>
-                        )}
-                    </div>
-                    <h1 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                        Apply <span className="text-accent italic font-medium">{selectedTool.name}</span> to many files
-                    </h1>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                    {history.length > 0 && !processing && (
-                        <button
-                            onClick={() => setShowHistory(s => !s)}
-                            className="hidden md:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-                            title="Recent batch runs"
-                            aria-expanded={showHistory}
-                        >
-                            <History size={12} /> Recent
-                        </button>
-                    )}
-                    {doneCount > 0 && !processing && (
-                        <button
-                            onClick={downloadAll}
-                            className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <Download size={12} /> Download all ({doneCount})
-                        </button>
-                    )}
-                    <button
-                        onClick={clearAllFiles}
-                        disabled={files.length === 0}
-                        className="hidden sm:inline-flex items-center gap-1.5 h-9 px-3 rounded-md border border-border text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                    >
-                        <Trash2 size={12} /> Clear
-                    </button>
-                    {processing ? (
-                        <button
-                            onClick={cancelRun}
-                            className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[13px] font-semibold bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/15 transition-colors"
-                        >
-                            <Square size={11} className="fill-current" />
-                            <span className="hidden sm:inline">Cancel</span>
-                            <span className="font-mono text-[11px] opacity-80">{doneCount}/{files.length}</span>
-                        </button>
-                    ) : (
-                        <button
-                            onClick={processAll}
-                            disabled={!canRun}
-                            className={cn(
-                                "inline-flex items-center gap-1.5 h-9 px-4 rounded-md text-[13px] font-semibold transition-colors",
-                                canRun
-                                    ? "bg-accent text-accent-foreground hover:brightness-105 shadow-sm"
-                                    : "bg-secondary text-muted-foreground cursor-not-allowed"
-                            )}
-                            title={errorCount > 0 ? `Retry ${errorCount} failure${errorCount !== 1 ? "s" : ""} and process ${pendingCount} pending` : undefined}
-                        >
-                            <Play size={13} />
-                            Process {runnableCount || files.length}
-                            {errorCount > 0 && <span className="font-mono text-[10.5px] opacity-80">({errorCount} retry)</span>}
-                        </button>
-                    )}
-                </div>
+        <div className="pt-studio-page pt-workflow-page pt-batch-page" data-running={processing}>
+            <header className="pt-workflow-header pt-studio-header">
+                <div className="pt-workflow-heading"><p className="pt-studio-kicker">BATCH / MORE DONE IN ONE GO</p><h1><span className="wf-air-copy">Make room for more.</span><span className="wf-play-copy">A whole pile. One click.</span></h1><p>Choose a tool, bring your files, and give every one the same treatment.</p></div>
+                <div className="wf-header-actions"><button className="wf-button" onClick={clearAllFiles} disabled={processing || !files.length}><Trash2 size={15} /> Clear</button>{processing ? <button className="wf-button wf-button-danger" onClick={cancelRun}><Square size={14} /> Cancel <span>{doneCount}/{files.length}</span></button> : <button className="wf-button wf-button-primary" onClick={processAll} disabled={!canRun}><Play size={15} /> Process {runnableCount || files.length}{errorCount > 0 && <span>({errorCount} retry)</span>}</button>}</div>
             </header>
-
-            {/* Overall progress bar */}
-            {files.length > 0 && (
-                <div className="h-1 bg-paper-2 relative">
-                    <div
-                        className={cn("h-full transition-all duration-300", processing ? "bg-accent" : doneCount === files.length ? "bg-accent" : "bg-accent/60")}
-                        style={{ width: `${progressPct}%` }}
-                    />
-                </div>
-            )}
-
-            {/* History panel — collapsible, shown above the body when toggled */}
-            {showHistory && history.length > 0 && (
-                <div className="border-b border-border bg-paper-2/40 px-5 py-3 animate-slide-down">
-                    <div className="max-w-5xl mx-auto">
-                        <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                                <History size={11} className="text-accent" />
-                                <span className="text-[11px] font-semibold text-muted-foreground">Recent batches · {history.length}</span>
-                            </div>
-                            <button
-                                onClick={clearHistory}
-                                className="font-medium text-[11px] text-muted-foreground hover:text-destructive transition-colors"
-                            >
-                                Clear
-                            </button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-                            {history.map((h, idx) => {
-                                const t = batchableTools.find(bt => bt.slug === h.toolSlug);
-                                const HIc = t?.icon;
-                                return (
-                                    <button
-                                        key={`${h.toolSlug}-${h.timestamp}-${idx}`}
-                                        onClick={() => {
-                                            if (t) {
-                                                if (selectedTool.slug !== t.slug) clearAllFiles();
-                                                setSelectedTool(t);
-                                            }
-                                            setShowHistory(false);
-                                        }}
-                                        className={cn(
-                                            "group flex items-center gap-2 px-3 py-2 rounded-lg border border-border bg-card hover:border-accent/40 transition-colors text-left",
-                                            t && `cat-${t.category}`
-                                        )}
-                                        disabled={!t}
-                                    >
-                                        {HIc && (
-                                            <span className="icon-tile icon-tile-sm shrink-0">
-                                                <HIc size={12} strokeWidth={1.75} />
-                                            </span>
-                                        )}
-                                        <div className="flex-1 min-w-0">
-                                            <p className="font-display text-[12.5px] font-semibold text-foreground tracking-[-0.01em] truncate">{h.toolName}</p>
-                                            <p className="font-mono text-[10px] text-muted-foreground truncate">
-                                                {h.done}/{h.total} done
-                                                {h.failed > 0 && <span className="text-destructive"> · {h.failed} failed</span>}
-                                                <span className="text-muted-foreground"> · {timeAgo(h.timestamp)}</span>
-                                            </p>
-                                        </div>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Body */}
-            <div className="flex-1">
-                <div className="mx-auto max-w-5xl px-5 py-6 sm:py-8">
-
-                    {/* Selected tool card with picker */}
-                    <section className="mb-6 rounded-xl border border-border bg-card overflow-hidden">
-                        <button
-                            onClick={() => setPickerOpen(o => !o)}
-                            className={cn("w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-secondary/40 transition-colors", `cat-${selectedTool.category}`)}
-                            aria-expanded={pickerOpen}
-                        >
-                            <span className="icon-tile icon-tile-sm shrink-0">
-                                <ToolIcon size={15} strokeWidth={1.75} />
-                            </span>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-display text-[15px] font-semibold text-foreground tracking-[-0.015em]">{selectedTool.name}</p>
-                                <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
-                                    Accepts {selectedTool.accepts || "any"} · outputs {selectedTool.outputLabel}
-                                </p>
-                            </div>
-                            <span className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-foreground transition-colors">
-                                {pickerOpen ? "Hide tools" : "Change tool"}
-                                {pickerOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
-                            </span>
-                        </button>
-                        {pickerOpen && (
-                            <div className="border-t border-border p-4 bg-paper-2/30 animate-fade-in">
-                                <div className="relative mb-3">
-                                    <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                                    <input
-                                        className="w-full h-9 pl-7 pr-7 rounded-md border border-border bg-card text-[13px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
-                                        placeholder={`Filter ${batchableTools.length} batchable tools…`}
-                                        value={toolSearch}
-                                        onChange={e => setToolSearch(e.target.value)}
-                                        autoFocus
-                                    />
-                                    {toolSearch && (
-                                        <button
-                                            onClick={() => setToolSearch("")}
-                                            className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                            aria-label="Clear search"
-                                        >
-                                            <X size={11} />
-                                        </button>
-                                    )}
-                                </div>
-                                <div className="max-h-[300px] overflow-y-auto -mx-1 px-1">
-                                    {toolSearch.trim() ? (
-                                        // Flat list when searching
-                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                                            {filteredTools.map(t => (
-                                                <BatchPickerOption
-                                                    key={t.slug}
-                                                    tool={t}
-                                                    active={selectedTool.slug === t.slug}
-                                                    onSelect={t => {
-                                                        if (selectedTool.slug !== t.slug) clearAllFiles();
-                                                        setSelectedTool(t);
-                                                        setPickerOpen(false);
-                                                        setToolSearch("");
-                                                    }}
-                                                />
-                                            ))}
-                                            {filteredTools.length === 0 && (
-                                                <p className="col-span-full text-[12px] text-muted-foreground px-2 py-3 text-center">
-                                                    No tools match "{toolSearch}".
-                                                </p>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        // Grouped by category
-                                        <div className="space-y-3">
-                                            {BATCH_CATEGORY_GROUPS.map(group => {
-                                                const groupTools = filteredTools.filter(t => group.cats.has(t.category));
-                                                if (groupTools.length === 0) return null;
-                                                return (
-                                                    <div key={group.id}>
-                                                        <p className="px-1 mb-1.5 text-[9.5px] font-medium text-muted-foreground">
-                                                            {group.label} · {groupTools.length}
-                                                        </p>
-                                                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
-                                                            {groupTools.map(t => (
-                                                                <BatchPickerOption
-                                                                    key={t.slug}
-                                                                    tool={t}
-                                                                    active={selectedTool.slug === t.slug}
-                                                                    onSelect={t => {
-                                                                        if (selectedTool.slug !== t.slug) clearAllFiles();
-                                                                        setSelectedTool(t);
-                                                                        setPickerOpen(false);
-                                                                    }}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                                <p className="font-medium mt-3 text-[11px] text-muted-foreground">
-                                    {batchableTools.length} tools support batching — drag a folder onto the dropzone, every file goes through the chosen tool
-                                </p>
-                            </div>
-                        )}
+            <div className="wf-batch-layout">
+                <aside className="wf-batch-setup wf-work-sheet">
+                    <div className="wf-rail-heading"><div><p className="wf-section-label">01 / SET THE TASK</p><h2>What are we doing?</h2></div><Layers size={23} /></div>
+                    <section className="pt-batch-tool-picker">
+                        <button disabled={processing} onClick={() => setPickerOpen(open => !open)} aria-expanded={pickerOpen} className="wf-selected-tool"><span className="wf-tool-icon"><ToolIcon size={25} /></span><span><strong>{selectedTool.name}</strong><small>Change tool {pickerOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}</small></span></button>
+                        {pickerOpen && <div className="wf-batch-picker-options"><div className="wf-search"><Search size={16} /><input autoFocus aria-label="Search batch tools" placeholder={`Filter ${batchableTools.length} batchable tools…`} value={toolSearch} onChange={event => setToolSearch(event.target.value)} />{toolSearch && <button aria-label="Clear search" onClick={() => setToolSearch("")}><X size={14} /></button>}</div>
+                            <div className="wf-picker-scroll">{toolSearch.trim() ? <div className="wf-picker-grid">{filteredTools.map(tool => <BatchPickerOption key={tool.slug} tool={tool} active={selectedTool.slug === tool.slug} disabled={processing} onSelect={next => { if (selectedTool.slug !== next.slug) clearAllFiles(); setSelectedTool(next); setPickerOpen(false); setToolSearch(""); }} />)}{!filteredTools.length && <p>No matching tools. Try a different search.</p>}</div> : BATCH_CATEGORY_GROUPS.map(group => { const items = filteredTools.filter(tool => group.cats.has(tool.category)); return items.length > 0 && <div className="wf-picker-group" key={group.id}><h3>{group.label}</h3><div className="wf-picker-grid">{items.map(tool => <BatchPickerOption key={tool.slug} tool={tool} active={selectedTool.slug === tool.slug} disabled={processing} onSelect={next => { if (selectedTool.slug !== next.slug) clearAllFiles(); setSelectedTool(next); setPickerOpen(false); }} />)}</div></div>; })}</div>
+                        </div>}
                     </section>
-
-                    {/* Dropzone */}
-                    <Dropzone
-                        accepts={selectedTool.accepts}
-                        onFiles={addFiles}
-                        onClick={() => inputRef.current?.click()}
-                    />
-                    <input
-                        ref={inputRef}
-                        type="file"
-                        multiple
-                        accept={selectedTool.accepts}
-                        className="hidden"
-                        onChange={e => { addFiles(e.target.files); e.target.value = ""; }}
-                    />
-
-                    {/* Rejected-files notice — appears when accepts filter drops files */}
-                    {rejectedCount > 0 && (
-                        <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-lg border border-amber-500/30 bg-amber-500/[0.06] text-amber-900 dark:text-amber-200 animate-fade-up">
-                            <AlertCircle size={13} className="shrink-0" />
-                            <span className="text-[12.5px] flex-1">
-                                Skipped <strong>{rejectedCount}</strong> file{rejectedCount !== 1 ? "s" : ""} that {rejectedCount === 1 ? "doesn't" : "don't"} match <span className="font-mono text-[11.5px]">{selectedTool.accepts || "any"}</span>.
-                            </span>
-                            <button
-                                onClick={() => setRejectedCount(0)}
-                                className="h-6 w-6 inline-flex items-center justify-center rounded hover:bg-amber-500/15"
-                                aria-label="Dismiss"
-                            >
-                                <X size={11} />
-                            </button>
-                        </div>
-                    )}
-
-                    {/* File queue */}
-                    {files.length > 0 && (
-                        <section className="mt-6">
-                            <div className="flex items-center gap-3 mb-3 px-1 flex-wrap">
-                                <div className="flex items-baseline gap-2">
-                                    <Layers size={11} className="text-accent" />
-                                    <span className="text-[11px] font-semibold text-muted-foreground">
-                                        Queue
-                                    </span>
-                                    <span className="font-mono text-[10px] text-muted-foreground">
-                                        {(totalIn / 1024).toFixed(0)} KB in
-                                        {totalOut > 0 && ` · ${(totalOut / 1024).toFixed(0)} KB out (${totalOut < totalIn ? "−" : "+"}${totalIn > 0 ? Math.abs(Math.round(((totalIn - totalOut) / totalIn) * 100)) : 0}%)`}
-                                    </span>
-                                </div>
-                                <div className="flex items-center gap-2 ml-auto flex-wrap">
-                                    {/* Parallel toggle — small but high-value */}
-                                    {!processing && (
-                                        <label className="inline-flex items-center gap-1.5 cursor-pointer select-none" title="Run 3 files at a time">
-                                            <input
-                                                type="checkbox"
-                                                checked={parallel}
-                                                onChange={e => setParallel(e.target.checked)}
-                                                className="sr-only peer"
-                                            />
-                                            <span className="relative inline-flex h-4 w-7 items-center rounded-full bg-border peer-checked:bg-accent transition-colors">
-                                                <span className="inline-block h-3 w-3 rounded-full bg-card translate-x-0.5 peer-checked:translate-x-3.5 transition-transform" />
-                                            </span>
-                                            <Zap size={10} className={cn("transition-colors", parallel ? "text-accent" : "text-muted-foreground/60")} />
-                                            <span className={cn("font-medium text-[11px]", parallel ? "text-accent" : "text-muted-foreground")}>
-                                                Parallel
-                                            </span>
-                                        </label>
-                                    )}
-                                    {errorCount > 0 && !processing && (
-                                        <button
-                                            onClick={retryAllFailures}
-                                            className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive hover:underline"
-                                        >
-                                            <RotateCw size={10} /> Retry {errorCount} failure{errorCount !== 1 ? "s" : ""}
-                                        </button>
-                                    )}
-                                    {doneCount > 0 && !processing && (
-                                        <button
-                                            onClick={removeDone}
-                                            className="font-medium inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground transition-colors"
-                                            title="Remove done files from queue"
-                                        >
-                                            <Trash2 size={10} /> Clear done
-                                        </button>
-                                    )}
-                                    {doneCount > 0 && (
-                                        <button
-                                            onClick={() => setHideDone(v => !v)}
-                                            className={cn(
-                                                "font-medium inline-flex items-center gap-1 text-[11px] transition-colors",
-                                                hideDone ? "text-accent" : "text-muted-foreground hover:text-foreground"
-                                            )}
-                                            title={hideDone ? "Show finished files" : "Hide finished files"}
-                                        >
-                                            <Filter size={10} /> {hideDone ? "Show done" : "Hide done"}
-                                        </button>
-                                    )}
-                                </div>
-                            </div>
-                            <div className="rounded-xl border border-border bg-card overflow-hidden divide-y divide-border">
-                                {visibleFiles.length === 0 && hideDone ? (
-                                    <p className="text-[12px] text-muted-foreground px-4 py-4 text-center">
-                                        All {doneCount} file{doneCount !== 1 ? "s" : ""} done. <button onClick={() => setHideDone(false)} className="text-accent hover:underline">Show them</button>
-                                    </p>
-                                ) : (
-                                    visibleFiles.map((f) => {
-                                        // Map visible index back to canonical index for actions.
-                                        const realIdx = files.indexOf(f);
-                                        return (
-                                            <FileRow
-                                                key={`${f.file.name}-${realIdx}`}
-                                                file={f}
-                                                index={realIdx}
-                                                processing={processing}
-                                                onRemove={removeFile}
-                                                onRetry={retryFile}
-                                            />
-                                        );
-                                    })
-                                )}
-                            </div>
-                        </section>
-                    )}
-                </div>
+                    <dl className="wf-task-details"><div><dt>Bring</dt><dd>{selectedTool.accepts || "Any supported file"}</dd></div><div><dt>Take away</dt><dd>{selectedTool.outputLabel}</dd></div></dl>
+                    {selectedTool.slug === "highlight-pdf" && <label className="wf-field">Text to highlight in every PDF<input value={highlightQuery} onChange={event => setHighlightQuery(event.target.value)} disabled={processing} maxLength={500} placeholder="Enter a word or phrase" /></label>}
+                    {selectedTool.slug === "subtitle-converter" && <div className="wf-subtitle-settings"><label className="wf-field">Output format<select value={subtitleTarget} onChange={event => setSubtitleTarget(event.target.value as "srt" | "vtt")} disabled={processing}><option value="vtt">WebVTT (.vtt)</option><option value="srt">SubRip (.srt)</option></select></label><p>Subtitle conversion runs on this device. Files are not uploaded.</p></div>}
+                    <label className="wf-parallel-choice"><span><Zap size={19} /><span><strong>A little faster</strong><small>Process up to 3 files at once</small></span></span><input type="checkbox" aria-label="Parallel" checked={parallel} disabled={processing} onChange={event => setParallel(event.target.checked)} /></label>
+                    <p className="wf-device-note">{selectedTool.slug === "subtitle-converter" ? "The work happens here in your browser." : "Files are uploaded when you press Process. Each one is handled as a separate job."}</p>
+                    {history.length > 0 && <div className="wf-batch-history"><button className="wf-text-button" onClick={() => setShowHistory(value => !value)} aria-expanded={showHistory}><History size={16} /> Recent batches <span>{history.length}</span></button>{showHistory && <div><div className="wf-subheading"><p>Run a familiar task again</p><button className="wf-text-button" disabled={processing} onClick={clearHistory}>Clear history</button></div>{history.map((item, index) => { const tool = batchableTools.find(candidate => candidate.slug === item.toolSlug); return <button className="wf-history-item" key={`${item.timestamp}-${index}`} disabled={!tool || processing} onClick={() => { if (tool) { if (selectedTool.slug !== tool.slug) clearAllFiles(); setSelectedTool(tool); } setShowHistory(false); }}><strong>{item.toolName}</strong><small>{item.done}/{item.total} finished{item.failed ? ` · ${item.failed} need attention` : ""} · {timeAgo(item.timestamp)}</small></button>; })}</div>}</div>}
+                </aside>
+                <section className="wf-batch-main wf-work-sheet" aria-label="Batch files">
+                    <div className="wf-sheet-heading"><div><p className="wf-section-label">02 / BRING YOUR FILES</p><h2>A place for the whole pile.</h2></div><span className="wf-status-pill">{files.length} file{files.length !== 1 ? "s" : ""}</span></div>
+                    <div className="wf-batch-drop-area"><Dropzone disabled={processing} accepts={selectedTool.accepts} onFiles={addFiles} onClick={() => inputRef.current?.click()} /><input ref={inputRef} disabled={processing} type="file" multiple accept={selectedTool.accepts} className="hidden" onChange={event => { addFiles(event.target.files); event.target.value = ""; }} /></div>
+                    {rejectedCount > 0 && <div className="wf-notice wf-notice-error" role="status"><AlertCircle size={18} /><p>Skipped {rejectedCount} file{rejectedCount !== 1 ? "s" : ""} that do not match {selectedTool.accepts || "the accepted formats"}.</p><button aria-label="Dismiss" onClick={() => setRejectedCount(0)}><X size={16} /></button></div>}
+                    <section className="pt-batch-queue">
+                        <div className="wf-queue-heading"><div><h3>{files.length ? "Your files" : "Your queue starts here"}</h3><p>{files.length ? `${(totalIn / 1024).toFixed(0)} KB in${totalOut ? ` · ${(totalOut / 1024).toFixed(0)} KB finished` : ""}` : "Add files above. We’ll keep each job easy to follow."}</p></div>{doneCount > 0 && <button className="wf-text-button" disabled={processing} onClick={downloadAll}><Download size={15} /> Download all ({doneCount})</button>}</div>
+                        {files.length > 0 && <div className="wf-queue-progress"><div className="wf-progress-label"><span>{doneCount} of {files.length} finished{errorCount > 0 ? ` · ${errorCount} need attention` : ""}</span><span>{etaSeconds > 0 ? `About ${etaSeconds < 60 ? `${etaSeconds}s` : `${Math.ceil(etaSeconds / 60)}m`} left` : `${progressPct}%`}</span></div><div className="pt-batch-progress" role="progressbar" aria-label="Completed batch files" aria-valuemin={0} aria-valuemax={files.length} aria-valuenow={doneCount} aria-valuetext={`${doneCount} of ${files.length} files completed${errorCount ? `; ${errorCount} failed` : ""}`}><div style={{ width: `${progressPct}%` }} /></div></div>}
+                        <div className="wf-queue-actions">{errorCount > 0 && !processing && <button onClick={retryAllFailures}><RotateCw size={14} /> Retry {errorCount} failure{errorCount !== 1 ? "s" : ""}</button>}{doneCount > 0 && !processing && <button onClick={removeDone}><Trash2 size={14} /> Clear done</button>}{doneCount > 0 && <button onClick={() => setHideDone(value => !value)}><Filter size={14} /> {hideDone ? "Show done" : "Hide done"}</button>}</div>
+                        {files.length ? <div className="pt-batch-files">{!visibleFiles.length && hideDone ? <div className="wf-queue-finished"><CheckCircle size={28} /><p>Every file is finished.</p><button className="wf-text-button" onClick={() => setHideDone(false)}>Show your downloads</button></div> : visibleFiles.map(item => { const index = files.indexOf(item); return <FileRow key={`${item.file.name}-${index}`} file={item} index={index} processing={processing} onRemove={removeFile} onRetry={retryFile} />; })}</div> : <div className="wf-empty-queue" aria-hidden="true"><span><FileText size={23} /></span><div><i /><i /></div><CheckCircle size={21} /></div>}
+                    </section>
+                </section>
             </div>
         </div>
     );
 }
 
 function Dropzone({
-    accepts, onFiles, onClick,
+    accepts, onFiles, onClick, disabled = false,
 }: {
     accepts: string;
+    disabled?: boolean;
     onFiles: (files: FileList | null) => void;
     onClick: () => void;
 }) {
@@ -851,15 +529,16 @@ function Dropzone({
         <button
             type="button"
             onClick={onClick}
+            disabled={disabled}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => {
                 e.preventDefault();
                 setDragOver(false);
-                onFiles(e.dataTransfer.files);
+                if (!disabled) onFiles(e.dataTransfer.files);
             }}
             className={cn(
-                "relative w-full block border-2 border-dashed rounded-xl px-6 py-10 sm:py-12 text-center transition-colors group",
+                "pt-batch-dropzone relative w-full block border-2 border-dashed rounded-xl px-6 py-10 sm:py-12 text-center transition-colors group",
                 dragOver
                     ? "border-accent bg-accent/[0.06]"
                     : "border-border-strong bg-paper-2/40 hover:border-accent/55 hover:bg-accent/[0.04]"
@@ -882,15 +561,17 @@ function Dropzone({
 }
 
 function BatchPickerOption({
-    tool, active, onSelect,
+    tool, active, onSelect, disabled = false,
 }: {
     tool: BatchTool;
     active: boolean;
+    disabled?: boolean;
     onSelect: (t: BatchTool) => void;
 }) {
     const Ic = tool.icon;
     return (
         <button
+            disabled={disabled}
             onClick={() => onSelect(tool)}
             className={cn(
                 "group flex items-center gap-2 px-2.5 h-8 rounded-md text-left text-[12.5px] transition-colors border",
@@ -947,13 +628,13 @@ function FileRow({
         : 0;
     return (
         <div className={cn(
-            "flex items-center gap-3 px-4 py-3 transition-colors",
+            "pt-batch-file flex items-center gap-3 px-4 py-3 transition-colors",
             f.status === "processing" && "bg-accent/[0.05]",
             f.status === "done"       && "bg-accent/[0.025]",
             f.status === "error"      && "bg-destructive/[0.04]",
-        )}>
+        )} data-file-status={f.status}>
             {/* Index */}
-            <span className="font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-7">
+            <span className="pt-batch-number font-mono text-[10.5px] tracking-wider text-muted-foreground shrink-0 w-7">
                 {String(index + 1).padStart(2, "0")}
             </span>
             {/* Status dot */}

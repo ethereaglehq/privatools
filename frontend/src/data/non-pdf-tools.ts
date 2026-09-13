@@ -46,7 +46,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "image-compressor", icon: ImageIcon, name: "Image Compressor",
     description: "Reduce JPEG/PNG/WebP size without losing quality",
-    longDescription: "Compress images online for free — reduce JPEG, PNG, and WebP file sizes by up to 80% without visible quality loss. Drag multiple files, see live savings, and download instantly. No upload to external servers.",
+    longDescription: "Compress JPEG, PNG, or WebP images online. Choose quality settings, compare file sizes, and inspect the result before downloading. Savings depend on the source and settings. Files use temporary server processing when you run this tool.",
     synonyms: "shrink optimize jpg png webp size reduce make smaller",
     popularity: 2,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp", outputLabel: "compressed images",
@@ -54,7 +54,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "image-converter", icon: RefreshCw, name: "Image Format Converter",
     description: "Convert between WebP, PNG, JPG, TIFF, and HEIC",
-    longDescription: "Convert images online for free — change between WebP, PNG, JPG, TIFF, BMP and HEIC formats instantly. Perfect for converting iPhone HEIC photos to JPG. No upload required, processed locally.",
+    longDescription: "Convert images online for free — change between WebP, PNG, JPG, TIFF, BMP and HEIC formats instantly. Perfect for converting iPhone HEIC photos to JPG. Files are uploaded to PrivaTools for temporary conversion.",
     synonyms: "format convert jpg png webp avif tiff bmp gif image format",
     popularity: 5,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.tiff,.heic,.bmp", outputLabel: "converted image",
@@ -85,8 +85,8 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   },
   {
     slug: "image-ocr", icon: ScanText, name: "Image OCR",
-    description: "Extract text from images using optical character recognition",
-    longDescription: "Extract text from images online for free using OCR. Upload photos of documents, screenshots, receipts, or handwritten notes and get all readable text. Supports 40+ languages via Tesseract. Private and instant.",
+    description: "Read text from images with local OCR or your AI provider",
+    longDescription: "Extract text from document images, screenshots, and receipts. Browser OCR offers 13 language choices and downloads language data when needed; a vision-capable AI provider is optional and receives your image directly. Accuracy depends on the scan, typography, and chosen engine. Review the text carefully, especially handwriting.",
     synonyms: "text extract from picture recognize",
     popularity: 35,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif", outputLabel: "extracted text",
@@ -96,7 +96,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "extract-audio", icon: Music, name: "Extract Audio from Video",
     description: "Strip the MP3/WAV audio track from a video file",
-    longDescription: "Extract audio from video online for free — pull the audio track from any MP4, MOV, WebM, or AVI file and save as MP3, WAV, or OGG. No quality loss, processed directly in your browser.",
+    longDescription: "Extract audio from video online for free — pull the audio track from any MP4, MOV, WebM, or AVI file and save as MP3, WAV, or OGG. Choose an output format; encoding can affect quality. Files are processed temporarily on the PrivaTools server.",
     synonyms: "rip audio mp3 from video soundtrack",
     popularity: 56,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "audio.mp3",
@@ -252,7 +252,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     category: "document-office", clientOnly: true, accepts: ".csv,.json", outputLabel: "converted file",
   },
   {
-    slug: "markdown-html", icon: Code2, name: "Markdown to HTML",
+    slug: "markdown-html", icon: Code2, name: "Markdown Editor & HTML",
     description: "Convert Markdown writing into web-ready HTML",
     longDescription: "Convert Markdown to HTML online for free — paste or upload .md files and get clean, semantic HTML output with live preview and syntax highlighting. Perfect for blog posts, documentation, and README files.",
     synonyms: "md html convert preview rendering",
@@ -269,8 +269,8 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   },
   {
     slug: "remove-background", icon: UserX, name: "Background Remover",
-    description: "Remove backgrounds from images using local AI",
-    longDescription: "Remove image background online for free using AI — upload any photo and instantly remove the background. Perfect for product photos, profile pictures, passport photos, and design work. Processed on your server, not third-party.",
+    description: "Make backgrounds transparent with browser or server AI",
+    longDescription: "Remove an image background using a browser model or the server engine. Browser mode downloads a model before processing on this device; server mode uploads the image for temporary processing. Inspect edges and fine details before using the result.",
     synonyms: "transparent cutout subject extract bg remove bg",
     popularity: 3,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "no_background.png",
@@ -294,7 +294,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "image-watermark", icon: Stamp, name: "Image Watermark",
     description: "Add text watermarks to photos and images",
-    longDescription: "Add watermark to images online for free — protect your photos with customizable text watermarks. Choose position (center, corners, or tiled), opacity, font size, and color. Processed locally, no upload.",
+    longDescription: "Add watermark to images online for free — protect your photos with customizable text watermarks. Choose position (center, corners, or tiled), opacity, font size, and color. Files are processed temporarily on the PrivaTools server.",
     synonyms: "watermark stamp brand image logo",
     popularity: 15,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "watermarked.png",
@@ -317,8 +317,8 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   },
   {
     slug: "generate-barcode", icon: ScanLine, name: "Barcode Generator",
-    description: "Generate Code128, EAN-13, QR codes from any text",
-    longDescription: "Generate barcodes online for free — create Code128, Code39, EAN-13, EAN-8, UPC-A, ISBN-13, and QR codes from any text or number. Download as high-resolution PNG images. No sign-up required.",
+    description: "Generate QR or linear barcodes from valid data",
+    longDescription: "Create PNG images for Code128, Code39, EAN-13, EAN-8, UPC-A, ISBN-13, or QR codes. Each format has its own character and length rules; the tool validates the value before generation. Download PNG output and test readability with your intended scanner.",
     synonyms: "barcode ean upc code128 qr",
     popularity: 98,
     category: "developer", accepts: "", outputLabel: "barcode.png",
@@ -382,8 +382,8 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   },
   {
     slug: "qr-reader", icon: QrCode, name: "QR Code Reader",
-    description: "Decode QR codes and barcodes from images",
-    longDescription: "Read QR codes online for free — upload any image containing a QR code or barcode and instantly decode its contents. Supports QR, Code128, EAN, UPC, and other popular barcode formats. No app needed.",
+    description: "Decode QR codes from an uploaded image",
+    longDescription: "Read a QR code from an uploaded image and inspect its decoded text or link. The image uses temporary server processing. This tool reads QR codes; linear barcode formats such as Code128, EAN, and UPC are not supported by this reader.",
     synonyms: "decode scan camera",
     popularity: 37,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "decoded text",
@@ -415,7 +415,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "transcribe-audio", icon: Mic, name: "Transcribe Audio (AI)",
     description: "Speech to text in your browser — or with your own AI key",
-    longDescription: "Transcribe audio to text online for free — meetings, voice notes, interviews. By default OpenAI Whisper runs entirely in your browser via WebAssembly: the model downloads once (~41 MB) and your recording never leaves the tab. Prefer higher accuracy? Use your own OpenAI or Groq key (or a self-hosted endpoint) and the audio goes straight from your browser to that provider, never through us. Timestamped transcript, plain-text download, and SRT subtitles included.",
+    longDescription: "Transcribe audio with an on-device Whisper model or your own OpenAI, Groq, or self-hosted connection. Local mode downloads the model and keeps the recording in your browser; provider mode sends the audio directly to the selected provider and may incur its charges. Review names, timestamps, and wording before exporting text or subtitles.",
     synonyms: "transcribe speech to text whisper stt voice notes meeting minutes subtitles dictation",
     popularity: 20,
     category: "video-audio", clientOnly: true, byok: true, accepts: ".mp3,.wav,.m4a,.ogg,.opus,.webm,.flac,.aac", outputLabel: "transcript.txt",
@@ -499,7 +499,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "jpg-to-webp", icon: RefreshCw, name: "JPG to WebP",
     description: "Convert JPG to WebP for smaller, web-optimized files",
-    longDescription: "Convert JPG to WebP online for free — WebP is Google's modern image format, typically 25–35% smaller than JPEG at equivalent quality. Supported by all modern browsers. Ideal for faster website page loads.",
+    longDescription: "Convert JPEG images to WebP for web delivery. Output size and quality depend on the source image and encoder settings; compare the result before replacing the original.",
     synonyms: "convert smaller google modern format",
     popularity: 27,
     category: "image", accepts: ".jpg,.jpeg", outputLabel: "image.webp",
@@ -539,7 +539,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "bmp-to-png", icon: RefreshCw, name: "BMP to PNG",
     description: "Convert BMP bitmap to PNG — lossless, much smaller",
-    longDescription: "Convert BMP to PNG online for free — PNG is also lossless but uses efficient compression. Output files are typically 5–10x smaller than the BMP source with zero pixel data loss.",
+    longDescription: "Convert BMP images to PNG, which uses lossless compression and is broadly supported by browsers and image editors. Output size depends on the original bitmap.",
     synonyms: "windows bitmap convert lossless",
     popularity: 25,
     category: "image", accepts: ".bmp", outputLabel: "image.png",
@@ -605,7 +605,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "mp4-to-webm", icon: Film, name: "MP4 to WebM",
     description: "Convert MP4 to WebM for web embedding",
-    longDescription: "Convert MP4 to WebM online for free — WebM (VP9 video + Opus audio) produces 30–50% smaller files than MP4 at equivalent quality. Native HTML5 video support in all modern browsers without a transcoding step on your server.",
+    longDescription: "Convert MP4 videos to WebM using the available server codecs. Output size, quality, and conversion time depend on the source and selected settings. Check that the destination browser or application supports the resulting video.",
     synonyms: "convert smaller open web vp9",
     popularity: 60,
     category: "video-audio", accepts: ".mp4", outputLabel: "video.webm",

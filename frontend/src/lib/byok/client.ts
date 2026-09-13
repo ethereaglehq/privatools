@@ -63,7 +63,9 @@ export async function complete(args: CompleteArgs): Promise<string> {
     if (!res.ok) throw classifyHttpStatus(res.status);
 
     const json = await res.json().catch(() => ({}));
-    return parseResponse(provider, json);
+    const text = parseResponse(provider, json);
+    if (!text.trim()) throw new ByokError("Unknown", "provider returned no text", "The provider returned no answer. Check the model name or try a different model.");
+    return text;
 }
 
 export interface TranscribeArgs {

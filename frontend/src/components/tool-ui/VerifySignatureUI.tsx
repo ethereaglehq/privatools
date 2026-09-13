@@ -9,11 +9,12 @@ import { uploadFile } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
 
 interface SigResult {
-    valid: boolean;
-    signatures: { signer: string; date: string; valid: boolean }[];
+    has_signatures: boolean;
+    signatures: { signer: string; date: string; status: string }[];
+    note?: string;
 }
 
-type Verdict = "none" | "valid" | "untrusted" | "tampered";
+type Verdict = "none" | "untrusted";
 
 export function VerifySignatureUI() {
     const [file, setFile] = useState<File | null>(null);
@@ -46,23 +47,11 @@ export function VerifySignatureUI() {
         return () => window.removeEventListener("keydown", h);
     }, [canProcess, process]);
 
-    // Compute the high-level verdict: none / valid / untrusted / tampered.
-    // We can only distinguish field-detected vs. cryptographically-broken with our backend today,
-    // so "untrusted" is shown when fields exist but PKI trust is not asserted, and "tampered"
-    // when any signature comes back valid:false.
-    const verdict = useMemo<Verdict>(() => {
-        if (!result || !result.signatures || result.signatures.length === 0) return "none";
-        const anyInvalid = result.signatures.some(s => s.valid === false);
-        if (anyInvalid) return "tampered";
-        if (result.valid === false) return "tampered";
-        return result.valid ? "untrusted" : "tampered";
-    }, [result]);
-
-    const verdictMeta: Record<Verdict, { tone: "accent" | "copper" | "danger" | "muted"; title: string; sub: string; icon: typeof ShieldCheck }> = {
-        none:      { tone: "muted",  title: "No signatures found",        sub: "This PDF doesn't contain any signature fields",                icon: ShieldQuestion },
-        valid:     { tone: "accent", title: "Signatures look intact",     sub: "Signature fields detected — document hasn't been altered",     icon: ShieldCheck },
-        untrusted: { tone: "copper", title: "Signed, trust not verified", sub: "Fields detected. Full PKI trust-chain validation not yet — verify the signer through your viewer of record", icon: ShieldAlert },
-        tampered:  { tone: "danger", title: "Signature broken or tampered", sub: "At least one signature failed validation — the document may have been altered after signing", icon: ShieldAlert },
+    // The endpoint detects fields only. It cannot establish validity or tampering.
+    const verdict: Verdict = result?.signatures?.length ? "untrusted" : "none";
+    const verdictMeta: Record<Verdict, { tone: "copper" | "muted"; title: string; sub: string; icon: typeof ShieldCheck }> = {
+        none: { tone: "muted", title: "No signature fields found", sub: "A visible signature image is not a digital signature field.", icon: ShieldQuestion },
+        untrusted: { tone: "copper", title: "Signature fields found", sub: "This check detects fields. It does not verify the signer, certificate, or document integrity.", icon: ShieldAlert },
     };
 
     const toneStyles = (tone: "accent" | "copper" | "danger" | "muted") => {
@@ -90,7 +79,7 @@ export function VerifySignatureUI() {
                         const meta = verdictMeta[verdict];
                         const t = toneStyles(meta.tone);
                         const Icon = meta.icon;
-                        const cornerTone: "accent" | "copper" | "danger" = meta.tone === "danger" ? "danger" : meta.tone === "copper" ? "copper" : "accent";
+                        const cornerTone = meta.tone === "copper" ? "copper" : "accent";
                         return (
                             <div className={cn("relative rounded-2xl border overflow-hidden", t.border)} role="status" aria-live="polite">
                                 <div className="relative p-6 animate-corner-extend">
@@ -129,9 +118,9 @@ export function VerifySignatureUI() {
                                         <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
                                         <div className={cn(
                                             "h-8 w-8 rounded-lg flex items-center justify-center shrink-0",
-                                            s.valid ? "bg-accent/12 border border-accent/30" : "bg-copper/15 border border-copper/35"
+                                            "bg-copper/15 border border-copper/35"
                                         )}>
-                                            {s.valid ? <CheckCircle2 size={14} className="text-accent" /> : <XCircle size={14} className="text-copper" />}
+                                            <ShieldQuestion size={14} className="text-copper" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[13.5px] font-medium text-foreground truncate">{s.signer || "Unknown signer"}</p>
@@ -139,9 +128,9 @@ export function VerifySignatureUI() {
                                         </div>
                                         <span className={cn(
                                             "font-medium text-[9.5px] px-2 py-0.5 rounded",
-                                            s.valid ? "bg-accent/15 text-accent" : "bg-copper/15 text-copper"
+                                            "bg-copper/15 text-copper"
                                         )}>
-                                            {s.valid ? "Valid" : "Invalid"}
+                                            Detected
                                         </span>
                                     </div>
                                 ))}

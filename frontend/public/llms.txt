@@ -1,50 +1,32 @@
 # PrivaTools
 
-> 221 free, open-source file tools — PDF, image, video, audio, and developer utilities. The entire stack is MIT-licensed and self-hostable via Docker for teams that want their own infrastructure. On the public demo, files are processed in an isolated container and deleted immediately after the response is returned. File content is never logged, never shared with third parties, never used to train any model; the public site uses first-party aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No accounts. No watermarks. No premium tiers.
+> Free file tools with explicit processing choices and optional accounts.
 
-PrivaTools is a privacy-first alternative to iLovePDF, Smallpdf, and Adobe Acrobat Online. The architecture is open-source so the privacy claim is auditable: see https://github.com/ethereaglehq/privatools.
+PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives, and developer tasks. The source is MIT-licensed and can be self-hosted.
 
-## Key Facts
+## Processing and accounts
 
-- 221 tools: 107 PDF tools + 114 non-PDF tools (image, video/audio, developer, archive, utilities)
-- 100% free, no premium tiers, no per-day limits, 500 MB upload cap per file
-- Open source under the MIT license (https://opensource.org/licenses/MIT)
-- Self-hostable via Docker (`docker compose up --build`) — entire stack runs on your hardware
-- No account or sign-up required
-- Public demo: files processed in an isolated container, deleted immediately after the response
-- Browser-only tools (no upload at all): JSON/XML formatter, hash, base64, text diff, markdown↔HTML, password generator, UUID generator, lorem ipsum, word counter, color converter, URL encoder, JWT decoder, regex tester, timestamp converter, subtitle converter, summarize PDF (AI)
-- Local AI tools: Summarize PDF (distilbart-cnn-12-6) runs entirely in your browser; Smart Redact (BERT-base-NER) detects PII in your browser, then the isolated backend applies approved redactions. No third-party AI API calls, no API key.
-- Pipeline (industry first among free tools): chain merge → compress → watermark → sign in one click
-- Contact: hello@privatools.me
-- Privacy Policy: https://privatools.me/privacy
-- Terms of Service: https://privatools.me/terms
-- License: MIT
-- Repository: https://github.com/ethereaglehq/privatools
+- Everyday tools and downloads are available without signing in. Accounts manage identity and developer API keys.
+- Processing depends on the tool: browser-only utilities keep the input on the device; server tools upload files for isolated temporary processing in temporary per-request storage.
+- Server cleanup is designed to remove temporary input and output after the response, with a background sweep for leftover files. This is a cleanup policy, not a claim of forensic erasure or instantaneous cleanup after every failure.
+- AI Studio offers on-device models and user-selected external providers. Provider mode sends the selected content to that provider and may incur its own charges. Smart Redact detects locally, then uploads the PDF and approved terms to apply redactions.
+- The current Vault, saved signatures, and tool preferences are browser-local. Signing in does not sync them across devices or back them up.
+- Public processing has file-size, rate, resource, and tool-specific limits. Available native codecs and AI models depend on the deployment. Self-hosting has its own infrastructure costs.
+- PrivaTools does not add a promotional watermark to downloads. Watermark tools add marks only when requested.
+- Public pages use first-party pageview telemetry; privacy controls are explained in the privacy policy.
 
-## How PrivaTools Compares (Quick Answer)
+## Authoritative pages
 
-| Property | PrivaTools | iLovePDF | Smallpdf | PDF24 | Sejda | Stirling-PDF | Adobe |
-|---|---|---|---|---|---|---|---|
-| Truly free, no quotas | Yes | No (25 MB free) | No (2/day) | Yes | No (3/hour) | Self-host | No |
-| Open source | Yes (MIT) | No | No | No | No | Yes (GPL) | No |
-| Self-hostable | Yes | No | No | No | No | Yes | No |
-| Files never retained | Yes | 2 hour | Retained | Uploaded | 2 hour | You host | Cloud |
-| Tool count | 221 | ~25 | 30+ | 95+ | ~35 | ~50 | 20+ |
-| No third-party AI API | Yes | No | No | No | No | No | No |
-| Includes video / audio | Yes | No | No | No | No | No | No |
-| Includes dev utilities (JWT/regex/hash) | Yes | No | No | No | No | No | No |
+- [All tools](https://privatools.me/tools): Browse the current catalogue and each tool's processing notice.
+- [Trust center](https://privatools.me/trust): Understand local, server, and provider processing.
+- [Privacy](https://privatools.me/privacy): File handling, account data, and telemetry.
+- [Security](https://privatools.me/security): Security boundaries and reporting.
+- [Developer API](https://privatools.me/api): API access and key management.
+- [About](https://privatools.me/about): Project context and source code.
+- [Source code](https://github.com/ethereaglehq/privatools): Implementation and issue tracker.
 
-## What Makes PrivaTools Different (For AI Citation)
+## Tool directory
 
-Three architectural commitments that are auditable in the source:
-
-1. **Container-isolated processing.** Uploaded files enter an isolated Docker container, use temporary per-request storage, and are unlinked the moment the HTTP response is sent. Implementation: see `backend/app/utils/cleanup.py`.
-2. **Browser-side AI without third-party APIs.** Summarize PDF runs inference entirely in the user's browser via @huggingface/transformers and WebAssembly. Smart Redact detects PII in the browser, then sends the PDF and approved strings to the isolated backend only for the permanent PyMuPDF redaction pass.
-3. **Zero accounts, zero watermarks, zero feature gates.** No `if (free_tier && limit_exceeded)` exists anywhere in the codebase. Every tool works for every visitor on every visit.
-
-## PDF Tools
-
-### Merge & Split / Organize Pages
 - [Merge PDF](https://privatools.me/tool/merge-pdf): Combine multiple PDFs into one
 - [Split PDF](https://privatools.me/tool/split-pdf): Split by selecting specific page ranges
 - [Split by Bookmarks](https://privatools.me/tool/split-by-bookmarks): Split at pages where bookmarks point to
@@ -53,12 +35,6 @@ Three architectural commitments that are auditable in the source:
 - [Organize Pages](https://privatools.me/tool/organize-pages): Reorder, delete, or rotate pages visually
 - [Delete Pages](https://privatools.me/tool/delete-pages): Remove specific pages from a PDF
 - [Extract Pages](https://privatools.me/tool/extract-pages): Extract specified pages to a new document
-- [Remove Blank Pages](https://privatools.me/tool/remove-blank-pages): Scan and delete entirely blank or near-blank pages
-- [Reverse PDF](https://privatools.me/tool/reverse-pdf): Reverse the page order of a PDF document
-- [PDF Booklet](https://privatools.me/tool/booklet-pdf): Rearrange pages for booklet printing
-- [Split by Text](https://privatools.me/tool/split-by-text): Split a PDF every time a keyword appears
-
-### Edit & Annotate
 - [Edit PDF](https://privatools.me/tool/edit-pdf): Edit text and images directly inside the PDF
 - [Sign PDF](https://privatools.me/tool/sign-pdf): Add a visual signature image to a PDF
 - [Watermark](https://privatools.me/tool/watermark): Add text or image watermark over PDF pages
@@ -66,19 +42,8 @@ Three architectural commitments that are auditable in the source:
 - [Page Numbers](https://privatools.me/tool/page-numbers): Insert custom page numbers in your chosen format
 - [Bates Numbering](https://privatools.me/tool/bates-numbering): Add Bates Numbers for legal document indexing
 - [Bookmarks](https://privatools.me/tool/bookmarks): Add or edit bookmarks to navigate large files
-- [Remove Watermark](https://privatools.me/tool/remove-watermark): Find and remove visible watermarks from a PDF
-- [PDF Stamp](https://privatools.me/tool/stamp-pdf): Add CONFIDENTIAL, DRAFT, or custom stamps
-- [E-Sign PDF](https://privatools.me/tool/esign-pdf): Quick draw-and-place signature on any PDF
-- [White-Out / Eraser](https://privatools.me/tool/whiteout-pdf): Cover content on PDF with white boxes
-- [Annotate PDF](https://privatools.me/tool/annotate-pdf): Add highlights, underlines, and sticky notes
-- [Highlight PDF](https://privatools.me/tool/highlight-pdf): Highlight every match of a word or phrase
-- [Add Shapes to PDF](https://privatools.me/tool/add-shapes): Draw rectangles, circles, lines, and arrows
-- [Add Attachment](https://privatools.me/tool/add-attachment): Embed any file inside a PDF document
-- [Add Hyperlinks](https://privatools.me/tool/add-hyperlinks): Draw clickable hyperlink areas over text or images
-- [Transparent Background](https://privatools.me/tool/transparent-background): Convert near-white PDF backgrounds to transparency
-
-### Optimize & Transform
 - [Compress PDF](https://privatools.me/tool/compress-pdf): Reduce the file size of your PDF
+- [Remove Watermark](https://privatools.me/tool/remove-watermark): Find and remove visible watermarks from a PDF
 - [Flatten PDF](https://privatools.me/tool/flatten-pdf): Flatten forms and annotations into PDF content
 - [Deskew PDF](https://privatools.me/tool/deskew-pdf): Straighten scanned pages that are slightly tilted
 - [Repair PDF](https://privatools.me/tool/repair-pdf): Attempt to fix corrupted PDF files
@@ -86,27 +51,12 @@ Three architectural commitments that are auditable in the source:
 - [Rotate PDF](https://privatools.me/tool/rotate-pdf): Rotate all or specific pages in the PDF
 - [Grayscale PDF](https://privatools.me/tool/grayscale-pdf): Convert a colorful PDF to black and white
 - [Crop PDF](https://privatools.me/tool/crop-pdf): Trim the margins or change the visible area
-- [Auto-Crop PDF (Remove Margins)](https://privatools.me/tool/auto-crop): Auto-detect content and trim margins from every page
-- [Invert Colors](https://privatools.me/tool/invert-colors): Invert PDF colors for a dark mode reading experience
-- [Batch Compress PDF](https://privatools.me/tool/batch-compress-pdf): Compress multiple PDFs at once in parallel
-- [Web Optimize PDF](https://privatools.me/tool/web-optimize-pdf): Linearize a PDF for fast web viewing
-
-### Security & Privacy
 - [Protect PDF](https://privatools.me/tool/protect-pdf): Encrypt a PDF with a password or set permissions
 - [Unlock PDF](https://privatools.me/tool/unlock-pdf): Remove password protection from a PDF
 - [Redact PDF](https://privatools.me/tool/redact-pdf): Permanently black out sensitive content
 - [Strip Metadata](https://privatools.me/tool/strip-metadata): Remove embedded metadata for privacy
 - [Delete Annotations](https://privatools.me/tool/delete-annotations): Remove all comments, highlights, and annotations
 - [Metadata](https://privatools.me/tool/metadata): View and edit document metadata
-- [Smart Redact (AI)](https://privatools.me/tool/smart-redact): Local AI auto-detects PII — names, emails, phones, SSNs
-- [PDF Permissions](https://privatools.me/tool/set-permissions): Control print, copy, and edit permissions
-- [Remove Bates Numbering](https://privatools.me/tool/bates-remove): Strip Bates stamps back off a PDF
-- [PDF Accessibility Checker](https://privatools.me/tool/accessibility-check): Audit a PDF against PDF/UA and WCAG
-- [PDF/A Validator](https://privatools.me/tool/pdfa-validator): Run basic PDF/A indicator checks
-- [Verify Digital Signature](https://privatools.me/tool/verify-signature): Inspect signature fields in a PDF
-- [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Aggressively clean hidden data, JS, and layers
-
-### Convert to PDF
 - [HTML to PDF](https://privatools.me/tool/html-to-pdf): Convert web pages or HTML code into a PDF
 - [Image to PDF](https://privatools.me/tool/image-to-pdf): Convert JPG, PNG, or other images into a PDF
 - [JPG to PDF](https://privatools.me/tool/jpg-to-pdf): Convert JPG / JPEG photos into a single PDF
@@ -119,18 +69,6 @@ Three architectural commitments that are auditable in the source:
 - [SVG to PDF](https://privatools.me/tool/svg-to-pdf): Convert SVG vector graphics into PDF
 - [ODT to PDF](https://privatools.me/tool/odt-to-pdf): Convert OpenDocument (ODT) into PDF
 - [Office to PDF](https://privatools.me/tool/office-to-pdf): Convert Word, Excel, or PowerPoint to PDF
-- [Markdown / Config to PDF](https://privatools.me/tool/markdown-to-pdf): Convert .md, .json, .yaml, or .toml files to PDF
-- [CSV to PDF](https://privatools.me/tool/csv-to-pdf): Generate table-style or invoice PDFs from CSV data
-- [Word to PDF](https://privatools.me/tool/word-to-pdf): Convert .docx Word documents to PDF
-- [Excel to PDF](https://privatools.me/tool/excel-to-pdf): Convert .xlsx spreadsheets to PDF
-- [PowerPoint to PDF](https://privatools.me/tool/pptx-to-pdf-convert): Convert .pptx presentations to PDF
-- [Text to PDF](https://privatools.me/tool/txt-to-pdf): Convert plain text .txt files to PDF
-- [JSON to PDF](https://privatools.me/tool/json-to-pdf): Format JSON data as a styled PDF document
-- [XML to PDF](https://privatools.me/tool/xml-to-pdf): Convert XML data to a formatted PDF document
-- [EPUB to PDF](https://privatools.me/tool/epub-to-pdf): Convert e-books from EPUB to PDF format
-- [RTF to PDF](https://privatools.me/tool/rtf-to-pdf): Convert Rich Text Format files to PDF
-
-### Convert from PDF
 - [PDF to Excel](https://privatools.me/tool/pdf-to-excel): Best-effort table/text extraction into a spreadsheet
 - [PDF to Image](https://privatools.me/tool/pdf-to-image): Convert each PDF page into an image file
 - [PDF to Long Image](https://privatools.me/tool/pdf-to-long-image): Stitch every PDF page into one tall image
@@ -143,13 +81,6 @@ Three architectural commitments that are auditable in the source:
 - [PDF to PowerPoint](https://privatools.me/tool/pdf-to-pptx): Convert each PDF page into a PowerPoint slide image
 - [PDF to Text](https://privatools.me/tool/pdf-to-text): Extract all text from a PDF file
 - [PDF to Word](https://privatools.me/tool/pdf-to-word): Convert PDF content to an editable Word draft
-- [PDF to EPUB](https://privatools.me/tool/pdf-to-epub): Convert a PDF into the EPUB format for e-readers
-- [PDF Table Extractor](https://privatools.me/tool/extract-tables): Extract tables from PDF pages to CSV
-- [PDF to Markdown](https://privatools.me/tool/pdf-to-markdown): Extract PDF content as clean Markdown format
-- [PDF to HTML](https://privatools.me/tool/pdf-to-html): Convert PDF to a web-viewable HTML file
-- [PDF to RTF](https://privatools.me/tool/pdf-to-rtf): Extract PDF text into a Rich Text Format file
-
-### Advanced
 - [Alternate Mix](https://privatools.me/tool/alternate-mix): Mix pages of two or more PDFs alternately
 - [Compare PDF](https://privatools.me/tool/compare-pdf): Visually compare two PDF documents
 - [Extract Images](https://privatools.me/tool/extract-images): Extract all embedded images from the PDF
@@ -159,57 +90,56 @@ Three architectural commitments that are auditable in the source:
 - [Overlay PDF](https://privatools.me/tool/overlay): Overlay one PDF onto another (e.g., letterhead)
 - [QR Code Generator](https://privatools.me/tool/qr-code): Generate QR codes — download as PNG or stamp into a PDF
 - [PDF to PDF/A](https://privatools.me/tool/pdf-to-pdfa): Convert to PDF/A format for long-term archiving
-- [Summarize PDF (AI)](https://privatools.me/tool/summarize-pdf): Local AI summary — your PDF never leaves your browser
+- [Remove Blank Pages](https://privatools.me/tool/remove-blank-pages): Scan and delete entirely blank or near-blank pages
+- [Auto-Crop PDF (Remove Margins)](https://privatools.me/tool/auto-crop): Auto-detect content and trim margins from every page
+- [PDF to EPUB](https://privatools.me/tool/pdf-to-epub): Convert a PDF into the EPUB format for e-readers
+- [Markdown / Config to PDF](https://privatools.me/tool/markdown-to-pdf): Convert a Markdown document to PDF
+- [CSV to PDF](https://privatools.me/tool/csv-to-pdf): Generate table-style or invoice PDFs from CSV data
+- [Word to PDF](https://privatools.me/tool/word-to-pdf): Convert .docx Word documents to PDF
+- [Excel to PDF](https://privatools.me/tool/excel-to-pdf): Convert .xlsx spreadsheets to PDF
+- [PowerPoint to PDF](https://privatools.me/tool/pptx-to-pdf-convert): Convert .pptx presentations to PDF
+- [Text to PDF](https://privatools.me/tool/txt-to-pdf): Convert plain text .txt files to PDF
+- [PDF Stamp](https://privatools.me/tool/stamp-pdf): Add CONFIDENTIAL, DRAFT, or custom stamps
+- [E-Sign PDF](https://privatools.me/tool/esign-pdf): Quick draw-and-place signature on any PDF
+- [PDF Table Extractor](https://privatools.me/tool/extract-tables): Extract tables from PDF pages to CSV
+- [PDF to Markdown](https://privatools.me/tool/pdf-to-markdown): Extract PDF content as clean Markdown format
+- [White-Out / Eraser](https://privatools.me/tool/whiteout-pdf): Cover content on PDF with white boxes
+- [Annotate PDF](https://privatools.me/tool/annotate-pdf): Add highlights, underlines, and sticky notes
+- [Highlight PDF](https://privatools.me/tool/highlight-pdf): Highlight every match of a word or phrase
+- [Summarize PDF (AI)](https://privatools.me/tool/summarize-pdf): Summarize with a local model or your own AI provider
+- [Smart Redact (AI)](https://privatools.me/tool/smart-redact): Find possible personal data, review, then apply redactions
 - [Chat with PDF (AI)](https://privatools.me/tool/chat-with-pdf): Ask questions about a PDF — answered with your own AI key
+- [Add Shapes to PDF](https://privatools.me/tool/add-shapes): Draw rectangles, circles, lines, and arrows
+- [PDF Permissions](https://privatools.me/tool/set-permissions): Control print, copy, and edit permissions
+- [Add Attachment](https://privatools.me/tool/add-attachment): Embed any file inside a PDF document
+- [JSON to PDF](https://privatools.me/tool/json-to-pdf): Format JSON data as a styled PDF document
+- [XML to PDF](https://privatools.me/tool/xml-to-pdf): Convert XML data to a formatted PDF document
+- [EPUB to PDF](https://privatools.me/tool/epub-to-pdf): Convert e-books from EPUB to PDF format
+- [RTF to PDF](https://privatools.me/tool/rtf-to-pdf): Convert Rich Text Format files to PDF
+- [Add Hyperlinks](https://privatools.me/tool/add-hyperlinks): Draw clickable hyperlink areas over text or images
 - [Form Creator](https://privatools.me/tool/form-creator): Add text fields, checkboxes, radios, and dropdowns to PDFs
+- [Transparent Background](https://privatools.me/tool/transparent-background): Convert near-white PDF backgrounds to transparency
+- [Invert Colors](https://privatools.me/tool/invert-colors): Invert PDF colors for a dark mode reading experience
 - [Translate PDF](https://privatools.me/tool/translate-pdf): Translate a PDF without uploading it
+- [Remove Bates Numbering](https://privatools.me/tool/bates-remove): Strip Bates stamps back off a PDF
+- [PDF Accessibility Checker](https://privatools.me/tool/accessibility-check): Audit a PDF against PDF/UA and WCAG
+- [PDF/A Validator](https://privatools.me/tool/pdfa-validator): Run basic PDF/A indicator checks
+- [Verify Digital Signature](https://privatools.me/tool/verify-signature): Inspect signature fields in a PDF
+- [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Aggressively clean hidden data, JS, and layers
+- [Reverse PDF](https://privatools.me/tool/reverse-pdf): Reverse the page order of a PDF document
+- [PDF Booklet](https://privatools.me/tool/booklet-pdf): Rearrange pages for booklet printing
+- [Batch Compress PDF](https://privatools.me/tool/batch-compress-pdf): Compress multiple PDFs at once in parallel
 - [PDF Page Counter](https://privatools.me/tool/pdf-page-counter): Count pages in multiple PDFs instantly
-
-## Non-PDF Tools
-
-### Image Tools
+- [Web Optimize PDF](https://privatools.me/tool/web-optimize-pdf): Linearize a PDF for fast web viewing
+- [Split by Text](https://privatools.me/tool/split-by-text): Split a PDF every time a keyword appears
+- [PDF to HTML](https://privatools.me/tool/pdf-to-html): Convert PDF to a web-viewable HTML file
+- [PDF to RTF](https://privatools.me/tool/pdf-to-rtf): Extract PDF text into a Rich Text Format file
 - [Image Compressor](https://privatools.me/tools/image-compressor): Reduce JPEG/PNG/WebP size without losing quality
 - [Image Format Converter](https://privatools.me/tools/image-converter): Convert between WebP, PNG, JPG, TIFF, and HEIC
 - [Remove EXIF Data](https://privatools.me/tools/remove-exif): Strip GPS, camera, and timestamp metadata from photos
 - [Resize & Crop Image](https://privatools.me/tools/resize-crop-image): Bulk resize or crop images to any dimension
 - [Video / Audio to GIF](https://privatools.me/tools/video-to-gif): Convert short video clips into animated GIFs
-- [Image OCR](https://privatools.me/tools/image-ocr): Extract text from images using optical character recognition
-- [HEIC to JPG](https://privatools.me/tools/heic-to-jpg): Convert iPhone HEIC/HEIF photos to JPEG
-- [Background Remover](https://privatools.me/tools/remove-background): Remove backgrounds from images using local AI
-- [SVG to PNG](https://privatools.me/tools/svg-to-png): Convert vector SVG files to crisp PNG images
-- [Remove Image Watermark](https://privatools.me/tools/remove-image-watermark): Erase a watermark from a photo or graphic
-- [Image Watermark](https://privatools.me/tools/image-watermark): Add text watermarks to photos and images
-- [Favicon Generator](https://privatools.me/tools/generate-favicon): Create .ico favicons from any image
-- [Photo Collage](https://privatools.me/tools/make-collage): Combine multiple images into a beautiful grid
-- [QR Code Reader](https://privatools.me/tools/qr-reader): Decode QR codes and barcodes from images
-- [Merge Images](https://privatools.me/tools/merge-images): Combine images side-by-side or top-to-bottom
-- [Image Upscaler](https://privatools.me/tools/image-upscaler): Upscale images 2x or 4x with Lanczos resampling
-- [View EXIF Data](https://privatools.me/tools/view-exif): Inspect GPS, camera, and metadata stored in an image
-- [WebP to JPG](https://privatools.me/tools/webp-to-jpg): Convert WebP images to JPEG
-- [WebP to PNG](https://privatools.me/tools/webp-to-png): Convert WebP images to PNG (lossless)
-- [HEIC to PNG](https://privatools.me/tools/heic-to-png): Convert iPhone HEIC photos to PNG
-- [JPG to PNG](https://privatools.me/tools/jpg-to-png): Convert JPG to PNG online — lossless conversion
-- [PNG to JPG](https://privatools.me/tools/png-to-jpg): Convert PNG to JPG for smaller file size
-- [JPG to WebP](https://privatools.me/tools/jpg-to-webp): Convert JPG to WebP for smaller, web-optimized files
-- [PNG to WebP](https://privatools.me/tools/png-to-webp): Convert PNG to WebP — smaller files, transparency preserved
-- [TIFF to JPG](https://privatools.me/tools/tiff-to-jpg): Convert TIFF to JPG for sharing and email
-- [TIFF to PNG](https://privatools.me/tools/tiff-to-png): Convert TIFF to PNG — lossless, transparency preserved
-- [BMP to JPG](https://privatools.me/tools/bmp-to-jpg): Convert BMP bitmap to JPG — massive size reduction
-- [BMP to PNG](https://privatools.me/tools/bmp-to-png): Convert BMP bitmap to PNG — lossless, much smaller
-- [GIF to JPG](https://privatools.me/tools/gif-to-jpg): Convert GIF to JPG (uses the first frame)
-- [GIF to PNG](https://privatools.me/tools/gif-to-png): Convert GIF to PNG (preserves transparency)
-- [JPG to TIFF](https://privatools.me/tools/jpg-to-tiff): Convert JPG photos to TIFF for archive workflows
-- [PNG to TIFF](https://privatools.me/tools/png-to-tiff): Convert PNG images to TIFF
-- [WebP to TIFF](https://privatools.me/tools/webp-to-tiff): Convert WebP images to TIFF
-- [JPG to BMP](https://privatools.me/tools/jpg-to-bmp): Convert JPG photos to Windows bitmap BMP
-- [PNG to BMP](https://privatools.me/tools/png-to-bmp): Convert PNG images to BMP
-- [WebP to BMP](https://privatools.me/tools/webp-to-bmp): Convert WebP images to BMP
-- [Image Color Palette](https://privatools.me/tools/image-palette): Extract dominant colors from any image
-- [Pixelate / Blur Image](https://privatools.me/tools/pixelate-image): Censor part of an image with mosaic or Gaussian blur
-- [Rotate Image](https://privatools.me/tools/rotate-image): Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
-- [Flip Image](https://privatools.me/tools/flip-image): Mirror an image horizontally or vertically
-
-### Video & Audio Tools
+- [Image OCR](https://privatools.me/tools/image-ocr): Read text from images with local OCR or your AI provider
 - [Extract Audio from Video](https://privatools.me/tools/extract-audio): Strip the MP3/WAV audio track from a video file
 - [Cut / Trim Video & Audio](https://privatools.me/tools/trim-media): Trim the start and end of video or audio files
 - [Compress Video](https://privatools.me/tools/compress-video): Reduce video file size for email or messaging
@@ -222,14 +152,63 @@ Three architectural commitments that are auditable in the source:
 - [Merge Videos](https://privatools.me/tools/video-merge): Concatenate multiple videos into one
 - [Merge Audio](https://privatools.me/tools/audio-merge): Concatenate multiple audio tracks into one file
 - [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert between SRT, VTT, and ASS subtitle formats
+- [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify and validate JSON or XML offline
+- [Text Diff / Comparator](https://privatools.me/tools/text-diff): Highlight exact differences between two text blocks
+- [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text and files as Base64
+- [Hash Generator](https://privatools.me/tools/hash-generator): Generate MD5, SHA-1, SHA-256 hashes of text or files
+- [Extract ZIP / TAR](https://privatools.me/tools/extract-archive): Extract ZIP and TAR archives privately
+- [Create ZIP Archive](https://privatools.me/tools/create-zip): Bundle multiple files into a ZIP archive
+- [CSV ↔ JSON Converter](https://privatools.me/tools/csv-json): Swap between CSV and JSON data formats instantly
+- [Markdown Editor & HTML](https://privatools.me/tools/markdown-html): Convert Markdown writing into web-ready HTML
+- [HEIC to JPG](https://privatools.me/tools/heic-to-jpg): Convert iPhone HEIC/HEIF photos to JPEG
+- [Background Remover](https://privatools.me/tools/remove-background): Make backgrounds transparent with browser or server AI
+- [SVG to PNG](https://privatools.me/tools/svg-to-png): Convert vector SVG files to crisp PNG images
+- [Remove Image Watermark](https://privatools.me/tools/remove-image-watermark): Erase a watermark from a photo or graphic
+- [Image Watermark](https://privatools.me/tools/image-watermark): Add text watermarks to photos and images
+- [Favicon Generator](https://privatools.me/tools/generate-favicon): Create .ico favicons from any image
+- [Photo Collage](https://privatools.me/tools/make-collage): Combine multiple images into a beautiful grid
+- [Barcode Generator](https://privatools.me/tools/generate-barcode): Generate QR or linear barcodes from valid data
+- [URL to PDF](https://privatools.me/tools/url-to-pdf): Save any webpage as a PDF document
+- [Password Generator](https://privatools.me/tools/password-generator): Cryptographically-strong passwords, 100% in your browser
+- [UUID Generator](https://privatools.me/tools/uuid-generator): Bulk-generate UUID v4 or v7 in your browser
+- [Lorem Ipsum Generator](https://privatools.me/tools/lorem-ipsum): Placeholder text — words, sentences, or paragraphs
+- [Word & Character Counter](https://privatools.me/tools/word-counter): Live counts of words, characters, sentences, lines
+- [Color Converter](https://privatools.me/tools/color-converter): Convert between HEX, RGB, HSL, RGBA
+- [URL Encoder / Decoder](https://privatools.me/tools/url-encoder): Percent-encode or decode URLs in your browser
+- [QR Code Reader](https://privatools.me/tools/qr-reader): Decode QR codes from an uploaded image
+- [Merge Images](https://privatools.me/tools/merge-images): Combine images side-by-side or top-to-bottom
+- [Image Upscaler](https://privatools.me/tools/image-upscaler): Upscale images 2x or 4x with Lanczos resampling
 - [Audio Converter](https://privatools.me/tools/audio-converter): Convert between MP3, WAV, OGG, FLAC, AAC
 - [Transcribe Audio (AI)](https://privatools.me/tools/transcribe-audio): Speech to text in your browser — or with your own AI key
+- [View EXIF Data](https://privatools.me/tools/view-exif): Inspect GPS, camera, and metadata stored in an image
+- [WebP to JPG](https://privatools.me/tools/webp-to-jpg): Convert WebP images to JPEG
+- [WebP to PNG](https://privatools.me/tools/webp-to-png): Convert WebP images to PNG (lossless)
+- [HEIC to PNG](https://privatools.me/tools/heic-to-png): Convert iPhone HEIC photos to PNG
+- [JWT Decoder](https://privatools.me/tools/jwt-decoder): Decode and inspect a JWT (JSON Web Token)
+- [Regex Tester](https://privatools.me/tools/regex-tester): Test regular expressions with live highlighting
+- [Timestamp Converter](https://privatools.me/tools/timestamp-converter): Convert Unix epoch ↔ ISO 8601 ↔ human-readable
+- [JPG to PNG](https://privatools.me/tools/jpg-to-png): Convert JPG to PNG online — lossless conversion
+- [PNG to JPG](https://privatools.me/tools/png-to-jpg): Convert PNG to JPG for smaller file size
+- [JPG to WebP](https://privatools.me/tools/jpg-to-webp): Convert JPG to WebP for smaller, web-optimized files
+- [PNG to WebP](https://privatools.me/tools/png-to-webp): Convert PNG to WebP — smaller files, transparency preserved
+- [TIFF to JPG](https://privatools.me/tools/tiff-to-jpg): Convert TIFF to JPG for sharing and email
+- [TIFF to PNG](https://privatools.me/tools/tiff-to-png): Convert TIFF to PNG — lossless, transparency preserved
+- [BMP to JPG](https://privatools.me/tools/bmp-to-jpg): Convert BMP bitmap to JPG — massive size reduction
+- [BMP to PNG](https://privatools.me/tools/bmp-to-png): Convert BMP bitmap to PNG — lossless, much smaller
+- [GIF to JPG](https://privatools.me/tools/gif-to-jpg): Convert GIF to JPG (uses the first frame)
+- [GIF to PNG](https://privatools.me/tools/gif-to-png): Convert GIF to PNG (preserves transparency)
 - [M4A to MP3](https://privatools.me/tools/m4a-to-mp3): Convert iPhone M4A voice memos and audio to MP3
 - [MP4 to MP3](https://privatools.me/tools/mp4-to-mp3): Extract audio from MP4 video and save as MP3
 - [MOV to MP4](https://privatools.me/tools/mov-to-mp4): Convert Apple MOV video to universally-supported MP4
 - [AVI to MP4](https://privatools.me/tools/avi-to-mp4): Convert legacy AVI video to modern MP4
 - [WebM to MP4](https://privatools.me/tools/webm-to-mp4): Convert WebM (Google) video to MP4
 - [MP4 to WebM](https://privatools.me/tools/mp4-to-webm): Convert MP4 to WebM for web embedding
+- [JPG to TIFF](https://privatools.me/tools/jpg-to-tiff): Convert JPG photos to TIFF for archive workflows
+- [PNG to TIFF](https://privatools.me/tools/png-to-tiff): Convert PNG images to TIFF
+- [WebP to TIFF](https://privatools.me/tools/webp-to-tiff): Convert WebP images to TIFF
+- [JPG to BMP](https://privatools.me/tools/jpg-to-bmp): Convert JPG photos to Windows bitmap BMP
+- [PNG to BMP](https://privatools.me/tools/png-to-bmp): Convert PNG images to BMP
+- [WebP to BMP](https://privatools.me/tools/webp-to-bmp): Convert WebP images to BMP
 - [MP3 to WAV](https://privatools.me/tools/mp3-to-wav): Convert MP3 audio to WAV
 - [WAV to MP3](https://privatools.me/tools/wav-to-mp3): Convert WAV audio to smaller MP3 files
 - [FLAC to MP3](https://privatools.me/tools/flac-to-mp3): Convert FLAC lossless audio to MP3
@@ -250,27 +229,6 @@ Three architectural commitments that are auditable in the source:
 - [MOV to MKV](https://privatools.me/tools/mov-to-mkv): Convert MOV video to MKV
 - [WebM to GIF](https://privatools.me/tools/webm-to-gif): Convert WebM video clips to animated GIFs
 - [MOV to GIF](https://privatools.me/tools/mov-to-gif): Convert MOV video clips to animated GIFs
-- [Mute Video](https://privatools.me/tools/mute-video): Strip the audio track from any video
-- [Reverse Video](https://privatools.me/tools/reverse-video): Play your video backwards (audio reversed too)
-- [Video Speed Changer](https://privatools.me/tools/video-speed): Speed up or slow down a video, 0.25× to 4×
-- [Audio Trimmer](https://privatools.me/tools/audio-trim): Cut a clip out of any audio file
-
-### Developer Tools
-- [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify and validate JSON or XML offline
-- [Text Diff / Comparator](https://privatools.me/tools/text-diff): Highlight exact differences between two text blocks
-- [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text and files as Base64
-- [Hash Generator](https://privatools.me/tools/hash-generator): Generate MD5, SHA-1, SHA-256 hashes of text or files
-- [Barcode Generator](https://privatools.me/tools/generate-barcode): Generate Code128, EAN-13, QR codes from any text
-- [URL to PDF](https://privatools.me/tools/url-to-pdf): Save any webpage as a PDF document
-- [Password Generator](https://privatools.me/tools/password-generator): Cryptographically-strong passwords, 100% in your browser
-- [UUID Generator](https://privatools.me/tools/uuid-generator): Bulk-generate UUID v4 or v7 in your browser
-- [Lorem Ipsum Generator](https://privatools.me/tools/lorem-ipsum): Placeholder text — words, sentences, or paragraphs
-- [Word & Character Counter](https://privatools.me/tools/word-counter): Live counts of words, characters, sentences, lines
-- [Color Converter](https://privatools.me/tools/color-converter): Convert between HEX, RGB, HSL, RGBA
-- [URL Encoder / Decoder](https://privatools.me/tools/url-encoder): Percent-encode or decode URLs in your browser
-- [JWT Decoder](https://privatools.me/tools/jwt-decoder): Decode and inspect a JWT (JSON Web Token)
-- [Regex Tester](https://privatools.me/tools/regex-tester): Test regular expressions with live highlighting
-- [Timestamp Converter](https://privatools.me/tools/timestamp-converter): Convert Unix epoch ↔ ISO 8601 ↔ human-readable
 - [YAML to JSON](https://privatools.me/tools/yaml-to-json): Convert YAML to JSON entirely in your browser
 - [JSON to YAML](https://privatools.me/tools/json-to-yaml): Convert JSON to YAML in your browser
 - [Case Converter](https://privatools.me/tools/case-converter): Convert text between UPPER, lower, Title, camelCase, snake_case, kebab-case
@@ -282,226 +240,73 @@ Three architectural commitments that are auditable in the source:
 - [SemVer Bumper](https://privatools.me/tools/semver-bumper): Calculate patch, minor, major, and prerelease bumps
 - [.env Validator](https://privatools.me/tools/env-validator): Lint .env files for syntax and risky values
 - [JSON to CSV Schema](https://privatools.me/tools/json-to-csv-schema): Infer JSON schema and export flattened CSV
-
-### Archive Tools
-- [Extract ZIP / TAR](https://privatools.me/tools/extract-archive): Extract ZIP and TAR archives privately
-- [Create ZIP Archive](https://privatools.me/tools/create-zip): Bundle multiple files into a ZIP archive
-
-### Document & Office Tools
-- [CSV ↔ JSON Converter](https://privatools.me/tools/csv-json): Swap between CSV and JSON data formats instantly
-- [Markdown to HTML](https://privatools.me/tools/markdown-html): Convert Markdown writing into web-ready HTML
-
-## Recent Articles
-
-Long-form, opinionated guides on PDF tools, AI, and the web — none sponsored.
-
-### [The PrivaTools Blog](https://privatools.me/blog)
-All guides and comparisons, newest first.
-
-### [How to Chat With a PDF for Free — Without Uploading It](https://privatools.me/blog/chat-with-pdf-free-private)
-*Published 2026-09-01 · 8 min read*
-
-PrivaTools Chat with PDF extracts the text in your browser with pdf.js and sends each question straight to the AI provider you pick, using your own API key — free, no subscription, no middleman holding your document. It needs a selectable text layer (run OCR on scans first) and reads the first ~100,000 characters.
-
-### [AI PDF Tools, No Upload Required: Your Own Key or On-Device Models](https://privatools.me/blog/ai-pdf-tools-no-upload-byok)
-*Published 2026-09-01 · 7 min read*
-
-There are two ways to run AI on a document privately: bring your own API key, so text goes straight from your browser to a provider you already trust, or run a free on-device model that downloads once and then works offline. PrivaTools' five AI tools use both; the AI hub in the top bar manages keys and models.
-
-### [Remove an Image Background Without Uploading It Anywhere](https://privatools.me/blog/remove-background-without-uploading)
-*Published 2026-09-01 · 6 min read*
-
-PrivaTools removes image backgrounds two ways: on this device, where the RMBG-1.4 model (~44 MB, downloaded once) runs in your browser and then works offline, or on our server with no download, processed in isolation and deleted after the job. Both are free at full resolution — unlike upload-based services whose free tiers limit output resolution.
-
-### [Transcribe Audio to Text Free — Without Uploading the Recording](https://privatools.me/blog/transcribe-audio-free-no-upload)
-*Published 2026-09-01 · 8 min read*
-
-Open PrivaTools Transcribe Audio, choose the free on-device engine, and OpenAI's Whisper model — Tiny at ~41 MB or Base at ~74 MB — transcribes the recording inside your browser with timestamps, exporting .txt or .srt. Nothing uploads. For higher accuracy, add your own OpenAI or Groq key and the audio goes browser-to-provider directly.
-
-### [OCR a Scanned PDF Free: Three Engines, and When Each Wins](https://privatools.me/blog/ocr-scanned-pdf-free-three-ways)
-*Published 2026-09-01 · 8 min read*
-
-PrivaTools OCRs scanned PDFs three ways, all free: the default server engine (Tesseract — multi-file queue, searchable-PDF output, deleted per job), an in-browser engine (tesseract.js — nothing uploads, text output), and a vision-AI engine that reads hard scans with your own GPT-4o, Claude, or Gemini-class key. Pick by scan quality and privacy need.
-
-### [Translate a PDF for Free — Without Uploading It](https://privatools.me/blog/translate-pdf-free-private)
-*Published 2026-09-01 · 7 min read*
-
-PrivaTools Translate PDF extracts text with pdf.js and translates it on your device with OPUS-MT models — ~107 MB per language pair, downloaded once, English-centric pairs, free. Your own AI key unlocks 30 languages in any direction with source auto-detect. Only the optional Save-as-PDF step sends text to a server — the translation, never the original file.
-
-### [Bring Your Own AI Key: The 10-Minute Setup Guide](https://privatools.me/blog/bring-your-own-ai-key-guide)
-*Published 2026-09-01 · 9 min read*
-
-Bring your own key means PrivaTools' AI tools run on an API key you created at a provider you already trust. Paste it once into the AI hub; it is stored encrypted on your device, every request goes browser-to-provider directly, and a typical task costs a fraction of a cent on your own meter instead of a subscription.
-
-### [Batch-Process Files for Free: 25 at a Time, No Quotas](https://privatools.me/blog/batch-process-files-free)
-*Published 2026-09-01 · 7 min read*
-
-Around 160 of PrivaTools' 221 tools accept up to 25 files per run, with per-file status, a retry-failed button, and one ZIP download — free, no quotas, no account. The /batch page handles bigger folder drops through any batchable tool, and /pipeline chains steps so one drop runs several tools in sequence.
-
-### [ChatPDF Alternatives That Don't Keep Your Documents](https://privatools.me/blog/chatpdf-alternatives-private)
-*Published 2026-09-01 · 7 min read*
-
-ChatPDF-style services hold your document: it uploads to their servers, stays for follow-up questions, and a subscription sits above the free tier. The private alternative keeps the file out of a middleman's hands: PrivaTools Chat with PDF extracts text in your browser and sends questions straight to an AI provider you choose — or to a model on your own machine.
-
-### [PrivaTools vs ihatepdf (2026): When Both Sides Are Private](https://privatools.me/blog/privatools-vs-ihatepdf)
-*Published 2026-08-30 · 6 min read*
-
-ihatepdf is a genuinely private, free, browser-only PDF suite — files never upload by its stated, network-tab-verifiable design, the same architecture PrivaTools uses for most tools. The differences: PrivaTools spans 200+ tools across PDF, image, video, audio and developer work, handles server-class jobs (OCR, office conversion) with disclosed per-job deletion, loads no third-party scripts, and adds batch, pipelines and an installable offline app.
-
-### [PrivaTools vs Sejda (2026): The 3-Tasks-an-Hour Question](https://privatools.me/blog/privatools-vs-sejda)
-*Published 2026-08-27 · 7 min read*
-
-Sejda offers the web's best free PDF editor with unusually transparent limits: 3 tasks per hour, 200 pages/50 MB per file, files deleted after 2 hours. PrivaTools has no task caps, a 500 MB limit, browser-local processing for most tools and per-job deletion for the rest. Use Sejda for occasional heavy editing; use PrivaTools for volume, larger files, or documents that shouldn't upload.
-
-### [PrivaTools vs Smallpdf (2026): Free Tiers Under a Microscope](https://privatools.me/blog/privatools-vs-smallpdf)
-*Published 2026-08-24 · 7 min read*
-
-Smallpdf is the most polished PDF suite on the web, but its free tier caps daily tasks and gates stronger compression behind Pro, and every file processes on its servers with time-limited retention. PrivaTools is uncapped and free, local-first so most files never upload, with per-job deletion for server tools. Pick Smallpdf for polish and integrations; pick PrivaTools for zero limits and files that stay on your machine.
-
-### [PrivaTools vs iLovePDF (2026): The Fine Print, Compared](https://privatools.me/blog/privatools-vs-ilovepdf)
-*Published 2026-08-20 · 8 min read*
-
-iLovePDF is a polished, mature suite whose free tier has task limits, Premium-gated settings, and server-side processing with time-limited retention. PrivaTools is fully free with no caps, runs most tools in your browser so files never upload, and deletes server-job files per-job. Choose iLovePDF for its desktop/mobile apps and workflow ecosystem; choose PrivaTools when price, limits, or file privacy decide it.
-
-### [How Local-First File Tools Actually Work](https://privatools.me/blog/how-local-first-works)
-*Published 2026-08-14 · 6 min read*
-
-Most file operations — merging PDFs, converting images, rewriting metadata — are pure computation your browser can do locally, so the file never leaves your machine. Only jobs needing native code (full OCR models, office-suite conversion, heavy video transcodes) require a server, and an honest tool tells you which is which before you add a file.
-
-### [What “Deleted After Use” Means on Our Servers](https://privatools.me/blog/what-deleted-means)
-*Published 2026-07-02 · 4 min read*
-
-For PrivaTools server jobs, a file exists exactly as long as the job does: written to isolated temporary storage, processed, streamed back, removed. No results bucket, no retention window, no recoverable copy — and most of the catalogue never touches a server at all.
-
-### [Reading a File Tool’s Privacy Policy in 60 Seconds](https://privatools.me/blog/reading-privacy-policies)
-*Published 2026-05-21 · 5 min read*
-
-Skip the preamble and ask four things of any file tool: Where do files go? How long do they stay? Whose code runs on the page? What does 'free' actually include? The answers — usually buried mid-policy — tell you who the product really serves.
-
-### [AI PDF Summarizer: How to Summarize Long PDFs in Your Browser (2026 Guide)](https://privatools.me/blog/ai-pdf-summarizer-browser-2026)
-*Published 2026-05-15 · 9 min read*
-
-Browser-side summarizers (PrivaTools Summarize PDF using distilbart-cnn in WebAssembly) keep your PDF local — verify with DevTools → Network. Cloud summarizers (Smallpdf, Adobe AI) upload it. A 100-page PDF summarises in 3–6 minutes locally on a modern laptop.
-
-### [10 Best iLovePDF Alternatives in 2026 (Free, Private, Open-Source)](https://privatools.me/blog/ilovepdf-alternatives-2026)
-*Published 2026-05-15 · 12 min read*
-
-Top iLovePDF alternatives in 2026: PrivaTools (221 tools, MIT open source, no quotas), Stirling-PDF (self-host only), PDF24 (free but uploads), Sejda (best text editor, 3 tasks/hour free). Avoid Smallpdf if you'll exceed 2 tasks/day.
-
-### [How to Redact a PDF Properly (Don't Use Black Boxes)](https://privatools.me/blog/redact-pdf-permanently-guide)
-*Published 2026-05-15 · 8 min read*
-
-Real redaction permanently removes the underlying content using a redaction annotation + apply step (PyMuPDF, Acrobat Pro). Black-rectangle annotations don't — the text remains and copy-pastes straight through. Always verify with text extraction.
-
-### [Why Most Online PDF Tools Are Tracking You (And What to Do About It)](https://privatools.me/blog/online-pdf-tools-tracking-you)
-*Published 2026-05-15 · 10 min read*
-
-Most free online PDF tools log your IP + file hash, fire 5–10 third-party trackers per visit, and retain files for hours-to-indefinitely. Use open-source tools (PrivaTools, Stirling-PDF) where the data flow is auditable.
-
-### [How to Convert HEIC to PDF, JPG, and PNG on Any Device (2026)](https://privatools.me/blog/heic-conversion-guide-2026)
-*Published 2026-05-15 · 7 min read*
-
-Fastest cross-platform: PrivaTools (HEIC to PDF / JPG / PNG online). Mac: Preview → File → Export. Windows 11: install HEIF Image Extensions from Microsoft Store. CLI: brew install libheif + heif-convert. Always strip EXIF before sharing publicly.
-
-### [How to Decode a JWT Token Safely (and What Each Part Means)](https://privatools.me/blog/decode-jwt-tokens-safely-guide)
-*Published 2026-05-15 · 8 min read*
-
-A JWT is header.payload.signature, each base64url-encoded JSON. Decoding reveals the claims; verifying needs the issuer's key. Use a browser-side decoder (PrivaTools JWT Decoder) — never paste production JWTs into a server-side decoder.
-
-### [How to Edit a PDF Online for Free — No Sign-Up Required](https://privatools.me/blog/edit-pdf-online-free-no-sign-up)
-*Published 2026-03-29 · 5 min read*
-
-Sejda has the best free PDF text editor (3 tasks/hour). PrivaTools' Edit PDF adds annotations, text boxes, and drawings without a quota. PDFescape's free tier limits 10 MB / 100 pages.
-
-### [How to Split a PDF File Online — 3 Free Methods](https://privatools.me/blog/split-pdf-online-free)
-*Published 2026-03-29 · 4 min read*
-
-Three approaches: by page range (Split PDF), by file size for email attachment caps (Split by Size), by bookmarks/chapters (Split by Bookmarks). All free on PrivaTools, no sign-up.
-
-### [How to Redact Sensitive Information from PDFs — Free Guide](https://privatools.me/blog/redact-pdf-free-guide)
-*Published 2026-03-29 · 5 min read*
-
-Drawing black rectangles over text doesn't redact — the text is still in the file. Use real redaction (PrivaTools Redact PDF or Smart Redact) which permanently removes the underlying content. Always verify with text extraction afterwards.
-
-### [The Best Free Online PDF Editors in 2026 — No Downloads Required](https://privatools.me/blog/best-free-online-pdf-editors-2026)
-*Published 2026-03-29 · 7 min read*
-
-PrivaTools wins on unrestricted free editing with privacy. Sejda has the best text editor (limited free). PDF24 has the most features but uploads to their cloud. Adobe Acrobat Online is good but mostly paywalled.
-
-### [How to Compress a PDF Without Losing Quality](https://privatools.me/blog/compress-pdf-without-losing-quality)
-*Published 2026-03-22 · 5 min read*
-
-Use lossy compression at a balanced setting (PrivaTools' 'Recommended' level) to cut PDF size by 60–90% with no visible quality loss. Lossless saves only 5–30% but never touches image data. For maximum reduction, drop image DPI to 96 and lower JPEG quality.
-
-### [How to Merge PDF Files Online for Free](https://privatools.me/blog/merge-pdf-files-online-free)
-*Published 2026-03-22 · 4 min read*
-
-Drop 2+ PDFs into a free merger like PrivaTools, drag-reorder, click Merge, download. No software, no account, no watermarks. Files are deleted from the server immediately after the response.
-
-### [Best Free PDF Tools in 2026: Honest Comparison](https://privatools.me/blog/best-free-pdf-tools-2026)
-*Published 2026-03-22 · 8 min read*
-
-In 2026: PrivaTools (100% free, open source, 221 tools) and PDF24 (free with cloud uploads) lead. Smallpdf and iLovePDF impose aggressive free-tier quotas. Sejda is best for editing PDF text but capped at 3 tasks/hour.
-
-### [How to Remove a Password from a PDF](https://privatools.me/blog/remove-password-from-pdf)
-*Published 2026-03-22 · 4 min read*
-
-If you know the password: PrivaTools Unlock PDF or qpdf --password=… --decrypt. If you don't, you can't legally bypass it. 'Print to PDF' from a viewer is a workaround for owner-password-only PDFs.
-
-### [How to Convert Word to PDF for Free](https://privatools.me/blog/convert-word-to-pdf-free)
-*Published 2026-03-22 · 5 min read*
-
-Best preservation: open the .docx in Word/LibreOffice and Save as PDF. Online: PrivaTools Word to PDF or Office to PDF. Google Docs preserves layout fairly well. python-docx + reportlab works for plain text but loses complex formatting.
-
-## Comparisons (Side-by-Side)
-
-Full feature matrices at /compare for each:
-
-- [vs iLovePDF](https://privatools.me/compare/ilovepdf) — popular but uploads + ads + 25 MB free cap
-- [vs Smallpdf](https://privatools.me/compare/smallpdf) — polished UX, 2 tasks/day free limit
-- [vs Adobe Acrobat Online](https://privatools.me/compare/adobe-acrobat) — industry standard, one free task per 30 days
-- [vs Sejda](https://privatools.me/compare/sejda) — best text editor, 3 tasks/hour free cap
-- [vs PDF24](https://privatools.me/compare/pdf24) — 95+ PDF tools, files uploaded to their cloud
-- [vs Foxit](https://privatools.me/compare/foxit) — enterprise PDF suite, AI tools need an account
-- [vs LightPDF](https://privatools.me/compare/lightpdf) — freemium, AI features behind paywall
-- [vs Stirling PDF](https://privatools.me/compare/stirling-pdf) — open-source competitor, self-host only, no demo
-- [vs DocHub](https://privatools.me/compare/dochub) — form-fill + e-sign, about 3 documents a month free
-- [vs PDFescape](https://privatools.me/compare/pdfescape) — free with 10 MB / 100 pages cap
-- [vs Nitro PDF](https://privatools.me/compare/nitro-pdf) — business PDF suite, 8 free converters
-- [vs TinyWow](https://privatools.me/compare/tinywow) — 260 tools, funded by ads and a CAPTCHA per task
-- [vs ihatepdf.cv](https://privatools.me/compare/ihatepdf) — runs in your browser, PDF only, 54 tools
-
-## Frequently Asked Questions
-
-### Is PrivaTools really free?
-Yes. There is no premium tier, no per-day limit, no watermark on output, and no account. The 500 MB upload limit per file applies equally to everyone.
-
-### Do you upload my files anywhere?
-For server-processed tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked from that temp storage immediately after the response is sent. We do not log file content, we do not retain files, we do not train models on uploads.
-
-For browser-only tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, Lorem Ipsum, UUID, Color Converter, Subtitle Converter, JSON/XML Formatter, Markdown↔HTML, CSV↔JSON, Text Diff, Word Counter), file content stays in the browser. Browser-side AI tools download model weights once; Smart Redact detects entities locally, then uploads the PDF and approved strings only when applying permanent redactions.
-
-### Can I self-host PrivaTools?
-Yes. `git clone https://github.com/ethereaglehq/privatools && cd privatools && docker compose up --build`. Everything runs on your own hardware. MIT license — fork, modify, deploy freely.
-
-### Does PrivaTools use AI?
-Two tools use AI without third-party AI APIs: (1) Summarize PDF uses distilbart-cnn-12-6 (~250 MB, cached after first download) entirely in the browser; (2) Smart Redact uses BERT-base-NER for browser-side PII detection, then the isolated backend applies approved redactions.
-
-### Are there any limits I should know about?
-- Maximum upload: 500 MB per file
-- Maximum files per multi-file tool: 50–100 (varies by tool — e.g., merge allows unlimited, batch-compress caps at 50, page-counter caps at 100)
-- Video / audio tools are FFmpeg-bound — processing time scales with media length
-- AI tools require the first-visit model download (~250 MB, then cached)
-
-### Who is behind PrivaTools?
-PrivaTools is an open-source project by ethereaglehq. Source code, issue tracker, and contribution history are public on GitHub: https://github.com/ethereaglehq/privatools. Contact: hello@privatools.me.
-
-### What's the privacy policy?
-Plain language at https://privatools.me/privacy. Summary: first-party aggregate pageviews only, no browser-loaded Google analytics scripts, no other trackers, no behavioural data, no cross-site identifiers, no profile building.
-
-## Source Code & Verification
-
-- GitHub: https://github.com/ethereaglehq/privatools
-- License: MIT (https://opensource.org/licenses/MIT)
-- Verify privacy claim: read `backend/app/utils/cleanup.py` (the temp-file cleanup task) and `backend/app/main.py` (request handling)
-- Verify AI claim: read `frontend/src/components/tool-ui/SummarizePdfUI.tsx` and `SmartRedactUI.tsx` (browser-side WebAssembly inference)
+- [Mute Video](https://privatools.me/tools/mute-video): Strip the audio track from any video
+- [Reverse Video](https://privatools.me/tools/reverse-video): Play your video backwards (audio reversed too)
+- [Video Speed Changer](https://privatools.me/tools/video-speed): Speed up or slow down a video, 0.25× to 4×
+- [Audio Trimmer](https://privatools.me/tools/audio-trim): Cut a clip out of any audio file
+- [Image Color Palette](https://privatools.me/tools/image-palette): Extract dominant colors from any image
+- [Pixelate / Blur Image](https://privatools.me/tools/pixelate-image): Censor part of an image with mosaic or Gaussian blur
+- [Rotate Image](https://privatools.me/tools/rotate-image): Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
+- [Flip Image](https://privatools.me/tools/flip-image): Mirror an image horizontally or vertically
+
+## Guides
+
+- [PrivaTools Journal](https://privatools.me/blog): Practical guides, limitations, and sources.
+
+- [remove.bg is moving to Canva: choosing your next workflow](https://privatools.me/blog/remove-bg-canva-alternative): Choose around the result you need: a standalone transparent PNG or a cutout inside a larger design workflow. Test a representative image, understand its processing path and keep the original before changing tools.
+- [From a Markdown file to a clean HTML document](https://privatools.me/blog/markdown-editor-to-html-guide): Open your .md file from home or in Markdown Editor & HTML, review the live preview, and save the format you need. This editor works in the browser. Its supported Markdown subset is deliberately smaller than a full publishing system.
+- [Turn Markdown into a PDF you can actually share](https://privatools.me/blog/markdown-to-pdf-layout-checklist): Keep the Markdown source, convert a copy with Markdown to PDF, then review the downloaded pages. The editor’s local HTML preview and the server-generated PDF are different outputs with different layout and privacy considerations.
+- [Use PrivaTools with—or without—an account](https://privatools.me/blog/passkeys-and-optional-accounts): You can use interactive file tools without signing in. An account supports account-specific features such as API key management. Passkeys are an optional sign-in method when enabled, and signing in does not turn local drafts or Vault data into a cloud backup.
+- [Where your files go when you run a tool](https://privatools.me/blog/where-your-files-go): Selecting a file is not the same as uploading it. The tool and selected mode determine the next step: browser computation, a PrivaTools server job, or a direct AI provider request. Read that disclosure before you run the task.
+- [Batch or Pipeline? Choose the shape of your task](https://privatools.me/blog/batch-or-pipeline-how-to-choose): Batch applies one supported operation to multiple inputs. Pipeline chains compatible steps so one output becomes the next input. Start with one accepted sample, and inspect partial failures or intermediate choices before scaling up.
+- [Build a document workflow you can trust twice](https://privatools.me/blog/repeatable-document-workflow): Keep originals, define the output, test a small sample, and record the settings that produced an accepted result. Reusing a workflow saves setup; it does not remove the need to check each new collection.
+- [How PDF chat handles your document text](https://privatools.me/blog/chat-with-pdf-free-private): PrivaTools PDF chat extracts text in the browser, then sends document text and your question directly to the BYOK provider. The raw file does not pass through PrivaTools, but the content is transmitted to the selected provider.
+- [On-device AI and BYOK: two different processing choices](https://privatools.me/blog/ai-pdf-tools-no-upload-byok): On-device AI computes in your browser after loading its model. BYOK calls your selected provider with your content. Both give you a choice, but only the on-device mode keeps that computation local.
+- [How to remove an image background on your device](https://privatools.me/blog/remove-background-without-uploading): Background Remover supports server and on-device engines. Select “On this device” before running if you want local processing; the current default is the server engine. The local model needs an initial download.
+- [How to transcribe audio with a local or provider engine](https://privatools.me/blog/transcribe-audio-free-no-upload): Local transcription uses a downloaded model on your device. BYOK transcription sends audio to a supported provider endpoint. In either case, verify names, numbers and unclear speech against the recording.
+- [OCR a scanned PDF: choose the right engine and output](https://privatools.me/blog/ocr-scanned-pdf-free-three-ways): OCR recognises text in page images. Choose an engine based on the output you need and an acceptable processing path; do not assume every engine returns the same searchable PDF, layout or accuracy.
+- [How to translate PDF text and choose its processing path](https://privatools.me/blog/translate-pdf-free-private): PrivaTools translation has local and BYOK modes. Local models support specific language pairs; a provider mode sends extracted text to the chosen endpoint. The result is a translation of extracted text, not a promise to preserve the original PDF layout.
+- [Bring your own AI key: a careful setup guide](https://privatools.me/blog/bring-your-own-ai-key-guide): Add a supported provider key in AI Studio, verify the endpoint and model, and try non-sensitive sample input. BYOK sends content to that provider; its billing and data policy apply. Save the key in this browser only if that suits your device.
+- [How to batch-process files without losing track of results](https://privatools.me/blog/batch-process-files-free): Batch repeats the same supported operation across a set of files. Test one file first, use the current queue limits, and check each result. A partly completed batch should not be treated as a complete delivery.
+- [Choosing a PDF chat alternative by its data path](https://privatools.me/blog/chatpdf-alternatives-private): Ask where document text goes, which provider receives it and what is retained. A raw PDF staying local does not make provider chat an on-device operation. Test extraction and answers with a non-sensitive sample.
+- [PrivaTools and ihatepdf: check what “local” means for each tool](https://privatools.me/blog/privatools-vs-ihatepdf): A raw file can stay in the browser while extracted text is sent to an AI provider. Compare each selected tool and mode: ihatepdf documents this distinction for PDF chat, and PrivaTools BYOK chat also sends document text to the chosen provider.
+- [PrivaTools and Sejda: a guide to choosing a PDF editor](https://privatools.me/blog/privatools-vs-sejda): Choose by the edit you need and the properties the export must preserve. Read the current Sejda sources and PrivaTools processing disclosure, then test a representative document rather than relying on an old task quota.
+- [PrivaTools and Smallpdf: choosing for everyday file work](https://privatools.me/blog/privatools-vs-smallpdf): Try the precise operation you need and inspect its download. Check current Smallpdf information and PrivaTools disclosures; neither visual polish nor a “free” label settles file privacy or output suitability.
+- [PrivaTools and iLovePDF: compare the workflow, not the headline](https://privatools.me/blog/privatools-vs-ilovepdf): Compare the exact operation, output and processing path. PrivaTools uses both browser and server tools; iLovePDF documents its own file-handling model. Current product sources belong ahead of old pricing or quota claims.
+- [What browser-local file processing does—and does not—mean](https://privatools.me/blog/how-local-first-works): Browser-local processing means the selected operation computes on your device. It does not describe every tool on the website. PrivaTools uses browser, server and chosen-provider processing depending on the task and mode.
+- [What deletion means for a server-processed file](https://privatools.me/blog/what-deleted-means): PrivaTools server tasks use temporary files and cleanup after the response, with a janitor for leftovers. Cleanup is an implementation behaviour, not a guarantee of instantaneous erasure after every failure or deletion of copies on your own device.
+- [Five questions to ask a file tool’s privacy policy](https://privatools.me/blog/reading-privacy-policies): Look for the processing destination, retention, third-party providers, account data and optional storage. Read the clauses that apply to the feature you use; a short headline cannot stand in for the full workflow.
+- [How to summarise a PDF with an on-device or provider model](https://privatools.me/blog/ai-pdf-summarizer-browser-2026): PrivaTools offers an on-device summariser and a BYOK provider mode. The local mode downloads model files and computes in the browser; provider mode sends extracted text to your selected provider. Neither mode guarantees a complete or accurate summary.
+- [Looking for an iLovePDF alternative? Start with the task](https://privatools.me/blog/ilovepdf-alternatives-2026): Identify what you want to change: a task restriction, an output capability, a processing path or the interface. Then compare that exact requirement with current product information and a sample file.
+- [A practical checklist for checking PDF redactions](https://privatools.me/blog/redact-pdf-permanently-guide): Inspect the exported file, not just the editor preview. Check visible regions, text extraction, repeated references and other document content; a successful apply message does not certify that every sensitive detail was found.
+- [How to evaluate privacy claims in online PDF tools](https://privatools.me/blog/online-pdf-tools-tracking-you): Ask specific questions about file contents and other service data. Uploading a file is not automatically tracking, and a no-upload tool can still make ordinary network requests. Read the feature’s disclosure rather than inferring motives.
+- [How to convert HEIC photos to JPG, PNG or PDF](https://privatools.me/blog/heic-conversion-guide-2026): Use JPG for a widely compatible photo, PNG when you need its image characteristics, and PDF to package an image as a document. Keep the original HEIC file and inspect the converted result.
+- [How to decode a JWT without mistaking it for verification](https://privatools.me/blog/decode-jwt-tokens-safely-guide): Decoding a signed JWT shows its header and payload; it does not prove who issued it. Signature, algorithm, issuer, audience and time checks belong in a trusted verifier. Avoid using real production tokens as examples.
+- [How to edit a PDF without creating an account](https://privatools.me/blog/edit-pdf-online-free-no-sign-up): Use Edit PDF for visible additions, a form tool for actual fields, and Redact PDF for removing sensitive content. Adding text or a white box is not the same as changing the original text beneath it.
+- [How to split a PDF into useful sections](https://privatools.me/blog/split-pdf-online-free): Use Split PDF to divide a document, or Extract Pages when you need one selection. Check physical page positions against printed page numbers, then inspect each downloaded result.
+- [How to redact sensitive information from a PDF](https://privatools.me/blog/redact-pdf-free-guide): Use the redaction tool, apply the selected regions, and verify the downloaded output. A black rectangle added by a drawing or annotation tool can leave the original content underneath.
+- [Choosing a free PDF editor: what to test before committing](https://privatools.me/blog/best-free-online-pdf-editors-2026): Choose by the kind of edit, not a “best editor” badge. Test a representative page and its download, especially when form fields, underlying text, accessibility or signed documents matter.
+- [How to compress a PDF while keeping it readable](https://privatools.me/blog/compress-pdf-without-losing-quality): Start with a balanced preset, keep the original, and inspect small text, diagrams and scanned pages in the result. Lossy compression changes image data; there is no universal percentage saving or guarantee of identical quality.
+- [How to merge PDF files in the right order](https://privatools.me/blog/merge-pdf-files-online-free): Add the PDFs, put the files in reading order, run the merge, and inspect the first and last pages of each section. Merging in PrivaTools uses its server; an account is not required for the interactive tool.
+- [How to choose a free PDF toolkit in 2026](https://privatools.me/blog/best-free-pdf-tools-2026): Start with the task and the file’s sensitivity. Then check the current tool page, export restrictions, processing path and output. This is a selection guide, not a claim that we benchmarked every product.
+- [How to remove a PDF password you know](https://privatools.me/blog/remove-password-from-pdf): Use Unlock PDF with the correct password and only for a document you are authorised to change. This removes protection from the new output; it does not recover an unknown password or secure the downloaded copy.
+- [How to convert Word to PDF and check the layout](https://privatools.me/blog/convert-word-to-pdf-free): Convert a copy of your Word document, then inspect the generated PDF. Office conversion runs on the server and can change layout when fonts or document features differ from the source application.
+
+## Comparisons
+
+- [Compare file tools](https://privatools.me/compare): Choose by workflow, processing location, and trade-offs.
+
+- [PrivaTools and remove.bg](https://privatools.me/compare/remove-bg): Compare background-removal workflows, transparent PNG output and processing choices, with the official remove.bg migration notice and practical checks.
+- [PrivaTools and iLovePDF](https://privatools.me/compare/ilovepdf): Compare PrivaTools and iLovePDF for everyday file tasks, mobile PDF work and desktop processing, with official sources and clear tradeoffs.
+- [PrivaTools and Smallpdf](https://privatools.me/compare/smallpdf): A sourced comparison of PrivaTools and Smallpdf covering document workflows, desktop use, cloud storage and practical reasons to choose either.
+- [PrivaTools and Adobe Acrobat](https://privatools.me/compare/adobe-acrobat): Compare PrivaTools with Adobe Acrobat for PDF editing, desktop work and signature workflows using Adobe's current product documentation.
+- [PrivaTools and Sejda PDF](https://privatools.me/compare/sejda): Compare PrivaTools with Sejda Web and Desktop, including local processing, PDF editing and the tradeoffs between a browser toolbox and desktop software.
+- [PrivaTools and PDF24](https://privatools.me/compare/pdf24): A sourced look at PrivaTools, PDF24 Online Tools and PDF24 Creator, with clear distinctions between browser access and local Windows processing.
+- [PrivaTools and Foxit PDF Editor](https://privatools.me/compare/foxit): Compare PrivaTools and Foxit PDF Editor for everyday tasks, existing-text editing, cloud integrations and team document workflows.
+- [PrivaTools and LightPDF](https://privatools.me/compare/lightpdf): Compare PrivaTools and LightPDF for direct file tasks, PDF editing and AI-assisted document workflows with linked official documentation.
+- [PrivaTools and Stirling PDF](https://privatools.me/compare/stirling-pdf): Compare two self-hostable options: PrivaTools for mixed file tasks and Stirling PDF for a dedicated PDF environment with desktop and managed deployment options.
+- [PrivaTools and DocHub](https://privatools.me/compare/dochub): Compare PrivaTools and DocHub for individual file tasks, reusable forms, signature requests and Google Drive document workflows.
+- [PrivaTools and PDFescape](https://privatools.me/compare/pdfescape): Compare PrivaTools with PDFescape Online and Desktop for annotations, form fields and broader file tasks using official feature documentation.
+- [PrivaTools and Nitro PDF Pro](https://privatools.me/compare/nitro-pdf): Compare PrivaTools and Nitro PDF Pro for everyday file work, existing PDF text editing, OCR and desktop document workflows.
+- [PrivaTools and TinyWow](https://privatools.me/compare/tinywow): Compare PrivaTools and TinyWow for mixed file tasks, AI writing, processing visibility and source access without unsupported tool-count rankings.
+- [PrivaTools and ihatepdf.cv](https://privatools.me/compare/ihatepdf): Compare PrivaTools and ihatepdf.cv for local browser PDF tasks and AI document chat, distinguishing local files from text sent to a model provider.

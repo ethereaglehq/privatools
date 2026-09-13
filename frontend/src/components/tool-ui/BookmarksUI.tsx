@@ -2,6 +2,7 @@
  * BookmarksUI — inject a TOC tree of bookmarks into a PDF.
  * Workshop: structured row editor + JSON code view toggle.
  */
+import { PdfPageStage } from "./pdf/PdfPageStage";
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, Bookmark, Plus, Trash2, RotateCcw, Code2, ListTree } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
@@ -21,12 +22,14 @@ export function BookmarksUI() {
     const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
     const [marks, setMarks] = useState<Mark[]>([
         { title: "Chapter 1", page: 1 },
-        { title: "Chapter 2", page: 5 },
+        { title: "Chapter 2", page: 1 },
     ]);
 
     const [json, setJson] = useState(JSON.stringify(marks, null, 2));
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
+    const [previewPage, setPreviewPage] = useState(1);
+    const [totalPages, setTotalPages] = useState<number | null>(null);
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
 
@@ -50,7 +53,7 @@ export function BookmarksUI() {
 
     const syncFromJson = (v: string) => {
         setJson(v);
-        try { const parsed = JSON.parse(v); if (Array.isArray(parsed)) setMarks(parsed); } catch { /* keep raw text */ }
+        try { const parsed = JSON.parse(v); if (Array.isArray(parsed) && parsed.every(x => typeof x?.title === "string" && Number.isFinite(x?.page))) setMarks(parsed); } catch { /* keep raw text */ }
     };
 
     // Validate JSON when in JSON mode
@@ -63,8 +66,8 @@ export function BookmarksUI() {
             return false;
         }
     })();
-    const marksValid = marks.length > 0 && marks.every(m => m.title.trim().length > 0 && Number.isFinite(m.page) && m.page >= 1);
-    const canProcess = !!file && (mode === "json" ? jsonValid : marksValid) && state !== "processing";
+    const marksValid = marks.length > 0 && marks.every(m => typeof m?.title === "string" && m.title.trim().length > 0 && Number.isInteger(m.page) && m.page >= 1 && (!totalPages || m.page <= totalPages));
+    const canProcess = !!file && (mode === "json" ? jsonValid && marksValid : marksValid) && state !== "processing";
 
     const process = useCallback(async () => {
         if (!file || !canProcess) return;
@@ -156,7 +159,8 @@ export function BookmarksUI() {
                         </button>
                     </div>
 
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="pdf-coordinate-workspace"><PdfPageStage file={file.raw} page={previewPage} onPageChange={setPreviewPage} onDimensions={info => setTotalPages(info.pages)} />
+                    <fieldset disabled={state === "processing"} className="pdf-coordinate-controls rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
                             <span>Bookmarks</span>
                             <div className="flex items-center gap-1">
@@ -182,14 +186,14 @@ export function BookmarksUI() {
                                         <input
                                             value={m.title}
                                             onChange={e => updateMark(i, { title: e.target.value })}
-                                            placeholder="Section title"
+                                            placeholder="Section title" aria-label={`Bookmark ${i + 1} title`}
                                             className="flex-1 min-w-0 rounded-md border border-border bg-card px-3 py-2 text-[13px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                         />
                                         <div className="flex items-center gap-1 shrink-0">
                                             <span className="font-mono text-[9.5px] tracking-wider text-muted-foreground">p.</span>
                                             <input
-                                                type="number" min={1} max={99999} value={m.page}
-                                                onChange={e => updateMark(i, { page: Math.max(1, Math.min(99999, parseInt(e.target.value) || 1)) })}
+                                                aria-label={`Bookmark ${i + 1} page`} type="number" min={1} max={totalPages || 99999} value={m.page}
+                                                onChange={e => { const page = Math.max(1, Math.min(totalPages || 99999, parseInt(e.target.value) || 1)); updateMark(i, { page }); setPreviewPage(page); }}
                                                 className="w-16 rounded-md border border-border bg-card px-2 py-2 font-mono text-[13px] text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-colors"
                                             />
                                         </div>
@@ -216,7 +220,7 @@ export function BookmarksUI() {
                                     onChange={e => syncFromJson(e.target.value)}
                                     rows={Math.max(6, marks.length + 2)}
                                     spellCheck={false}
-                                    aria-invalid={!jsonValid}
+                                    aria-label="Bookmarks JSON" aria-invalid={!jsonValid || !marksValid}
                                     className={cn(
                                         "w-full rounded-md border bg-paper-2/40 px-3 py-2 font-mono text-[12.5px] leading-relaxed text-foreground outline-none focus:ring-2 transition-colors",
                                         jsonValid
@@ -235,7 +239,8 @@ export function BookmarksUI() {
                                 )}
                             </div>
                         )}
-                    </div>
+                    {!marksValid && <p className="text-destructive text-sm p-3" role="status">Every bookmark needs a title and a page inside this document.</p>}
+                    </fieldset></div>
 
                     {error && (
                         <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">

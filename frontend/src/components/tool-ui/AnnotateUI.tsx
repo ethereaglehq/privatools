@@ -7,6 +7,7 @@ import { Download, Loader2, AlertCircle, Plus, Trash2, CheckCircle2, Highlighter
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 
 const ANN_TYPES = [
     { value: "highlight",     label: "Highlight",      defaultColor: "#ffe24a", icon: "▭" },
@@ -34,6 +35,7 @@ const PAGE_W = 612;
 const PAGE_H = 792;
 
 export function AnnotateUI() {
+    const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
     const [annotations, setAnnotations] = useState<Annotation[]>([
         { id: makeId(), type: "highlight", page: 1, x: 72, y: 72, width: 200, height: 14, color: "#ffe24a", text: "" },
@@ -148,15 +150,15 @@ export function AnnotateUI() {
                             <Plus size={11} /> Add
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 p-4 items-start">
-                        <div className="space-y-2">
+                    <div className="pdf-coordinate-workspace">
+                        <fieldset className="pdf-coordinate-controls" disabled={status === "processing"}>
                             {annotations.map((ann, idx) => {
                                 const isSel = selected === ann.id;
                                 const annType = ANN_TYPES.find(t => t.value === ann.type);
                                 return (
                                     <div
                                         key={ann.id}
-                                        onClick={() => setSelected(ann.id)}
+                                        onClick={() => { setSelected(ann.id); setPreviewPage(ann.page); }}
                                         className={cn(
                                             "rounded-lg border p-3 cursor-pointer transition-colors",
                                             isSel ? "border-accent bg-accent/[0.06]" : "border-border bg-card hover:border-border-strong"
@@ -168,7 +170,7 @@ export function AnnotateUI() {
                                             </span>
                                             <span className="font-display text-[12.5px] font-medium text-foreground">{annType?.label}</span>
                                             <span className="h-3 w-3 rounded-sm border border-border" style={{ background: ann.color }} />
-                                            <button onClick={(e) => { e.stopPropagation(); removeAnnotation(ann.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                            <button type="button" aria-label={`Remove annotation ${idx + 1}`} onClick={(e) => { e.stopPropagation(); removeAnnotation(ann.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                                                 <Trash2 size={12} />
                                             </button>
                                         </div>
@@ -225,7 +227,7 @@ export function AnnotateUI() {
                                                     <label className="font-medium text-[10.5px] text-muted-foreground">{c.label}</label>
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(ann.id, el); else rowRefs.current.delete(ann.id); } : undefined}
-                                                        type="number" inputMode="numeric" min={c.min}
+                                                        type="number" aria-label={c.label} inputMode="numeric" min={c.min}
                                                         value={ann[c.f]}
                                                         onClick={e => e.stopPropagation()}
                                                         onChange={e => update(ann.id, c.f, +e.target.value)}
@@ -246,38 +248,10 @@ export function AnnotateUI() {
                                     </div>
                                 );
                             })}
-                        </div>
+                        </fieldset>
 
                         {/* Page preview */}
-                        <div>
-                            <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[200px] overflow-hidden">
-                                {annotations.map(a => {
-                                    const isSel = selected === a.id;
-                                    return (
-                                        <div
-                                            key={a.id}
-                                            className={cn(
-                                                "absolute border transition-colors",
-                                                isSel ? "ring-1 ring-accent" : ""
-                                            )}
-                                            style={{
-                                                left: `${(a.x / PAGE_W) * 100}%`,
-                                                top: `${(a.y / PAGE_H) * 100}%`,
-                                                width: `${(a.width / PAGE_W) * 100}%`,
-                                                height: `${(a.height / PAGE_H) * 100}%`,
-                                                minWidth: 2, minHeight: 2,
-                                                background: a.color + "66",
-                                                borderColor: a.color,
-                                            }}
-                                        />
-                                    );
-                                })}
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
-                            </div>
-                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
-                                Coords in points
-                            </p>
-                        </div>
+                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} regions={annotations.map((annotation, index) => ({ ...annotation, kind: annotation.type, label: `Annotation ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setAnnotations(items => [...items, { ...region, id, type: "highlight", color: "#ffe24a", text: "" }]); setSelected(id); }} />
                     </div>
                 </div>
             )}

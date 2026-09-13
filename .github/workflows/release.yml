@@ -68,6 +68,10 @@ jobs:
           # SDK is never downloaded.
           build-args: |
             VITE_CLERK_PUBLISHABLE_KEY=${{ vars.CLERK_PUBLISHABLE_KEY }}
+            VITE_AUTH_PROVIDER=clerk
+            VITE_CLERK_SOCIAL_PROVIDERS=${{ vars.CLERK_SOCIAL_PROVIDERS || 'google,github' }}
+            VITE_CLERK_USERNAME_ENABLED=true
+            VITE_CLERK_PASSKEYS_ENABLED=true
           push: true
           # Without this every release re-ran apt-get, `npm ci` and
           # `pip install` from nothing. The Dockerfile copies package manifests

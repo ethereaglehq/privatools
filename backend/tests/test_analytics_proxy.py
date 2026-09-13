@@ -126,99 +126,61 @@ def _forwarded(client, monkeypatch, payload: dict) -> dict:
     return calls[0][1]["events"][0]
 
 
-def test_user_engagement_is_not_counted_as_a_page_view(client, monkeypatch):
-    """Time on page has to arrive as its own event.
-
-    GA4 only calls a session engaged if it passes ten seconds, reaches a
-    second page, or fires a key event — so the time a visitor actually spent
-    has to be reported. Reporting it as another page_view would fix the bounce
-    rate by inflating the page-view count, which is worse than the bug.
-    """
-    event = _forwarded(
-        client,
-        monkeypatch,
-        {
-            "event": "user_engagement",
-            "path": "/tool/compress-pdf",
-            "client_id": "client.12345678",
-            "engagement_time_msec": 42_000,
-        },
-    )
-
-    assert event["name"] == "user_engagement"
+def test_legacy_engagement_is_remapped_to_allowed_custom_event(client, monkeypatch):
+    event = _forwarded(client, monkeypatch, {
+        "event": "user_engagement", "path": "/tool/compress-pdf", "client_id": "client.12345678",
+        "engagement_time_msec": 42_000, "session_id": "1800000000",
+    })
+    assert event["name"] == "foreground_time"
     assert event["params"]["engagement_time_msec"] == 42_000
+    assert event["params"]["session_id"] == "1800000000"
 
 
-def test_unknown_event_name_falls_back_to_page_view(client, monkeypatch):
-    """The endpoint is unauthenticated, so the event name is an allowlist.
-
-    Without one, anyone who can POST could write arbitrary event names —
-    including names that collide with key events — straight into the property.
-    """
-    event = _forwarded(
-        client,
-        monkeypatch,
-        {
-            "event": "purchase",
-            "path": "/",
-            "client_id": "client.12345678",
-        },
-    )
-
-    assert event["name"] == "page_view"
+def test_reserved_or_unknown_events_are_dropped_without_inventing_pageviews():
+    for name in ("purchase", "first_visit", "session_start", "random_event"):
+        assert analytics._build_ga4_payload(analytics.AnalyticsPageview(
+            event=name, client_id="client.12345678")) is None
 
 
-def test_zero_engagement_is_floored_to_one_millisecond(client, monkeypatch):
-    """The first view of a visit legitimately has no time behind it.
-
-    It still needs the parameter present and non-zero or GA4 drops the event
-    from every standard report — but the floor should be negligible, not the
-    invented 100ms that used to stand in for a real measurement.
-    """
-    event = _forwarded(
-        client,
-        monkeypatch,
-        {
-            "path": "/",
-            "client_id": "client.12345678",
-            "engagement_time_msec": 0,
-        },
-    )
-
-    assert event["params"]["engagement_time_msec"] == 1
+def test_zero_time_and_invalid_session_do_not_invent_measurements(client, monkeypatch):
+    event = _forwarded(client, monkeypatch, {
+        "path": "/", "client_id": "client.12345678", "engagement_time_msec": 0,
+        "session_id": "not-a-measured-session",
+    })
+    assert "engagement_time_msec" not in event["params"]
+    assert "session_id" not in event["params"]
+    assert "session_engaged" not in event["params"]
 
 
-def test_session_engaged_flag_is_forwarded(client, monkeypatch):
-    """Engagement time alone never makes a session engaged.
-
-    GA4 counts engaged sessions from this flag, and bounce rate is its
-    inverse — so sending a real engagement time without it produces a true
-    average engagement time sitting next to a 100% bounce rate, which is the
-    exact contradiction this property reported.
-    """
-    event = _forwarded(
-        client,
-        monkeypatch,
-        {
-            "path": "/",
-            "client_id": "client.12345678",
-            "engagement_time_msec": 12_000,
-            "session_engaged": "1",
-        },
-    )
-
-    assert event["params"]["session_engaged"] == "1"
+def test_real_tool_success_is_allowed_only_on_tool_routes(client, monkeypatch):
+    event = _forwarded(client, monkeypatch, {
+        "event": "tool_success", "path": "/tools/json-formatter", "client_id": "client.12345678",
+    })
+    assert event["name"] == "tool_success"
+    assert analytics._build_ga4_payload(analytics.AnalyticsPageview(
+        event="tool_success", path="/account", client_id="client.12345678")) is None
 
 
-def test_session_engaged_defaults_to_not_engaged(client, monkeypatch):
-    """Absent or malformed means "0", never omitted.
+def test_blank_measurement_id_uses_existing_public_default(monkeypatch):
+    monkeypatch.setenv("GA4_API_SECRET", "test-secret")
+    monkeypatch.setenv("GA4_MEASUREMENT_ID", "")
+    assert analytics._analytics_config() == (analytics._DEFAULT_MEASUREMENT_ID, "test-secret")
 
-    Conservative on purpose: a session we cannot vouch for should understate
-    engagement rather than invent it.
-    """
-    for payload in (
-        {"path": "/", "client_id": "client.12345678"},
-        {"path": "/", "client_id": "client.12345678", "session_engaged": "yes"},
-    ):
-        event = _forwarded(client, monkeypatch, payload)
-        assert event["params"]["session_engaged"] == "0"
+
+def test_regional_policy_requires_explicit_flags_and_preserves_no_store(client, monkeypatch):
+    monkeypatch.delenv("GA_BROWSER_TAG_ENABLED", raising=False)
+    monkeypatch.delenv("GA_TRUSTED_COUNTRY_HEADER", raising=False)
+    monkeypatch.setenv("GA_DEFAULT_ON_COUNTRIES", "US,IN")
+    for headers in ({}, {"CF-IPCountry": "US"}, {"X-PrivaTools-Country": "US"}, {"X-Forwarded-For": "1.1.1.1"}):
+        response = client.get("/api/analytics/policy", headers=headers)
+        assert response.json() == {"mode": "opt_in"}
+        assert "no-store" in response.headers["cache-control"]
+    monkeypatch.setenv("GA_BROWSER_TAG_ENABLED", "true")
+    assert client.get("/api/analytics/policy", headers={"X-PrivaTools-Country": "US"}).json() == {"mode": "opt_in"}
+    monkeypatch.setenv("GA_TRUSTED_COUNTRY_HEADER", "true")
+    assert client.get("/api/analytics/policy", headers={"CF-IPCountry": "US"}).json() == {"mode": "opt_in"}
+    assert client.get("/api/analytics/policy", headers={"X-PrivaTools-Country": "US"}).json() == {"mode": "default_on"}
+    for country in ("GB", "DE", "XX", "T1", "us", "USA", "US,IN", ""):
+        assert client.get("/api/analytics/policy", headers={"X-PrivaTools-Country": country}).json() == {"mode": "opt_in"}
+    monkeypatch.setenv("GA_DEFAULT_ON_COUNTRIES", "")
+    assert client.get("/api/analytics/policy", headers={"X-PrivaTools-Country": "US"}).json() == {"mode": "opt_in"}

@@ -99,12 +99,23 @@ export function providerById(id: string): Provider | undefined {
     return PROVIDERS.find((p) => p.id === id);
 }
 
+function customBaseUrl(value: string): string {
+    let url: URL;
+    try { url = new URL(value.trim()); } catch { throw new Error("Enter a complete endpoint URL, such as http://localhost:11434."); }
+    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.search || url.hash) {
+        throw new Error("Use an HTTP or HTTPS endpoint without credentials, query parameters or a fragment.");
+    }
+    // Many OpenAI-compatible servers publish a base ending in /v1. Accept
+    // both that form and the server root without constructing /v1/v1.
+    return url.href.replace(/\/+$/, "").replace(/\/v1$/, "");
+}
+
 function baseFor(p: Provider, input: CompleteInput): string {
     if (p.customBaseUrl) {
         // Never guess a default here. Silently picking one would send the
         // user's key to a host they did not choose.
         if (!input.baseUrl) throw new Error(`${p.label} needs a base URL`);
-        return input.baseUrl.replace(/\/+$/, "");
+        return customBaseUrl(input.baseUrl);
     }
     return p.origin;
 }
@@ -211,7 +222,7 @@ export function buildTranscribeRequest(
         throw new Error(`${p.label} has no OpenAI-style transcription endpoint`);
     }
     const base = p.customBaseUrl
-        ? (() => { if (!input.baseUrl) throw new Error(`${p.label} needs a base URL`); return input.baseUrl.replace(/\/+$/, ""); })()
+        ? (() => { if (!input.baseUrl) throw new Error(`${p.label} needs a base URL`); return customBaseUrl(input.baseUrl); })()
         : p.origin;
     const body = new FormData();
     body.append("file", input.file, input.filename ?? (input.file instanceof File ? input.file.name : "audio.webm"));

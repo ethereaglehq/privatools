@@ -25,7 +25,7 @@ set -euo pipefail
 
 REPO_DIR=/home/ubuntu/privatools
 DEPLOY_LOG=/home/ubuntu/deploy.log
-HEALTH_URL=http://127.0.0.1:8000/api/health
+HEALTH_URL=http://127.0.0.1:8000/readyz
 HEALTH_RETRIES=10
 HEALTH_INTERVAL=6  # seconds; total wait = 60s
 

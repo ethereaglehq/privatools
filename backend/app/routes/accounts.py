@@ -113,7 +113,38 @@ def _public(user: accounts.User) -> dict:
     return {"id": user.id, "email": user.email, "created_at": user.created_at}
 
 
-@router.post("/auth/register")
+def _check_account_lockout(email: str) -> None:
+    """A signed-in session must not bypass account-level secret throttling."""
+    locked = accounts.login_locked_until(email)
+    if locked:
+        raise HTTPException(
+            status_code=429,
+            detail="Too many failed attempts. Try again shortly.",
+            headers={"Retry-After": str(max(1, int((locked - _utcnow()).total_seconds())))},
+        )
+
+
+async def _verify_current_password(user: accounts.User, password: str) -> None:
+    _check_account_lockout(user.email)
+    found = accounts.credentials_for(user.email)
+    stored = found[1] if found else accounts.DUMMY_HASH
+    verified = await hashing_pool.verify(password, stored)
+    if not found or not verified:
+        accounts.record_login_failure(user.email)
+        raise HTTPException(status_code=401, detail="Your current password is incorrect.")
+    accounts.clear_login_failures(user.email)
+
+
+def _require_native_auth() -> None:
+    """Keep local credentials inactive when this deployment delegates auth."""
+    if clerk_session.is_configured():
+        raise HTTPException(
+            status_code=409,
+            detail="This site uses Clerk for accounts. Use Clerk sign-in or email password reset; recovery codes are no longer used here.",
+        )
+
+
+@router.post("/auth/register", dependencies=[Depends(_require_native_auth)])
 @limiter.limit(CREDENTIAL_RATE_LIMIT)
 async def register(request: Request, response: Response, body: Credentials):
     try:
@@ -143,7 +174,7 @@ async def register(request: Request, response: Response, body: Credentials):
     return {"user": _public(user), "recovery_code": recovery_code}
 
 
-@router.post("/auth/login")
+@router.post("/auth/login", dependencies=[Depends(_require_native_auth)])
 @limiter.limit(CREDENTIAL_RATE_LIMIT)
 async def login(request: Request, response: Response, body: Credentials):
     # Per-account, because the per-IP limiter does not stop guesses for one
@@ -202,13 +233,13 @@ async def delete_account(response: Response, user: accounts.User = Depends(curre
     return {"ok": True}
 
 
-@router.post("/auth/recover")
+@router.post("/auth/recover", dependencies=[Depends(_require_native_auth)])
 @limiter.limit(CREDENTIAL_RATE_LIMIT)
 async def recover(request: Request, response: Response, body: RecoveryRequest):
     """Reset a password with the recovery code issued at signup.
 
-    This is the only way back into an account: the product sends no email, so
-    there is no reset link. A wrong code is rate-limited and answered with the
+    In native-auth self-hosted deployments, there is no email reset link.
+    Clerk deployments reject this endpoint. A wrong code is answered with the
     same message as a wrong address, so this cannot be used to test which
     addresses are registered.
     """
@@ -250,7 +281,7 @@ async def recover(request: Request, response: Response, body: RecoveryRequest):
     return {"ok": True, "recovery_code": next_code}
 
 
-@router.post("/auth/password")
+@router.post("/auth/password", dependencies=[Depends(_require_native_auth)])
 @limiter.limit(CREDENTIAL_RATE_LIMIT)
 async def change_password(
     request: Request,
@@ -267,9 +298,7 @@ async def change_password(
     except accounts.AccountError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
 
-    found = accounts.credentials_for(user.email)
-    if not found or not await hashing_pool.verify(body.current_password, found[1]):
-        raise HTTPException(status_code=401, detail="Your current password is incorrect.")
+    await _verify_current_password(user, body.current_password)
 
     accounts.change_password(
         user.id,
@@ -279,7 +308,7 @@ async def change_password(
     return {"ok": True}
 
 
-@router.post("/auth/recovery-code")
+@router.post("/auth/recovery-code", dependencies=[Depends(_require_native_auth)])
 @limiter.limit(CREDENTIAL_RATE_LIMIT)
 async def rotate_recovery_code(
     request: Request,
@@ -297,9 +326,7 @@ async def rotate_recovery_code(
     this at all: a code that was written down and then lost should be
     replaceable without going through a password reset.
     """
-    found = accounts.credentials_for(user.email)
-    if not found or not await hashing_pool.verify(body.current_password, found[1]):
-        raise HTTPException(status_code=401, detail="Your current password is incorrect.")
+    await _verify_current_password(user, body.current_password)
 
     code = accounts.new_recovery_code()
     accounts.rotate_recovery_code(
@@ -330,7 +357,7 @@ async def create_key(body: KeyRequest, user: accounts.User = Depends(current_use
     return {
         "key": raw,
         "record": {"key_id": record.key_id, "label": record.label,
-                   "created_at": record.created_at, "revoked": False},
+                   "created_at": record.created_at, "last_used_at": None, "revoked": False},
     }
 
 

@@ -130,10 +130,20 @@ describe("account capability parity", () => {
         // A stolen cookie must not mint a code the thief keeps — one that
         // outlives the owner noticing and changing their password.
         const src = readFileSync(resolve(__dirname, "../../../backend/app/routes/accounts.py"), "utf8");
-        const route = src.slice(src.indexOf('@router.post("/auth/recovery-code")'));
+        const routeStart = src.indexOf('@router.post("/auth/recovery-code"');
+        expect(routeStart).toBeGreaterThan(-1);
+        const route = src.slice(routeStart);
         const body = route.slice(0, route.indexOf("@router.get"));
+        expect(body).toContain("Depends(_require_native_auth)");
         expect(body).toContain("current_password");
-        expect(body).toContain("hashing_pool.verify");
+        const verifyCall = "await _verify_current_password(user, body.current_password)";
+        expect(body).toContain(verifyCall);
+        expect(body.indexOf(verifyCall)).toBeLessThan(body.indexOf("accounts.rotate_recovery_code("));
+        const helperStart = src.indexOf("async def _verify_current_password(");
+        const helper = src.slice(helperStart, src.indexOf("@router.post", helperStart));
+        expect(helper).toContain("_check_account_lockout(user.email)");
+        expect(helper).toContain("await hashing_pool.verify(password, stored)");
+        expect(helper).toContain('raise HTTPException(status_code=401');
     });
 
     it("the mixin keeps the code the register call returns", () => {

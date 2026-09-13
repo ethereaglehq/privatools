@@ -24,7 +24,7 @@ from pathlib import Path
 
 import pytest
 
-from app.seo_meta import path_is_known
+from app.seo_meta import NOINDEX_PATHS, get_meta_for_path, path_is_known
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 APP_TSX = REPO_ROOT / "frontend" / "src" / "App.tsx"
@@ -57,3 +57,23 @@ def test_unknown_paths_still_404():
     """The guard above must not be satisfied by making everything known."""
     for bogus in ("/definitely-not-a-route", "/tool/no-such-tool", "/blog/no-such-post"):
         assert not path_is_known(bogus), f"{bogus} should not be a known path"
+
+
+@pytest.mark.parametrize("route", [
+    "/account/sign-in", "/account/sign-up", "/account/settings", "/settings",
+])
+def test_private_workspace_routes_have_metadata_and_stay_out_of_search(route: str):
+    assert path_is_known(route)
+    assert route in NOINDEX_PATHS
+    title, description = get_meta_for_path(route)
+    assert "404" not in title
+    assert description
+
+
+@pytest.mark.parametrize("route", ["/api", "/trust", "/ai"])
+def test_public_reference_pages_have_indexable_metadata(route: str):
+    assert path_is_known(route)
+    assert route not in NOINDEX_PATHS
+    title, description = get_meta_for_path(route)
+    assert "404" not in title
+    assert description

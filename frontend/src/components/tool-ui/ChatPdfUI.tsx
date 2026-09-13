@@ -7,10 +7,12 @@
  * conversational answer needs a real LLM, and we don't proxy documents.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertCircle, Bot, Copy, Loader2, MessageSquareText, RotateCcw, Send, User, X, FileText, CheckCircle2 } from "lucide-react";
+import { Bot, Loader2, MessageSquareText, RotateCcw, Send, User, FileText } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { formatFileSize } from "@/lib/api";
-import { FileUploadZone } from "./FileUploadZone";
+import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
+import { AiTaskWorkspace } from "./AiTaskWorkspace";
+import { ToolCopyButton } from "./SpecialistTools";
 import { consumeFileHandoff } from "@/lib/file-handoff";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
@@ -50,9 +52,12 @@ export function ChatPdfUI() {
     const [model, setModel] = useState("");
     const abortRef = useRef<AbortController | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const documentId = useRef(0);
 
     const extract = useCallback(async (f: File) => {
-        setExtracting(true);
+        const current = ++documentId.current;
+        setExtracting(true); setExtractPct(0);
+        let loadedPdf: Awaited<ReturnType<PdfjsLibType["getDocument"]>["promise"]> | undefined;
         setError(null);
         setMessages([]);
         setText("");
@@ -60,6 +65,7 @@ export function ChatPdfUI() {
             const pdfjsLib = await loadPdfjs();
             const buf = await f.arrayBuffer();
             const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+            loadedPdf = pdf;
             const pages: string[] = [];
             for (let i = 1; i <= pdf.numPages; i++) {
                 const page = await pdf.getPage(i);
@@ -69,8 +75,10 @@ export function ChatPdfUI() {
                     .join(" ")
                     .replace(/\s+/g, " ")
                     .trim());
+                if (current !== documentId.current) return;
                 setExtractPct(Math.round((i / pdf.numPages) * 100));
             }
+            if (current !== documentId.current) return;
             const joined = pages.join("\n\n").trim();
             if (!joined) {
                 setError("No selectable text found — if this is a scan, run OCR PDF first, then come back.");
@@ -79,10 +87,12 @@ export function ChatPdfUI() {
             }
             setText(joined);
         } catch {
+            if (current !== documentId.current) return;
             setError("Couldn't read that PDF. If it is password-protected, unlock it first.");
             setFile(null);
         } finally {
-            setExtracting(false);
+            void loadedPdf?.destroy();
+            if (current === documentId.current) setExtracting(false);
         }
     }, []);
 
@@ -95,10 +105,10 @@ export function ChatPdfUI() {
     }, [pick]);
 
     useEffect(() => {
-        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+        scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth" });
     }, [messages, busy]);
 
-    useEffect(() => () => abortRef.current?.abort(), []);
+    useEffect(() => () => { documentId.current++; abortRef.current?.abort(); }, []);
 
     const ask = useCallback(async () => {
         const question = input.trim();
@@ -106,6 +116,7 @@ export function ChatPdfUI() {
         setBusy(true);
         setError(null);
         setInput("");
+        const currentDocument = documentId.current;
         const history = messages;
         setMessages(m => [...m, { role: "user", content: question }]);
         const controller = new AbortController();
@@ -123,176 +134,25 @@ export function ChatPdfUI() {
                 history,
                 signal: controller.signal,
             });
-            setMessages(m => [...m, { role: "assistant", content: answer }]);
+            if (currentDocument === documentId.current) setMessages(m => [...m, { role: "assistant", content: answer }]);
         } catch (e: unknown) {
-            if ((e as DOMException)?.name === "AbortError") return;
+            if (currentDocument !== documentId.current) return;
+            if ((e as DOMException)?.name === "AbortError") { setMessages(history); setInput(question); return; }
             const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "The request failed.";
             setError(friendlyError(msg, "The request failed."));
             // Put the question back so it isn't lost.
             setMessages(history);
             setInput(question);
         } finally {
-            setBusy(false);
+            if (currentDocument === documentId.current) setBusy(false);
             if (abortRef.current === controller) abortRef.current = null;
         }
     }, [input, busy, text, byok.ready, byok.provider, messages, model]);
 
-    if (!file) {
-        return (
-            <div className="space-y-4">
-                <FileUploadZone
-                    file={null}
-                    onFileSelect={pick}
-                    onClear={() => {}}
-                    accept=".pdf"
-                    label="Drop a PDF to chat with"
-                    hint="Text is read in your browser · questions go only to the AI provider you choose, with your key"
-                />
-                {error && (
-                    <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                        <AlertCircle size={13} className="shrink-0" /> {error}
-                    </div>
-                )}
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-4">
-            {/* File bar */}
-            <div className="flex items-center gap-3 rounded-xl border border-accent/30 bg-accent/[0.04] px-4 py-3">
-                <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
-                    {extracting ? <Loader2 size={16} className="text-accent animate-spin" /> : <FileText size={16} className="text-accent" />}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <p className="text-[14px] font-medium text-foreground truncate">{file.name}</p>
-                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">
-                        {extracting
-                            ? `Reading text in your browser… ${extractPct}%`
-                            : <>{formatFileSize(file.size)} · {text.length.toLocaleString()} characters of text · never uploaded to us</>}
-                    </p>
-                </div>
-                <button
-                    onClick={() => { abortRef.current?.abort(); setFile(null); setText(""); setMessages([]); setError(null); }}
-                    className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-                    aria-label="Remove file"
-                ><X size={13} /></button>
-            </div>
-
-            {/* Key setup */}
-            <ByokPanel
-                byok={byok}
-                purpose="Each question is sent, with the document text, straight from your browser to this provider using your key. It never passes through PrivaTools."
-            />
-            {byok.ready && (
-                <label className="block">
-                    <span className="font-medium text-[11px] text-muted-foreground">Model (optional)</span>
-                    <input
-                        type="text"
-                        value={model}
-                        onChange={e => setModel(e.target.value)}
-                        placeholder={providerById(byok.provider)?.models[0] ?? "provider default"}
-                        className="mt-1 w-full rounded-md border border-border bg-background px-2.5 py-1.5 text-[13px] font-mono"
-                    />
-                </label>
-            )}
-
-            {/* Conversation */}
-            {byok.ready && !extracting && text && (
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div ref={scrollRef} className="max-h-[420px] overflow-y-auto p-4 space-y-4">
-                        {messages.length === 0 && (
-                            <div className="text-center py-6">
-                                <MessageSquareText size={22} className="mx-auto text-accent mb-2" strokeWidth={1.75} />
-                                <p className="text-[13.5px] text-muted-foreground">
-                                    Ask anything about the document — "What are the payment terms?",
-                                    "Summarize section 3", "List every deadline".
-                                </p>
-                            </div>
-                        )}
-                        {messages.map((m, i) => (
-                            <div key={i} className={cn("flex gap-2.5", m.role === "user" ? "justify-end" : "")}>
-                                {m.role === "assistant" && (
-                                    <div className="h-7 w-7 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0 mt-0.5">
-                                        <Bot size={13} className="text-accent" />
-                                    </div>
-                                )}
-                                <div className={cn(
-                                    "group relative max-w-[85%] rounded-xl px-3.5 py-2.5 text-[13.5px] leading-relaxed whitespace-pre-wrap",
-                                    m.role === "user" ? "bg-accent/10 border border-accent/25 text-foreground" : "bg-secondary/50 border border-border text-foreground"
-                                )}>
-                                    {m.content}
-                                    {m.role === "assistant" && (
-                                        <button
-                                            onClick={() => navigator.clipboard.writeText(m.content).catch(() => {})}
-                                            className="absolute -top-2 -right-2 opacity-0 group-hover:opacity-100 h-6 w-6 rounded-md bg-card border border-border inline-flex items-center justify-center text-muted-foreground hover:text-foreground transition-all"
-                                            aria-label="Copy answer"
-                                        ><Copy size={11} /></button>
-                                    )}
-                                </div>
-                                {m.role === "user" && (
-                                    <div className="h-7 w-7 rounded-lg bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
-                                        <User size={13} className="text-muted-foreground" />
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                        {busy && (
-                            <div className="flex gap-2.5">
-                                <div className="h-7 w-7 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
-                                    <Bot size={13} className="text-accent" />
-                                </div>
-                                <div className="rounded-xl bg-secondary/50 border border-border px-3.5 py-2.5">
-                                    <Loader2 size={14} className="animate-spin text-accent" />
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                    <div className="border-t border-border p-3 flex items-end gap-2">
-                        <textarea
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(); } }}
-                            placeholder="Ask about the document… (Enter to send, Shift+Enter for a new line)"
-                            rows={Math.min(4, Math.max(1, input.split("\n").length))}
-                            className="flex-1 resize-none rounded-lg border border-border bg-background px-3 py-2 text-[13.5px] outline-none focus:border-accent/50"
-                        />
-                        {busy ? (
-                            <button
-                                onClick={() => abortRef.current?.abort()}
-                                className="h-9 px-3 rounded-lg border border-border bg-card text-[12.5px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-                            >Stop</button>
-                        ) : (
-                            <button
-                                onClick={() => void ask()}
-                                disabled={!input.trim()}
-                                className="h-9 w-9 rounded-lg bg-accent text-accent-foreground inline-flex items-center justify-center disabled:opacity-40 transition-opacity"
-                                aria-label="Send question"
-                            ><Send size={14} /></button>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {messages.length > 0 && !busy && (
-                <button
-                    onClick={() => setMessages([])}
-                    className="inline-flex items-center gap-1.5 text-[12px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-                ><RotateCcw size={11} /> New conversation (same document)</button>
-            )}
-
-            {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                    <AlertCircle size={13} className="shrink-0" /> {error}
-                </div>
-            )}
-
-            {!extracting && text && !byok.ready && (
-                <p className="flex items-center gap-2 text-[12.5px] text-muted-foreground">
-                    <CheckCircle2 size={13} className="text-accent" />
-                    Text extracted. Add a provider key above to start asking questions.
-                </p>
-            )}
-        </div>
-    );
+    const clear = () => { documentId.current++; abortRef.current?.abort(); setFile(null); setText(""); setMessages([]); setInput(""); setError(null); setBusy(false); setExtracting(false); };
+    return <AiTaskWorkspace kind="chat" title="A conversation with your document" description="Read the PDF on your device, connect your provider, and ask questions in your own words." engine="byok" phase={extracting ? "extracting" : busy ? "answering" : "idle"}>
+        <div className="pt-chat-workspace"><aside className="pt-chat-source"><div className="pt-lab-toolbar"><h3>Your reading material</h3><FileText size={20}/></div><FileUploadZone file={file} onFileSelect={pick} onClear={clear} accept=".pdf" label="Choose a PDF to explore" hint="Selectable text works best · extracted on your device"/>{extracting && <ProcessingBar progress={extractPct} label="Reading the PDF on your device…"/>}{text && <details className="pt-specialist-disclosure"><summary>Review extracted text · {text.length.toLocaleString()} characters</summary><pre className="pt-chat-extract" tabIndex={0}>{text}</pre></details>}<p className="pt-lab-caption">{file && `${formatFileSize(file.size)} · `}Each question sends the document text directly to your chosen AI provider. Its terms and retention policy apply. The document never passes through PrivaTools.</p></aside>
+        <section className="pt-chat-conversation"><div className="pt-lab-toolbar"><h3>Ask, explore, understand</h3>{messages.length > 0 && <button className="pt-lab-button" disabled={busy} onClick={() => setMessages([])}><RotateCcw size={15}/>Start over</button>}</div><div ref={scrollRef} className="pt-chat-thread" role="log" aria-label="Document conversation" aria-live="polite">{messages.length === 0 && <div className="pt-specialist-empty"><MessageSquareText size={37}/><h3>{!file ? "Every question starts somewhere" : !byok.ready ? "Connect an AI provider below" : "What would you like to know?"}</h3><p>{!file ? "Add a PDF to start. Your conversation will live here for this session." : !byok.ready ? "Use your own key to ask questions about this document." : "Ask for an overview, find a detail or compare ideas in the document."}</p>{byok.ready && text && <div className="pt-chat-suggestions">{["Give me a short overview.","What are the key takeaways?","Which details should I double-check?"].map(prompt => <button key={prompt} onClick={() => setInput(prompt)}>{prompt}</button>)}</div>}</div>}{messages.map((message,index) => <article key={index} className={`pt-chat-message is-${message.role}`}><div>{message.role === "user" ? <User size={17}/> : <Bot size={17}/>}<strong>{message.role === "user" ? "You" : providerById(byok.provider)?.label ?? "Your provider"}</strong></div><p>{message.content}</p>{message.role === "assistant" && <ToolCopyButton value={message.content} label="Copy answer"/>}</article>)}{busy && <p className="pt-chat-thinking" role="status"><Loader2 size={17} className="animate-spin"/>Your provider is responding…</p>}</div><div className="pt-chat-compose"><textarea aria-label="Question about your PDF" value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void ask(); } }} rows={3} placeholder="Ask about this document…" disabled={!text || !byok.ready || extracting}/><button className="pt-lab-button is-primary" disabled={!busy && (!input.trim() || !text || !byok.ready || extracting)} onClick={() => busy ? abortRef.current?.abort() : void ask()}>{busy ? "Stop" : <><Send size={16}/>Ask</>}</button></div>{error && <p role="alert" className="pt-lab-issue is-error">{error}</p>}</section></div>
+        <details className="pt-chat-provider" open={!byok.ready}><summary><span>AI connection</span><strong>{byok.ready ? providerById(byok.provider)?.label ?? "Provider configured" : "Choose your provider and key"}</strong></summary><ByokPanel byok={byok} purpose="Each question is sent, with the document text, straight from your browser to this provider using your key. It never passes through PrivaTools."/>{byok.ready && <label className="pt-lab-field pt-lab-spaced"><span>Model (optional)</span><input type="text" value={model} onChange={e => setModel(e.target.value)} placeholder={providerById(byok.provider)?.models[0] ?? "provider default"} className="pt-lab-version-input"/></label>}</details>
+    </AiTaskWorkspace>;
 }

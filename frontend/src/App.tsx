@@ -42,8 +42,8 @@ const AccountPage = lazy(() => import("./pages/AccountPage"));
 const VaultPage = lazy(() => import("./pages/VaultPage"));
 const StatusPage = lazy(() => import("./pages/StatusPage"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
-const OnboardingTour = lazy(() => import("./components/OnboardingTour").then(m => ({ default: m.OnboardingTour })));
-const ShortcutsHelp = lazy(() => import("./components/ShortcutsHelp").then(m => ({ default: m.ShortcutsHelp })));
+import { OnboardingTour } from "./components/OnboardingTour";
+import { ShortcutsHelp } from "./components/ShortcutsHelp";
 const FirstSuccessListener = lazy(() => import("./components/FirstSuccessListener").then(m => ({ default: m.FirstSuccessListener })));
 
 const RouteLoader = () => (
@@ -133,10 +133,11 @@ const App = () => (
     <AppProviders>
     <BrowserRouter>
       <GlobalErrorWire />
+      {/* Navigation can request these as soon as the first screen is usable. */}
+      <ShortcutsHelp />
+      <OnboardingTour />
       <AfterInitialPaint>
         <Suspense fallback={null}>
-          <ShortcutsHelp />
-          <OnboardingTour />
           <FirstSuccessListener />
         </Suspense>
       </AfterInitialPaint>
@@ -161,6 +162,16 @@ const App = () => (
           <Route path="/my-stuff/vault" element={withRouteFallback(<VaultPage />)} />
           <Route path="/account" element={withRouteFallback(<AccountPage />)} />
           <Route path="/account/keys" element={withRouteFallback(<AccountPage />)} />
+          {/* SkinAppHost owns these page compositions, as it owns every
+              existing route above. Keep their public paths declared here
+              for the frontend/backend route-parity checks. */}
+          <Route path="/account/sign-in" element={null} />
+          <Route path="/account/sign-up" element={null} />
+          <Route path="/account/settings" element={null} />
+          <Route path="/settings" element={null} />
+          <Route path="/ai" element={null} />
+          <Route path="/api" element={null} />
+          <Route path="/trust" element={null} />
           <Route path="/status" element={withRouteFallback(<StatusPage />)} />
           <Route path="/support" element={withRouteFallback(<SupportPage />)} />
           <Route path="*" element={withRouteFallback(<NotFound />)} />

@@ -1,16 +1,17 @@
 /**
  * ImageToPdfUI — batch images → single PDF, with page-size choice.
- * Workshop: numbered file rows + page-size cards.
+ * Arrange real image previews on a working sheet before binding the PDF.
  */
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { Download, Loader2, CheckCircle2, X, Image as ImageIcon, AlertCircle, RotateCcw, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
+import { Download, X, Image as ImageIcon, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
+import { friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
 import { loadSampleJpg } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
-import { consumeFileHandoff } from "@/lib/file-handoff";
+import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { FileIntake, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
 
 type PageSize = "auto" | "a4" | "letter";
 const sizes: { id: PageSize; label: string; desc: string }[] = [
@@ -43,9 +44,7 @@ export function ImageToPdfUI({
 
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
-    const [drag, setDrag] = useState(false);
     const [dragIdx, setDragIdx] = useState<number | null>(null);
-    const ref = useRef<HTMLInputElement>(null);
 
     const add = useCallback((fl: FileList | File[]) => {
         setFiles(p => [...p, ...Array.from(fl).map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), raw: f }))]);
@@ -54,8 +53,11 @@ export function ImageToPdfUI({
 
     useEffect(() => {
         let cancelled = false;
-        consumeFileHandoff(handoffSlug).then(file => {
-            if (!cancelled && file) add([file]);
+        queueMicrotask(() => {
+            if (cancelled) return;
+            void consumeFileHandoffs(handoffSlug).then(files => {
+                if (!cancelled && files.length) add(files);
+            });
         });
         return () => { cancelled = true; };
     }, [handoffSlug, add]);
@@ -116,179 +118,29 @@ export function ImageToPdfUI({
         return () => window.removeEventListener("keydown", h);
     }, [files, state, process]);
 
-    if (state === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Bound</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">{files.length}</span> {nounLabel}{files.length > 1 ? "s" : ""} → PDF
-                        </h2>
-                        <button
-                            onClick={() => { setFiles([]); setState("idle"); }}
-                            className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <RotateCcw size={12} /> Convert more
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    return (
-        <div className="space-y-4">
-            <div
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
-                onClick={() => ref.current?.click()}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-                role="button" tabIndex={0} aria-label="Upload images"
-                className={cn(
-                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
-                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-                )}
-            >
-                <CornerMarks />
-                <input ref={ref} type="file" accept={accept} multiple className="hidden" onChange={e => { e.target.files && add(e.target.files); e.target.value = ""; }} />
-                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
-                    <ImageIcon size={20} className="text-accent" strokeWidth={1.75} />
-                </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? `Add more ${nounLabel}s` : `Select ${nounLabel}s to bind into a PDF`}</p>
-                <p className="font-medium text-[11.5px] text-muted-foreground">{formatsLabel}</p>
-            </div>
-
-            {/* Try with sample — JPEG fallback. Hidden if the wrapper restricts
-                accept to a non-JPEG format (e.g. heic-to-jpg). */}
-            {files.length === 0 && sampleSupported && (
-                <div className="flex items-center justify-center">
-                    <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); trySample(); }}
-                        disabled={loadingSample}
-                        className="inline-flex items-center gap-1.5 text-[12px] text-muted-foreground hover:text-foreground transition-colors disabled:opacity-60"
-                    >
-                        {loadingSample ? (
-                            <><Loader2 size={11} className="animate-spin" /> Loading sample…</>
-                        ) : (
-                            <><Sparkles size={11} className="text-accent" /> Try with a sample image</>
-                        )}
-                    </button>
-                </div>
-            )}
-
-            {files.length > 0 && (
-                <>
-                    <div className="font-medium flex items-center justify-between text-[11.5px] text-muted-foreground">
-                        <span>Page order — drag or use arrows</span>
-                        <span>{files.length} {nounLabel}{files.length > 1 ? "s" : ""} → {files.length} page{files.length > 1 ? "s" : ""}</span>
-                    </div>
-                    <div className="space-y-2">
-                        {files.map((f, i) => (
-                            <div
-                                key={f.id}
-                                draggable
-                                onDragStart={() => setDragIdx(i)}
-                                onDragOver={e => { e.preventDefault(); }}
-                                onDrop={e => {
-                                    e.preventDefault();
-                                    if (dragIdx !== null && dragIdx !== i) moveFile(dragIdx, i);
-                                    setDragIdx(null);
-                                }}
-                                onDragEnd={() => setDragIdx(null)}
-                                className={cn(
-                                    "flex items-center gap-3 rounded-xl border bg-accent/[0.04] px-4 py-3 cursor-grab active:cursor-grabbing transition-colors animate-queue-row-enter",
-                                    dragIdx === i ? "dragging border-accent" : "border-accent/30"
-                                )}
-                            >
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                                <div className="h-10 w-10 rounded-lg bg-accent/12 border border-accent/30 flex items-center justify-center shrink-0">
-                                    <ImageIcon size={15} className="text-accent" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-[14px] font-medium text-foreground truncate">{f.name}</p>
-                                    <p className="font-medium text-[11.5px] text-muted-foreground mt-0.5">{f.size}</p>
-                                </div>
-                                <div className="flex items-center gap-0.5">
-                                    <button
-                                        onClick={() => moveFile(i, i - 1)}
-                                        disabled={i === 0}
-                                        aria-label="Move up"
-                                        className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    ><ChevronUp size={13} /></button>
-                                    <button
-                                        onClick={() => moveFile(i, i + 1)}
-                                        disabled={i === files.length - 1}
-                                        aria-label="Move down"
-                                        className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 disabled:opacity-30 disabled:cursor-not-allowed"
-                                    ><ChevronDown size={13} /></button>
-                                    <button
-                                        onClick={() => setFiles(p => p.filter(x => x.id !== f.id))}
-                                        className="h-7 w-7 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60"
-                                        aria-label="Remove"
-                                    ><X size={13} /></button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    <div className="rounded-xl border border-border bg-card overflow-hidden">
-                        <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                            Page size
-                        </div>
-                        <div className="p-3 grid grid-cols-3 gap-2">
-                            {sizes.map(s => {
-                                const active = pageSize === s.id;
-                                return (
-                                    <button
-                                        key={s.id}
-                                        onClick={() => setPageSize(s.id)}
-                                        className={cn(
-                                            "rounded-lg border p-3 text-left transition-colors",
-                                            active ? "border-accent bg-accent/[0.06]" : "border-border hover:border-border-strong hover:bg-secondary/40"
-                                        )}
-                                    >
-                                        <p className={cn("font-display text-[14px] font-semibold tracking-[-0.015em]", active ? "text-accent" : "text-foreground")}>{s.label}</p>
-                                        <p className="font-medium text-[11px] text-muted-foreground mt-0.5">{s.desc}</p>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {error && (
-                        <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0" />{error}
-                        </div>
-                    )}
-
-                    <div className="flex items-center gap-3">
-                        <button onClick={process} disabled={state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                            {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Binding…</> : <><Download size={13} /> Convert {files.length} {nounLabel}{files.length > 1 ? "s" : ""} → PDF</>}
-                        </button>
-                        {state === "idle" && <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] tracking-wider text-muted-foreground bg-secondary/40 border border-border rounded px-1.5 py-0.5">⌘ ↵</kbd>}
-                        <button onClick={() => setFiles([])} aria-label="Clear all images" className="h-9 px-3 inline-flex items-center rounded text-[12px] text-muted-foreground hover:text-foreground hover:bg-secondary/60">Clear</button>
-                    </div>
-                </>
-            )}
-        </div>
-    );
+    if (state === "done") return <StudioResult title={`${files.length} ${nounLabel}${files.length > 1 ? "s" : ""}, one PDF.`} detail="Your download has started. Each image has its own page, in your chosen order.">
+        <StudioFile name={buildOutputFilename(files[0]?.name, null, "pdf")} detail={`${files.length} pages · ${sizes.find(size => size.id === pageSize)?.label} page size`} status="done" />
+        <div className="ts-actions"><button className="ts-text-button" onClick={() => { setFiles([]); setState("idle"); }}>Convert more</button></div>
+    </StudioResult>;
+    return <StudioLayout className="ts-image-binding" options={<>
+        <div><p className="ts-eyebrow">The shape of your document</p><h3>Page size</h3><div className="ts-choices">{sizes.map(size => <button className="ts-choice" key={size.id} onClick={() => setPageSize(size.id)} aria-pressed={pageSize === size.id} disabled={state === "processing"}><strong>{size.label}</strong><span>{size.desc}</span></button>)}</div></div>
+        <div><p>Every image gets a page. Drag images into order, or use the arrow controls.</p><p className="ts-caption">{files.length} {nounLabel}{files.length !== 1 ? "s" : ""} selected</p></div>
+        <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!files.length || state === "processing"}><Download size={16} /> Convert {files.length} {nounLabel}{files.length !== 1 ? "s" : ""} → PDF</button>{files.length > 0 && <button className="ts-text-button" disabled={state === "processing"} onClick={() => setFiles([])} aria-label="Clear all images">Clear</button>}</div>
+    </>}>
+        <FileIntake accepts={accept} multiple onFiles={add} label="Upload images" title="Turn pictures into pages." detail={formatsLabel} disabled={state === "processing"} compact={files.length > 0} />
+        {files.length === 0 && sampleSupported && <button className="ts-text-button" onClick={trySample} disabled={loadingSample}><Sparkles size={15} /> {loadingSample ? "Loading sample…" : "Try with a sample image"}</button>}
+        {files.length > 0 && <section className="ts-image-pages" aria-label="Page order">{files.map((file, i) => <article key={file.id} className="ts-image-page" draggable={state !== "processing"}
+            onDragStart={() => setDragIdx(i)} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); if (dragIdx !== null && state !== "processing") moveFile(dragIdx, i); setDragIdx(null); }} onDragEnd={() => setDragIdx(null)} data-dragging={dragIdx === i}>
+            <ImagePagePreview file={file.raw} /><div className="ts-image-page-info"><span>{i + 1}</span><p>{file.name}<small>{file.size}</small></p></div>
+            <div className="ts-image-page-actions"><button className="ts-icon-button" onClick={() => moveFile(i, i - 1)} disabled={i === 0 || state === "processing"} aria-label="Move up"><ChevronUp size={16} /></button><button className="ts-icon-button" onClick={() => moveFile(i, i + 1)} disabled={i === files.length - 1 || state === "processing"} aria-label="Move down"><ChevronDown size={16} /></button><button className="ts-icon-button" disabled={state === "processing"} onClick={() => setFiles(prev => prev.filter(item => item.id !== file.id))} aria-label="Remove"><X size={16} /></button></div>
+        </article>)}</section>}
+        {state === "processing" && <StudioProgress label="Making a home for your images" detail={`${files.length} images, arranged in one PDF.`} />}
+        {error && <div role="alert" className="ts-error">{error}</div>}
+    </StudioLayout>;
 }
-
-function CornerMarks() {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-        </>
-    );
+function ImagePagePreview({ file }: { file: File }) {
+    const [url, setUrl] = useState<string>();
+    const [failed, setFailed] = useState(false);
+    useEffect(() => { const next = URL.createObjectURL(file); setUrl(next); return () => URL.revokeObjectURL(next); }, [file]);
+    return <div className="ts-image-page-preview">{url && !failed ? <img src={url} alt={`Preview of ${file.name}`} onError={() => setFailed(true)} /> : <span><ImageIcon size={34} /><small>Image preview unavailable</small></span>}</div>;
 }

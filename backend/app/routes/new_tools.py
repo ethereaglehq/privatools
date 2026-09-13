@@ -28,7 +28,7 @@ from ..services import (
     split_in_half_service,
     video_tools_service,
 )
-from ..utils.exceptions import ProcessingError
+from ..utils.exceptions import ProcessingError, ToolError
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -458,6 +458,10 @@ async def add_subtitles_endpoint(
             media_type="video/mp4",
             background=cleanup,
         )
+    except ToolError:
+        remove_files(str(vid_path), str(srt_path))
+        if output_path: remove_files(output_path)
+        raise
     except ValueError as exc:
         remove_files(str(vid_path), str(srt_path))
         if output_path: remove_files(output_path)

@@ -1,3 +1,5 @@
+import { type DiffLine, computeDiff } from "./text-diff";
+import { LabNote, ToolCopyButton } from "./SpecialistTools";
 /**
  * TextDiffUI — line-by-line diff with workshop aesthetic.
  *
@@ -9,13 +11,6 @@ import { useMemo, useState, useCallback} from "react";
 import { GitCompare, Plus, Minus, ArrowRightLeft, RotateCcw, Columns2, Rows3, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
-
-interface DiffLine {
-    type: "same" | "added" | "removed";
-    text: string;
-    lineA?: number;
-    lineB?: number;
-}
 
 type DiffMode = "unified" | "split";
 
@@ -34,32 +29,6 @@ const SAMPLE_B = [
     '}',
 ].join("\n");
 
-function computeDiff(a: string, b: string): DiffLine[] {
-    const linesA = a.split("\n");
-    const linesB = b.split("\n");
-    const result: DiffLine[] = [];
-    const maxLen = Math.max(linesA.length, linesB.length);
-    let ai = 0, bi = 0;
-    for (let i = 0; i < maxLen; i++) {
-        const la = linesA[ai];
-        const lb = linesB[bi];
-        if (la === lb) {
-            result.push({ type: "same", text: la ?? "", lineA: ai + 1, lineB: bi + 1 });
-            ai++; bi++;
-        } else {
-            if (la !== undefined) {
-                result.push({ type: "removed", text: la, lineA: ai + 1 });
-                ai++;
-            }
-            if (lb !== undefined) {
-                result.push({ type: "added", text: lb, lineB: bi + 1 });
-                bi++;
-            }
-        }
-    }
-    return result;
-}
-
 const TEXT_DIFF_DEFAULTS: { view: DiffMode } = {
     view: "unified",
 };
@@ -72,7 +41,8 @@ export function TextDiffUI() {
     const [textB, setTextB] = useState("");
     const [diff, setDiff] = useState<DiffLine[] | null>(null);
 
-    const compare = () => setDiff(computeDiff(textA, textB));
+    const [error,setError] = useState<string | null>(null);
+    const compare = () => { setError(null); try { setDiff(computeDiff(textA,textB)); } catch(e) { setDiff(null); setError(e instanceof Error ? e.message : "Could not compare these texts."); } };
     const clear = () => { setTextA(""); setTextB(""); setDiff(null); };
     const swap = () => { setTextA(textB); setTextB(textA); setDiff(null); };
     const loadSample = () => { setTextA(SAMPLE_A); setTextB(SAMPLE_B); setDiff(null); };
@@ -95,11 +65,13 @@ export function TextDiffUI() {
     };
 
     return (
-        <div className="space-y-4">
+        <div className="pt-specialist pt-diff-workspace space-y-4">
+            <LabNote>Compare lines on this device. Added and removed lines stay aligned around unchanged text.</LabNote>
+            {error && <p role="alert" className="pt-lab-issue is-error">{error}</p>}
             {/* Inputs */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <DiffEditor label="A · Original" value={textA} onChange={setTextA} placeholder="Paste the original text…" onSubmit={onKeyDownSubmit} />
-                <DiffEditor label="B · Modified" value={textB} onChange={setTextB} placeholder="Paste the modified text…" onSubmit={onKeyDownSubmit} />
+                <DiffEditor label="A · Original" value={textA} onChange={value => { setTextA(value); setDiff(null); setError(null); }} placeholder="Paste the original text…" onSubmit={onKeyDownSubmit} />
+                <DiffEditor label="B · Modified" value={textB} onChange={value => { setTextB(value); setDiff(null); setError(null); }} placeholder="Paste the modified text…" onSubmit={onKeyDownSubmit} />
             </div>
 
             {/* Actions */}
@@ -134,9 +106,9 @@ export function TextDiffUI() {
                 )}
                 {/* View mode toggle, only useful once a diff exists */}
                 {diff && (
-                    <div role="tablist" aria-label="Diff view" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5">
+                    <div role="group" aria-label="Diff view" className="inline-flex rounded-md border border-border bg-paper-2/40 p-0.5">
                         <button
-                            role="tab" type="button" aria-selected={view === "unified"}
+                            type="button" aria-pressed={view === "unified"}
                             onClick={() => setView("unified")}
                             className={cn(
                                 "font-medium inline-flex items-center gap-1 h-7 px-2.5 text-[11.5px] rounded transition-colors",
@@ -146,7 +118,7 @@ export function TextDiffUI() {
                             <Rows3 size={11} /> Unified
                         </button>
                         <button
-                            role="tab" type="button" aria-selected={view === "split"}
+                            type="button" aria-pressed={view === "split"}
                             onClick={() => setView("split")}
                             className={cn(
                                 "font-medium inline-flex items-center gap-1 h-7 px-2.5 text-[11.5px] rounded transition-colors",
@@ -286,6 +258,7 @@ function DiffEditor({
             </div>
             <textarea
                 value={value}
+                aria-label={label}
                 onChange={e => onChange(e.target.value)}
                 onKeyDown={onSubmit}
                 placeholder={placeholder}

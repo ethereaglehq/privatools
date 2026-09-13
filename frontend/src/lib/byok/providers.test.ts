@@ -77,3 +77,12 @@ describe("provider registry", () => {
     expect(body.messages[0].role).toBe("user");
   });
 });
+
+it("accepts an explicit v1 custom API base without duplicating its path", () => {
+  expect(buildRequest(providerById('openai-compatible')!, { apiKey:'synthetic', model:'local', messages:[], baseUrl:'http://localhost:11434/v1/' }).url).toBe('http://localhost:11434/v1/chat/completions');
+});
+it("rejects credential-bearing or query-bearing custom endpoint URLs", () => {
+  for (const baseUrl of ['https://user:password@example.test', 'https://example.test?token=secret', 'javascript:alert(1)']) {
+    expect(() => buildRequest(providerById('openai-compatible')!, {apiKey:'synthetic',model:'local',messages:[],baseUrl})).toThrow(/without credentials/);
+  }
+});

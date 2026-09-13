@@ -1,0 +1,16 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { focusPolicySection, policyScrollBehavior, readPolicySection, rememberPolicySection } from '@/lib/policyNavigation';
+function scrollContainer(article:HTMLElement|null){let element=article?.parentElement;while(element&&element!==document.body){if(/auto|scroll/.test(getComputedStyle(element).overflowY)&&element.scrollHeight>element.clientHeight+1)return element;element=element.parentElement;}return document.getElementById('workspace');}
+export function useDocumentReader(sections:ReadonlyArray<{id:string}>){
+ const articleRef=useRef<HTMLElement>(null);const [progress,setProgress]=useState(0);const [activeId,setActiveId]=useState<string|null>(null);const [showTop,setShowTop]=useState(false);const [copied,setCopied]=useState(false);const copyTimer=useRef<ReturnType<typeof setTimeout>>();
+ useEffect(()=>{const article=articleRef.current;if(!article)return;const container=scrollContainer(article);let raf=0;
+ const update=()=>{raf=0;const rect=article.getBoundingClientRect();const viewport=container?container.clientHeight:window.innerHeight;const offset=container?container.getBoundingClientRect().top:0;const distance=Math.max(1,rect.height-viewport);setProgress(Math.min(100,Math.max(0,(offset-rect.top)/distance*100)));setShowTop((container?container.scrollTop:window.scrollY)>800);let current:string|null=null;for(const section of sections){const el=document.getElementById(section.id);if(el&&article.contains(el)&&el.getBoundingClientRect().top-offset<viewport*.25)current=section.id;}setActiveId(current)};
+ const onScroll=()=>{if(!raf)raf=requestAnimationFrame(update)};update();const target=container||window;target.addEventListener('scroll',onScroll,{passive:true});window.addEventListener('resize',onScroll);return()=>{target.removeEventListener('scroll',onScroll);window.removeEventListener('resize',onScroll);cancelAnimationFrame(raf)};
+ },[sections]);
+ const scrollToHeading=useCallback((id:string,focus=true)=>{const el=document.getElementById(id);if(!el||!articleRef.current?.contains(el))return;const container=scrollContainer(articleRef.current);if(container)container.scrollTo({top:container.scrollTop+el.getBoundingClientRect().top-container.getBoundingClientRect().top-110,behavior:policyScrollBehavior()});else el.scrollIntoView({behavior:policyScrollBehavior(),block:'start'});if(focus){rememberPolicySection(id);focusPolicySection(el)}setActiveId(id)},[]);
+ const scrollToTop=useCallback(()=>{const container=scrollContainer(articleRef.current);(container||window).scrollTo({top:0,behavior:policyScrollBehavior()})},[]);
+ const copyLink=useCallback(async()=>{try{await navigator.clipboard.writeText(window.location.href);setCopied(true);clearTimeout(copyTimer.current);copyTimer.current=setTimeout(()=>setCopied(false),2000)}catch{setCopied(false)}},[]);
+ useEffect(()=>()=>clearTimeout(copyTimer.current),[]);
+ useEffect(()=>{let timer:ReturnType<typeof setTimeout>;const restore=()=>{clearTimeout(timer);const id=readPolicySection(sections);if(id)timer=setTimeout(()=>scrollToHeading(id,false),0)};restore();window.addEventListener('popstate',restore);return()=>{clearTimeout(timer);window.removeEventListener('popstate',restore)}},[sections,scrollToHeading]);
+ return {articleRef,progress,activeId,showTop,copied,scrollToHeading,scrollToTop,copyLink};
+}

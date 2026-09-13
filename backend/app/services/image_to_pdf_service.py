@@ -15,8 +15,7 @@ import uuid
 
 from PIL import Image
 from reportlab.lib.pagesizes import A4, LETTER
-from reportlab.platypus import Image as RLImage
-from reportlab.platypus import SimpleDocTemplate
+from reportlab.pdfgen.canvas import Canvas
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path
 
@@ -35,7 +34,7 @@ _SVG_EXTS = {".svg"}
 
 def _svg_to_png(svg_path: str) -> str:
     """Rasterize an SVG to a high-res PNG temp file via cairosvg."""
-    from cairosvg import svg2png  # cairosvg ships with the rembg dep tree
+    from cairosvg.surface import PNGSurface
 
     from .svg_safety import block_external_refs
 
@@ -46,11 +45,11 @@ def _svg_to_png(svg_path: str) -> str:
     # server filesystem, and block_external_refs denies absolute file:// (LFI)
     # and http(s):// (SSRF) references — only inline data: URIs are allowed.
     # Render at 2x for crisp output even after PDF embed scaling.
-    svg2png(
+    PNGSurface.convert(
         bytestring=svg_data,
         write_to=str(out_path),
         output_width=2400,
-        url_fetcher=block_external_refs,
+        url_fetcher=lambda url, resource_type: block_external_refs(url, resource_type)["string"],
     )
     return str(out_path)
 
@@ -115,8 +114,6 @@ def images_to_pdf(input_paths: list, page_size: str = "A4") -> str:
         if auto:
             # Build a multi-page PDF page-by-page so each page can be a different
             # size. ReportLab's SimpleDocTemplate only supports a single pagesize.
-            from reportlab.pdfgen.canvas import Canvas
-
             c: Canvas | None = None
             for path in input_paths:
                 ext = os.path.splitext(path)[1].lower()
@@ -149,8 +146,7 @@ def images_to_pdf(input_paths: list, page_size: str = "A4") -> str:
                 c.showPage()
             c.save()
         else:
-            doc = SimpleDocTemplate(str(output_path), pagesize=fixed_size)
-            story = []
+            c = Canvas(str(output_path), pagesize=fixed_size)
 
             page_width, page_height = fixed_size
             margin = 36  # 0.5 inch
@@ -182,10 +178,20 @@ def images_to_pdf(input_paths: list, page_size: str = "A4") -> str:
                 new_width = img_width * ratio
                 new_height = img_height * ratio
 
-                rl_img = RLImage(embed_path, width=new_width, height=new_height)
-                story.append(rl_img)
+                # Draw directly on each sheet. A flowing document can reject a
+                # full-page image or place multiple short images on one page.
+                c.drawImage(
+                    embed_path,
+                    (page_width - new_width) / 2,
+                    (page_height - new_height) / 2,
+                    width=new_width,
+                    height=new_height,
+                )
+                c.showPage()
 
-            doc.build(story)
+            if not input_paths:
+                c.showPage()
+            c.save()
     finally:
         # Drop the intermediate JPEG/PNG transcodes — they're embedded in
         # the output PDF already, no need to keep them on disk.

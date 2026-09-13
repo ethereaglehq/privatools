@@ -98,13 +98,14 @@ describe("SmartRedactUI privacy copy", () => {
     // reachable only by scrolling past the input someone is about to fill in.
     await mountAndPick();
     await userEvent.click(screen.getByText(/my own api key/i));
+    await userEvent.click(screen.getByRole("button", { name: /OpenAI Connect with your key/i }));
     await waitFor(() => {
       const warning = screen.getByText(/contains the personal information you are trying\s+to remove/i);
-      const panel = screen.getByText(/use your own ai key/i);
-      expect(warning).toBeInTheDocument();
-      expect(panel).toBeInTheDocument();
-      // Warning must come BEFORE the panel in document order.
-      expect(warning.compareDocumentPosition(panel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      const keyField = screen.getByLabelText("OpenAI API key");
+      expect(warning).toBeVisible();
+      expect(keyField).toBeVisible();
+      // The sensitive-document warning must precede the actual credential input.
+      expect(warning.compareDocumentPosition(keyField) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 });

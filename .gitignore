@@ -35,8 +35,14 @@ lo_input_*.pdf
 .secrets/
 
 # Durable app state (accounts, API keys). Created at runtime; never committed.
-data/
+/data/
 
 # Local agent state. Holds a per-machine command allowlist that quotes real
 # host paths and SSH invocations — machine-local, never shared.
 .claude/settings.local.json
+
+# Generated browser model assets (pinned/prepared by frontend build hooks).
+/frontend/public/models/*.onnx
+/frontend/public/models/*.wasm
+/frontend/public/models/*.mjs
+/frontend/public/models/asset-manifest.json

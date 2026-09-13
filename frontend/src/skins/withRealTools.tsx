@@ -110,6 +110,7 @@ export function withRealTools(Base, config) {
                     >
                         {NON_PDF_SLUGS.has(tool.slug) ? (
                             <NonPdfToolUI
+                                key={tool.slug}
                                 slug={tool.slug}
                                 toolName={tool.name}
                                 outputLabel={tool.outputLabel ?? "file"}
@@ -117,6 +118,7 @@ export function withRealTools(Base, config) {
                             />
                         ) : (
                             <ToolUI
+                                key={tool.slug}
                                 slug={tool.slug}
                                 toolName={tool.name}
                                 outputLabel={tool.outputLabel ?? "file"}

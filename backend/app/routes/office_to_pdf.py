@@ -8,6 +8,7 @@ from starlette.background import BackgroundTask
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files
 from ..utils.route_helpers import stream_upload_to_disk
 from ..services import office_to_pdf_service
+from ..utils.exceptions import ToolError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -45,12 +46,12 @@ async def office_to_pdf(request: Request, file: UploadFile = File(...)):
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise
-    except Exception as e:
+    except Exception:
         to_remove = ([str(temp_path)] if temp_path is not None else []) + ([output_path] if output_path else [])
         remove_files(*to_remove)
         logger.exception("Unexpected error")
-        raise HTTPException(status_code=500, detail=f"Processing failed: {e}")
+        raise HTTPException(status_code=500, detail="Office conversion failed. Please try another document.")

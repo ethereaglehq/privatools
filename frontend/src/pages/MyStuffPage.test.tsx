@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
@@ -10,6 +10,7 @@ import * as counters from "@/lib/localStore/counters";
 import * as defaults from "@/lib/localStore/defaults";
 import { savePersisted } from "@/lib/persistence";
 import MyStuffPage from "./MyStuffPage";
+import * as api from "@/lib/api";
 
 const renderPage = () =>
   render(
@@ -25,6 +26,33 @@ beforeEach(async () => {
 });
 
 describe("MyStuffPage", () => {
+  it("filters the real library without altering saved items", async () => {
+    await vault.addPassword("work docs", "hunter2");
+    await assets.putAsset("logo", "brand.png", new Blob([new Uint8Array([1, 2, 3])]));
+    renderPage();
+    await screen.findByText("work docs");
+    await userEvent.click(screen.getByRole("button", { name: "Assets" }));
+    expect(screen.queryByText("work docs")).not.toBeInTheDocument();
+    expect(screen.getByText("brand.png")).toBeInTheDocument();
+    expect(await vault.listEntries()).toHaveLength(1);
+    await userEvent.click(screen.getByRole("button", { name: "Everything" }));
+    expect(screen.getByText("work docs")).toBeInTheDocument();
+  });
+
+  it("downloads the stored asset bytes and can delete that asset individually", async () => {
+    await assets.putAsset("logo", "brand.png", new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }));
+    const download = vi.spyOn(api, "downloadBlob").mockImplementation(() => {});
+    renderPage();
+    await userEvent.click(await screen.findByRole("button", { name: "Download brand.png" }));
+    await waitFor(() => expect(download).toHaveBeenCalledOnce());
+    expect(download.mock.calls[0][0]).toMatchObject({ size: 3, type: "image/png" });
+    expect(download.mock.calls[0][1]).toBe("brand.png");
+    download.mockRestore();
+    await userEvent.click(screen.getByRole("button", { name: "Delete brand.png" }));
+    await waitFor(() => expect(screen.queryByText("brand.png")).not.toBeInTheDocument());
+    expect(await assets.listAssets()).toEqual([]);
+  });
+
   it("states that storage is device-local", async () => {
     renderPage();
     expect(await screen.findByText(/stored on this device only/i)).toBeInTheDocument();

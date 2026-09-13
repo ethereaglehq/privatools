@@ -56,6 +56,14 @@ describe("pathRoutes", () => {
         expect(hashForPath("/privacy")).toBe("#/privacy");
     });
 
+    it("reaches both experiences' new workspaces and canonical account pages", () => {
+        for (const path of ["/ai", "/api", "/trust", "/account/sign-in", "/account/sign-up", "/account/settings"]) {
+            expect(hashForPath(path)).toBe("#" + path);
+        }
+        expect(hashForPath("/settings")).toBe("#/account/settings");
+        expect(hashForPath("/settings/")).toBe("#/account/settings");
+    });
+
     it("claims nothing it does not own", () => {
         // "" means leave the URL alone — a design that hijacked unknown paths
         // would break anything else served from this origin.

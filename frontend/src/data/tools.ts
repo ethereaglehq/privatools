@@ -169,7 +169,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "compress-pdf", icon: Minimize2, name: "Compress PDF",
     description: "Reduce the file size of your PDF",
-    longDescription: "Compress PDF online for free — reduce PDF file size by up to 90% without losing quality. Choose from light, balanced, or extreme compression levels. Preview estimated savings before downloading. No file limits, no sign-up.",
+    longDescription: "Compress PDF online for free. Choose a compression preset and compare the resulting file size. Savings and visual quality depend on the original PDF and selected settings; review the output before sharing. Server upload and capacity limits apply.",
     synonyms: "shrink reduce smaller optimize size make pdf smaller pdf optimizer",
     popularity: 2,
     category: "optimize", accepts: ".pdf", outputLabel: "compressed.pdf",
@@ -479,7 +479,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "pdf-to-word", icon: FileOutput, name: "PDF to Word",
     description: "Convert PDF content to an editable Word draft",
-    longDescription: "Convert PDF to Word online for free — extract text, paragraphs, and images into an editable DOCX document. Note: complex layouts may require some manual cleanup after conversion. No watermarks, no file limits.",
+    longDescription: "Convert PDF to Word online for free. Extract text, paragraphs, and images into an editable DOCX document. Complex layouts can require manual cleanup after conversion. Files use temporary server processing; upload and capacity limits apply.",
     synonyms: "doc docx convert export editable pdf to docx",
     popularity: 4,
     category: "from-pdf", accepts: ".pdf", outputLabel: "document.docx",
@@ -588,8 +588,8 @@ const _toolsRaw: Tool[] = [
   },
   {
     slug: "markdown-to-pdf", icon: Code2, name: "Markdown / Config to PDF",
-    description: "Convert .md, .json, .yaml, or .toml files to PDF",
-    longDescription: "Convert Markdown to PDF online for free. Upload .md, .json, .yaml, or .toml files and render them as beautifully formatted, structured PDF documents — locally and instantly. Perfect for documentation.",
+    description: "Convert a Markdown document to PDF",
+    longDescription: "Convert Markdown to PDF online. Upload a .md, .markdown, or .txt document for temporary server-side rendering, then download the generated PDF. Review formatting and links in the output before sharing.",
     synonyms: "md markdown convert pdf",
     popularity: 115,
     category: "to-pdf", accepts: ".md,.markdown,.json,.yaml,.yml,.toml", outputLabel: "document.pdf",
@@ -692,16 +692,16 @@ const _toolsRaw: Tool[] = [
   },
   {
     slug: "summarize-pdf", icon: Sparkles, name: "Summarize PDF (AI)",
-    description: "Local AI summary — your PDF never leaves your browser",
-    longDescription: "Summarize PDF online with AI — without uploading. By default PrivaTools runs the summarization model entirely in your browser via WebAssembly, so your document never touches a third-party server. If you would rather use a stronger model, you can supply your own API key — then the text goes straight from your browser to that provider, still never through us. Choose short, medium, or long summaries. First load of the on-device model downloads ~250 MB and caches it for next time.",
+    description: "Summarize with a local model or your own AI provider",
+    longDescription: "Summarize PDF text using an on-device model or your own AI provider connection. The local model runs in your browser after its initial download. Provider mode sends extracted text directly to your selected provider and may incur provider charges. Choose the summary length and review the result against the original; scanned PDFs may need OCR first.",
     synonyms: "ai summary tldr abstract synopsis",
     popularity: 164,
     category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "summary.txt",
   },
   {
     slug: "smart-redact", icon: ShieldCheck, name: "Smart Redact (AI)",
-    description: "Local AI auto-detects PII — names, emails, phones, SSNs",
-    longDescription: "Smart Redact PDF online with AI — regex passes always run in your browser, catching emails, phone numbers, SSNs and card numbers with no model and no network. Names and organisations are found either by a local NER model, so nothing leaves the tab, or by your own AI key for far better coverage — in which case the values the regex pass already found are masked out before any text is sent. Review the suggestions, uncheck anything you want to keep, then the PDF and chosen strings are sent for real PyMuPDF redaction — permanent removal, not just a black overlay.",
+    description: "Find possible personal data, review, then apply redactions",
+    longDescription: "Find possible personal information in PDF text. Pattern detection runs in your browser; names can be suggested by a local model or your selected AI provider. Already detected pattern values are masked before provider requests. Review every suggestion: detection can miss information. Applying your selection uploads the PDF and selected terms to the backend for permanent redaction.",
     synonyms: "censor blackout privacy pii hide name email",
     popularity: 73,
     category: "security", clientOnly: false, byok: true, accepts: ".pdf", outputLabel: "redacted.pdf",
@@ -808,7 +808,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "translate-pdf", icon: Languages, name: "Translate PDF",
     description: "Translate a PDF without uploading it",
-    longDescription: "Translate PDF online for free \u2014 runs entirely in your browser, so the document is never uploaded. Supports English to and from 24 languages on the free on-device model, or any language with your own AI key (optional) — the text then goes straight from your browser to that provider, never through us. No account, no watermarks. First run of the on-device model downloads it once and caches it.",
+    longDescription: "Translate extracted PDF text using an available browser model or your own AI provider connection. Local mode downloads a language model and keeps the document on this device; provider mode sends the text directly to that provider. Language support depends on the selected model. Review translations and layout; scanned documents may need OCR first.",
     synonyms: "translate translation language convert language spanish french german chinese japanese multilingual localize",
     popularity: 45,
     clientOnly: true, byok: true,

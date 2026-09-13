@@ -1,255 +1,176 @@
-import { useState, useEffect, useRef } from "react";
+import { type Rect, positionTourCard } from "./tour-position";
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useLocation } from "react-router-dom";
-import { X, ArrowRight, Shield, Layers, Sparkles, GitBranch, Star, MousePointerSquareDashed } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { tools } from "@/data/tools";
-import { nonPdfTools } from "@/data/non-pdf-tools";
+import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
+import { TOTAL_TOOL_COUNT } from "@/data/site-stats";
 import { START_TOUR_EVENT } from "@/lib/events";
+import "./onboarding-tour.css";
 
 const STORAGE_KEY = "privatools_onboarding_done";
-const TOOL_TOTAL = tools.length + nonPdfTools.length;
-
-interface Step {
-    icon: typeof Shield;
-    title: string;
-    description: string;
-}
-
-const steps: Step[] = [
-    {
-        icon: Sparkles,
-        title: "Welcome to PrivaTools",
-        description: `${TOOL_TOTAL} file tools — PDF, image, video, audio, developer — browser-only where possible, self-hosted when processing needs a server. No account needed, no watermarks. Free and open-source under MIT.`,
-    },
-    {
-        icon: MousePointerSquareDashed,
-        title: "Drop a file anywhere",
-        description: "Drag any file onto this page and we'll match it to every tool that handles it. Prefer the keyboard? Press ⌘K (or Ctrl+K) to search by name.",
-    },
-    {
-        icon: Layers,
-        title: "Organized by suite",
-        description: "PDF, Image, Video, Developer, Archive and Office. Browse a suite from the left sidebar — each tool keeps its inputs, options and output in one panel.",
-    },
-    {
-        icon: Shield,
-        title: "No third-party file processors",
-        description: "Server-side jobs use isolated temporary storage on the PrivaTools backend and are deleted after the response. Self-hosted? One Docker command and the whole stack runs on your hardware.",
-    },
-    {
-        icon: GitBranch,
-        title: "Pipelines & local AI",
-        description: "Chain merge → compress → watermark in one click. Summarize in-browser, detect Smart Redact entities in-browser, and apply approved redactions on the isolated backend — no OpenAI, no cloud GPU.",
-    },
-    {
-        icon: Star,
-        title: "Star a tool to pin it",
-        description: "The star next to any tool's title pins it to the sidebar for one-click access. Press ? anytime to see every keyboard shortcut.",
-    },
+interface TourStep { id: string; selectors: string[]; label: string; title: string; description: string }
+const tourSteps: TourStep[] = [
+  { id: "tools", selectors: ['.pt-top-links [data-destination="tools"]'], label: "All tools", title: "Find your next little helper.", description: `Start here for all ${TOTAL_TOOL_COUNT} tools. Browse PDFs, images, video, text and more. File tools are free to use without signing in; each workspace tells you where processing happens.` },
+  { id: "search", selectors: [".pt-search-trigger", ".pt-home-search"], label: "Search", title: "A task in mind? Just search.", description: "Try a task like “compress a PDF” or “resize an image”. On a keyboard, ⌘K or Ctrl+K opens tool search from anywhere." },
+  { id: "pipeline", selectors: ['.pt-top-links [data-destination="pipeline"]'], label: "Pipeline", title: "Put the steps in order.", description: "Build a sequence of compatible tools, adjust each step, then run it. Save a recipe when you find a routine you want to use again." },
+  { id: "batch", selectors: ['.pt-top-links [data-destination="batch"]'], label: "Batch", title: "One task. A few more files.", description: "Choose a supported tool and apply its settings to a collection of files. Follow each result in the queue, retry a failed item, or cancel a run." },
+  { id: "ai", selectors: ['.pt-top-links [data-destination="ai"]'], label: "AI Studio", title: "A little help with the reading.", description: "Explore document chat, summaries and other AI tasks. Check the chosen model or provider before sharing a file; availability and processing location depend on that choice." },
+  { id: "vault", selectors: ['.pt-top-links [data-destination="vault"]'], label: "Vault", title: "Keep useful details nearby.", description: "Save reusable PDF passwords and assets on this device. Your Vault works as a guest and stays in this browser; it isn’t a cloud backup or an account sync." },
+  { id: "mystuff", selectors: ['.pt-top-links [data-destination="mystuff"]'], label: "My Stuff", title: "Your own small collection.", description: "Find the recipes, assets and settings you’ve saved locally. My Stuff works without an account. You can export or remove saved items, and clearing browser storage can remove them." },
+  { id: "api", selectors: ['.pt-top-links [data-destination="api"]'], label: "Dev API", title: "For the things you automate.", description: "Read the API guide and request examples here. Creating and managing API keys needs an account; ordinary file tools remain open to guests." },
+  { id: "style", selectors: [".pt-header .pt-style-switch"], label: "Air / Play", title: "Make the place feel like you.", description: "Air keeps things calm and spacious. Play adds warmer shapes and a little bounce. Switch between them here; your current files and task stay with you." },
+  { id: "theme", selectors: [".pt-header .pt-theme-toggle"], label: "Light / dark", title: "Settle into your shade.", description: "This sun or moon button switches light and dark in one click. Air has Morning Mist and Graphite; Play has Blush and Charcoal. You can replay this tour from the footer whenever you like." },
 ];
 
+function findTarget(step: TourStep) {
+  for (const selector of step.selectors) {
+    for (const candidate of document.querySelectorAll<HTMLElement>(selector)) {
+      const bounds = candidate.getBoundingClientRect();
+      if (bounds.width > 0 && bounds.height > 0 && getComputedStyle(candidate).visibility !== "hidden") return candidate;
+    }
+  }
+  return null;
+}
+
+function revealTarget(anchor: HTMLElement | null) {
+  anchor?.scrollIntoView({ block: "nearest", inline: "center", behavior: "instant" });
+  // Body controls must clear the sticky header after native scrolling.
+  const header = document.querySelector(".pt-header");
+  if (anchor && !header?.contains(anchor)) {
+    const desiredTop = (header?.getBoundingClientRect().bottom ?? 0) + 24;
+    window.scrollBy({ top: anchor.getBoundingClientRect().top - desiredTop, behavior: "instant" });
+  }
+}
+
 export function OnboardingTour() {
-    const [show, setShow] = useState(false);
-    const [step, setStep] = useState(0);
-    const location = useLocation();
-    const previouslyFocused = useRef<HTMLElement | null>(null);
-    const dialogRef = useRef<HTMLDivElement | null>(null);
-    const nextBtnRef = useRef<HTMLButtonElement | null>(null);
+  const location = useLocation();
+  const [activeSteps, setActiveSteps] = useState<TourStep[]>([]);
+  const [index, setIndex] = useState(0);
+  const [targetRect, setTargetRect] = useState<Rect | null>(null);
+  const [viewport, setViewport] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [cardSize, setCardSize] = useState({ width: 360, height: 310 });
+  const dialog = useRef<HTMLDivElement>(null);
+  const nextButton = useRef<HTMLButtonElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+  const target = useRef<HTMLElement | null>(null);
+  const show = activeSteps.length > 0;
+  const current = activeSteps[index];
+  const maskId = `tour-mask-${useId().replace(/:/g, "")}`;
+  const dismiss = useCallback(() => {
+    setActiveSteps([]);
+    try { localStorage.setItem(STORAGE_KEY, "1"); } catch { /* Dismissal still works when storage is unavailable. */ }
+  }, []);
+  const start = useCallback(() => {
+    const available = tourSteps.filter(step => findTarget(step));
+    if (!available.length) return;
+    previouslyFocused.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setIndex(0);
+    setTargetRect(null);
+    setActiveSteps(available);
+  }, []);
 
-    // Listen for an explicit "start the tour" event dispatched by the Dashboard
-    // welcome card. We honor this even if the tour has been dismissed before —
-    // re-opening the tour on demand is the user's intent.
-    useEffect(() => {
-        const handler = () => {
-            setStep(0);
-            setShow(true);
-        };
-        window.addEventListener(START_TOUR_EVENT, handler);
-        return () => window.removeEventListener(START_TOUR_EVENT, handler);
-    }, []);
+  useEffect(() => {
+    window.addEventListener(START_TOUR_EVENT, start);
+    return () => window.removeEventListener(START_TOUR_EVENT, start);
+  }, [start]);
 
-    useEffect(() => {
-        // The auto-show behavior only fires on the homepage. Visitors landing
-        // on a deep tool URL (e.g. from Google) already have an obvious task
-        // in front of them — opening a modal would force them to dismiss it
-        // before they can engage.
-        //
-        // The Dashboard's first-run welcome card now invites the tour
-        // explicitly, so we no longer auto-pop the modal on first visit. The
-        // STORAGE_KEY is still respected (manual `?tour=1` queries, etc.)
-        // and kept in localStorage for back-compat with older sessions.
-        if (location.pathname !== "/") return;
+  useEffect(() => {
+    // No automatic first-visit popup. Existing dismissal preferences persist;
+    // an explicit replay event or tour URL is the visitor asking to open it.
+    if (location.pathname !== "/") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("tour") !== "1" && url.hash !== "#tour") return;
+    const timer = window.setTimeout(start, 250);
+    return () => window.clearTimeout(timer);
+  }, [location.pathname, start]);
 
-        // Allow ?tour=1 (or #tour) to force-open. Useful for QA + links from
-        // marketing pages that say "show me how it works".
-        const url = new URL(window.location.href);
-        if (url.searchParams.get("tour") === "1" || url.hash === "#tour") {
-            setStep(0);
-            const t = setTimeout(() => setShow(true), 250);
-            return () => clearTimeout(t);
-        }
-    }, [location.pathname]);
+  useEffect(() => { setActiveSteps([]); }, [location.pathname]);
 
-    // Focus management — when the tour opens, remember the previously focused
-    // element and move focus to the primary CTA. On close, restore focus.
-    // Escape closes the dialog so the user can always escape without a mouse.
-    useEffect(() => {
-        if (show) {
-            previouslyFocused.current = document.activeElement as HTMLElement | null;
-            requestAnimationFrame(() => nextBtnRef.current?.focus());
-            const onKey = (e: KeyboardEvent) => {
-                if (e.key === "Escape") {
-                    e.preventDefault();
-                    setShow(false);
-                    try { localStorage.setItem(STORAGE_KEY, "1"); } catch { }
-                }
-                // Focus trap
-                if (e.key === "Tab" && dialogRef.current) {
-                    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
-                        'a, button, input, textarea, select, [tabindex]:not([tabindex="-1"])'
-                    );
-                    if (focusable.length === 0) return;
-                    const first = focusable[0];
-                    const last = focusable[focusable.length - 1];
-                    if (e.shiftKey && document.activeElement === first) {
-                        e.preventDefault();
-                        last.focus();
-                    } else if (!e.shiftKey && document.activeElement === last) {
-                        e.preventDefault();
-                        first.focus();
-                    }
-                }
-            };
-            document.addEventListener("keydown", onKey);
-            return () => document.removeEventListener("keydown", onKey);
-        } else if (previouslyFocused.current) {
-            if (document.contains(previouslyFocused.current)) {
-                previouslyFocused.current.focus();
-            }
-            previouslyFocused.current = null;
-        }
-    }, [show]);
-
-    const dismiss = () => {
-        setShow(false);
-        try { localStorage.setItem(STORAGE_KEY, "1"); } catch { }
+  useEffect(() => {
+    if (!show) {
+      if (previouslyFocused.current?.isConnected) previouslyFocused.current.focus();
+      previouslyFocused.current = null;
+      return;
+    }
+    const frame = requestAnimationFrame(() => nextButton.current?.focus({ preventScroll: true }));
+    const keyDown = (event: KeyboardEvent) => {
+      // Keep site-wide shortcuts from opening another overlay underneath.
+      event.stopPropagation();
+      if (event.key === "Escape") { event.preventDefault(); event.stopPropagation(); dismiss(); }
+      if (event.key !== "Tab" || !dialog.current) return;
+      const buttons = [...dialog.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href], [tabindex="0"]')];
+      const first = buttons[0], last = buttons[buttons.length - 1];
+      if (!dialog.current.contains(document.activeElement) || event.shiftKey && document.activeElement === first || !event.shiftKey && document.activeElement === last) {
+        event.preventDefault(); (event.shiftKey ? last : first)?.focus();
+      }
     };
+    document.addEventListener("keydown", keyDown, true);
+    return () => { cancelAnimationFrame(frame); document.removeEventListener("keydown", keyDown, true); };
+  }, [show, dismiss]);
 
-    const next = () => {
-        if (step < steps.length - 1) {
-            setStep(step + 1);
-        } else {
-            dismiss();
+  useLayoutEffect(() => {
+    if (!show || !current) return;
+    let frame = 0;
+    const anchor = findTarget(current);
+    target.current = anchor;
+    anchor?.setAttribute("data-tour-target", current.id);
+    // Native scrolling also reveals items in the mobile horizontal navigation.
+    revealTarget(anchor);
+    const measure = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const width = window.visualViewport?.width ?? window.innerWidth;
+        const height = window.visualViewport?.height ?? window.innerHeight;
+        setViewport({ width, height });
+        const active = findTarget(current);
+        if (active !== target.current) {
+          target.current?.removeAttribute("data-tour-target");
+          target.current = active;
+          active?.setAttribute("data-tour-target", current.id);
+          revealTarget(active);
         }
+        const bounds = active?.getBoundingClientRect();
+        if (bounds && bounds.bottom > 0 && bounds.top < height && bounds.right > 0 && bounds.left < width) {
+          setTargetRect({ left: Math.max(4, bounds.left - 5), top: Math.max(4, bounds.top - 5), width: Math.min(width - 4, bounds.right + 5) - Math.max(4, bounds.left - 5), height: Math.min(height - 4, bounds.bottom + 5) - Math.max(4, bounds.top - 5) });
+        } else setTargetRect(null);
+        if (dialog.current) {
+          const rect = dialog.current.getBoundingClientRect();
+          setCardSize(previous => Math.abs(previous.height - rect.height) > 1 || Math.abs(previous.width - rect.width) > 1 ? { width: rect.width, height: rect.height } : previous);
+        }
+      });
     };
+    measure();
+    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    if (anchor) observer?.observe(anchor);
+    if (dialog.current) observer?.observe(dialog.current);
+    window.addEventListener("resize", measure);
+    window.addEventListener("scroll", measure, true);
+    window.visualViewport?.addEventListener("resize", measure);
+    const focusFrame = requestAnimationFrame(() => nextButton.current?.focus({ preventScroll: true }));
+    return () => {
+      cancelAnimationFrame(frame); cancelAnimationFrame(focusFrame);
+      observer?.disconnect();
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", measure, true);
+      window.visualViewport?.removeEventListener("resize", measure);
+      target.current?.removeAttribute("data-tour-target"); target.current = null;
+    };
+  }, [show, current]);
 
-    if (!show) return null;
-
-    const current = steps[step];
-    const Icon = current.icon;
-
-    return (
-        <>
-            {/* Backdrop — non-focusable */}
-            <button
-                type="button"
-                aria-label="Close tutorial"
-                tabIndex={-1}
-                className="fixed inset-0 z-[200] bg-foreground/35 backdrop-blur-md animate-in fade-in-0 duration-200 cursor-default"
-                onClick={dismiss}
-            />
-
-            {/* Modal */}
-            <div
-                ref={dialogRef}
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="onboarding-title"
-                aria-describedby="onboarding-desc"
-                className="fixed inset-x-0 top-[18vh] z-[201] mx-auto w-full max-w-md px-5 animate-in fade-in-0 slide-in-from-bottom-4 duration-300"
-            >
-                <div
-                    className="rounded-2xl border border-border-strong overflow-hidden shadow-[0_30px_60px_-20px_rgba(20,15,5,0.35)] dark:shadow-[0_30px_60px_-20px_rgba(0,0,0,0.7)]"
-                    style={{ background: "hsl(var(--background))" }}
-                >
-                    {/* Dateline header */}
-                    <div className="font-medium px-5 py-2 border-b border-border bg-paper-2/50 flex items-center justify-between text-[11px] text-muted-foreground">
-                        <span>Welcome · {String(step + 1).padStart(2, "0")} / {String(steps.length).padStart(2, "0")}</span>
-                        <button
-                            onClick={dismiss}
-                            aria-label="Close tutorial"
-                            className="h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-colors"
-                        >
-                            <X size={11} />
-                        </button>
-                    </div>
-
-                    {/* Content */}
-                    <div className="px-7 pt-8 pb-4">
-                        <div className="h-14 w-14 rounded-2xl bg-accent/12 border border-accent/35 mb-5 flex items-center justify-center">
-                            <Icon size={22} className="text-accent" strokeWidth={1.75} />
-                        </div>
-
-                        <h3
-                            id="onboarding-title"
-                            className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-[1.05] mb-3"
-                            style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}
-                        >
-                            {current.title}
-                        </h3>
-                        <p id="onboarding-desc" className="font-display text-[15.5px] text-muted-foreground leading-[1.55]" style={{ fontVariationSettings: '"opsz" 14' }}>
-                            {current.description}
-                        </p>
-                    </div>
-
-                    {/* Footer — dots + actions */}
-                    <div className="px-7 py-4 border-t border-border bg-paper-2/30 flex items-center justify-between">
-                        <div
-                            className="flex gap-1.5"
-                            role="progressbar"
-                            aria-valuenow={step + 1}
-                            aria-valuemin={1}
-                            aria-valuemax={steps.length}
-                            aria-label={`Step ${step + 1} of ${steps.length}`}
-                        >
-                            {steps.map((_, i) => (
-                                <div
-                                    key={i}
-                                    aria-hidden="true"
-                                    className={cn(
-                                        "h-1.5 rounded-full transition-all duration-300",
-                                        i === step
-                                            ? "w-6 bg-accent"
-                                            : i < step
-                                                ? "w-1.5 bg-accent/40"
-                                                : "w-1.5 bg-border"
-                                    )}
-                                />
-                            ))}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={dismiss}
-                                className="font-medium text-[11.5px] text-muted-foreground hover:text-foreground transition-colors px-2"
-                            >
-                                Skip
-                            </button>
-                            <button
-                                ref={nextBtnRef}
-                                onClick={next}
-                                className="btn-accent"
-                            >
-                                {step < steps.length - 1 ? (
-                                    <>Next <ArrowRight size={13} aria-hidden="true" /></>
-                                ) : (
-                                    "Get started"
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </>
-    );
+  if (!show || !current) return null;
+  const position = positionTourCard(targetRect, viewport, { width: Math.min(viewport.height < 500 ? 280 : 360, viewport.width - 24), height: cardSize.height });
+  const last = index === activeSteps.length - 1;
+  return createPortal(<div className="pt-tour" data-step={current.id}>
+    <div className="pt-tour-shield" aria-hidden="true"/>
+    <svg className="pt-tour-dimmer" width="100%" height="100%" aria-hidden="true"><defs><mask id={maskId}><rect width="100%" height="100%" fill="white"/>{targetRect && <rect width={targetRect.width} height={targetRect.height} x={targetRect.left} y={targetRect.top} rx="10" fill="black"/>}</mask></defs><rect width="100%" height="100%" mask={`url(#${maskId})`}/></svg>
+    {targetRect && <div className="pt-tour-spotlight" style={{ left: targetRect.left, top: targetRect.top, width: targetRect.width, height: targetRect.height }} aria-hidden="true"/>}
+    <div ref={dialog} className="pt-tour-card" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-description" style={{ left: position.left, top: position.top, width: position.width, maxHeight: viewport.height - 24 }} data-side={position.side}>
+      {targetRect && position.side !== "floating" && <span className="pt-tour-pointer" style={position.side === "left" || position.side === "right" ? { top: position.arrowTop } : { left: position.arrowLeft }} aria-hidden="true"/>}
+      <div className="pt-tour-card-inner"><header><span className="pt-tour-step-label">A little look around <span>{index + 1} / {activeSteps.length}</span></span><button type="button" className="pt-tour-close" aria-label="Close tour" onClick={dismiss}><X size={17}/></button></header>
+        <div className="pt-tour-copy" key={current.id}><span className="pt-tour-control-label">{current.label}</span><h2 id="tour-title">{current.title}</h2><p id="tour-description">{current.description}</p>{!targetRect && <button type="button" className="pt-tour-reveal" onClick={() => revealTarget(findTarget(current))}>Bring this control into view</button>}</div>
+        <div className="pt-tour-progress" role="progressbar" aria-label="Tour progress" aria-valuemin={1} aria-valuemax={activeSteps.length} aria-valuenow={index + 1}>{activeSteps.map((step, stepIndex) => <span key={step.id} data-complete={stepIndex <= index || undefined}/>)}</div>
+        <footer><button type="button" className="pt-tour-skip" onClick={dismiss}>Skip tour</button><div><button type="button" className="pt-tour-back" disabled={index === 0} onClick={() => setIndex(value => value - 1)}><ArrowLeft size={15}/><span>Back</span></button><button ref={nextButton} type="button" className="pt-tour-next" onClick={() => last ? dismiss() : setIndex(value => value + 1)}>{last ? <>All set <Check size={16}/></> : <>Next <ArrowRight size={16}/></>}</button></div></footer>
+      </div>
+    </div>
+  </div>, document.body);
 }

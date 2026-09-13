@@ -20,6 +20,7 @@ import {
 } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { PdfWatermarkPreview } from "./pdf/PdfWatermarkPreview";
 import { AssetPicker } from "@/components/AssetPicker";
 
 const WATERMARK_DEFAULTS = {
@@ -279,7 +280,8 @@ export function WatermarkUI() {
                 tabIndex={0}
                 aria-label="Upload PDFs"
                 className={cn(
-                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 sm:py-14 px-6 text-center group",
+                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors px-6 text-center group",
+                    files.length ? "py-5" : "py-12 sm:py-14",
                     drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]",
                 )}
             >
@@ -311,10 +313,10 @@ export function WatermarkUI() {
                     />
 
                     {/* Settings + preview */}
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_240px] gap-4">
-                        <div className="rounded-xl border border-border bg-card overflow-hidden">
+                    <div className="pdf-coordinate-workspace">
+                        <fieldset disabled={state === "processing"} className="pdf-coordinate-controls rounded-xl border border-border bg-card overflow-hidden">
                             <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                                Settings
+                                Watermark settings
                             </div>
                             <div className="p-5 space-y-4">
                                 <div>
@@ -443,28 +445,6 @@ export function WatermarkUI() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Preview pane */}
-                        <PreviewPane mode={mode} text={text} fontSize={fontSize} opacity={opacity} position={position} hasImage={!!watermarkImage} />
-                    </div>
-
-                    {error && (
-                        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                            <AlertCircle size={13} className="shrink-0 mt-0.5" />
-                            <span className="flex-1">{error}</span>
-                            <button
-                                type="button"
-                                onClick={copyErrorToClipboard}
-                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
-                                aria-label="Copy error details to clipboard"
-                                title="Copy error details for a bug report"
-                            >
-                                <Copy size={10} /> Copy error
-                            </button>
-                        </div>
-                    )}
-
                     <div className="flex items-center gap-3 flex-wrap">
                         <button
                             type="button"
@@ -491,6 +471,28 @@ export function WatermarkUI() {
                             <Undo2 size={10} /> Reset to defaults
                         </button>
                     </div>
+                        </fieldset>
+
+                        <PdfWatermarkPreview file={files[0].file} mode={mode} text={text} fontSize={fontSize} opacity={opacity} position={position} image={watermarkImage?.raw} imageScale={imageScale} />
+                    </div>
+
+                    {error && (
+                        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
+                            <AlertCircle size={13} className="shrink-0 mt-0.5" />
+                            <span className="flex-1">{error}</span>
+                            <button
+                                type="button"
+                                onClick={copyErrorToClipboard}
+                                className="font-medium inline-flex items-center gap-1 text-[11px] text-destructive hover:text-destructive transition-colors px-1.5 h-6 rounded hover:bg-destructive/10 shrink-0"
+                                aria-label="Copy error details to clipboard"
+                                title="Copy error details for a bug report"
+                            >
+                                <Copy size={10} /> Copy error
+                            </button>
+                        </div>
+                    )}
+
+
 
                     {state === "processing" && (
                         <p className="font-medium text-[11.5px] text-muted-foreground">
@@ -573,66 +575,6 @@ function StatusBadge({ status }: { status: Status }) {
     if (status === "running") return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent"><Loader2 size={10} className="animate-spin" /> Running</span>;
     if (status === "done") return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-accent"><CheckCircle2 size={10} /> Done</span>;
     return <span className="font-medium inline-flex items-center gap-1 text-[9.5px] text-destructive"><AlertCircle size={10} /> Failed</span>;
-}
-
-/** Mini visual preview pane — approximates the watermark on a stylised page. */
-function PreviewPane({
-    mode, text, fontSize, opacity, position, hasImage,
-}: {
-    mode: WatermarkMode; text: string; fontSize: number; opacity: number;
-    position: (typeof positions)[number]["id"]; hasImage: boolean;
-}) {
-    const wmStyle: React.CSSProperties = (() => {
-        const map: Record<string, React.CSSProperties> = {
-            "center":       { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
-            "top":          { top: "8%",  left: "50%", transform: "translateX(-50%)" },
-            "bottom":       { bottom: "8%", left: "50%", transform: "translateX(-50%)" },
-            "top-left":     { top: "8%",  left: "8%" },
-            "top-right":    { top: "8%",  right: "8%" },
-            "bottom-left":  { bottom: "8%", left: "8%" },
-            "bottom-right": { bottom: "8%", right: "8%" },
-            "diagonal":     { top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-30deg)" },
-            "tile":         { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
-        };
-        return map[position] || map.center;
-    })();
-
-    const sampleText = text.trim() || "TEXT";
-    const fontPx = Math.max(10, Math.round((fontSize / 40) * 14));
-
-    return (
-        <div className="rounded-xl border border-border bg-card overflow-hidden">
-            <div className="font-medium px-3 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                Preview
-            </div>
-            <div className="p-3 flex items-center justify-center bg-paper-2/30">
-                <div className="relative aspect-[3/4] w-full max-w-[180px] bg-paper border border-border rounded-md shadow-sm overflow-hidden">
-                    <div className="absolute inset-3 space-y-1 opacity-30 pointer-events-none">
-                        {Array.from({ length: 14 }).map((_, i) => (
-                            <span key={i} className="block h-px bg-foreground" style={{ width: `${50 + ((i * 13) % 50)}%` }} />
-                        ))}
-                    </div>
-                    {position === "tile" ? (
-                        <div className="absolute inset-0 grid grid-cols-2 grid-rows-3 gap-1 place-items-center" style={{ opacity }}>
-                            {Array.from({ length: 6 }).map((_, i) => (
-                                <span key={i} className="font-mono font-bold text-accent" style={{ fontSize: Math.max(8, fontPx - 4) }}>
-                                    {mode === "image" && hasImage ? "IMG" : sampleText}
-                                </span>
-                            ))}
-                        </div>
-                    ) : (
-                        <span
-                            className="absolute font-mono font-bold text-accent select-none"
-                            style={{ ...wmStyle, opacity, fontSize: fontPx, whiteSpace: "nowrap" }}
-                        >
-                            {mode === "image" && hasImage ? "IMG" : sampleText}
-                        </span>
-                    )}
-                </div>
-            </div>
-            <p className="font-medium px-3 pb-2 text-[11px] text-muted-foreground text-center">approximate placement</p>
-        </div>
-    );
 }
 
 function CornerMarks({ accent }: { accent?: boolean } = {}) {

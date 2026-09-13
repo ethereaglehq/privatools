@@ -1,0 +1,180 @@
+.pt-studio-footer {
+  grid-area: footer;
+  width: min(calc(100% - 64px), 1280px);
+  margin: 20px auto 0;
+  padding: 34px 0 23px;
+  border-top: 1px solid var(--pt-line);
+  color: var(--pt-ink);
+}
+
+.pt-footer-layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+  grid-template-areas: 'intro groups' 'app groups';
+  column-gap: clamp(36px, 5vw, 76px);
+  row-gap: 28px;
+  align-items: start;
+}
+
+.pt-footer-intro { grid-area: intro; }
+html[data-experience] .pt-studio-footer .pt-brand { display: inline-flex; font-size: 26px; gap: 11px; }
+.pt-footer-intro > p {
+  margin: 14px 0 0;
+  color: var(--pt-muted);
+  font-size: 14px;
+  line-height: 1.65;
+  letter-spacing: -.13px;
+  white-space: pre-line;
+}
+
+.pt-footer-groups {
+  grid-area: groups;
+  display: grid;
+  grid-template-columns: 1.1fr .85fr 1fr;
+  gap: 26px;
+  align-items: start;
+}
+
+.pt-footer-group { min-width: 0; }
+.pt-footer-group h2, .pt-footer-app h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.5;
+  letter-spacing: -.15px;
+}
+.pt-footer-group ul { display: grid; margin: 13px 0 0; padding: 0; list-style: none; }
+.pt-studio-footer .pt-footer-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  gap: 6px;
+  color: var(--pt-muted);
+  font-size: 13px;
+  font-weight: 450;
+  line-height: 1.45;
+  text-decoration: none;
+  text-underline-offset: 5px;
+  transition: color .18s, transform .22s var(--pt-ease);
+}
+.pt-footer-group a > span { font-size: 13px; opacity: .7; }
+.pt-footer-group a:hover { color: var(--pt-action); text-decoration: underline; }
+.pt-studio-footer a:focus-visible { outline: 2px solid var(--pt-action); outline-offset: 4px; border-radius: 3px; }
+
+.pt-footer-app { grid-area: app; display: grid; justify-items: start; gap: 13px; }
+.pt-footer-app p { margin: 5px 0 0; color: var(--pt-muted); font-size: 12px; line-height: 1.6; }
+.pt-footer-app-controls .pwa-trigger {
+  min-height: 40px;
+  padding: 9px 13px;
+  color: var(--pt-ink);
+  background: var(--pt-surface);
+  border-color: var(--pt-line);
+  border-radius: 9px;
+  font-size: 12px;
+  gap: 8px;
+}
+.pt-footer-app-controls .pwa-trigger > span { display: inline; }
+.pt-footer-app-controls .pwa-trigger:hover { background: var(--pt-panel); }
+.pt-footer-baseline {
+  margin-top: 27px;
+  padding-top: 18px;
+  border-top: 1px solid var(--pt-line);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--pt-muted);
+}
+
+html[data-experience=play] .pt-studio-footer {
+  width: min(calc(100% - 40px), 1360px);
+  margin: 16px auto 20px;
+  padding: 31px 38px 20px;
+  border: 1px solid var(--pt-line);
+  border-radius: 28px;
+  background: var(--pt-surface);
+}
+html[data-experience=play] .pt-footer-layout {
+  grid-template-columns: minmax(210px, 1fr) minmax(0, 1.15fr);
+  grid-template-areas: 'intro app' 'groups groups';
+  column-gap: 50px;
+  row-gap: 30px;
+}
+html[data-experience=play] .pt-studio-footer .pt-brand { font-size: 29px; }
+html[data-experience=play] .pt-footer-intro > p { margin-top: 11px; white-space: normal; max-width: 290px; }
+html[data-experience=play] .pt-footer-app {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  align-self: center;
+  gap: 22px;
+}
+html[data-experience=play] .pt-footer-app-controls { flex-shrink: 0; }
+html[data-experience=play] .pt-footer-app-controls .pwa-trigger {
+  background: var(--pt-soft);
+  border-color: transparent;
+  border-radius: 99px;
+  color: var(--pt-action);
+  min-height: 44px;
+  padding-inline: 17px;
+}
+html[data-experience=play] .pt-footer-app-controls .pwa-trigger:hover { transform: translateY(-2px) rotate(-1deg); }
+html[data-experience=play] .pt-footer-groups {
+  grid-template-columns: 1.3fr .7fr 1.2fr;
+  gap: clamp(28px, 5vw, 78px);
+  padding-top: 23px;
+  border-top: 1px dashed var(--pt-line);
+}
+html[data-experience=play] .pt-footer-group h2 { color: var(--pt-action); font-size: 14px; }
+html[data-experience=play] .pt-footer-group ul { grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 18px; margin-top: 10px; }
+html[data-experience=play] .pt-footer-group-explore ul { grid-template-columns: 1fr; }
+html[data-experience=play] .pt-footer-group a { min-height: 35px; transition-timing-function: cubic-bezier(.2,1.35,.5,1); }
+html[data-experience=play] .pt-footer-group a:hover { transform: translateX(3px); }
+html[data-experience=play] .pt-footer-baseline { margin-top: 23px; padding-top: 15px; text-align: right; }
+
+@media (max-width: 900px) {
+  .pt-footer-layout { grid-template-columns: minmax(200px, .9fr) minmax(0, 1.6fr); column-gap: 35px; }
+  .pt-footer-groups { gap: 18px; }
+  html[data-experience=play] .pt-studio-footer { padding-inline: 27px; }
+  html[data-experience=play] .pt-footer-layout { column-gap: 25px; }
+  html[data-experience=play] .pt-footer-app { flex-direction: column; align-items: flex-start; gap: 12px; justify-self: end; }
+}
+
+@media (max-width: 650px) {
+  .pt-studio-footer { width: calc(100% - 36px); margin-top: 8px; padding: 26px 0 20px; }
+  .pt-footer-layout { grid-template-columns: 1fr; grid-template-areas: 'intro' 'groups' 'app'; gap: 25px; }
+  html[data-experience] .pt-studio-footer .pt-brand { font-size: 24px; gap: 7px; }
+  .pt-footer-intro > p { font-size: 13px; margin-top: 10px; }
+  .pt-footer-groups { grid-template-columns: 1.1fr .8fr 1fr; gap: 15px; }
+  .pt-footer-group h2 { font-size: 12px; }
+  .pt-footer-group ul { margin-top: 8px; }
+  .pt-footer-group a { min-height: 40px; font-size: 12px; }
+  .pt-footer-app { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding-top: 20px; border-top: 1px solid var(--pt-line); }
+  .pt-footer-app h2 { font-size: 12px; }
+  .pt-footer-app p { font-size: 11px; }
+  .pt-footer-app-controls { flex-shrink: 0; }
+  .pt-footer-app-controls .pwa-trigger { padding-inline: 11px; font-size: 11px; min-height: 42px; gap: 6px; }
+  .pt-footer-app-controls .pwa-trigger > svg { width: 14px; }
+  .pt-footer-baseline { margin-top: 22px; padding-top: 0; border: 0; font-size: 10px; }
+  html[data-experience=play] .pt-studio-footer { width: calc(100% - 24px); padding: 25px 20px 19px; border-radius: 23px; margin-bottom: 12px; }
+  html[data-experience=play] .pt-footer-layout { grid-template-columns: 1fr; grid-template-areas: 'intro' 'groups' 'app'; gap: 21px; }
+  html[data-experience=play] .pt-studio-footer .pt-brand { font-size: 27px; }
+  html[data-experience=play] .pt-footer-groups { grid-template-columns: 1.1fr .8fr 1fr; gap: 13px; padding-top: 21px; }
+  html[data-experience=play] .pt-footer-group h2 { font-size: 12px; }
+  html[data-experience=play] .pt-footer-group ul { grid-template-columns: 1fr; margin-top: 8px; }
+  html[data-experience=play] .pt-footer-group a { min-height: 40px; }
+  html[data-experience=play] .pt-footer-app { justify-self: stretch; flex-direction: row; align-items: center; justify-content: space-between; gap: 12px; border-top-style: dashed; }
+  html[data-experience=play] .pt-footer-app-controls .pwa-trigger { padding-inline: 12px; min-height: 42px; }
+  html[data-experience=play] .pt-footer-baseline { margin-top: 20px; padding-top: 0; text-align: left; }
+}
+
+@media (max-width: 360px) {
+  .pt-footer-groups, html[data-experience=play] .pt-footer-groups { gap: 10px; }
+  .pt-footer-app, html[data-experience=play] .pt-footer-app { flex-direction: column; align-items: flex-start; gap: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pt-footer-group a { transition: none; }
+  html[data-experience=play] .pt-footer-group a:hover,
+  html[data-experience=play] .pt-footer-app-controls .pwa-trigger:hover { transform: none; }
+}
+
+.pt-footer-help{display:flex;gap:20px;flex-wrap:wrap}.pt-footer-help button{display:inline-flex;align-items:center;gap:6px;background:transparent;border:0;color:var(--pt-muted);font:inherit;cursor:pointer;padding:0;min-height:32px}.pt-footer-help button:hover{color:var(--pt-ink)}.pt-footer-help button:focus-visible{outline:2px solid var(--pt-action);outline-offset:4px}.pt-footer-baseline{gap:16px;flex-wrap:wrap}

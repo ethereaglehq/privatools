@@ -1,6 +1,7 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import DaylightApp from "./extensions/daylight";
 import { hashForPath } from "./pathRoutes";
+import { accountNavigationFor, documentNavigationFor } from "./cspRoutes";
 
 /**
  * Mounts Daylight — the site's design.
@@ -45,15 +46,33 @@ export function SkinAppHost() {
     useEffect(() => {
         let tries = 0;
         let timer = 0;
+        let skipLink: HTMLElement | null = null;
+        const skip = (event: MouseEvent) => {
+            const main = document.querySelector<HTMLElement>("main[id]");
+            if (!main) return;
+            // A fragment is a page route in this app. Move focus directly so
+            // the accessibility link cannot navigate to a nonexistent page.
+            event.preventDefault();
+            main.focus({ preventScroll: true });
+            main.scrollIntoView({ block: "start", behavior: "instant" });
+        };
         const settle = () => {
             const prepaint = document.getElementById("prepaint-skip");
             if (!prepaint) return;
             const main = document.querySelector("main[id]");
-            if (main) { prepaint.setAttribute("href", `#${main.id}`); return; }
+            if (main) {
+                prepaint.setAttribute("href", `#${main.id}`);
+                skipLink = prepaint;
+                prepaint.addEventListener("click", skip);
+                return;
+            }
             if (++tries < 40) timer = window.setTimeout(settle, 50);
         };
         settle();
-        return () => window.clearTimeout(timer);
+        return () => {
+            window.clearTimeout(timer);
+            skipLink?.removeEventListener("click", skip);
+        };
     }, []);
 
     // The mounted house pages (Pipeline, Batch, Status, My Stuff, the tool
@@ -69,9 +88,29 @@ export function SkinAppHost() {
         if (!a) return;
         const target = a.getAttribute("target");
         if (target && target !== "_self") return;
+        if (a.hasAttribute("download")) return;
         const href = a.getAttribute("href") || "";
+        const accountTarget = accountNavigationFor(window.location.pathname, href);
+        if (accountTarget) {
+            e.preventDefault();
+            window.history.pushState(null, "", accountTarget);
+            window.dispatchEvent(new PopStateEvent("popstate"));
+            window.scrollTo(0, 0);
+            return;
+        }
+        const documentTarget = documentNavigationFor(window.location.pathname, href);
+        if (documentTarget) {
+            // A hash cannot acquire the destination's model/auth CSP. Request
+            // the canonical page only when its capabilities are missing.
+            e.preventDefault();
+            window.location.assign(documentTarget);
+            return;
+        }
         if (!href.startsWith("/") || href.startsWith("//")) return;
         const path = href.split("?")[0].split("#")[0];
+        // Account pages need their path-specific CSP; workflow share links
+        // carry a real query consumed on first mount. Keep both intact.
+        if (path.startsWith("/account") || href.includes("?")) return;
         const hash = path === "/" ? "#/" : hashForPath(path);
         if (!hash) return; // no mapping — let the browser navigate; the bridge handles it on load
         e.preventDefault();

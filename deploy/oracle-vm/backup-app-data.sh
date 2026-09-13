@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Nightly backup of the accounts database.
 #
-# This is the one irreplaceable thing the app holds. There is no email path:
-# the recovery code issued at signup is the only way back into an account, so
-# losing this file locks every user out permanently with no way to reissue.
+# This persists the local account mirror and API-key records. Clerk identity
+# recovery does not restore these records; legacy native accounts also depend
+# on this database. Keep an encrypted off-host copy and rehearse restoration.
 #
 # The DB lives in the app-data Docker volume, root-owned on the host, inside a
 # container with a read-only root filesystem. So rather than reaching into
@@ -38,7 +38,15 @@ ping_backup() {  # ping_backup ok|fail
 }
 
 cleanup() { docker exec "$CONTAINER" rm -f "$TMP_IN_CONTAINER" >/dev/null 2>&1 || true; }
-trap 'rc=$?; if [[ $rc -ne 0 ]]; then log "FAILED at line $LINENO (exit $rc)"; ping_backup fail; fi; cleanup' EXIT
+on_exit() {
+    local status="$1" line="$2"
+    if [[ "$status" -ne 0 ]]; then
+        log "FAILED at line ${line} (exit ${status})"
+        ping_backup fail
+    fi
+    cleanup
+}
+trap 'on_exit "$?" "$LINENO"' EXIT
 
 if ! docker inspect -f '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -q true; then
     log "container ${CONTAINER} is not running; nothing to back up"
@@ -93,5 +101,5 @@ fi
 
 find "$DEST_DIR" -name 'privatools-*.db' -type f -mtime "+${RETAIN_DAYS}" -delete
 
-log "wrote ${DEST} ($(du -h "$DEST" | cut -f1)), verified, $(ls -1 "$DEST_DIR"/privatools-*.db 2>/dev/null | wc -l | tr -d ' ') kept"
+log "wrote ${DEST} ($(du -h "$DEST" | cut -f1)), verified, $(find "$DEST_DIR" -maxdepth 1 -name 'privatools-*.db' -type f | wc -l | tr -d ' ') kept"
 ping_backup ok

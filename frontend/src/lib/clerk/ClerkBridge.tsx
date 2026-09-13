@@ -14,10 +14,16 @@ export function ClerkBridge(): null {
 
     useEffect(() => {
         setClerkInstance(clerk);
+        // useClerk returns a stable object. Session changes do not rerun this
+        // effect, so subscribe to resources rather than checking only at mount.
+        const publish = () => setClerkInstance(clerk);
+        const unsubscribe = clerk.addListener(publish);
+        // Resource emission can precede loaded=true during initial startup.
+        clerk.on("status", publish, { notify: true });
         // Clearing on unmount matters in tests, where several trees mount in
         // one process and a stale instance from a torn-down tree would be
         // handed to the next one.
-        return () => setClerkInstance(null);
+        return () => { unsubscribe(); clerk.off("status", publish); setClerkInstance(null); };
     }, [clerk]);
 
     return null;

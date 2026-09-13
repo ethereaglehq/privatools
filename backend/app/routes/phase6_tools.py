@@ -179,6 +179,10 @@ async def audio_converter(
     if bitrate not in allowed_bitrates:
         bitrate = "192k"
 
+    # Ogg can carry either Vorbis or Opus. Some FFmpeg distributions only
+    # include the latter; select the available encoder before staging bytes.
+    from ..services.ffmpeg_capabilities import ogg_encoder
+    ogg_codec = await run_bounded(ogg_encoder) if format == "ogg" else None
     data = await read_upload(file, label="Audio file", max_bytes=200 * 1024 * 1024)
 
     # Detect input extension
@@ -191,7 +195,7 @@ async def audio_converter(
 
     cmd = ["ffmpeg", "-y", "-i", str(in_path), "-b:a", bitrate]
     if format == "ogg":
-        cmd.extend(["-c:a", "libvorbis"])
+        cmd.extend(["-c:a", ogg_codec])
     elif format == "aac":
         cmd.extend(["-c:a", "aac"])
     cmd.append(str(out_path))

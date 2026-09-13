@@ -1,186 +1,39 @@
-/**
- * CreateZipUI — bundle any files into a single ZIP archive.
- * Workshop: drag&drop multi-add + numbered file list.
- */
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Loader2, AlertCircle, FileText, X, Plus, Archive, RotateCcw } from "lucide-react";
-import { cn, friendlyError } from "@/lib/utils";
-import { formatFileSize, downloadBlob, buildOutputFilename, postFormData } from "@/lib/api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Archive, Download, File, Loader2, Plus, X } from "lucide-react";
+import { formatFileSize, downloadBlob, postFormData, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { friendlyError } from "@/lib/utils";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { ProcessingBar } from "./FileUploadZone";
+import { LabWorkspace } from "./SpecialistTools";
 
-const CREATE_ZIP_DEFAULTS: { compression: number } = {
-    compression: 6,
-};
-
+const DEFAULTS = { compression: 6 };
+interface Item { id: string; file: File; }
+interface Result { blob: Blob; count: number; originalBytes: number; }
 export function CreateZipUI() {
-    const [config, , { setField }] = useToolDefaults("create-zip", CREATE_ZIP_DEFAULTS);
-    const { compression } = config;
-    const setCompression = useCallback((v: React.SetStateAction<typeof CREATE_ZIP_DEFAULTS["compression"]>) => setField("compression", v), [setField]);
-    const [files, setFiles] = useState<{ id: string; name: string; size: string; file: File }[]>([]);
-    const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
-    const [error, setError] = useState<string | null>(null);
-    const [drag, setDrag] = useState(false);
-
-    const ref = useRef<HTMLInputElement>(null);
-
-    const add = (fl: FileList) => {
-        setFiles(p => [...p, ...Array.from(fl).map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), file: f }))]);
-    };
-
-    const totalBytes = files.reduce((s, f) => s + f.file.size, 0);
-    const compressionLabel = compression === 0 ? "Store (no compression)" : compression <= 3 ? "Fast" : compression <= 6 ? "Balanced" : "Maximum";
-
-    const canProcess = files.length > 0 && status !== "processing";
-
+    const [config, , {setField}] = useToolDefaults("create-zip", DEFAULTS);
+    const [files, setFiles] = useState<Item[]>([]), [busy, setBusy] = useState(false), [error, setError] = useState<string | null>(null), [result, setResult] = useState<Result | null>(null), [drag, setDrag] = useState(false);
+    const ref = useRef<HTMLInputElement>(null), active = useRef(false), generation = useRef(0);
+    const add = useCallback((incoming: File[]) => {
+        if (active.current) return;
+        const tooLarge = incoming.find(file => file.size > MAX_FILE_SIZE);
+        if (tooLarge) { setError(`${tooLarge.name} exceeds ${MAX_FILE_SIZE_LABEL}. Choose smaller files.`); return; }
+        setFiles(previous => [...previous, ...incoming.map(file => ({id: crypto.randomUUID(), file}))]); setResult(null); setError(null);
+    }, []);
+    const invalidatePending = useCallback(() => { generation.current++; }, []);
+    useEffect(() => { let cancelled = false; void consumeFileHandoffs("create-zip").then(values => { if (!cancelled) add(values); }); return () => { cancelled = true; invalidatePending(); }; }, [add, invalidatePending]);
+    const totalBytes = files.reduce((sum, item) => sum + item.file.size, 0);
+    const label = config.compression === 0 ? "Store without compression" : config.compression < 4 ? "Fast" : config.compression < 7 ? "Balanced" : "Smallest size";
     const process = useCallback(async () => {
-        if (files.length === 0) return;
-        setStatus("processing"); setError(null);
+        if (!files.length || active.current) return;
+        active.current = true; const current = ++generation.current; setBusy(true); setError(null); setResult(null);
         try {
-            const res = await postFormData("/create-zip", () => {
-                const fd = new FormData();
-                for (const f of files) fd.append("files", f.file);
-                fd.append("compression", String(compression));
-                return fd;
-            }, { timeoutMs: 300_000 });
-            const blob = await res.blob();
-            downloadBlob(blob, buildOutputFilename(files[0]?.name, "archive", "zip"));
-            setStatus("done");
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : "Failed";
-            setError(friendlyError(msg, "Couldn't create that archive."));
-            setStatus("idle");
-        }
-    }, [files, compression]);
-
-    useEffect(() => {
-        const h = (e: KeyboardEvent) => {
-            if ((e.metaKey || e.ctrlKey) && e.key === "Enter" && canProcess) { e.preventDefault(); process(); }
-        };
-        window.addEventListener("keydown", h);
-        return () => window.removeEventListener("keydown", h);
-    }, [canProcess, process]);
-
-    if (status === "done") return (
-        <div className="rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden animate-fade-up">
-            <div className="relative p-7 sm:p-9 animate-corner-extend">
-                <CornerMarks />
-                <div className="flex items-start gap-5">
-                    <div className="h-14 w-14 rounded-2xl bg-accent/15 border border-accent/35 flex items-center justify-center shrink-0 animate-success-pop">
-                        <Archive size={24} className="text-accent" strokeWidth={1.75} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <p className="section-mark mb-2">Archive sealed</p>
-                        <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}>
-                            <span className="italic text-accent">{files.length}</span> file{files.length !== 1 && "s"} → .zip
-                        </h2>
-                        <button onClick={() => { setFiles([]); setStatus("idle"); }} className="mt-5 inline-flex items-center gap-1.5 h-9 px-4 rounded-md border border-border bg-card text-[13px] font-medium text-foreground hover:bg-secondary/60 transition-colors">
-                            <RotateCcw size={12} /> Create another
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
-    return (
-        <div className="space-y-4">
-            <div
-                onDragOver={e => { e.preventDefault(); setDrag(true); }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={e => { e.preventDefault(); setDrag(false); if (e.dataTransfer.files.length) add(e.dataTransfer.files); }}
-                onClick={() => ref.current?.click()}
-                onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ref.current?.click(); } }}
-                role="button" tabIndex={0} aria-label="Upload files"
-                className={cn(
-                    "dropzone-surface relative flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed cursor-pointer transition-colors py-12 px-6 text-center group",
-                    drag ? "border-accent bg-accent/[0.06]" : "border-border-strong bg-paper-2/30 hover:border-accent/55 hover:bg-accent/[0.04]"
-                )}
-            >
-                <CornerMarks />
-                <input ref={ref} type="file" multiple className="hidden" onChange={e => { e.target.files && add(e.target.files); e.target.value = ""; }} />
-                <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center transition-colors", drag ? "bg-accent/20 border border-accent/45" : "bg-accent/10 border border-accent/30 group-hover:bg-accent/15")}>
-                    <Archive size={20} className="text-accent" strokeWidth={1.75} />
-                </div>
-                <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more files" : "Drop files to zip"}</p>
-                <p className="font-medium text-[11.5px] text-muted-foreground">Any file types · multiple allowed</p>
-            </div>
-
-            {files.length > 0 && (
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
-                        <span>Manifest ({files.length})</span>
-                        <button onClick={() => ref.current?.click()} className="inline-flex items-center gap-1 text-accent hover:opacity-80">
-                            <Plus size={11} /> Add more
-                        </button>
-                    </div>
-                    <div className="divide-y divide-border">
-                        {files.map((f, i) => (
-                            <div key={f.id} className="flex items-center gap-3 px-4 py-2.5">
-                                <span className="font-mono text-[10px] tracking-wider text-muted-foreground w-6 text-right shrink-0">{String(i + 1).padStart(2, "0")}</span>
-                                <FileText size={13} className="text-muted-foreground shrink-0" />
-                                <span className="text-[13px] text-foreground flex-1 truncate">{f.name}</span>
-                                <span className="font-medium text-[11.5px] text-muted-foreground">{f.size}</span>
-                                <button onClick={() => setFiles(p => p.filter(x => x.id !== f.id))} aria-label={`Remove ${f.name}`} className="h-7 w-7 coarse:h-11 coarse:w-11 inline-flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-secondary/60">
-                                    <X size={12} />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {files.length > 0 && (
-                <div className="rounded-xl border border-border bg-card overflow-hidden">
-                    <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11.5px] text-muted-foreground">
-                        <span>Compression</span>
-                        <span className="text-accent normal-case tracking-normal">{compressionLabel} · level {compression}</span>
-                    </div>
-                    <div className="p-4">
-                        <input
-                            type="range" min={0} max={9} step={1}
-                            value={compression}
-                            onChange={e => setCompression(parseInt(e.target.value, 10))}
-                            className="w-full accent-accent"
-                            aria-label="ZIP compression level"
-                            aria-valuetext={`Level ${compression} — ${compressionLabel}`}
-                        />
-                        <div className="font-medium flex justify-between text-[11px] text-muted-foreground mt-2">
-                            <span>Store (0)</span><span>Balanced (6)</span><span>Maximum (9)</span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <p className="font-medium text-[11px] text-muted-foreground">
-                {files.length > 0 && `${formatFileSize(totalBytes)} uncompressed · `}Standard ZIP archive · password-encrypted output not yet supported
-            </p>
-
-            {error && (
-                <div className="flex items-center gap-2 rounded-lg border border-destructive/30 bg-destructive/[0.06] px-3 py-2.5 text-[13px] text-destructive">
-                    <AlertCircle size={13} className="shrink-0" />{error}
-                </div>
-            )}
-
-            <div className="flex items-center gap-3 flex-wrap">
-                <button onClick={process} disabled={!canProcess} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
-                    {status === "processing" ? <><Loader2 size={13} className="animate-spin" /> Sealing…</> : <><Archive size={13} /> Create ZIP ({files.length} {files.length === 1 ? "file" : "files"})</>}
-                </button>
-                {canProcess && (
-                    <kbd className="hidden sm:inline-flex items-center gap-0.5 font-mono text-[10px] text-muted-foreground bg-secondary/30 rounded px-1.5 py-0.5">⌘↵</kbd>
-                )}
-            </div>
-        </div>
-    );
-}
-
-function CornerMarks() {
-    const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-    return (
-        <>
-            <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-            <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-        </>
-    );
+            const response = await postFormData("/create-zip", () => { const form = new FormData(); files.forEach(item => form.append("files", item.file)); form.append("compression", String(config.compression)); return form; }, {timeoutMs: 300_000});
+            const blob = await response.blob();
+            if (generation.current === current) setResult({blob, count: files.length, originalBytes: totalBytes});
+        } catch (e) { if (generation.current === current) setError(friendlyError(e instanceof Error ? e.message : "", "Couldn't create that archive.")); }
+        finally { if (generation.current === current) { active.current = false; setBusy(false); } }
+    }, [files, config.compression, totalBytes]);
+    useEffect(() => { const listener = (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); void process(); } }; window.addEventListener("keydown", listener); return () => window.removeEventListener("keydown", listener); }, [process]);
+    return <LabWorkspace kind="archive"><div className="pt-archive-workspace"><section className="pt-archive-intake"><div className="pt-lab-toolbar"><h2>Bring your files together</h2><span>{files.length} selected</span></div><input ref={ref} type="file" multiple disabled={busy} className="sr-only" tabIndex={-1} aria-label="Files to archive" onChange={e => { add(Array.from(e.target.files ?? [])); e.target.value = ""; }}/><button className={`pt-archive-drop ${drag ? "is-dragging" : ""}`} disabled={busy} onClick={() => ref.current?.click()} onDragOver={e => { e.preventDefault(); if (!busy) setDrag(true); }} onDragLeave={() => setDrag(false)} onDrop={e => { e.preventDefault(); setDrag(false); add(Array.from(e.dataTransfer.files)); }}><Plus size={27}/><strong>{files.length ? "Add more files" : "Choose files to bundle"}</strong><span>Or drop them here · any file type</span></button>{files.length > 0 && <ul className="pt-archive-list">{files.map(({id, file}) => <li key={id}><File size={17}/><span title={file.name}>{file.name}</span><small>{formatFileSize(file.size)}</small><button className="pt-archive-remove" aria-label={`Remove ${file.name}`} disabled={busy} onClick={() => { setFiles(previous => previous.filter(item => item.id !== id)); setResult(null); }}><X size={16}/></button></li>)}</ul>}<p className="pt-lab-caption">{formatFileSize(totalBytes)} in total · Duplicate names are renamed in the ZIP so every file is kept.</p></section><section className="pt-archive-contents"><div className="pt-lab-toolbar"><h2>{result ? "Your bundle is ready" : "Make it a ZIP"}</h2><Archive size={26}/></div>{result ? <><div className="pt-archive-result" role="status"><strong>{formatFileSize(result.blob.size)}</strong><span>{result.count} files in one standard ZIP</span></div><p className="pt-lab-caption">Source files: {formatFileSize(result.originalBytes)}. Some formats are already compressed, so a ZIP may be slightly larger.</p><button className="pt-lab-button is-primary pt-lab-spaced" onClick={() => downloadBlob(result.blob, "archive.zip")}><Download size={16}/>Download ZIP</button><button className="pt-lab-button pt-lab-spaced" onClick={() => { setResult(null); setFiles([]); }}>Start another bundle</button></> : <><p className="pt-lab-caption">Files are uploaded to the server only when you create the archive.</p><label className="pt-lab-range"><strong>Compression</strong><span>{label} · {config.compression}/9</span><input type="range" min={0} max={9} step={1} value={config.compression} disabled={busy} aria-label="ZIP compression level" aria-valuetext={`Level ${config.compression}: ${label}`} onChange={e => setField("compression", Number(e.target.value))}/><span>Faster creation</span><span>Smaller archive</span></label><p className="pt-lab-caption">Standard ZIP, without password encryption.</p><button className="pt-lab-button is-primary pt-lab-spaced" disabled={!files.length || busy} onClick={() => void process()}>{busy ? <Loader2 size={16} className="animate-spin"/> : <Archive size={16}/>} {busy ? "Creating your ZIP…" : `Create ZIP${files.length ? ` · ${files.length} files` : ""}`}</button>{busy && <ProcessingBar label="Uploading and compressing the selected files…"/>}</>}{error && <p role="alert" className="pt-lab-issue is-error">{error}</p>}</section></div></LabWorkspace>;
 }

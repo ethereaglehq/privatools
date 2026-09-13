@@ -1,0 +1,205 @@
+import { StrictMode } from "react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MergeUI } from "./MergeUI";
+import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { uploadFiles, downloadBlob } from "@/lib/api";
+import { openMergePreview } from "./merge-preview";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+vi.mock("@/lib/file-handoff", () => ({ consumeFileHandoffs: vi.fn(async () => []) }));
+vi.mock("@/lib/api", async importOriginal => ({ ...await importOriginal<typeof import("@/lib/api")>(), uploadFiles: vi.fn(), downloadBlob: vi.fn() }));
+vi.mock("./merge-preview", () => ({ openMergePreview: vi.fn() }));
+vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: vi.fn(() => false) }));
+vi.mock("@/hooks/useFirstSuccess", () => ({ emitToolSuccess: vi.fn() }));
+vi.mock("./ResultHandoff", () => ({ ResultHandoff: ({ filename }: { filename: string }) => <div data-testid="result-handoff">{filename}</div> }));
+
+function pdf(name: string) { return new File(["%PDF-example"], name, { type: "application/pdf" }); }
+function response() { return { blob: async () => new Blob(["%PDF-merged"], { type: "application/pdf" }) } as Response; }
+function addFiles(files = [pdf("notes.pdf"), pdf("checklist.pdf")]) {
+    fireEvent.change(screen.getByLabelText("Choose PDFs to merge"), { target: { files } });
+}
+async function ready() { await waitFor(() => expect(screen.getByRole("button", { name: "Merge 4 pages" })).toBeEnabled()); }
+
+beforeEach(() => {
+    vi.clearAllMocks();
+    localStorage.clear();
+    vi.mocked(useIsMobile).mockReturnValue(false);
+    vi.mocked(consumeFileHandoffs).mockResolvedValue([]);
+    vi.mocked(uploadFiles).mockResolvedValue(response());
+    vi.mocked(openMergePreview).mockImplementation(async file => ({
+        numPages: file instanceof File && file.name === "notes.pdf" ? 3 : file instanceof File ? 1 : 4,
+        destroy: vi.fn(async () => {}),
+        getPage: vi.fn(async () => ({
+            getViewport: ({ scale }: { scale: number }) => ({ width: 600 * scale, height: 800 * scale }),
+            render: () => ({ promise: Promise.resolve(), cancel: vi.fn() }),
+        })),
+    }) as never);
+});
+afterEach(cleanup);
+
+describe("Merge workspace", { timeout: 20_000 }, () => {
+    it("reads the entire home handoff once under StrictMode without uploading", async () => {
+        vi.mocked(consumeFileHandoffs).mockResolvedValue([pdf("notes.pdf"), pdf("checklist.pdf")]);
+        render(<StrictMode><MergeUI /></StrictMode>);
+        await ready();
+        expect(consumeFileHandoffs).toHaveBeenCalledTimes(1);
+        expect(screen.getAllByRole("button", { name: /^Remove .*pdf$/ })).toHaveLength(2);
+        expect(uploadFiles).not.toHaveBeenCalled();
+        expect(screen.getByText("Processing: temporary server upload")).toBeVisible();
+    });
+
+    it("preserves selected pages, filename, and file order in the real merge request", async () => {
+        render(<MergeUI />);
+        addFiles();
+        await ready();
+        fireEvent.click(screen.getByRole("button", { name: "Exclude page 2 of notes.pdf" }));
+        expect(screen.getByLabelText("notes.pdf")).toHaveValue("1,3");
+        fireEvent.change(screen.getByLabelText("notes.pdf"), { target: { value: "3,1" } });
+        fireEvent.click(screen.getByRole("button", { name: "Move checklist.pdf up" }));
+        fireEvent.change(screen.getByLabelText("Output filename"), { target: { value: "Together" } });
+        fireEvent.click(screen.getByRole("button", { name: "Merge 3 pages" }));
+        await screen.findByRole("heading", { name: "Your PDF is ready" });
+        expect(uploadFiles).toHaveBeenCalledTimes(1);
+        const [, files, params, options] = vi.mocked(uploadFiles).mock.calls[0];
+        expect(files.map(file => file.name)).toEqual(["checklist.pdf", "notes.pdf"]);
+        expect(params).toEqual({ page_ranges: '["all","3,1"]' });
+        expect(options?.signal).toBeInstanceOf(AbortSignal);
+        expect(screen.getByTestId("result-handoff")).toHaveTextContent("Together.pdf");
+        expect(downloadBlob).not.toHaveBeenCalled();
+        fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
+        expect(downloadBlob).toHaveBeenCalledWith(expect.any(Blob), "Together.pdf");
+    });
+
+    it("keeps out-of-bounds ranges and a one-file selection from reaching the server", async () => {
+        render(<MergeUI />);
+        addFiles([pdf("notes.pdf")]);
+        await waitFor(() => expect(screen.getByRole("button", { name: "Add one more PDF" })).toBeDisabled());
+        addFiles([pdf("checklist.pdf")]);
+        await ready();
+        fireEvent.change(screen.getByLabelText("notes.pdf"), { target: { value: "4" } });
+        expect(screen.getByLabelText("notes.pdf")).toHaveAttribute("aria-invalid", "true");
+        expect(screen.getByRole("button", { name: "Merge 2 PDFs" })).toBeDisabled();
+        fireEvent.keyDown(window, { key: "Enter", ctrlKey: true });
+        expect(uploadFiles).not.toHaveBeenCalled();
+    });
+
+    it("rejects a mixed file selection visibly without silently dropping a file", () => {
+        render(<MergeUI />);
+        addFiles([pdf("notes.pdf"), new File(["image"], "photo.png", { type: "image/png" })]);
+        expect(screen.getByRole("alert")).toHaveTextContent("photo.png");
+        expect(screen.getByRole("alert")).toHaveTextContent("selection was not added");
+        expect(screen.queryByRole("button", { name: "Remove notes.pdf" })).not.toBeInTheDocument();
+        expect(uploadFiles).not.toHaveBeenCalled();
+    });
+
+    it("keeps a large file in the merge while avoiding an excessive preview allocation", async () => {
+        const large = pdf("large.pdf");
+        Object.defineProperty(large, "size", { value: 70 * 1024 * 1024 });
+        render(<MergeUI />);
+        addFiles([large, pdf("checklist.pdf")]);
+        await waitFor(() => expect(screen.getByRole("button", { name: "Merge 2 PDFs" })).toBeEnabled());
+        expect(screen.getByText(/Preview skipped to keep memory use low/)).toBeVisible();
+        expect(vi.mocked(openMergePreview).mock.calls.some(([file]) => file === large)).toBe(false);
+        expect(screen.queryByRole("region", { name: "Preview of page order" })).not.toBeInTheDocument();
+        fireEvent.click(screen.getByRole("button", { name: "Merge 2 PDFs" }));
+        await screen.findByRole("heading", { name: "Your PDF is ready" });
+        expect(vi.mocked(uploadFiles).mock.calls[0][1]).toEqual([large, expect.objectContaining({ name: "checklist.pdf" })]);
+    });
+
+    it("discards a cancelled response even if it arrives after the next successful merge", async () => {
+        let resolveFirst!: (value: Response) => void;
+        vi.mocked(uploadFiles).mockImplementationOnce(() => new Promise(resolve => { resolveFirst = resolve; }));
+        render(<MergeUI />);
+        addFiles();
+        await ready();
+        fireEvent.click(screen.getByRole("button", { name: "Merge 4 pages" }));
+        const firstSignal = vi.mocked(uploadFiles).mock.calls[0][3]!.signal!;
+        fireEvent.click(screen.getByRole("button", { name: "Cancel request" }));
+        expect(firstSignal.aborted).toBe(true);
+        fireEvent.change(screen.getByLabelText("Output filename"), { target: { value: "Fresh.pdf" } });
+        fireEvent.click(screen.getByRole("button", { name: "Merge 4 pages" }));
+        await screen.findByRole("heading", { name: "Your PDF is ready" });
+        await act(async () => { resolveFirst(response()); });
+        expect(screen.getByTestId("result-handoff")).toHaveTextContent("Fresh.pdf");
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(downloadBlob).not.toHaveBeenCalled();
+    });
+
+    it("invalidates the previous download before editing and uses the revised selection", async () => {
+        render(<MergeUI />);
+        addFiles();
+        await ready();
+        fireEvent.click(screen.getByRole("button", { name: "Merge 4 pages" }));
+        await screen.findByRole("heading", { name: "Your PDF is ready" });
+        fireEvent.click(screen.getByRole("button", { name: "Adjust pages" }));
+        expect(screen.queryByRole("button", { name: "Download PDF" })).not.toBeInTheDocument();
+        expect(screen.queryByTestId("result-handoff")).not.toBeInTheDocument();
+        fireEvent.change(screen.getByLabelText("notes.pdf"), { target: { value: "1" } });
+        fireEvent.click(screen.getByRole("button", { name: "Merge 2 pages" }));
+        await screen.findByRole("heading", { name: "Your PDF is ready" });
+        expect(vi.mocked(uploadFiles).mock.calls[1][2]).toEqual({ page_ranges: '["1","all"]' });
+        fireEvent.click(screen.getByRole("button", { name: "Start another merge" }));
+        expect(screen.getByRole("button", { name: "Choose PDFs" })).toBeVisible();
+        expect(screen.queryByRole("button", { name: "Download PDF" })).not.toBeInTheDocument();
+    });
+
+    it("retains inputs after a server error and aborts a request when unmounted", async () => {
+        vi.mocked(uploadFiles).mockRejectedValueOnce(new Error("Network error"));
+        const { unmount } = render(<MergeUI />);
+        addFiles();
+        await ready();
+        fireEvent.click(screen.getByRole("button", { name: "Merge 4 pages" }));
+        await screen.findByRole("alert");
+        expect(screen.getByRole("button", { name: "Merge 4 pages" })).toBeEnabled();
+        expect(screen.getAllByRole("button", { name: /^Remove .*pdf$/ })).toHaveLength(2);
+        vi.mocked(uploadFiles).mockImplementationOnce(() => new Promise(() => {}));
+        fireEvent.click(screen.getByRole("button", { name: "Merge 4 pages" }));
+        const signal = vi.mocked(uploadFiles).mock.calls[1][3]!.signal!;
+        unmount();
+        expect(signal.aborted).toBe(true);
+    });
+
+    it("shows the page order specified by a nonascending range", async () => {
+        render(<MergeUI />);
+        addFiles();
+        await ready();
+        fireEvent.change(screen.getByLabelText("notes.pdf"), { target: { value: "3,1" } });
+        const order = screen.getByRole("region", { name: "Preview of page order" });
+        expect(within(order).getAllByRole("img").map(image => image.getAttribute("aria-label"))).toEqual([
+            "Output page 1: notes.pdf, page 3", "Output page 2: notes.pdf, page 1", "Output page 3: checklist.pdf, page 1",
+        ]);
+    });
+
+    it("saves a reusable operation without retaining source names, output names, or page ranges", async () => {
+        render(<MergeUI />);
+        addFiles();
+        await ready();
+        fireEvent.change(screen.getByLabelText("notes.pdf"), { target: { value: "3,1" } });
+        fireEvent.change(screen.getByLabelText("Output filename"), { target: { value: "Private result.pdf" } });
+        fireEvent.click(screen.getByRole("button", { name: "Merge 3 pages" }));
+        await screen.findByRole("heading", { name: "Your PDF is ready" });
+        fireEvent.click(screen.getByRole("button", { name: "Save workflow" }));
+        const saved = JSON.parse(localStorage.getItem("privatools_pipeline_saved")!);
+        expect(saved).toEqual([{ name: "Merge PDFs", slugs: ["merge-pdf"], savedAt: expect.any(Number) }]);
+        expect(screen.getByText(/Choose files, page ranges, order, and filename again each time/)).toBeVisible();
+        expect(screen.getByRole("button", { name: "Workflow saved" })).toBeDisabled();
+        expect(screen.getByRole("link", { name: "your home workspace" })).toHaveAttribute("href", "/");
+    });
+
+    it("maps mobile result thumbnails back to ordered sources and keeps extra details collapsed", async () => {
+        vi.mocked(useIsMobile).mockReturnValue(true);
+        render(<MergeUI />);
+        addFiles();
+        await ready();
+        fireEvent.change(screen.getByLabelText("notes.pdf"), { target: { value: "3,1,2" } });
+        fireEvent.click(screen.getByRole("button", { name: "Move checklist.pdf up" }));
+        fireEvent.click(screen.getByRole("button", { name: "Merge 4 pages" }));
+        const strip = await screen.findByRole("group", { name: "Choose a result page" });
+        expect(within(strip).getByRole("button", { name: "Show 1 · checklist.pdf, page 1" })).toHaveAttribute("aria-pressed", "true");
+        fireEvent.click(within(strip).getByRole("button", { name: "Show 2 · notes.pdf, page 3" }));
+        await waitFor(() => expect(screen.getByRole("img", { name: "Merged PDF, 2 · notes.pdf, page 3" })).not.toHaveClass("merge-canvas-pending"));
+        expect(screen.getByText("Merge details").closest("details")).not.toHaveAttribute("open");
+        expect(screen.getByRole("button", { name: "Download PDF" })).toBeVisible();
+    });
+});

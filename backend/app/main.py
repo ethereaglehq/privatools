@@ -15,7 +15,7 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from .rate_limit import limiter
-from .runtime_config import host_from_url, inject_runtime_config
+from .runtime_config import host_from_url, inject_runtime_config, google_analytics_enabled_for_path
 from .seo_meta import blog_content_mtime_ns, inject_seo
 from .middleware import (
     AccessLogMiddleware,
@@ -198,6 +198,9 @@ def _env_positive_int(name: str, default: int) -> int:
 # ---------------------------------------------------------------------------
 _SCRIPT_TAG_RE = re.compile(r"<script\b(?![^>]*\bnonce=)", re.IGNORECASE)
 _WASM_EVAL_PATHS = {
+    # The standalone AI workspace instantiates downloaded Transformers models
+    # to populate their cache, so it needs the same runtime policy as the tools.
+    "/ai",
     "/tool/summarize-pdf",
     "/tool/smart-redact",
     # On-device OPUS-MT / RMBG models run on onnxruntime-web, which needs
@@ -216,6 +219,12 @@ _WASM_EVAL_PATHS = {
 # pages alone extend script-src to that host. Everywhere else stays
 # self+nonce.
 _TESSERACT_PATHS = {"/tool/ocr-pdf", "/tools/image-ocr"}
+
+# Transformers 3.x configures ONNX Runtime to import its JS glue from
+# jsDelivr. With multiple threads, ONNX first fetches that module and imports
+# a same-origin blob URL. These script sources belong only to these model
+# pages, never to ordinary file tools or the homepage.
+_TRANSFORMERS_PATHS = _WASM_EVAL_PATHS - _TESSERACT_PATHS
 
 # Pages allowed to talk directly to a BYOK AI provider.
 #
@@ -361,6 +370,9 @@ def _inject_csp_nonce(html: str, nonce: str | None) -> str:
 
 
 def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
+    # The SPA accepts trailing slashes on the same page. Its response must
+    # receive the same capabilities as the canonical route.
+    path = path.rstrip("/") or "/"
     script_src = [
         "'self'",
         f"'nonce-{nonce}'",
@@ -369,6 +381,8 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
         script_src.append("'wasm-unsafe-eval'")
     if path in _TESSERACT_PATHS:
         script_src.append("https://cdn.jsdelivr.net")
+    if path in _TRANSFORMERS_PATHS:
+        script_src.extend(["https://cdn.jsdelivr.net", "blob:"])
 
     # connect-src allows HF transformers to fetch the local-AI models
     # (Summarize PDF, Smart Redact). Models are downloaded once and cached
@@ -393,7 +407,13 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
     if path in _BYOK_PATHS:
         connect_src.extend(_BYOK_ORIGINS)
 
+    if google_analytics_enabled_for_path(path):
+        script_src.append("https://www.googletagmanager.com")
+        connect_src.extend(["https://www.google-analytics.com", "https://region1.google-analytics.com", "https://www.googletagmanager.com"])
+
     img_src = ["'self'", "data:", "blob:"]
+    if google_analytics_enabled_for_path(path):
+        img_src.extend(["https://www.google-analytics.com", "https://region1.google-analytics.com", "https://www.googletagmanager.com"])
     # No frame-src today, so frames fall back to default-src 'self'. Clerk's
     # bot check renders a Cloudflare Turnstile iframe, which needs naming.
     frame_src = ["'self'"]
@@ -465,13 +485,44 @@ _SKIP_SEO_PREFIXES = (
     "/google", "/BingSiteAuth", "/yandex", "/baidu_verify",
 )
 _STATIC_EXTENSIONS = {
-    ".js", ".css", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
+    ".js", ".mjs", ".css", ".html", ".wasm", ".webmanifest", ".avif",
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg",
     ".ico", ".woff", ".woff2", ".ttf", ".otf", ".map", ".json",
     ".xml", ".txt", ".pdf", ".mp4", ".mp3", ".wav", ".ogg", ".zip",
 }
 
-# Path to the built index.html — same root as _frontend_path computed below
-_INDEX_HTML = Path(__file__).parent.parent.parent / "frontend" / "dist" / "index.html"
+# Public AI files are an explicit build contract, not arbitrary filesystem paths.
+_BROWSER_MODEL_ASSETS = {
+    "models/u2netp.onnx": "application/octet-stream",
+    "models/ort-wasm-simd-threaded.wasm": "application/wasm",
+    "models/ort-wasm-simd-threaded.mjs": "text/javascript",
+    "models/asset-manifest.json": "application/json",
+    "models/NOTICE.txt": "text/plain",
+    "models/U2NET-LICENSE.txt": "text/plain",
+    "models/REMBG-LICENSE.txt": "text/plain",
+    "models/ONNXRUNTIME-LICENSE.txt": "text/plain",
+    "models/README.md": "text/plain",
+}
+
+def _resolve_frontend_path() -> Path:
+    if "FRONTEND_PATH" in os.environ:
+        return Path(os.environ["FRONTEND_PATH"])
+    # Built frontend output
+    cwd_dist = Path.cwd() / "frontend" / "dist"
+    if cwd_dist.exists():
+        return cwd_dist
+    rel_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
+    if rel_dist.exists():
+        return rel_dist
+    # Fallback to frontend root
+    cwd_path = Path.cwd() / "frontend"
+    if cwd_path.exists():
+        return cwd_path
+    return Path(__file__).parent.parent.parent / "frontend"
+
+
+# SEO and static serving must use the same configurable build directory.
+_INDEX_HTML = _resolve_frontend_path() / "index.html"
 
 
 from functools import lru_cache
@@ -500,6 +551,8 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
+        if request.method not in {"GET", "HEAD"}:
+            return await call_next(request)
 
         # Pass through API, sitemap, and other non-HTML paths unchanged
         for prefix in _SKIP_SEO_PREFIXES:
@@ -508,7 +561,7 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
 
         # Pass through requests for real static assets (JS, CSS, images…)
         suffix = Path(path).suffix.lower()
-        if suffix in _STATIC_EXTENSIONS:
+        if path.startswith("/models/") or suffix in _STATIC_EXTENSIONS:
             return await call_next(request)
 
         # URLs Google still holds that never existed here, or moved. Every one
@@ -541,13 +594,16 @@ class SPASEOMiddleware(BaseHTTPMiddleware):
                 from .seo_meta import path_is_known
                 html = _get_seo_html(path, _index_mtime_ns(), blog_content_mtime_ns())
                 html = _inject_csp_nonce(html, getattr(request.state, "csp_nonce", None))
-                html = inject_runtime_config(html, _PUBLIC_API_BASE)
+                html = inject_runtime_config(html, _PUBLIC_API_BASE, analytics_enabled=google_analytics_enabled_for_path(path))
                 # Unknown paths (e.g. /tool/nonexistent-slug, /not-found, /404)
                 # return HTTP 404 with a proper "Page not found" SSR body
                 # rendered by inject_seo — without this, the 404 page inherits
                 # the homepage title/H1 and Google flags it as Soft 404.
                 status = 200 if path_is_known(path) else 404
-                return HTMLResponse(content=html, status_code=status)
+                return HTMLResponse(
+                    content=html, status_code=status,
+                    headers={"Cache-Control": "no-store" if _is_clerk_path(path) else "no-cache"},
+                )
             except Exception as exc:
                 logger.error("SPA SEO injection failed for %s: %s", path, exc)
         else:
@@ -957,27 +1013,12 @@ async def readyz():
 
 
 # Mount frontend static files with SPA catch-all
-def _resolve_frontend_path() -> Path:
-    if "FRONTEND_PATH" in os.environ:
-        return Path(os.environ["FRONTEND_PATH"])
-    # Built frontend output
-    cwd_dist = Path.cwd() / "frontend" / "dist"
-    if cwd_dist.exists():
-        return cwd_dist
-    rel_dist = Path(__file__).parent.parent.parent / "frontend" / "dist"
-    if rel_dist.exists():
-        return rel_dist
-    # Fallback to frontend root
-    cwd_path = Path.cwd() / "frontend"
-    if cwd_path.exists():
-        return cwd_path
-    return Path(__file__).parent.parent.parent / "frontend"
 
 _frontend_path = _resolve_frontend_path()
 if _frontend_path.exists():
     # SPA catch-all: serve static files when they exist on disk,
     # otherwise serve index.html so React Router handles routing.
-    @app.get("/{full_path:path}")
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
     async def spa_fallback(full_path: str, request: Request):
         # API paths must NEVER fall through to the SPA index. If a request
         # reaches this handler with an `/api/` prefix, it means no router
@@ -990,24 +1031,40 @@ if _frontend_path.exists():
                 {"detail": "Not found", "path": str(request.url)},
                 status_code=404,
             )
+        if full_path.startswith("models/") and full_path not in _BROWSER_MODEL_ASSETS:
+            return JSONResponse({"detail": "Not found"}, status_code=404)
         # Prevent path traversal
         if ".." in full_path:
             return JSONResponse({"detail": "Not found"}, status_code=404)
         file_path = (_frontend_path / full_path).resolve()
         # Ensure the resolved path is within the frontend directory
-        if not str(file_path).startswith(str(_frontend_path.resolve())):
+        try:
+            file_path.relative_to(_frontend_path.resolve())
+        except ValueError:
             return JSONResponse({"detail": "Not found"}, status_code=404)
         if file_path.is_file() and file_path.suffix.lower() == ".html":
             html = _inject_csp_nonce(
                 file_path.read_text("utf-8"),
                 getattr(request.state, "csp_nonce", None),
             )
-            html = inject_runtime_config(html, _PUBLIC_API_BASE)
+            html = inject_runtime_config(html, _PUBLIC_API_BASE, analytics_enabled=google_analytics_enabled_for_path(request.url.path))
             resp = HTMLResponse(content=html)
             resp.headers["Cache-Control"] = "no-cache"
             return resp
         if file_path.is_file():
-            resp = FileResponse(file_path)
+            resp = FileResponse(
+                file_path,
+                media_type="application/manifest+json" if full_path == "manifest.json" else _BROWSER_MODEL_ASSETS.get(full_path),
+            )
+            if full_path == "sw.js":
+                resp.headers["Cache-Control"] = "no-cache, max-age=0, must-revalidate"
+                resp.headers["Service-Worker-Allowed"] = "/"
+                return resp
+            if full_path in _BROWSER_MODEL_ASSETS:
+                # Fixed model/runtime names must revalidate across app upgrades;
+                # the versioned service-worker cache supplies offline copies.
+                resp.headers["Cache-Control"] = "public, max-age=0, must-revalidate"
+                return resp
             # Immutable cache for hashed assets (e.g. /assets/index-TSOEbfYo.js)
             if full_path.startswith("assets/"):
                 resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
@@ -1018,6 +1075,9 @@ if _frontend_path.exists():
             else:
                 resp.headers["Cache-Control"] = "no-cache"
             return resp
+        # Missing build assets must fail as assets, never as a 200 HTML shell.
+        if full_path.startswith(("assets/", "fonts/", "icons/", "pwa/", "experience/", "models/")) or file_path.suffix.lower() in _STATIC_EXTENSIONS:
+            return JSONResponse({"detail": "Not found"}, status_code=404)
         # Fall back to index.html for SPA routing
         index = _frontend_path / "index.html"
         if index.is_file():
@@ -1025,7 +1085,7 @@ if _frontend_path.exists():
                 index.read_text("utf-8"),
                 getattr(request.state, "csp_nonce", None),
             )
-            html = inject_runtime_config(html, _PUBLIC_API_BASE)
+            html = inject_runtime_config(html, _PUBLIC_API_BASE, analytics_enabled=google_analytics_enabled_for_path(request.url.path))
             resp = HTMLResponse(content=html)
             resp.headers["Cache-Control"] = "no-cache"
             return resp

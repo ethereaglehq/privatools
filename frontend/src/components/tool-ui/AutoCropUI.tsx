@@ -4,6 +4,7 @@ import { SimpleProcessUI } from "./SimpleProcessUI";
 export function AutoCropUI() {
     return (
         <SimpleProcessUI
+            handoffSlug="auto-crop"
             endpoint="/auto-crop"
             accepts=".pdf"
             outputSuffix="cropped"

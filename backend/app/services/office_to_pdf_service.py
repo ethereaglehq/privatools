@@ -21,6 +21,7 @@ import shutil
 from pathlib import Path
 
 from ..utils.exceptions import (
+    DependencyError,
     ExternalToolError,
     ProcessingError,
     ToolTimeoutError,
@@ -108,7 +109,8 @@ async def office_to_pdf(input_path: str) -> str:
             # very chatty initialisation messages into the user's error toast.
             err = (stderr or b"").decode("utf-8", errors="replace").strip()
             last = err.splitlines()[-1] if err else f"exit {proc.returncode}"
-            raise ExternalToolError(f"LibreOffice conversion failed: {last}")
+            logger.warning("office_to_pdf: converter failed: %s", last)
+            raise ExternalToolError("LibreOffice could not convert this document. Try another Office file.")
 
         output_path = temp_input.with_suffix(".pdf")
         if not output_path.exists():
@@ -117,6 +119,8 @@ async def office_to_pdf(input_path: str) -> str:
             )
 
         return str(output_path)
+    except FileNotFoundError as exc:
+        raise DependencyError("Office conversion is unavailable on this server: LibreOffice is not installed.") from exc
     finally:
         # Kill the subprocess on EVERY exit path so it can't outlive its request.
         # On cancellation (client disconnect / request timeout) the wait_for above

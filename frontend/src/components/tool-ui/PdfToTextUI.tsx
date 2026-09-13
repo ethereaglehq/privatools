@@ -14,7 +14,7 @@ import { buildZip } from "@/lib/zip";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
 
-interface ExtractedResult { text: string; pages?: number; }
+interface ExtractedResult { text: string; pages?: number | { page: number; text: string }[]; }
 
 interface ParsedResult {
     id: string;
@@ -55,7 +55,7 @@ export function PdfToTextUI() {
             const parsed = await Promise.all(done.map(async (e): Promise<ParsedResult> => {
                 try {
                     const data = JSON.parse(await e.blob!.text()) as ExtractedResult;
-                    return { id: e.id, name: e.name, text: data.text ?? "", pages: data.pages };
+                    return { id: e.id, name: e.name, text: data.text ?? "", pages: Array.isArray(data.pages) ? data.pages.length : data.pages };
                 } catch {
                     return { id: e.id, name: e.name, text: "" };
                 }

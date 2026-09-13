@@ -24,13 +24,13 @@ FAILED_FILE="${FAILED_FILE:-${REPO_DIR}/.privatools-auto-deploy.failed}"
 
 # Deploy gate. Without one, *any* commit reaching ${BRANCH} ships to prod
 # within ~60s with no human approval. Modes:
-#   auto   (default) deploy the latest release tag reachable from ${BRANCH};
+#   auto   legacy: deploy the latest release tag reachable from ${BRANCH};
 #          fall back to ${BRANCH} HEAD until the first tag exists — so turning
 #          this on changes nothing until you cut your first release tag, after
 #          which only tagged commits deploy.
-#   tag    only deploy a matching tag; never deploy an untagged ${BRANCH} push.
+#   tag    (default) only matching tags; never deploy an untagged branch push.
 #   branch legacy: deploy ${BRANCH} HEAD every push (no gate).
-DEPLOY_MODE="${DEPLOY_MODE:-auto}"
+DEPLOY_MODE="${DEPLOY_MODE:-tag}"
 DEPLOY_TAG_GLOB="${DEPLOY_TAG_GLOB:-v*}"
 
 # Prefer the cosign-signed image release.yml builds+pushes on each tag over a
@@ -62,14 +62,11 @@ DEPLOY_PING_URL="${DEPLOY_PING_URL:-}"
 # cosign signature verification before deploy. release.yml signs each image
 # keyless (Fulcio/OIDC via GitHub Actions); the OCI revision label is
 # unauthenticated, so the signature is the real trust anchor. When cosign is
-# installed on the host, verification is FAIL-CLOSED. The signing identity is
+# unavailable on the host, deployment is refused. The signing identity is
 # the release.yml workflow on a tag ref. (Validated against a real signed image.)
-# The owner is an alternation for the same reason as the image fallback above:
-# the signing identity embeds the account name, verification is FAIL-CLOSED, and
-# a rename would otherwise make every new image unverifiable — refusing to
-# deploy rather than merely stalling. Both names are accepted until the rename
-# settles, then the stale one should be dropped.
-DEPLOY_COSIGN_IDENTITY_REGEXP="${DEPLOY_COSIGN_IDENTITY_REGEXP:-^https://github\\.com/(deadpoolrulesmarvel1-svg|ethereaglehq)/privatools/\\.github/workflows/release\\.yml@}"
+# Only the current repository's release workflow on a version tag is trusted.
+# A future repository rename requires a reviewed identity update.
+DEPLOY_COSIGN_IDENTITY_REGEXP="${DEPLOY_COSIGN_IDENTITY_REGEXP:-^https://github\\.com/ethereaglehq/privatools/\\.github/workflows/release\\.yml@refs/tags/v[^/]+$}"
 DEPLOY_COSIGN_OIDC_ISSUER="${DEPLOY_COSIGN_OIDC_ISSUER:-https://token.actions.githubusercontent.com}"
 
 ping_deploy() {  # ping_deploy ok|fail
@@ -91,7 +88,15 @@ health_reports_sha() {
         || [[ "$body" == *"\"build_sha\": \"${expected_sha}\""* ]]
 }
 
-trap 'rc=$?; log "failed at line $LINENO with exit $rc"; ping_deploy fail; exit "$rc"' ERR
+# Invoked indirectly by the ERR trap below.
+# shellcheck disable=SC2329
+on_error() {
+    local status="$1" line="$2"
+    log "failed at line ${line} with exit ${status}"
+    ping_deploy fail
+    exit "$status"
+}
+trap 'on_error "$?" "$LINENO"' ERR
 
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
@@ -128,7 +133,7 @@ case "$DEPLOY_MODE" in
         fi
         target_sha="$(git rev-parse "${target_ref}^{commit}")"
         ;;
-    auto|*)
+    auto)
         target_ref="$(latest_release_tag)"
         if [[ -n "$target_ref" ]]; then
             target_sha="$(git rev-parse "${target_ref}^{commit}")"
@@ -137,6 +142,10 @@ case "$DEPLOY_MODE" in
             target_sha="$branch_sha"
             log "no ${DEPLOY_TAG_GLOB} tag yet; deploying ${BRANCH} HEAD (cut a release tag to enable the deploy gate)"
         fi
+        ;;
+    *)
+        log "invalid DEPLOY_MODE; expected tag, auto, or branch"
+        exit 1
         ;;
 esac
 log "deploy target: ${target_ref} -> ${target_sha:0:12}"
@@ -181,8 +190,10 @@ git reset --hard "$target_sha"
 
 # Capture the image currently running so we can roll back to it if the new image
 # fails its health gate below (empty on a first deploy / no running container).
-prev_image="$(docker inspect --format '{{.Config.Image}}' \
-    "$(docker compose ps -q 2>/dev/null | head -1)" 2>/dev/null || true)"
+prev_container="$(docker compose ps -q privatools 2>/dev/null | head -1)"
+prev_image="$(docker inspect --format '{{.Image}}' "$prev_container" 2>/dev/null || true)"
+prev_sha="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' \
+    "$prev_container" 2>/dev/null | sed -n 's/^PRIVATOOLS_BUILD_SHA=//p' || true)"
 [[ -n "$prev_image" ]] && log "pre-deploy: currently running ${prev_image}"
 
 # Deploy the cosign-signed GHCR image release.yml builds for a release tag —
@@ -234,11 +245,15 @@ if [[ "$target_ref" != "${REMOTE}/${BRANCH}" && -n "$DEPLOY_IMAGE_REPO" ]]; then
         log "signed image for ${target_ref} not ready yet (revision '${img_rev:0:12}' != ${target_sha:0:12}); will retry next cycle"
         exit 0
     fi
-    # Verify the cosign signature before running the image. Fail closed when
-    # cosign is installed; warn-and-proceed otherwise (so a host without cosign
-    # still deploys — prod has cosign installed, so it enforces).
+    # Pin verification AND execution to the pulled digest, not a mutable tag.
+    # No signature tool means no release; do not silently run an unsigned image.
+    image_digest="$(docker image inspect "$image_ref" --format '{{index .RepoDigests 0}}')"
+    if [[ ! "$image_digest" =~ @sha256:[a-f0-9]{64}$ ]]; then
+        log "no immutable image digest found; refusing to deploy"
+        exit 1
+    fi
     if command -v cosign >/dev/null 2>&1; then
-        if ! cosign verify "$image_ref" \
+        if ! cosign verify "$image_digest" \
                 --certificate-identity-regexp "$DEPLOY_COSIGN_IDENTITY_REGEXP" \
                 --certificate-oidc-issuer "$DEPLOY_COSIGN_OIDC_ISSUER" >/dev/null 2>&1; then
             log "COSIGN VERIFY FAILED for ${image_ref} — refusing to deploy"
@@ -247,15 +262,22 @@ if [[ "$target_ref" != "${REMOTE}/${BRANCH}" && -n "$DEPLOY_IMAGE_REPO" ]]; then
         fi
         log "cosign signature verified for ${target_ref}"
     else
-        log "WARNING: cosign not installed; skipping signature verification (install cosign to enforce)"
+        log "cosign is required for release verification; refusing to deploy"
+        exit 1
     fi
+    image_ref="$image_digest"
     log "using signed image (revision matches ${target_sha:0:12})"
-    PRIVATOOLS_IMAGE="$image_ref" GIT_SHA="$target_sha" docker compose up -d --no-build
+    if ! PRIVATOOLS_IMAGE="$image_ref" GIT_SHA="$target_sha" docker compose up -d --no-build --pull never; then
+        log "container replacement failed; checking readiness before rollback"
+    fi
 else
     log "no release tag for ${target_ref}; building locally"
-    GIT_SHA="$target_sha" docker compose up -d --build
+    if ! GIT_SHA="$target_sha" docker compose up -d --build; then
+        log "local build/replacement failed; checking readiness before rollback"
+    fi
 fi
-docker image prune -f >/dev/null || true
+# Retain the previous image for rollback. Pruning before the health gate can
+# delete the only usable rollback image when its tag has moved.
 
 for i in $(seq 1 "$HEALTH_RETRIES"); do
     if health_reports_sha "$target_sha"; then
@@ -281,9 +303,9 @@ docker compose ps || true
 # redeploy it on a loop. Only roll back to a real, different prior image.
 if [[ -n "$prev_image" && "$prev_image" != "${image_ref:-}" ]]; then
     log "ROLLBACK: restoring previous image ${prev_image}"
-    if PRIVATOOLS_IMAGE="$prev_image" docker compose up -d --no-build; then
+    if PRIVATOOLS_IMAGE="$prev_image" GIT_SHA="${prev_sha:-unknown}" docker compose up -d --no-build --pull never; then
         for i in $(seq 1 "$HEALTH_RETRIES"); do
-            if curl --fail --silent --max-time 5 "$HEALTH_URL" >/dev/null 2>&1; then
+            if health_reports_sha "${prev_sha:-unknown}"; then
                 printf '%s\n' "$target_sha" > "$FAILED_FILE"
                 log "ROLLBACK successful after ${i} checks; previous image healthy. Marked ${target_sha:0:12} failed (won't redeploy until a newer tag)."
                 ping_deploy fail

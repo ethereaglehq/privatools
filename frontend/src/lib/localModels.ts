@@ -83,8 +83,8 @@ export const LOCAL_MODELS: LocalModelInfo[] = [
         label: "PII detector — BERT NER",
         powers: "Smart Redact · finds names and organisations locally",
         toolHref: "#/tool/smart-redact",
-        approxLabel: "~250 MB",
-        predownload: (p) => pipelinePredownload("token-classification", "Xenova/bert-base-NER", p, 250 * 1024 * 1024),
+        approxLabel: "~110 MB",
+        predownload: (p) => pipelinePredownload("token-classification", "Xenova/bert-base-NER", p, 110 * 1024 * 1024),
     },
     {
         id: "whisper-tiny",
@@ -106,11 +106,11 @@ export const LOCAL_MODELS: LocalModelInfo[] = [
     },
     {
         id: "bg-remove",
-        hfId: "briaai/RMBG-1.4",
-        label: "Background remover — RMBG 1.4",
+        hfId: "PrivaTools/u2netp",
+        label: "Background remover — U²-Net-P",
         powers: "Remove Background · the on-device engine",
         toolHref: "#/tools/remove-background",
-        approxLabel: "~44 MB",
+        approxLabel: "~4.4 MB + runtime",
         predownload: async (p) => {
             const { loadBgModel } = await import("./localBgRemove");
             await loadBgModel(p);
@@ -129,6 +129,7 @@ export interface CachedModel {
 }
 
 function hfIdFromUrl(url: string): string | null {
+    if (new URL(url).pathname === "/models/u2netp.onnx") return "PrivaTools/u2netp";
     // e.g. https://huggingface.co/Xenova/distilbart-cnn-6-6/resolve/main/…
     const m = url.match(/huggingface\.co\/([^/]+\/[^/]+)\/(?:resolve|raw)\//);
     return m ? m[1] : null;

@@ -1,88 +1,98 @@
+/** Previous releases stored one base64 file here. Only read it for migration. */
 export const FILE_HANDOFF_KEY = "privatools.file-handoff";
 
 const MAX_HANDOFF_AGE_MS = 10 * 60 * 1000;
 
-// Cap the handoff payload. sessionStorage quota is ~5 MB and a base64 data URL
-// inflates the file by ~33%, so a larger file would throw on setItem (silently
-// failing the handoff) or leave a multi-MB blob sitting in the tab's storage.
-// Above this, we skip the convenience handoff and just re-prompt for upload.
-const MAX_HANDOFF_BYTES = 3 * 1024 * 1024;
-
-type StoredFileHandoff = {
-  name: string;
-  type: string;
-  data: string;
+type FileHandoff = {
+  files: File[];
   targetSlug?: string;
   createdAt: number;
 };
 
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error || new Error("Failed to read file"));
-    reader.onload = () => {
-      if (typeof reader.result === "string") resolve(reader.result);
-      else reject(new Error("FileReader did not return a data URL"));
-    };
-    reader.readAsDataURL(file);
-  });
+// Same-document navigation keeps File references intact. File bytes never go
+// to storage, a server, or a base64 string, and the storage quota is irrelevant.
+let pending: FileHandoff | null = null;
+let expiryTimer: ReturnType<typeof setTimeout> | undefined;
+
+function clearLegacyPayload(): void {
+  try { sessionStorage.removeItem(FILE_HANDOFF_KEY); } catch { /* Storage may be disabled. */ }
 }
 
+export function clearFileHandoffs(): void {
+  pending = null;
+  if (expiryTimer !== undefined) clearTimeout(expiryTimer);
+  expiryTimer = undefined;
+  clearLegacyPayload();
+}
+
+/** Replace the entire pending selection, preserving order and distinct files. */
+export async function storeFileHandoffs(files: readonly File[], targetSlug?: string): Promise<boolean> {
+  clearFileHandoffs();
+  if (!files.length) return false;
+  pending = { files: [...files], targetSlug, createdAt: Date.now() };
+  expiryTimer = setTimeout(clearFileHandoffs, MAX_HANDOFF_AGE_MS);
+  return true;
+}
+
+/** Compatibility entry point for clipboard, samples, and result chaining. */
 export async function storeFileHandoff(file: File, targetSlug?: string): Promise<boolean> {
-  // Skip the handoff for files too large to fit sessionStorage safely.
-  if (file.size > MAX_HANDOFF_BYTES) return false;
-  try {
-    const payload: StoredFileHandoff = {
-      name: file.name || "clipboard-file",
-      type: file.type || "application/octet-stream",
-      data: await readAsDataUrl(file),
-      targetSlug,
-      createdAt: Date.now(),
-    };
-    sessionStorage.setItem(FILE_HANDOFF_KEY, JSON.stringify(payload));
-    return true;
-  } catch {
-    return false;
-  }
+  return storeFileHandoffs([file], targetSlug);
 }
 
-export async function consumeFileHandoff(targetSlug?: string): Promise<File | null> {
-  let payload: StoredFileHandoff | null = null;
+function isFresh(createdAt: number): boolean {
+  const age = Date.now() - createdAt;
+  return Number.isFinite(createdAt) && age >= 0 && age < MAX_HANDOFF_AGE_MS;
+}
+
+function matchesTarget(handoff: FileHandoff, targetSlug?: string): boolean {
+  // A targeted selection can only be claimed by its destination. Older
+  // unscoped single-file callers continue to work without a destination.
+  return !handoff.targetSlug || handoff.targetSlug === targetSlug;
+}
+
+function readPending(): FileHandoff | null {
+  if (pending) {
+    if (!isFresh(pending.createdAt)) clearFileHandoffs();
+    return pending;
+  }
+
   try {
     const raw = sessionStorage.getItem(FILE_HANDOFF_KEY);
     if (!raw) return null;
-    payload = JSON.parse(raw) as StoredFileHandoff;
+    const payload = JSON.parse(raw);
+    if (!payload || typeof payload.name !== "string" || !payload.name
+      || typeof payload.data !== "string" || !payload.data.startsWith("data:")
+      || typeof payload.createdAt !== "number" || !isFresh(payload.createdAt)
+      || (payload.type !== undefined && typeof payload.type !== "string")
+      || (payload.targetSlug !== undefined && typeof payload.targetSlug !== "string")) {
+      clearLegacyPayload();
+      return null;
+    }
+    return {
+      files: [dataUrlToFile(payload.data, payload.name, payload.type)],
+      targetSlug: payload.targetSlug,
+      createdAt: payload.createdAt,
+    };
   } catch {
-    try { sessionStorage.removeItem(FILE_HANDOFF_KEY); } catch {}
+    clearLegacyPayload();
     return null;
   }
+}
 
-  if (!payload?.data || !payload.name) {
-    try { sessionStorage.removeItem(FILE_HANDOFF_KEY); } catch {}
-    return null;
-  }
+/** Claim the complete selection once. A different tool leaves it untouched. */
+export async function consumeFileHandoffs(targetSlug?: string): Promise<File[]> {
+  const handoff = readPending();
+  if (!handoff || !matchesTarget(handoff, targetSlug)) return [];
+  clearFileHandoffs();
+  return handoff.files;
+}
 
-  const expired = Date.now() - (payload.createdAt || 0) > MAX_HANDOFF_AGE_MS;
-  if (expired) {
-    try { sessionStorage.removeItem(FILE_HANDOFF_KEY); } catch {}
-    return null;
-  }
-
-  if (targetSlug && payload.targetSlug && payload.targetSlug !== targetSlug) {
-    return null;
-  }
-
-  try {
-    sessionStorage.removeItem(FILE_HANDOFF_KEY);
-    // Decode the data URL directly rather than `fetch(dataUrl)` → blob: fetch
-    // of a data: URL is unsupported/inconsistent in some runtimes (notably
-    // node/jsdom under tests), where it yields a Blob that stringifies to
-    // "[object Blob]" instead of the bytes. A manual base64 decode is exact
-    // and works everywhere.
-    return dataUrlToFile(payload.data, payload.name, payload.type);
-  } catch {
-    return null;
-  }
+/** Single-file tools must not take the first file and silently lose the rest. */
+export async function consumeFileHandoff(targetSlug?: string): Promise<File | null> {
+  const handoff = readPending();
+  if (!handoff || handoff.files.length !== 1 || !matchesTarget(handoff, targetSlug)) return null;
+  clearFileHandoffs();
+  return handoff.files[0];
 }
 
 function dataUrlToFile(dataUrl: string, name: string, type?: string): File {

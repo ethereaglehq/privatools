@@ -1,3 +1,5 @@
+import { useDocumentReader } from "@/skins/experience/useDocumentReader";
+import { DocumentStudio } from "@/skins/experience/DocumentStudio";
 /**
  * SecurityPage - factual trust and vulnerability reporting page.
  *
@@ -6,7 +8,7 @@
  * and browser-side tools where applicable. Do not imply external audits,
  * certifications, SOC 2, ISO, or formal bug bounty coverage.
  */
-import { useEffect, useRef, useState } from "react";
+
 import { Link } from "react-router-dom";
 import {
   ArrowLeft,
@@ -22,7 +24,8 @@ import {
   Shield,
   TriangleAlert,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
+
 
 const LAST_UPDATED = "June 18, 2026";
 const GIT_HISTORY_URL = "https://github.com/ethereaglehq/privatools/commits/main/frontend/src/pages/SecurityPage.tsx";
@@ -41,37 +44,6 @@ const SECTIONS: Section[] = [
   { id: "contact", title: "9. Contact" },
 ];
 
-let smoothScrollRaf = 0;
-function smoothScrollTo(el: HTMLElement, target: number, duration = 380) {
-  if (smoothScrollRaf) cancelAnimationFrame(smoothScrollRaf);
-  const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) { el.scrollTop = target; return; }
-  const start = el.scrollTop;
-  const dist = target - start;
-  if (Math.abs(dist) < 1) return;
-  const t0 = performance.now();
-  const step = (now: number) => {
-    const t = Math.min(1, (now - t0) / duration);
-    const ease = 1 - Math.pow(1 - t, 3);
-    el.scrollTop = start + dist * ease;
-    if (t < 1) smoothScrollRaf = requestAnimationFrame(step);
-    else smoothScrollRaf = 0;
-  };
-  smoothScrollRaf = requestAnimationFrame(step);
-}
-
-function CornerMarks() {
-  const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-  return (
-    <>
-      <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-      <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-      <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-      <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-    </>
-  );
-}
-
 const SUBPROCESSORS = [
   { name: "Oracle Cloud Infrastructure", purpose: "Hosting the PrivaTools processing server and static deployment environment." },
   { name: "Cloudflare", purpose: "Optional edge CDN, TLS acceleration, and static asset delivery. File-processing API responses are marked no-store." },
@@ -81,170 +53,13 @@ const SUBPROCESSORS = [
 ];
 
 export default function SecurityPage() {
-  const articleRef = useRef<HTMLElement>(null);
-  const [progress, setProgress] = useState(0);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [showTop, setShowTop] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const getScrollEl = (article: HTMLElement | null): HTMLElement | null => {
-    if (!article) return null;
-    let el: HTMLElement | null = article.parentElement;
-    while (el && el !== document.body) {
-      const style = window.getComputedStyle(el);
-      const overflowOk = /(auto|scroll)/.test(style.overflowY);
-      const isScrollable = el.scrollHeight - el.clientHeight > 1;
-      if (overflowOk && isScrollable) return el;
-      el = el.parentElement;
-    }
-    return document.getElementById("workspace");
-  };
-
-  useEffect(() => {
-    const article = articleRef.current;
-    if (!article) return;
-    const scrollEl = getScrollEl(article);
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const rect = article.getBoundingClientRect();
-      const viewportH = scrollEl ? scrollEl.clientHeight : window.innerHeight;
-      const articleTop = rect.top - (scrollEl ? scrollEl.getBoundingClientRect().top : 0);
-      const totalDistance = Math.max(1, rect.height - viewportH);
-      const scrolled = Math.min(Math.max(-articleTop, 0), totalDistance);
-      setProgress((scrolled / totalDistance) * 100);
-      const scrollTop = scrollEl ? scrollEl.scrollTop : (window.scrollY || document.documentElement.scrollTop);
-      setShowTop(scrollTop > 800);
-      const headingEls = Array.from(article.querySelectorAll<HTMLElement>("h2[id]"));
-      const comfort = viewportH * 0.25;
-      let current: string | null = null;
-      for (const h of headingEls) {
-        const top = h.getBoundingClientRect().top - (scrollEl ? scrollEl.getBoundingClientRect().top : 0);
-        if (top - comfort <= 0) current = h.id;
-        else break;
-      }
-      setActiveId(current);
-    };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
-    update();
-    const target = scrollEl || window;
-    target.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      target.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
-
-  const scrollToHeading = (id: string) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const scrollEl = getScrollEl(articleRef.current);
-    if (scrollEl) {
-      const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop - 80;
-      smoothScrollTo(scrollEl, top);
-    } else {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    history.replaceState(null, "", `#${id}`);
-  };
-
-  const scrollToTop = () => {
-    const scrollEl = getScrollEl(articleRef.current);
-    if (scrollEl) smoothScrollTo(scrollEl, 0);
-    else window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch { /* ignore */ }
-  };
-
-  useEffect(() => {
-    const hash = window.location.hash.slice(1);
-    if (hash && SECTIONS.some(s => s.id === hash)) {
-      const t = setTimeout(() => scrollToHeading(hash), 60);
-      return () => clearTimeout(t);
-    }
-  }, []);
-
-  return (
-    <div className="relative">
-      <div className="sticky top-0 left-0 right-0 z-30 h-1 bg-transparent print:hidden">
-        <div
-          role="progressbar"
-          aria-valuenow={Math.round(progress)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Document reading progress"
-          className="h-full bg-accent transition-[width] duration-150 ease-out shadow-[0_0_12px_hsl(var(--accent)/0.6)]"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
-
-      <article className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_220px] gap-12">
-          <article ref={articleRef} className="min-w-0 animate-fade-up">
-            <nav className="mb-8 flex items-center justify-between flex-wrap gap-3" aria-label="Document navigation">
-              <Link
-                to="/privacy"
-                className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-accent transition-colors"
-              >
-                <ArrowLeft size={12} /> Privacy
-              </Link>
-              <button
-                onClick={copyLink}
-                className="font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[11.5px] text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
-              >
-                {copied ? <><Check size={11} className="text-accent" /> Copied</> : <><Link2 size={11} /> Copy link</>}
-              </button>
-            </nav>
-
-            <header className="mb-8">
-              <div className="flex flex-wrap gap-2 mb-5 items-center">
-                <span className="font-medium inline-flex items-center gap-1.5 h-6 px-2 rounded-full border border-accent/30 bg-accent/[0.06] text-[9.5px] text-accent">
-                  <Shield size={10} /> Trust / Security
-                </span>
-              </div>
-
-              <h1
-                className="font-display font-bold text-foreground tracking-[-0.025em] leading-tight text-3xl sm:text-4xl lg:text-5xl"
-                style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}
-              >
-                Security
-              </h1>
-
-              <p className="font-display text-[16px] sm:text-[17px] text-muted-foreground mt-5 leading-relaxed max-w-prose">
-                How to report vulnerabilities, what PrivaTools protects against, and where the
-                service still depends on infrastructure providers. This page is intentionally
-                factual: no certifications, audits, or guarantees are claimed here.
-              </p>
-
-              <div className="font-medium mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 text-[11.5px] text-muted-foreground">
-                <span className="text-foreground">PrivaTools</span>
-                <span className="text-muted-foreground">/</span>
-                <span>Last updated <time dateTime="2026-06-18" className="text-accent">{LAST_UPDATED}</time></span>
-                <span className="text-muted-foreground">/</span>
-                <a
-                  href={GIT_HISTORY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 hover:text-accent transition-colors"
-                >
-                  <History size={11} /> Version history
-                </a>
-              </div>
-            </header>
-
+  const {articleRef,progress,activeId,showTop,copied,scrollToHeading,scrollToTop,copyLink}=useDocumentReader(SECTIONS);
+  return <DocumentStudio title="Security" description="How your files are handled, where the boundaries are, and how to report a problem." updated={LAST_UPDATED} historyHref={GIT_HISTORY_URL} sections={SECTIONS} activeId={activeId} onSection={scrollToHeading} progress={progress} articleRef={articleRef} copied={copied} onCopy={copyLink} onTop={scrollToTop} showTop={showTop}>
             <section id="short-version" className="mb-10 scroll-mt-20">
               <h2 className="sr-only">The Short Version</h2>
               <aside className="relative rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden">
                 <div className="relative p-5 sm:p-6">
-                  <CornerMarks />
+
                   <div className="flex items-center gap-2 mb-3">
                     <KeyRound size={13} className="text-accent" />
                     <span className="text-[11px] text-accent font-semibold">The short version</span>
@@ -392,120 +207,5 @@ Policy: https://privatools.me/security`}</code></pre>
                 </a>.
               </p>
             </div>
-
-            <aside className="mt-12 pt-8 border-t border-border">
-              <p className="section-mark mb-5">Related</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Link
-                  to="/privacy"
-                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
-                >
-                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">01</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Privacy Policy</p>
-                    <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">File handling, telemetry, and subprocessors.</p>
-                  </div>
-                </Link>
-                <a
-                  href="/.well-known/security.txt"
-                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
-                >
-                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">02</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors inline-flex items-center gap-1.5">
-                      <FileText size={12} /> security.txt
-                    </p>
-                    <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">Machine-readable vulnerability contact.</p>
-                  </div>
-                </a>
-                <a
-                  href="mailto:hello@privatools.me"
-                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
-                >
-                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">03</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors inline-flex items-center gap-1.5">
-                      <Mail size={12} /> Report
-                    </p>
-                    <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">Use subject prefix [Security].</p>
-                  </div>
-                </a>
-              </div>
-            </aside>
-          </article>
-
-          <aside className="hidden lg:block">
-            <div className="sticky top-8">
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1.5"><List size={10} className="text-accent" /> Contents</span>
-                  <span className="text-accent tabular-nums">{Math.round(progress)}%</span>
-                </div>
-                <nav className="p-3 max-h-[70vh] overflow-y-auto" aria-label="Table of contents">
-                  <ul className="space-y-0.5">
-                    {SECTIONS.map(s => {
-                      const isActive = activeId === s.id;
-                      return (
-                        <li key={s.id}>
-                          <button
-                            onClick={() => scrollToHeading(s.id)}
-                            className={cn(
-                              "relative block w-full text-left text-[12px] leading-snug pl-3 py-1.5 rounded transition-colors",
-                              isActive
-                                ? "text-accent font-medium bg-accent/[0.06]"
-                                : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                            )}
-                          >
-                            {isActive && (
-                              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded bg-accent" aria-hidden="true" />
-                            )}
-                            {s.flag && <span className="inline-block w-1 h-1 rounded-full bg-accent mr-1.5 align-middle" aria-hidden="true" />}
-                            {s.title}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </nav>
-                <div className="font-medium px-4 py-3 border-t border-border bg-paper-2/40 flex items-center gap-2 text-[11px] text-muted-foreground">
-                  <TriangleAlert size={11} className="text-accent" />
-                  <span>No certification claims</span>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
-
-        <details className="lg:hidden mt-6 rounded-xl border border-border bg-card overflow-hidden">
-          <summary className="font-medium px-4 py-3 list-none cursor-pointer flex items-center gap-2 text-[11.5px] text-muted-foreground hover:bg-secondary/40 transition-colors">
-            <List size={12} className="text-accent" />
-            <span>Table of contents</span>
-            <span className="ml-auto font-mono text-[10px] tracking-wider text-accent">{SECTIONS.length}</span>
-          </summary>
-          <ul className="px-4 pb-3 space-y-1.5">
-            {SECTIONS.map(s => (
-              <li key={s.id}>
-                <button
-                  onClick={() => scrollToHeading(s.id)}
-                  className="w-full text-left text-[13px] text-muted-foreground hover:text-accent transition-colors"
-                >
-                  {s.title}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </details>
-      </article>
-
-      {showTop && (
-        <button
-          onClick={scrollToTop}
-          className="fixed bottom-10 right-5 z-40 h-10 w-10 rounded-full border border-border bg-card shadow-lg flex items-center justify-center text-muted-foreground hover:text-accent hover:border-accent/45 transition-colors print:hidden"
-          aria-label="Back to top"
-        >
-          <ArrowUp size={16} />
-        </button>
-      )}
-    </div>
-  );
+  </DocumentStudio>;
 }

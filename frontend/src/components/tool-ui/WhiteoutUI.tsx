@@ -7,6 +7,7 @@ import { Download, Loader2, AlertCircle, Plus, Trash2, Eraser, CheckCircle2, Rot
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 
 interface Region {
     id: string;
@@ -24,6 +25,7 @@ const PAGE_W = 612;
 const PAGE_H = 792;
 
 export function WhiteoutUI() {
+    const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
     const [regions, setRegions] = useState<Region[]>([
         { id: makeId(), page: 1, x: 100, y: 100, width: 200, height: 30 },
@@ -131,14 +133,14 @@ export function WhiteoutUI() {
                             <Plus size={11} /> Add
                         </button>
                     </div>
-                    <div className="grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 p-4 items-start">
-                        <div className="space-y-2">
+                    <div className="pdf-coordinate-workspace">
+                        <fieldset className="pdf-coordinate-controls" disabled={status === "processing"}>
                             {regions.map((r, idx) => {
                                 const isSel = selected === r.id;
                                 return (
                                     <div
                                         key={r.id}
-                                        onClick={() => setSelected(r.id)}
+                                        onClick={() => { setSelected(r.id); setPreviewPage(r.page); }}
                                         className={cn(
                                             "rounded-lg border p-3 cursor-pointer transition-colors",
                                             isSel ? "border-accent bg-accent/[0.06]" : "border-border bg-card hover:border-border-strong"
@@ -149,7 +151,7 @@ export function WhiteoutUI() {
                                                 {String(idx + 1).padStart(2, "0")}
                                             </span>
                                             <span className="font-display text-[12.5px] font-medium text-foreground">Region {idx + 1}</span>
-                                            <button onClick={(e) => { e.stopPropagation(); removeRegion(r.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
+                                            <button type="button" aria-label={`Remove whiteout region ${idx + 1}`} onClick={(e) => { e.stopPropagation(); removeRegion(r.id); }} className="ml-auto h-6 w-6 inline-flex items-center justify-center rounded text-muted-foreground hover:text-destructive hover:bg-destructive/10">
                                                 <Trash2 size={12} />
                                             </button>
                                         </div>
@@ -165,7 +167,7 @@ export function WhiteoutUI() {
                                                     <label className="font-medium text-[10.5px] text-muted-foreground">{c.label}</label>
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(r.id, el); else rowRefs.current.delete(r.id); } : undefined}
-                                                        type="number" inputMode="numeric" min={c.min}
+                                                        type="number" aria-label={c.label} inputMode="numeric" min={c.min}
                                                         value={r[c.f]}
                                                         onClick={e => e.stopPropagation()}
                                                         onChange={e => update(r.id, c.f, +e.target.value)}
@@ -177,36 +179,10 @@ export function WhiteoutUI() {
                                     </div>
                                 );
                             })}
-                        </div>
+                        </fieldset>
 
                         {/* Page preview with all regions */}
-                        <div>
-                            <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[200px] overflow-hidden">
-                                {regions.map(r => {
-                                    const isSel = selected === r.id;
-                                    return (
-                                        <div
-                                            key={r.id}
-                                            className={cn(
-                                                "absolute border transition-colors",
-                                                isSel ? "border-accent bg-accent/35" : "border-foreground/45 bg-foreground/15"
-                                            )}
-                                            style={{
-                                                left: `${(r.x / PAGE_W) * 100}%`,
-                                                top: `${(r.y / PAGE_H) * 100}%`,
-                                                width: `${(r.width / PAGE_W) * 100}%`,
-                                                height: `${(r.height / PAGE_H) * 100}%`,
-                                                minWidth: 2, minHeight: 2,
-                                            }}
-                                        />
-                                    );
-                                })}
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page</span>
-                            </div>
-                            <p className="font-medium text-[11px] text-muted-foreground mt-2 text-center">
-                                Coords in points · top-left origin
-                            </p>
-                        </div>
+                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} regions={regions.map((region, index) => ({ ...region, color: "#ffffff", kind: "whiteout", label: `Whiteout ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setRegions(items => [...items, { ...region, id }]); setSelected(id); }} />
                     </div>
                 </div>
             )}

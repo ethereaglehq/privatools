@@ -20,6 +20,8 @@ unit-testable) without the FastAPI app or its native dependencies.
 from __future__ import annotations
 
 from html import escape as _html_escape
+import os
+import re
 
 #: Name of the ``<meta>`` tag the SPA reads to discover its API origin. Must
 #: stay in sync with ``frontend/src/lib/api.ts`` (resolveApiOrigin()).
@@ -59,7 +61,7 @@ def runtime_config_meta(api_base: str) -> str:
     return f'<meta name="{API_BASE_META_NAME}" content="{_html_escape(origin, quote=True)}">'
 
 
-def inject_runtime_config(html: str, api_base: str) -> str:
+def inject_runtime_config(html: str, api_base: str, *, analytics_enabled: bool = False) -> str:
     """Insert the API-origin ``<meta>`` tag into an ``index.html`` string.
 
     No-op when ``api_base`` is blank, and no-op for documents that are not
@@ -80,9 +82,26 @@ def inject_runtime_config(html: str, api_base: str) -> str:
     for the SPA to find in it and nothing to inject.
     """
     tag = runtime_config_meta(api_base)
+    if analytics_enabled:
+        tag += '<meta name="privatools:google-analytics" content="enabled">'
     if not tag:
         return html
     idx = html.lower().rfind("</head>")
     if idx == -1:
         return html
     return f"{html[:idx]}{tag}{html[idx:]}"
+
+
+def google_analytics_enabled_for_path(path: str) -> bool:
+    """Operator attestation that automatic collection settings were verified safe.
+
+    Off by default. This only permits loading; the browser separately requires
+    an affirmative visitor choice and respects DNT/GPC. Account and local
+    personal-workspace documents never receive Google origins or the flag.
+    """
+    if os.environ.get("GA_BROWSER_TAG_ENABLED", "").strip().lower() != "true":
+        return False
+    path = path.rstrip("/") or "/"
+    public = {"/", "/tools", "/pipeline", "/batch", "/ai", "/api", "/trust", "/security", "/status",
+              "/support", "/about", "/privacy", "/terms", "/blog", "/compare"}
+    return path in public or bool(re.fullmatch(r"/(?:tools?|blog|compare)/[a-z0-9-]+", path))

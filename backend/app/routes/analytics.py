@@ -4,13 +4,13 @@ import json
 import logging
 import os
 import re
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Response
+from fastapi import APIRouter, BackgroundTasks, Response, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 router = APIRouter()
@@ -26,24 +26,11 @@ class AnalyticsPageview(BaseModel):
     title: str | None = Field(default=None, max_length=160)
     referrer: str | None = Field(default=None, max_length=512)
     client_id: str | None = Field(default=None, max_length=96)
-    # GA4 fills Realtime from events alone, but leaves every standard report
-    # empty unless the event carries a session and some engagement time. We
-    # sent neither, so page views arrived, showed up in Realtime, and never
-    # reached Traffic acquisition or Pages and screens.
+    # These optional values describe observed sessions and foreground time.
+    # MP-only telemetry does not provide Google's complete browser lifecycle.
     session_id: str | None = Field(default=None, max_length=32)
     engagement_time_msec: int | None = Field(default=None, ge=0, le=3_600_000)
-    # A page view and a report of time-on-page are different events. Sending
-    # both as page_view would double the page-view count; sending neither is
-    # how every single-page visit scored as a bounce.
     event: str | None = Field(default=None, max_length=32)
-    # Engagement TIME alone does not make a session engaged. GA4 builds the
-    # engaged-session count — and so bounce rate, its inverse — from this flag,
-    # which is why the property once reported a real 40s average engagement
-    # next to a 100% bounce rate.
-    # Wide enough to accept a wrong value and normalise it to "0" rather than
-    # 422 the whole event: a malformed flag should cost the engagement reading,
-    # not the page view that carried it.
-    session_engaged: str | None = Field(default=None, max_length=8)
 
 
 def _clean_path(path: str | None) -> str:
@@ -57,38 +44,21 @@ def _clean_path(path: str | None) -> str:
 _SESSION_ID_RE = re.compile(r"^[0-9]{6,20}$")
 
 
-def _clean_session_id(value: str | None) -> str:
-    """A GA4 session id is a numeric timestamp; anything else gets replaced.
-
-    Falling back to a fresh id is deliberate: a missing or malformed session
-    would otherwise drop the event out of every standard report, which is the
-    exact failure this whole field exists to prevent.
-    """
+def _clean_session_id(value: str | None) -> str | None:
     v = (value or "").strip()
-    if _SESSION_ID_RE.fullmatch(v):
-        return v
-    return str(int(time.time()))
+    return v if _SESSION_ID_RE.fullmatch(v) else None
 
 
-# Only the two events this site actually sends. An allowlist rather than a
-# passthrough: the endpoint is unauthenticated, and an open event name would
-# let anyone write arbitrary events into the property.
-_ALLOWED_EVENTS = frozenset({"page_view", "user_engagement"})
+_ALLOWED_EVENTS = frozenset({"page_view", "foreground_time", "tool_success"})
 
 
-def _clean_event(value: str | None) -> str:
-    v = (value or "").strip()
-    return v if v in _ALLOWED_EVENTS else "page_view"
-
-
-def _clean_engaged(value: str | None) -> str:
-    """GA4 wants the literal string "1" or "0"; anything else is not engaged.
-
-    Defaulting to "0" rather than omitting the parameter keeps the reading
-    conservative: a session we cannot vouch for counts as a bounce, which
-    understates engagement instead of inventing it.
-    """
-    return "1" if (value or "").strip() == "1" else "0"
+def _clean_event(value: str | None) -> str | None:
+    # Old cached clients sent a reserved MP event name; preserve their measured
+    # time under our custom event without forwarding that reserved name.
+    v = (value or "page_view").strip()
+    if v == "user_engagement":
+        return "foreground_time"
+    return v if v in _ALLOWED_EVENTS else None
 
 
 def _clean_text(value: str | None, limit: int) -> str | None:
@@ -113,7 +83,7 @@ def _analytics_config() -> tuple[str, str] | None:
     secret = os.environ.get("GA4_API_SECRET")
     if not secret:
         return None
-    measurement_id = os.environ.get("GA4_MEASUREMENT_ID", _DEFAULT_MEASUREMENT_ID)
+    measurement_id = os.environ.get("GA4_MEASUREMENT_ID", "").strip() or _DEFAULT_MEASUREMENT_ID
     return measurement_id, secret
 
 
@@ -122,19 +92,21 @@ def _build_ga4_payload(pageview: AnalyticsPageview) -> dict[str, Any] | None:
     if not _CLIENT_ID_RE.fullmatch(client_id):
         return None
 
+    event = _clean_event(pageview.event)
+    if event is None:
+        return None
     path = _clean_path(pageview.path)
+    if event == "tool_success" and not re.fullmatch(r"/tools?/[a-z0-9-]+", path):
+        return None
     params: dict[str, Any] = {
         "page_location": f"{_PUBLIC_BASE_URL}{path}",
         "page_path": path,
-        # Both are required for a Measurement Protocol event to count towards
-        # users, sessions and engagement rather than only appearing in Realtime.
-        "session_id": _clean_session_id(pageview.session_id),
-        # Present and non-zero, or GA4 keeps the event out of every standard
-        # report. 1ms is the smallest honest floor: the real number arrives in
-        # the user_engagement event sent when the page is hidden.
-        "engagement_time_msec": max(pageview.engagement_time_msec or 0, 1),
-        "session_engaged": _clean_engaged(pageview.session_engaged),
     }
+    session = _clean_session_id(pageview.session_id)
+    if session:
+        params["session_id"] = session
+    if pageview.engagement_time_msec:
+        params["engagement_time_msec"] = pageview.engagement_time_msec
     title = _clean_text(pageview.title, 160)
     referrer = _clean_referrer(pageview.referrer)
     if title:
@@ -145,7 +117,7 @@ def _build_ga4_payload(pageview: AnalyticsPageview) -> dict[str, Any] | None:
     return {
         "client_id": client_id,
         "non_personalized_ads": True,
-        "events": [{"name": _clean_event(pageview.event), "params": params}],
+        "events": [{"name": event, "params": params}],
     }
 
 
@@ -180,3 +152,21 @@ async def analytics_pageview(
         endpoint = f"https://www.google-analytics.com/mp/collect?{query}"
         background_tasks.add_task(_send_ga4_pageview, endpoint, body)
     return Response(status_code=204)
+
+
+@router.get("/analytics/policy")
+async def analytics_policy(request: Request) -> JSONResponse:
+    """A deployment-reviewed regional default, never a browser location guess.
+
+    Enable the header trust flag only behind the documented ingress boundary.
+    nginx overwrites X-PrivaTools-Country; raw CF-IPCountry/XFF are ignored.
+    """
+    trusted = os.environ.get("GA_TRUSTED_COUNTRY_HEADER", "").strip().lower() == "true"
+    enabled = os.environ.get("GA_BROWSER_TAG_ENABLED", "").strip().lower() == "true"
+    country = request.headers.get("x-privatools-country", "") if trusted else ""
+    permitted = {value.strip() for value in os.environ.get("GA_DEFAULT_ON_COUNTRIES", "").split(",")
+                 if re.fullmatch(r"[A-Z]{2}", value.strip()) and value.strip() not in {"XX", "T1"}}
+    default_on = enabled and trusted and bool(re.fullmatch(r"[A-Z]{2}", country)) and country not in {"XX", "T1"} and country in permitted
+    return JSONResponse({"mode": "default_on" if default_on else "opt_in"}, headers={
+        "Cache-Control": "private, no-store", "Vary": "X-PrivaTools-Country",
+    })

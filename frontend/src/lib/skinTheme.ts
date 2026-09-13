@@ -20,6 +20,7 @@ export type ThemeChoice = "system" | "light" | "dark" | "midnight";
 const KEYS: Record<SkinId, { key: string }> = {
     daylight: { key: "privatools.daylight.theme" },
 };
+const volatileChoices = new Map<SkinId, ThemeChoice>();
 
 function systemPrefers(): "light" | "dark" {
     return typeof window !== "undefined"
@@ -29,16 +30,15 @@ function systemPrefers(): "light" | "dark" {
 }
 
 export function readThemeChoice(skin: SkinId): ThemeChoice {
+    const volatile = volatileChoices.get(skin);
+    if (volatile) return volatile;
     try {
         const spec = KEYS[skin];
         if (!spec) return "system";
         const v = localStorage.getItem(spec.key);
-        // Light is the default for first-time visitors — a product decision, not
-        // an accident: the brand reads best on paper. "system" survives only as
-        // an explicit choice from the theme cycle.
-        return v === "light" || v === "dark" || v === "midnight" || v === "system" ? v : "light";
+        return v === "light" || v === "dark" || v === "midnight" || v === "system" ? v : "system";
     } catch {
-        return "light";
+        return "system";
     }
 }
 
@@ -58,8 +58,41 @@ export function setThemeChoice(skin: SkinId, choice: ThemeChoice): void {
     try {
         const spec = KEYS[skin];
         if (spec) localStorage.setItem(spec.key, choice);
+        volatileChoices.delete(skin);
     } catch {
-        /* private mode: the paint below still works for this session */
+        // A blocked/quota-limited store still keeps this tab's manual choice.
+        volatileChoices.set(skin, choice);
     }
     document.documentElement.setAttribute("data-theme", resolveTheme(choice));
+    window.dispatchEvent(new CustomEvent("privatools:theme-change", { detail: { choice } }));
+}
+
+/** Follow OS changes only while the user has chosen the system appearance. */
+export function watchThemeChoice(skin: SkinId, onChange: (choice: ThemeChoice) => void): () => void {
+    const media = window.matchMedia("(prefers-color-scheme: light)");
+    const update = () => {
+        const choice = readThemeChoice(skin);
+        document.documentElement.setAttribute("data-theme", resolveTheme(choice));
+        onChange(choice);
+    };
+    const storage = (event: StorageEvent) => {
+        if (event.key === KEYS[skin].key || event.key === null) {
+            volatileChoices.delete(skin);
+            update();
+        }
+    };
+    media.addEventListener?.("change", update);
+    window.addEventListener("storage", storage);
+    const experience = (event: Event) => {
+        const detail = (event as CustomEvent).detail;
+        if (detail?.source !== "experience") return;
+        volatileChoices.set(skin, detail.choice);
+        onChange(detail.choice);
+    };
+    window.addEventListener("privatools:theme-change", experience);
+    return () => {
+        media.removeEventListener?.("change", update);
+        window.removeEventListener("storage", storage);
+        window.removeEventListener("privatools:theme-change", experience);
+    };
 }

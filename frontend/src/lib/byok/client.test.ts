@@ -75,3 +75,8 @@ describe("complete", () => {
     }
   });
 });
+
+it("does not present an empty successful HTTP response as an AI answer", async () => {
+  mockFetch(200, {choices:[]});
+  await expect(complete({providerId:'openai-compatible', apiKey:'synthetic-local',model:'missing-model',baseUrl:'http://localhost:11434',messages:[]})).rejects.toMatchObject({userMessage:expect.stringMatching(/returned no answer/)});
+});

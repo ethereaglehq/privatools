@@ -17,11 +17,19 @@ COPY frontend/ .
 # and it is visible in the bundle of every Clerk site. The *secret* key is a
 # runtime variable and must never appear here.
 #
-# Empty is the meaningful default and the one in use today: with no key the
-# provider is never mounted and the SDK is not even downloaded, so accounts fall
-# back to local auth and the entry bundle stays 124K smaller.
+# Without a key, tools remain available and account controls explain that
+# sign-in is not configured. Native accounts require an explicit build choice.
 ARG VITE_CLERK_PUBLISHABLE_KEY=""
 ENV VITE_CLERK_PUBLISHABLE_KEY=$VITE_CLERK_PUBLISHABLE_KEY
+ARG VITE_AUTH_PROVIDER="clerk"
+ARG VITE_CLERK_SOCIAL_PROVIDERS="google,github"
+ARG VITE_CLERK_USERNAME_ENABLED="true"
+ARG VITE_CLERK_PASSKEYS_ENABLED="true"
+ENV VITE_AUTH_PROVIDER=$VITE_AUTH_PROVIDER \
+    VITE_CLERK_SOCIAL_PROVIDERS=$VITE_CLERK_SOCIAL_PROVIDERS \
+    VITE_CLERK_USERNAME_ENABLED=$VITE_CLERK_USERNAME_ENABLED \
+    VITE_CLERK_PASSKEYS_ENABLED=$VITE_CLERK_PASSKEYS_ENABLED
+
 
 RUN npm run build \
     && find dist -type f \( -name '*.js' -o -name '*.css' -o -name '*.svg' -o -name '*.html' \) -exec brotli -q 11 -k {} \;
@@ -67,6 +75,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     qpdf \
     && rm -rf /var/lib/apt/lists/*
 
+# Fail the image build if the distro changes FFmpeg capabilities. A process
+# existing is insufficient: subtitle burn-in needs libass; MP4 exports need
+# the H.264 and AAC encoders. Consume the full output (no grep -q/SIGPIPE).
+RUN ffmpeg -hide_banner -filters 2>/dev/null | grep -E '^[ .A-Z|]+ subtitles[[:space:]]' \
+    && ffmpeg -hide_banner -encoders 2>/dev/null | grep -E '^[ .A-Z]+ libx264[[:space:]]' \
+    && ffmpeg -hide_banner -encoders 2>/dev/null | grep -E '^[ .A-Z]+ aac[[:space:]]'
+
 WORKDIR /app
 
 # Install Python dependencies from the fully-pinned, hashed lockfile.
@@ -79,27 +94,21 @@ COPY requirements.txt requirements.lock ./
 RUN pip install --no-cache-dir --require-hashes -r requirements.lock \
     && python -c "import fitz; print('PyMuPDF OK:', fitz.version)"
 
-# Pre-download the rembg u2netp model into the runtime cache directory so the
-# first /api/remove-background request never has to wait on a GitHub release.
-# Numba JIT is disabled here so the import path doesn't trip on the slim
-# image's locator quirk (matches the runtime ENV NUMBA_DISABLE_JIT=1).
-#
-# Baked under /app/cache, deliberately NOT /tmp: the container runs with
-# read_only: true and LibreOffice needs a writable /tmp for its IPC pipe, so a
-# tmpfs is mounted there — which would mask anything baked underneath. It did:
-# with a tmpfs on /tmp the model vanished and rembg silently re-downloaded it
-# from a GitHub release on the first request, turning a self-contained image
-# into one with a runtime network dependency. /app/cache is in the read-only
-# layer, which is all these need — they are read, never written.
-RUN mkdir -p /app/cache/u2net /app/cache/xdg \
- && NUMBA_DISABLE_JIT=1 U2NET_HOME=/app/cache/u2net XDG_CACHE_HOME=/app/cache/xdg \
-    python -c "from rembg import new_session; new_session('u2netp'); print('rembg u2netp model cached at /app/cache/u2net')"
+# The frontend build stages and SHA-256 verifies U²-Net-P. The backend uses
+# that SAME file through a read-only symlink below; no duplicate model download
+# or weight copy in the image. Keep runtime caches outside the masked /tmp.
+RUN mkdir -p /app/cache/u2net /app/cache/xdg
 
 # Copy backend
 COPY backend/ backend/
 
 # Copy built frontend from stage 1
 COPY --from=frontend-build /app/frontend/dist frontend/dist/
+
+# Verify rembg can load the exact browser-shipped model without a network fetch.
+RUN ln -s /app/frontend/dist/models/u2netp.onnx /app/cache/u2net/u2netp.onnx \
+ && NUMBA_DISABLE_JIT=1 U2NET_HOME=/app/cache/u2net XDG_CACHE_HOME=/app/cache/xdg \
+    python -c "from rembg import new_session; new_session('u2netp'); print('rembg u2netp shared model loaded')"
 
 # Create non-root user
 RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser

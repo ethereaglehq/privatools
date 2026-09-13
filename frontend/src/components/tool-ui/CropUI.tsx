@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL } from "@/lib/api";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const MAX_PT = 500;
@@ -33,6 +34,8 @@ export function CropUI() {
     const setLeft = useCallback((v: React.SetStateAction<typeof CROP_DEFAULTS["left"]>) => setField("left", v), [setField]);
     const setRight = useCallback((v: React.SetStateAction<typeof CROP_DEFAULTS["right"]>) => setField("right", v), [setField]);
     const proc = useMultiFileProcessor();
+    const [previewPage, setPreviewPage] = useState(1);
+    const [pageSize, setPageSize] = useState({ width: 612, height: 792 });
     const [phase, setPhase] = useState<"idle" | "processing" | "done">("idle");
     const [drag, setDrag] = useState(false);
     const ref = useRef<HTMLInputElement>(null);
@@ -163,8 +166,8 @@ export function CropUI() {
                             <span>Crop margins</span>
                             <span>1 pt = 1/72 inch</span>
                         </div>
-                        <div className="p-5 grid grid-cols-1 lg:grid-cols-[1fr_220px] gap-5 items-center">
-                            <div className="grid grid-cols-2 gap-3">
+                        <div className="pdf-coordinate-workspace">
+                            <div className="pdf-coordinate-controls">
                                 {[
                                     { label: "Top",    value: top,    set: setTop },
                                     { label: "Bottom", value: bottom, set: setBottom },
@@ -175,7 +178,7 @@ export function CropUI() {
                                         <label className="font-medium text-[11px] text-muted-foreground">{m.label}</label>
                                         <div className="relative">
                                             <input
-                                                type="number"
+                                                type="number" aria-label={`${m.label} crop margin`}
                                                 inputMode="numeric"
                                                 min={0} max={MAX_PT}
                                                 value={m.value}
@@ -188,18 +191,7 @@ export function CropUI() {
                                     </div>
                                 ))}
                             </div>
-                            <div className="relative aspect-[3/4] bg-paper-2/40 border border-border rounded-md mx-auto w-full max-w-[180px]">
-                                <div
-                                    className="absolute border-2 border-accent bg-card transition-all duration-150"
-                                    style={{
-                                        top: `${Math.min(45, (parseInt(top) || 0) / MAX_PT * 100)}%`,
-                                        bottom: `${Math.min(45, (parseInt(bottom) || 0) / MAX_PT * 100)}%`,
-                                        left: `${Math.min(45, (parseInt(left) || 0) / MAX_PT * 100)}%`,
-                                        right: `${Math.min(45, (parseInt(right) || 0) / MAX_PT * 100)}%`,
-                                    }}
-                                />
-                                <span className="absolute top-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-accent">crop area</span>
-                            </div>
+                            <PdfPageStage file={proc.entries[0].file} page={previewPage} onPageChange={setPreviewPage} onDimensions={info => setPageSize({ width: info.width, height: info.height })} regions={[{ id: "crop", page: previewPage, x: Number(left), y: Number(top), width: Math.max(0, pageSize.width - Number(left) - Number(right)), height: Math.max(0, pageSize.height - Number(top) - Number(bottom)), kind: "rectangle", color: "#397dec", label: "Area to keep" }]} drawLabel="Draw the area to keep" disabled={phase === "processing"} onDraw={region => { setTop(String(Math.round(region.y))); setLeft(String(Math.round(region.x))); setRight(String(Math.max(0, Math.round(pageSize.width - region.x - region.width)))); setBottom(String(Math.max(0, Math.round(pageSize.height - region.y - region.height)))); }} />
                         </div>
                     </div>
 

@@ -18,6 +18,8 @@ from starlette.background import BackgroundTask
 
 from ..rate_limit import EXPENSIVE_RATE_LIMIT, limiter
 from ..utils.concurrency import run_bounded
+from ..services.media_trim_service import AUDIO_EXTENSIONS, VIDEO_ENCODERS, trim_command
+from ..services.ffmpeg_capabilities import ogg_encoder
 
 logger = logging.getLogger(__name__)
 
@@ -557,6 +559,8 @@ async def extract_audio(request: Request, file: UploadFile = File(...), format: 
     }
     if audio_format not in codec_map:
         raise HTTPException(status_code=400, detail="Unsupported output audio format")
+    if audio_format == "ogg":
+        codec_map["ogg"] = await run_bounded(ogg_encoder)
 
     input_ext = os.path.splitext(_safe_filename(file.filename, "video.mp4"))[1] or ".mp4"
     data = await _read_upload(file, MAX_VIDEO_SIZE, label="Media file")
@@ -602,26 +606,16 @@ async def trim_media(request: Request,
     if _timestamp_to_seconds(start) >= _timestamp_to_seconds(end):
         raise HTTPException(status_code=400, detail="end timestamp must be greater than start timestamp")
 
-    ext = os.path.splitext(_safe_filename(file.filename, "media.mp4"))[1] or ".mp4"
+    ext = (os.path.splitext(_safe_filename(file.filename, "media.mp4"))[1] or ".mp4").lower()
+    if ext not in VIDEO_ENCODERS and ext not in AUDIO_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Please upload a supported video or audio file.")
     data = await _read_upload(file, MAX_VIDEO_SIZE, label="Media file")
     input_path = _write_temp_file(data, ext)
     output_path = _new_temp_file(ext)
 
     try:
         await _run_ffmpeg_async(
-            [
-                "ffmpeg",
-                "-y",
-                "-i",
-                input_path,
-                "-ss",
-                start,
-                "-to",
-                end,
-                "-c",
-                "copy",
-                output_path,
-            ],
+            trim_command(input_path, output_path, ext, start, _timestamp_to_seconds(end) - _timestamp_to_seconds(start)),
             timeout=180,
         )
     except HTTPException:
@@ -629,7 +623,7 @@ async def trim_media(request: Request,
         raise
 
     cleanup = BackgroundTask(_cleanup_paths, input_path, output_path)
-    media_type = VIDEO_MIME_BY_EXT.get(ext.lower(), "application/octet-stream")
+    media_type = VIDEO_MIME_BY_EXT.get(ext, AUDIO_MIME_MAP.get(ext.lstrip("."), "audio/mp4" if ext == ".m4a" else "application/octet-stream"))
     return FileResponse(output_path, media_type=media_type, filename=f"trimmed{ext}", background=cleanup)
 
 

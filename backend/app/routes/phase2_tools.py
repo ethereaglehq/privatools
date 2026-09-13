@@ -16,6 +16,7 @@ from ..services import bg_remover_service, esign_service, table_extractor_servic
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
 from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
 from ..utils.concurrency import run_bounded
+from ..utils.exceptions import ToolError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -139,7 +140,7 @@ async def remove_background(
         out = await run_bounded(bg_remover_service.remove_background, str(temp))
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="no_background.png", media_type="image/png", background=cleanup)
-    except HTTPException:
+    except (HTTPException, ToolError):
         _cleanup_on_error(temp, out)
         raise
     except Exception as e:

@@ -19,6 +19,7 @@ from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
 from ..utils.route_helpers import read_upload, stream_upload_to_disk
 from ..utils.concurrency import run_bounded
+from ..services.media_trim_service import trim_command
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -206,10 +207,10 @@ async def audio_trim_endpoint(
     out_path = get_temp_path(f"atrim_out_{uuid.uuid4().hex}{suffix}")
     await stream_upload_to_disk(file, in_path, label="Audio", max_bytes=MAX_VIDEO_BYTES)
     try:
-        await _run_ffmpeg_async([
-            "ffmpeg", "-y", "-ss", start.strip(), "-to", end.strip(),
-            "-i", str(in_path), "-c", "copy", str(out_path),
-        ], "Audio trim")
+        await _run_ffmpeg_async(trim_command(
+            str(in_path), str(out_path), suffix, s_strip,
+            _ts_to_seconds(e_strip) - _ts_to_seconds(s_strip),
+        ), "Audio trim")
         cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
         return FileResponse(
             str(out_path),

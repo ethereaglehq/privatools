@@ -109,19 +109,14 @@ class TestSPAFallback:
 # ---------------------------------------------------------------------------
 
 def _parse_sitemap_slugs() -> tuple[list[str], list[str]]:
-    """Parse PDF and non-PDF slugs from the sitemap route file."""
-    sitemap_file = ROOT / "backend" / "app" / "routes" / "sitemap.py"
-    text = sitemap_file.read_text(encoding="utf-8")
-
-    # Extract the PDF_TOOLS list
-    pdf_match = re.search(r"PDF_TOOLS\s*=\s*\[(.*?)\]", text, re.DOTALL)
-    pdf_slugs = re.findall(r'"([^"]+)"', pdf_match.group(1)) if pdf_match else []
-
-    # Extract the NON_PDF_TOOLS list
-    non_pdf_match = re.search(r"NON_PDF_TOOLS\s*=\s*\[(.*?)\]", text, re.DOTALL)
-    non_pdf_slugs = re.findall(r'"([^"]+)"', non_pdf_match.group(1)) if non_pdf_match else []
-
-    return pdf_slugs, non_pdf_slugs
+    """Read the sitemap's rendered routes, including authoritative build manifests."""
+    from xml.etree import ElementTree
+    from backend.app.routes.sitemap import _build_sitemap_xml
+    root = ElementTree.fromstring(_build_sitemap_xml())
+    urls = [node.text for node in root.iter('{http://www.sitemaps.org/schemas/sitemap/0.9}loc')]
+    base = 'https://privatools.me'
+    return ([url.removeprefix(base + '/tool/') for url in urls if url.startswith(base + '/tool/')],
+            [url.removeprefix(base + '/tools/') for url in urls if url.startswith(base + '/tools/')])
 
 
 def _parse_frontend_slugs(filename: str) -> set[str]:

@@ -1,5 +1,5 @@
 /**
- * Fetches a tool's on-device model the moment the tool opens.
+ * Offers an explicit browser-model download before running a tool.
  *
  * Before this, a first-time visitor to Summarize PDF picked a file, pressed
  * run, and then waited on a silent 250 MB download with no indication that
@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Check, HardDrive, RotateCw } from "lucide-react";
 
-import { LOCAL_MODELS, listCachedModels, type LocalModelInfo } from "@/lib/localModels";
+import { LOCAL_MODELS, type LocalModelInfo } from "@/lib/localModels";
 
 /**
  * The model a slug needs, or undefined.
@@ -29,15 +29,9 @@ for (const m of LOCAL_MODELS) {
 
 type Phase = "checking" | "idle" | "downloading" | "ready" | "error";
 
-/** Whether the visitor asked their browser not to burn data. */
-function saveDataOn(): boolean {
-    const c = (navigator as { connection?: { saveData?: boolean } }).connection;
-    return c?.saveData === true;
-}
-
 export function LocalModelBanner({ slug }: { slug: string }) {
     const model = BY_SLUG.get(slug);
-    const [phase, setPhase] = useState<Phase>("checking");
+    const [phase, setPhase] = useState<Phase>("idle");
     const [pct, setPct] = useState(0);
     const [err, setErr] = useState("");
     // StrictMode mounts twice in development; without this the download starts
@@ -68,20 +62,10 @@ export function LocalModelBanner({ slug }: { slug: string }) {
             }
         };
 
-        (async () => {
-            try {
-                const cached = await listCachedModels();
-                if (!alive) return;
-                // A model whose weights are missing shows up as a tiny entry —
-                // config and tokenizer only. Treat that as not installed.
-                const have = cached.some((c) => c.hfId === model.hfId && c.bytes > 1_000_000);
-                if (have) { setPhase("ready"); setPct(100); return; }
-                if (saveDataOn()) { setPhase("idle"); return; }
-                void begin();
-            } catch {
-                if (alive) setPhase("idle");
-            }
-        })();
+        // Opening a tool must not download hundreds of megabytes, nor imply
+        // that its independently selected server/BYOK engine is browser-only.
+        setPhase("idle");
+        started.current = false;
 
         beginRef.current = () => { void begin(); };
         return () => { alive = false; };
@@ -110,18 +94,18 @@ export function LocalModelBanner({ slug }: { slug: string }) {
 
                 <div className="min-w-0 flex-1">
                     <p className="text-[13px] font-medium text-foreground">
-                        {phase === "downloading" && `Getting this tool ready — ${pct}%`}
-                        {phase === "ready" && "Ready. This tool runs on your device."}
-                        {phase === "idle" && `This tool needs a ${model.approxLabel.replace("~", "")} model`}
+                        {phase === "downloading" && `Preparing the browser model — ${pct}%`}
+                        {phase === "ready" && "Browser model ready for this visit."}
+                        {phase === "idle" && `Optional browser model · ${model.approxLabel}`}
                         {phase === "error" && "The model could not download"}
                     </p>
                     <p className="mt-0.5 text-[11.5px] text-muted-foreground">
                         {phase === "downloading"
-                            && `${model.label} downloads once into this browser, then works every visit, even offline.`}
+                            && `${model.label} downloads into this browser. Saved files can be reused while your browser keeps them.`}
                         {phase === "ready"
-                            && "Nothing you run here is uploaded."}
+                            && "Choose the on-device engine to keep processing here. Server and API-key modes have different data paths."}
                         {phase === "idle"
-                            && "Your browser is set to save data, so it is not downloading on its own."}
+                            && "Download ahead of time, or let the on-device engine prepare it when you run the tool."}
                         {phase === "error" && err}
                     </p>
                 </div>

@@ -4,6 +4,7 @@ import { SimpleProcessUI } from "./SimpleProcessUI";
 export function AddHyperlinksUI() {
     return (
         <SimpleProcessUI
+            handoffSlug="add-hyperlinks"
             endpoint="/add-hyperlinks"
             accepts=".pdf"
             outputSuffix="linked"

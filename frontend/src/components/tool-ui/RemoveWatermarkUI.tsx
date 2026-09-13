@@ -10,6 +10,7 @@
  * “CONFIDENTIAL” on 3 of 3 pages" — never as `image_xobject xref=42`, and
  * lossless vs destructive removal is stated per candidate rather than buried.
  */
+import { PdfPageStage } from "./pdf/PdfPageStage";
 import { useCallback, useRef, useState } from "react";
 import {
     AlertCircle, CheckCircle2, Download, Eraser, FileText, Loader2, RotateCcw, Search, X,
@@ -55,6 +56,7 @@ export function RemoveWatermarkUI() {
     );
 
     const [file, setFile] = useState<File | null>(null);
+    const [previewPage, setPreviewPage] = useState(1);
     const [phase, setPhase] = useState<Phase>("idle");
     const [result, setResult] = useState<DetectResult | null>(null);
     const [chosen, setChosen] = useState<Set<string>>(new Set());
@@ -137,7 +139,7 @@ export function RemoveWatermarkUI() {
                             watermark{chosen.size !== 1 && "s"} removed
                         </h2>
                         <p className="mt-1 text-[11px] tracking-[0.04em] text-muted-foreground">
-                            The rest of the page is untouched
+                            The selected candidates have been removed. Review the downloaded pages before sharing.
                         </p>
                         <button onClick={reset} className="mt-5 inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-card px-4 text-[13px] font-medium hover:bg-secondary/60">
                             <RotateCcw size={12} /> Clean another PDF
@@ -206,14 +208,15 @@ export function RemoveWatermarkUI() {
             )}
 
             {phase !== "detecting" && result && result.candidates.length > 0 && (
-                <div className="overflow-hidden rounded-xl border border-border bg-card">
+                <div className="pdf-coordinate-workspace"><PdfPageStage file={file!} page={previewPage} onPageChange={setPreviewPage} regions={result.candidates.flatMap(c => c.pages.map(page => ({ id: c.id + ":" + page, page, x: c.bbox[0], y: c.bbox[1], width: c.bbox[2] - c.bbox[0], height: c.bbox[3] - c.bbox[1], color: chosen.has(c.id) ? "#a32950" : "#397dec", label: c.label })))} />
+                <fieldset disabled={phase === "removing"} className="pdf-coordinate-controls overflow-hidden rounded-xl border border-border bg-card">
                     <div className="font-medium border-b border-border bg-paper-2/40 px-4 py-2 text-[11.5px] text-muted-foreground">
                         Found {result.candidates.length} — tick what to remove
                     </div>
                     <div className="divide-y divide-border">
                         {result.candidates.map(c => (
                             <label key={c.id} className="flex cursor-pointer items-start gap-3 p-3 hover:bg-secondary/30">
-                                <input type="checkbox" checked={chosen.has(c.id)} onChange={() => toggle(c.id)}
+                                <input type="checkbox" checked={chosen.has(c.id)} onChange={() => { toggle(c.id); setPreviewPage(c.pages[0] || 1); }}
                                     className="mt-0.5 h-4 w-4 shrink-0 accent-current text-accent" />
                                 <span className="min-w-0 flex-1">
                                     <span className="block text-[14px]">{c.label}</span>
@@ -242,7 +245,7 @@ export function RemoveWatermarkUI() {
                             Pre-tick high-confidence matches next time
                         </label>
                     </div>
-                </div>
+                </fieldset></div>
             )}
 
             {error && (

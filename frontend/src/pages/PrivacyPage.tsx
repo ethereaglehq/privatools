@@ -1,27 +1,19 @@
-/**
- * PrivacyPage — workshop-styled privacy policy with reading aids.
- *
- * Layout parity with BlogPostPage:
- *   - Sticky right-side TOC (desktop) + collapsible TOC (mobile)
- *   - Reading-progress bar at top
- *   - Hash-link anchors on every section
- *   - markers, mono dateline, corner-marked "short version" highlight
- *
- * Highlighted clauses (privacy-relevant) get an accent panel with corner marks.
- * Last-updated timestamp links to the git history for diff transparency.
- */
-import { Link } from "react-router-dom";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Shield, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail, Github } from "lucide-react";
+import { useDocumentReader } from "@/skins/experience/useDocumentReader";
 import { cn } from "@/lib/utils";
+import { DocumentStudio } from "@/skins/experience/DocumentStudio";
+/** Privacy disclosures aligned with the hosted runtime and optional services. */
+import { useEffect, useState } from "react";
+import { Shield } from "lucide-react";
+
+
 import {
-  ANALYTICS_OPT_OUT_KEY,
+  googleAnalyticsAvailable,
   readAnalyticsPrivacyPreference,
   setAnalyticsOptOut,
   type AnalyticsPrivacyPreference,
 } from "@/lib/analyticsPrivacy";
 
-const LAST_UPDATED = "June 18, 2026";
+const LAST_UPDATED = "September 14, 2026";
 const GIT_HISTORY_URL = "https://github.com/ethereaglehq/privatools/commits/main/frontend/src/pages/PrivacyPage.tsx";
 
 interface Section { id: string; title: string; flag?: boolean }
@@ -29,8 +21,8 @@ const SECTIONS: Section[] = [
   { id: "short-version",       title: "The Short Version", flag: true },
   { id: "files-you-upload",    title: "1. Files You Upload" },
   { id: "client-side-tools",   title: "2. Client-Side Tools" },
-  { id: "what-we-dont-collect",title: "3. Information We Do Not Collect", flag: true },
-  { id: "developer-accounts", title: "4. Developer Accounts" },
+  { id: "what-we-dont-collect",title: "3. Analytics Data Boundaries", flag: true },
+  { id: "developer-accounts", title: "4. Optional Accounts" },
   { id: "server-infrastructure",title: "5. Server Infrastructure" },
   { id: "third-party",         title: "6. Third-Party Services" },
   { id: "open-source",         title: "7. Open Source Transparency" },
@@ -39,49 +31,19 @@ const SECTIONS: Section[] = [
   { id: "contact",             title: "10. Contact" },
 ];
 
-/** Hand-rolled smooth scroll (matches BlogPostPage logic) for nested overflow containers. */
-let smoothScrollRaf = 0;
-function smoothScrollTo(el: HTMLElement, target: number, duration = 380) {
-  if (smoothScrollRaf) cancelAnimationFrame(smoothScrollRaf);
-  const reduce = typeof matchMedia === "function" && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  if (reduce) { el.scrollTop = target; return; }
-  const start = el.scrollTop;
-  const dist = target - start;
-  if (Math.abs(dist) < 1) return;
-  const t0 = performance.now();
-  const step = (now: number) => {
-    const t = Math.min(1, (now - t0) / duration);
-    const ease = 1 - Math.pow(1 - t, 3);
-    el.scrollTop = start + dist * ease;
-    if (t < 1) smoothScrollRaf = requestAnimationFrame(step);
-    else smoothScrollRaf = 0;
-  };
-  smoothScrollRaf = requestAnimationFrame(step);
-}
-
-function CornerMarks() {
-  const cls = "corner-mark absolute h-3 w-3 pointer-events-none";
-  return (
-    <>
-      <span className={`${cls} -top-1 -left-1`}><span className="absolute top-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 left-0 w-px h-3 bg-accent/70" /></span>
-      <span className={`${cls} -top-1 -right-1`}><span className="absolute top-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute top-0 right-0 w-px h-3 bg-accent/70" /></span>
-      <span className={`${cls} -bottom-1 -left-1`}><span className="absolute bottom-0 left-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 left-0 w-px h-3 bg-accent/70" /></span>
-      <span className={`${cls} -bottom-1 -right-1`}><span className="absolute bottom-0 right-0 h-px w-3 bg-accent/70" /><span className="absolute bottom-0 right-0 w-px h-3 bg-accent/70" /></span>
-    </>
-  );
-}
-
+/** Preserve the same browser consent preference used by the analytics runtime. */
 function AnalyticsOptOutPanel() {
   const [preference, setPreference] = useState<AnalyticsPrivacyPreference>(() => readAnalyticsPrivacyPreference());
 
   useEffect(() => {
     const refresh = () => setPreference(readAnalyticsPrivacyPreference());
     window.addEventListener("storage", refresh);
-    return () => window.removeEventListener("storage", refresh);
+    window.addEventListener("privatools:analytics-policy", refresh);
+    return () => { window.removeEventListener("storage", refresh); window.removeEventListener("privatools:analytics-policy", refresh); };
   }, []);
 
   const toggleOptOut = () => {
-    setPreference(setAnalyticsOptOut(!preference.localOptOut));
+    setPreference(setAnalyticsOptOut(!preference.effectiveDisabled));
   };
 
   return (
@@ -93,25 +55,31 @@ function AnalyticsOptOutPanel() {
               Analytics control
             </span>
             <span className="font-medium rounded-full border border-border bg-paper-2/60 px-2 py-0.5 text-[11px] text-muted-foreground">
-              {preference.effectiveDisabled ? "Analytics paused" : "Anonymous analytics allowed"}
+              {preference.effectiveDisabled || !googleAnalyticsAvailable() ? "Analytics off" : "Analytics allowed"}
             </span>
           </div>
           <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
             {preference.browserPrivacySignal
-              ? "Your browser is sending Do Not Track or Global Privacy Control, so the analytics beacon will not run."
-              : preference.localOptOut
-                ? `This browser stores ${ANALYTICS_OPT_OUT_KEY}=1 and blocks the analytics beacon.`
-                : "Set a local browser opt-out to stop analytics on this device."}
+              ? "Your browser’s privacy signal keeps analytics off, even if you previously allowed it."
+              : !googleAnalyticsAvailable()
+                ? "Analytics is currently unavailable. You can save your choice for when it becomes available."
+                : !preference.effectiveDisabled
+                  ? preference.consented
+                    ? "You have allowed Google Analytics in this browser. You can withdraw that choice here at any time."
+                    : "Analytics is enabled by the reviewed policy for your region. You can turn it off here at any time."
+                  : "Google Analytics stays off unless you allow it. All tools work either way."}
+
           </p>
         </div>
         <button
           type="button"
           role="switch"
-          aria-checked={preference.localOptOut}
+          aria-checked={!preference.effectiveDisabled}
+          disabled={preference.browserPrivacySignal}
           onClick={toggleOptOut}
           className={cn(
             "group inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-2.5 transition-colors",
-            preference.localOptOut
+            !preference.effectiveDisabled
               ? "border-accent/45 bg-accent/[0.08] text-accent"
               : "border-border bg-paper-2/60 text-muted-foreground hover:text-foreground"
           )}
@@ -120,18 +88,18 @@ function AnalyticsOptOutPanel() {
             aria-hidden="true"
             className={cn(
               "relative h-5 w-9 rounded-full border transition-colors",
-              preference.localOptOut ? "border-accent/60 bg-accent/20" : "border-border bg-background"
+              !preference.effectiveDisabled ? "border-accent/60 bg-accent/20" : "border-border bg-background"
             )}
           >
             <span
               className={cn(
                 "absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-current transition-transform",
-                preference.localOptOut ? "translate-x-[18px]" : "translate-x-1"
+                !preference.effectiveDisabled ? "translate-x-[18px]" : "translate-x-1"
               )}
             />
           </span>
           <span className="font-medium text-[11px]">
-            Local opt-out
+            Allow Google Analytics
           </span>
         </button>
       </div>
@@ -140,503 +108,84 @@ function AnalyticsOptOutPanel() {
 }
 
 export default function PrivacyPage() {
-  const articleRef = useRef<HTMLElement>(null);
-  const [progress, setProgress] = useState(0);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const [showTop, setShowTop] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const { articleRef, progress, activeId, showTop, copied, scrollToHeading, scrollToTop, copyLink } = useDocumentReader(SECTIONS);
+  return <DocumentStudio title="Privacy policy" description="Your files, your data, your choices. Here is how PrivaTools handles each of them." updated={LAST_UPDATED} historyHref={GIT_HISTORY_URL} sections={SECTIONS} activeId={activeId} onSection={scrollToHeading} progress={progress} articleRef={articleRef} copied={copied} onCopy={copyLink} onTop={scrollToTop} showTop={showTop}>
+    <section id="short-version" className="mb-10 scroll-mt-20">
+      <h2 className="sr-only">The Short Version</h2>
+      <aside className="rounded-2xl border border-accent/30 bg-accent/[0.05] p-5 sm:p-6">
+        <div className="flex items-center gap-2 mb-3"><Shield size={15} className="text-accent"/><span className="text-[11px] text-accent font-semibold">The short version</span></div>
+        <p><strong>Choose where your task runs.</strong> Browser tools process on your device. Server tools upload your file for temporary processing. AI provider tools send the content needed for your request to the provider you choose.</p>
+        <p><strong>Accounts and analytics are separate choices.</strong> Interactive file tools do not require an account. Optional accounts use Clerk for identity and sign-in. Optional analytics measures public-site usage, including scrolling, outbound links and supported video engagement. It uses identifiers and cookies, so it is not anonymous.</p>
+      </aside>
+    </section>
+    <div className="blog-prose prose-headings:scroll-mt-20">
+      <h2 id="files-you-upload">1. Files You Upload</h2>
+      <p>When you run a server tool, the selected file is sent to the processing service. The public deployment uses HTTPS. Its processing libraries read the document, image, audio or other content needed to perform your task.</p>
+      <ul>
+        <li><strong>Temporary processing:</strong> Inputs and outputs use isolated temporary per-request storage. This storage is part of the processing workflow, not an account file library.</li>
+        <li><strong>Cleanup:</strong> Response cleanup removes the job’s temporary files. A background sweep also removes older files left by interrupted requests, failed workers or cleanup errors. Failures can delay removal; deletion is not a guarantee of immediate erasure or forensic unrecoverability.</li>
+        <li><strong>Your copies:</strong> The original on your device and the result you download remain under your control. Server cleanup does not delete those copies or files saved in your browser’s local Vault.</li>
+        <li><strong>Limits:</strong> File-size, image-dimension, resource and rate limits apply. Availability and acceptable inputs vary by tool and deployment.</li>
+      </ul>
+      <p>Read the processing label and any engine selector before running. The <a href="/trust">trust center</a> explains the workflow; the <a href="/blog/what-deleted-means">deletion guide</a> distinguishes temporary files, local copies and operational records.</p>
 
-  const getScrollEl = (article: HTMLElement | null): HTMLElement | null => {
-    if (!article) return null;
-    let el: HTMLElement | null = article.parentElement;
-    while (el && el !== document.body) {
-      const style = window.getComputedStyle(el);
-      const overflowOk = /(auto|scroll)/.test(style.overflowY);
-      const isScrollable = el.scrollHeight - el.clientHeight > 1;
-      if (overflowOk && isScrollable) return el;
-      el = el.parentElement;
-    }
-    return document.getElementById("workspace");
-  };
+      <h2 id="client-side-tools">2. Client-Side Tools</h2>
+      <p>Browser processing uses JavaScript or WebAssembly on your device. Tools such as text formatting, hashing, Markdown editing and subtitle conversion do not need to upload their input for that operation. Choosing a subsequent server or provider step changes the data path.</p>
+      <p>Local AI engines also run inference in the browser. They first need model and runtime files. Background Remover’s U²-Net-P model and runtime are served from this site. Other local models can download resources from Hugging Face or a CDN; those hosts receive normal connection information such as IP address, user agent and requested resource URL. A model download does not include the document or audio being processed locally.</p>
+      <p>Some AI workflows contain more than one step. Smart Redact can detect candidate text locally, then sends the PDF and the strings you approve to the backend to apply the redactions. Saving a translation as a PDF sends the translated text to the backend. Check the selected tool’s disclosure for the full workflow.</p>
+      <p>Preferences, recent-tool history, saved recipes, Vault items and provider settings can be stored in this browser. The PWA caches application resources and supported model resources for reuse. Browser storage can be cleared or evicted; signing in does not turn these items into a cloud backup, and installation does not make server tools available offline.</p>
 
-  // Passive scroll listener — no measurement-then-paint dependency, so
-  // useEffect (post-paint) is correct and doesn't block the first paint.
-  useEffect(() => {
-    const article = articleRef.current;
-    if (!article) return;
-    const scrollEl = getScrollEl(article);
-    let raf = 0;
-    const update = () => {
-      raf = 0;
-      const rect = article.getBoundingClientRect();
-      const viewportH = scrollEl ? scrollEl.clientHeight : window.innerHeight;
-      const articleTop = rect.top - (scrollEl ? scrollEl.getBoundingClientRect().top : 0);
-      const totalDistance = Math.max(1, rect.height - viewportH);
-      const scrolled = Math.min(Math.max(-articleTop, 0), totalDistance);
-      setProgress((scrolled / totalDistance) * 100);
-      const scrollTop = scrollEl ? scrollEl.scrollTop : (window.scrollY || document.documentElement.scrollTop);
-      setShowTop(scrollTop > 800);
-      const headingEls = Array.from(article.querySelectorAll<HTMLElement>("h2[id]"));
-      const comfort = viewportH * 0.25;
-      let current: string | null = null;
-      for (const h of headingEls) {
-        const top = h.getBoundingClientRect().top - (scrollEl ? scrollEl.getBoundingClientRect().top : 0);
-        if (top - comfort <= 0) current = h.id;
-        else break;
-      }
-      setActiveId(current);
-    };
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update); };
-    update();
-    const target = scrollEl || window;
-    target.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll);
-    return () => {
-      target.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
-      if (raf) cancelAnimationFrame(raf);
-    };
-  }, []);
+      <h2 id="what-we-dont-collect">3. Analytics Data Boundaries</h2>
+      <p><strong>These exclusions describe analytics.</strong> Specifically, they cover the page and tool-success events constructed by PrivaTools. They do not mean the service receives no personal data: an account requires identity information, a server task receives the selected file, and a support message contains what you send.</p>
+      <ul>
+        <li>PrivaTools’ manual analytics events do not include account identity, email addresses, passwords or API keys.</li>
+        <li>Those manual events do not include uploaded file contents, filenames, document text, prompts or tool output.</li>
+        <li>Public page events use canonical route URLs and route-derived titles, without URL queries or fragments. Account, settings and personal-workspace routes are excluded from tracking.</li>
+      </ul>
+      <p>Enabled outbound-link and video events have their own metadata, described in Section 6. An outbound-link event can include query parameters from its destination URL; the clean page URL does not remove those destination parameters.</p>
 
-  const scrollToHeading = useCallback((id: string) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const scrollEl = getScrollEl(articleRef.current);
-    if (scrollEl) {
-      const top = el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop - 80;
-      smoothScrollTo(scrollEl, top);
-    } else {
-      el.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    history.replaceState(null, "", `#${id}`);
-  }, []);
+      <h2 id="developer-accounts">4. Optional Accounts</h2>
+      <p>Interactive file tools can be used as a guest. An optional account provides account settings and access to developer API keys. Clerk manages the hosted site’s identity, authentication and sessions, including the email address, username and any profile information or connected sign-in provider you supply.</p>
+      <p>Clerk supports the enabled email verification, password-reset and sign-in flows. Security or verification messages may be sent to your email address. Passkeys can be added where supported; their availability depends on the configured account service and your browser or device. Hosted Clerk accounts do not use the legacy signup recovery-code flow.</p>
+      <p>The PrivaTools backend associates an account identifier with issued API keys and usage or quota records. It stores API-key hashes and identifiers, labels, creation/revocation information and last-use information so keys can be managed and checked. API use can therefore be associated with an account even though processed files are not saved as an account library.</p>
+      <p>The account-deletion action requests removal of the PrivaTools account records and keys, then deletion of the Clerk identity. A failed request can require another attempt. This does not clear browser-local Vault items, downloaded files, or operational records held separately by infrastructure providers.</p>
+      <p>Self-hosted operators can configure a different identity service or the legacy native-account mode. The operator’s configuration and privacy policy govern that deployment. Clerk’s <a href="https://clerk.com/docs/guides/how-clerk-works/cookies" target="_blank" rel="noopener noreferrer">authentication-cookie documentation</a> explains its session cookies, which support sign-in independently of optional analytics.</p>
 
-  const scrollToTop = () => {
-    const scrollEl = getScrollEl(articleRef.current);
-    if (scrollEl) smoothScrollTo(scrollEl, 0);
-    else window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+      <h2 id="server-infrastructure">5. Server Infrastructure</h2>
+      <p>Hosting and delivery providers handle network requests and technical connection data. Static application assets can be cached by the delivery layer. Processing API responses use <code>no-store</code> headers and are configured to bypass response caching.</p>
+      <p>Operational records support diagnostics, abuse prevention and service reliability. They can include timestamps, request identifiers, routes, status codes, duration, byte counts and error categories. Account operations can also record an account identifier. Hosting and proxy logs may contain IP addresses and other connection data. These records are separate from the temporary file cleanup described above; retention depends on the deployment’s operational configuration.</p>
+      <p>Self-hosting changes who operates the service. Inspect that operator’s infrastructure, logging and backup settings rather than assuming every installation has identical behavior.</p>
 
-  const copyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1800);
-    } catch { /* ignore */ }
-  };
+      <h2 id="third-party">6. Third-Party Services</h2>
+      <h3>Google Analytics and your choice</h3>
+      <p>When available and permitted by your choice or a reviewed regional policy, Google Analytics measures public page visits, sessions, engagement time and selected successful tool actions. Google receives browser and cookie identifiers, device/browser information and network connection information, including your IP address.</p>
+      <ul>
+        <li><strong>Enabled automatic events:</strong> Scroll depth, outbound-link clicks and supported embedded-video engagement. Outbound events can include the destination URL and domain, including destination query parameters, link identifiers and CSS classes. Video events can include the provider, video title and URL, duration, current position and playback progress. See <a href="https://support.google.com/analytics/answer/9216061?hl=en" target="_blank" rel="noopener noreferrer">Google’s event and parameter documentation</a>.</li>
+        <li><strong>Disabled automatic events:</strong> Form interactions, file downloads, site search and browser-history page views. PrivaTools sends its own canonical public-page events without queries or fragments and selected tool-success events without file or input details.</li>
+        <li><strong>User-provided data:</strong> The Google tag configuration permits this capability, but automatic detection and snippet-based collection are disabled. PrivaTools does not supply identity data through a <code>user_data</code> parameter.</li>
+        <li><strong>Advertising settings:</strong> Advertising storage, advertising user data, personalized advertising and Google Signals are disabled in the site’s tag configuration.</li>
+      </ul>
+      <p>Analytics requires opt-in unless a verified regional policy permits an opt-out default. An unknown region uses opt-in. Do Not Track and Global Privacy Control override an allowance. The control below saves your choice in this browser; withdrawing it stops further analytics collection through this site. Clearing site data resets the saved choice. Development previews do not send analytics. See <a href="https://business.safety.google/privacy/" target="_blank" rel="noopener noreferrer">Google’s information about data use</a>.</p>
+      <AnalyticsOptOutPanel/>
+      <h3>Identity, AI and delivery services</h3>
+      <ul>
+        <li><strong>Clerk and connected sign-in providers:</strong> Receive information needed for the account and authentication flows you use, including session and technical security information. Choosing an external sign-in provider also involves that provider.</li>
+        <li><strong>Your AI provider:</strong> BYOK requests go from your browser to the provider or endpoint you select. Depending on the task, that request can contain extracted document text, prompts, images or audio, along with your provider key. Review that provider’s terms and retention settings. PrivaTools does not proxy the provider key through its backend.</li>
+        <li><strong>Saved provider keys:</strong> The default local store encrypts saved keys in browser storage; session-only mode keeps keys in memory for the session. A key is readable in memory when needed for a provider request. Clearing a local key does not revoke it at the provider.</li>
+        <li><strong>Model and delivery hosts:</strong> Model hosts and configured delivery services, such as Cloudflare, can receive connection metadata for requests they handle. Fonts are served from this site’s <code>/fonts</code> assets. Model downloads and account requests are separate from the analytics choice.</li>
+      </ul>
 
-  // Honor hash on initial mount so /privacy#third-party scrolls into view.
-  useEffect(() => {
-    const hash = window.location.hash.slice(1);
-    if (hash && SECTIONS.some(s => s.id === hash)) {
-      // Delay so layout settles after lazy-route mount.
-      const t = setTimeout(() => scrollToHeading(hash), 60);
-      return () => clearTimeout(t);
-    }
-  }, [scrollToHeading]);
+      <h2 id="open-source">7. Open Source Transparency</h2>
+      <p>The PrivaTools application source is available at <a href="https://github.com/ethereaglehq/privatools" target="_blank" rel="noopener noreferrer">github.com/ethereaglehq/privatools</a>. You can inspect its processing, cleanup and analytics implementation or operate a self-hosted copy. Third-party libraries, models and services have their own licenses and terms. Source availability does not certify a particular deployment’s configuration or every possible output.</p>
 
-  return (
-    <div className="relative">
-      {/* Reading progress bar */}
-      <div className="sticky top-0 left-0 right-0 z-30 h-1 bg-transparent print:hidden">
-        <div
-          role="progressbar"
-          aria-valuenow={Math.round(progress)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Document reading progress"
-          className="h-full bg-accent transition-[width] duration-150 ease-out shadow-[0_0_12px_hsl(var(--accent)/0.6)]"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+      <h2 id="childrens-privacy">8. Children's Privacy</h2>
+      <p>The service is not directed at children under 13. Guest access still involves the network and processing data described in this policy. If you believe a child has supplied personal information to the service, contact us so we can review the request and appropriate removal steps.</p>
 
-      {/* AppShell already exposes `<main id="main-content">` — use <article>
-         for the policy body so screen readers expose it as its own landmark. */}
-      <article className="mx-auto max-w-6xl px-4 sm:px-6 py-10 sm:py-14">
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,3fr)_220px] gap-12">
+      <h2 id="changes">9. Changes to This Policy</h2>
+      <p>We update the date above when this policy changes. Its public version history records source changes. Review the current policy and tool disclosures when your processing or account needs change.</p>
 
-          {/* ── Article column ── */}
-          <article ref={articleRef} className="min-w-0 animate-fade-up">
-
-            {/* Back link + copy-link row */}
-            <nav className="mb-8 flex items-center justify-between flex-wrap gap-3" aria-label="Document navigation">
-              <Link
-                to="/about"
-                className="font-medium inline-flex items-center gap-1.5 text-[11.5px] text-muted-foreground hover:text-accent transition-colors"
-              >
-                <ArrowLeft size={12} /> About
-              </Link>
-              <button
-                onClick={copyLink}
-                className="font-medium inline-flex items-center gap-1.5 h-8 px-3 rounded-md border border-border bg-card text-[11.5px] text-muted-foreground hover:text-accent hover:border-accent/45 hover:bg-accent/[0.04] transition-colors"
-              >
-                {copied ? <><Check size={11} className="text-accent" /> Copied</> : <><Link2 size={11} /> Copy link</>}
-              </button>
-            </nav>
-
-            {/* ── Header ── */}
-            <header className="mb-8">
-              <div className="flex flex-wrap gap-2 mb-5 items-center">
-                <span className="font-medium inline-flex items-center gap-1.5 h-6 px-2 rounded-full border border-accent/30 bg-accent/[0.06] text-[9.5px] text-accent">
-                  <Shield size={10} /> Legal · Privacy
-                </span>
-              </div>
-
-              <h1
-                className="font-display font-bold text-foreground tracking-[-0.025em] leading-tight text-3xl sm:text-4xl lg:text-5xl"
-                style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50' }}
-              >
-                Privacy Policy
-              </h1>
-
-              <p className="font-display text-[16px] sm:text-[17px] text-muted-foreground mt-5 leading-relaxed max-w-prose">
-                How PrivaTools handles your files, your network requests, and the small amount of aggregate
-                pageview telemetry we collect. Written plainly, with no dark patterns.
-              </p>
-
-              <div className="font-medium mt-7 pb-7 border-b border-border flex items-center flex-wrap gap-x-4 gap-y-2 text-[11.5px] text-muted-foreground">
-                <span className="text-foreground">PrivaTools</span>
-                <span className="text-muted-foreground">·</span>
-                <span>Last updated <time dateTime="2026-06-18" className="text-accent">{LAST_UPDATED}</time></span>
-                <span className="text-muted-foreground">·</span>
-                <a
-                  href={GIT_HISTORY_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 hover:text-accent transition-colors"
-                >
-                  <History size={11} /> Version history
-                </a>
-              </div>
-            </header>
-
-            {/* ── The Short Version (highlighted corner-marked panel) ── */}
-            <section id="short-version" className="mb-10 scroll-mt-20">
-              <h2 className="sr-only">The Short Version</h2>
-              <aside className="relative rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden">
-                <div className="relative p-5 sm:p-6">
-                  <CornerMarks />
-                  <div className="flex items-center gap-2 mb-3">
-                    <Shield size={13} className="text-accent" />
-                    <span className="text-[11px] text-accent font-semibold">The short version</span>
-                  </div>
-                  <p className="font-display text-[15.5px] text-foreground leading-relaxed mb-3">
-                    <strong className="font-semibold">Your files are private.</strong> Server-side tools use isolated temporary
-                    storage and delete files immediately after the response is delivered. We never read, inspect, store, or share
-                    their contents.
-                  </p>
-                  <p className="font-display text-[15.5px] text-foreground/85 leading-relaxed">
-                    <strong className="font-semibold">We do collect anonymous pageview telemetry</strong> through a
-                    first-party <code>/api/analytics/pageview</code> beacon. No Google Analytics scripts run in your
-                    browser; our server forwards aggregate path/title/referrer data to GA4 only when its server-side
-                    secret is configured. Do Not Track, Global Privacy Control, and the local toggle below disable it.
-                  </p>
-                </div>
-              </aside>
-            </section>
-
-            <div className="blog-prose prose-headings:scroll-mt-20">
-
-              <h2 id="files-you-upload">1. Files You Upload</h2>
-              <p>
-                When you use a server-side tool (e.g., Merge PDF, Compress PDF), your file is uploaded
-                to our processing server over an encrypted HTTPS connection. Here is exactly what happens:
-              </p>
-              <ul>
-                <li><strong>Processing:</strong> Your file is held in isolated temporary per-request storage only for the duration of processing. It is never written to permanent storage.</li>
-                <li><strong>Deletion:</strong> The moment processing completes and your result is delivered, the original file and the output are unlinked from temporary storage. This typically takes less than one second after download.</li>
-                <li><strong>No inspection:</strong> Our servers process raw bytes. We never read, analyze, index, or inspect the contents of your files. We have no knowledge of what you upload.</li>
-                <li><strong>No retention:</strong> We do not retain copies, backups, thumbnails, or metadata from your files. Once deleted, they are unrecoverable.</li>
-              </ul>
-
-              <h2 id="client-side-tools">2. Client-Side Tools</h2>
-              <p>
-                A growing number of tools run <strong>entirely in your browser</strong> using JavaScript
-                and (in some cases) WebAssembly. For those browser-only processing steps, your data
-                never leaves your device — not even temporarily. You can verify by opening browser
-                DevTools → Network and watching for requests during processing.
-              </p>
-              <ul>
-                <li><strong>Developer utilities</strong>: JSON / XML Formatter, Text Diff, Base64
-                  Encoder, Hash Generator, CSV ↔ JSON Converter, Markdown ↔ HTML Converter,
-                  JWT Decoder, Regex Tester, Timestamp Converter, URL Encoder, Word Counter,
-                  Color Converter, UUID Generator, Lorem Ipsum Generator, Password Generator.</li>
-                <li><strong>Browser-side AI</strong>: Summarize PDF (distilbart-cnn-12-6) and Smart
-                  Redact detection (BERT-base-NER) run AI models <em>in your browser</em> via the
-                  @huggingface/transformers WebAssembly runtime. The models (~250 MB) are downloaded
-                  once from the Hugging Face CDN and cached in your browser's IndexedDB storage.
-                  After the model is cached, summarization and PII detection happen offline. Smart
-                  Redact sends the PDF and selected strings to the backend only after you approve
-                  redactions, so PyMuPDF can permanently remove the content.</li>
-                <li><strong>Subtitle Converter</strong>: SRT ↔ VTT ↔ ASS conversion happens entirely
-                  in your browser.</li>
-              </ul>
-              <p>
-                On first visit to a browser-side AI tool, your browser fetches the model from
-                <code> huggingface.co</code> and <code>cdn.jsdelivr.net</code> over HTTPS. Hugging Face
-                sees that <em>someone</em> requested the model file (the request includes your IP and
-                user agent, as with any web request); they do not see the content you intend to
-                summarise or scan for redaction. Subsequent summarization and Smart Redact detection
-                run offline from the cached model; applying Smart Redact still uses the isolated
-                backend to create the final redacted PDF.
-              </p>
-            </div>
-
-            {/* ── Highlighted clause (key data minimisation) ── */}
-            <section id="what-we-dont-collect" className="my-10 scroll-mt-20">
-              <h2 className="font-display font-bold text-[1.625rem] tracking-[-0.02em] leading-tight mt-10 mb-3 text-foreground">
-                3. Information We Do Not Collect
-              </h2>
-              <aside className="relative rounded-2xl border border-accent/30 bg-accent/[0.05] overflow-hidden">
-                <div className="relative p-5 sm:p-6">
-                  <CornerMarks />
-                  <p className="font-display text-[15.5px] text-foreground leading-relaxed mb-3">
-                    We do not collect:
-                  </p>
-                  <ul className="font-display text-[15.5px] text-foreground leading-relaxed space-y-1.5 list-disc pl-6">
-                    <li>Names, phone numbers, postal addresses, or payment details</li>
-                    <li>Personally identifiable information from analytics beacons</li>
-                    <li>Browser fingerprints or canvas-based device identifiers</li>
-                    <li>Behavioural profiles, session recordings, or remarketing audiences</li>
-                    <li>Advertising cookies or tracking pixels from ad networks</li>
-                    <li>File metadata, filenames, or content from uploaded files</li>
-                  </ul>
-                  <p className="font-display text-[15.5px] text-muted-foreground leading-relaxed mt-3">
-                    We <em>do</em> collect aggregate pageview counts through a first-party analytics proxy — see
-                    Section 6 for details and how to opt out.
-                  </p>
-                </div>
-              </aside>
-            </section>
-
-            <div className="blog-prose prose-headings:scroll-mt-20">
-              <h2 id="developer-accounts">4. Developer Accounts</h2>
-              <p>
-                Every file tool on this site works with no account. You do not need to sign up to use
-                anything, and nothing on a tool page asks you to.
-              </p>
-              <p>
-                An account exists for one purpose: issuing API keys for the developer API. If you
-                create one, we store your <strong>email address</strong> and a <strong>scrypt hash of
-                your password</strong> — never the password itself. We also store the keys you issue,
-                as a hash plus a short public identifier, so a key can be checked and rate-limited
-                without us holding the secret. Nothing else about you is recorded, and an account is
-                never linked to files processed through the tools.
-              </p>
-              <p>
-                We do not send email — not a welcome message, not a verification link, not a password
-                reset. That means your email address is never used to contact you, and it also means
-                there is no reset link if you forget your password. Instead you are given a
-                <strong> recovery code</strong> once, when you sign up. We store only a hash of it, so
-                we cannot tell you what it is later; if you lose both your password and your code, the
-                account cannot be recovered by us or by anyone else, and you would create a new one.
-              </p>
-              <p>
-                We do not send marketing email, share your address with anyone, or use it for
-                anything other than signing you in and contacting you about your keys. Deleting your
-                account removes the address, the password hash and every key immediately and
-                permanently; there is no soft-delete and no backup copy to restore from.
-              </p>
-              <p>
-                If you would rather not create an account at all, you do not have to. Every tool
-                remains free, unlimited and anonymous, and a self-hosted deployment can issue its own
-                keys through configuration instead.
-              </p>
-
-              <h2 id="server-infrastructure">5. Server Infrastructure</h2>
-              <p>
-                PrivaTools runs on Oracle Cloud Infrastructure (ARM-based, 24 GB RAM). The server is
-                located in a single data center and is maintained by the PrivaTools team. We use HTTPS
-                with HSTS for all connections. Our server does not log request bodies or file contents.
-                Standard web server access logs (timestamps, HTTP status codes, request paths) may be
-                retained for up to 7 days for operational debugging, but these logs never contain file
-                data or personally identifiable information.
-              </p>
-              <p>
-                Static assets may be served through Cloudflare's free edge CDN so the app shell loads
-                quickly from a nearby location. File-processing API routes are marked <code>no-store</code>,
-                are configured to bypass edge caching, and continue to run only on the PrivaTools
-                processing server.
-              </p>
-
-              <h2 id="third-party">6. Third-Party Services</h2>
-              <p>
-                PrivaTools uses the following third-party services. Typography is self-hosted
-                from <code>/fonts</code> on <code>privatools.me</code>; no Google Fonts or
-                Bunny Fonts requests are made.
-              </p>
-              <ul>
-                <li><strong>Google Analytics (GA4):</strong> We use a first-party <code>/api/analytics/pageview</code> proxy to understand which pages and tools are useful. Your browser does not load Google Analytics or Google Tag Manager scripts. When the server-side GA4 secret is configured, our backend forwards only the sanitized page path, title, same-origin referrer, and an anonymous client ID; it never forwards uploaded files or file metadata. Do Not Track, Global Privacy Control, this page's opt-out toggle, and standard blockers disable the browser beacon.</li>
-                <li><strong>Cloudflare:</strong> We use Cloudflare as an edge CDN for static files and TLS acceleration. Cloudflare may see standard connection metadata such as IP address, user agent, and requested URL. File uploads and tool outputs are not cached at the edge, and API responses carry no-store cache headers.</li>
-              </ul>
-              <AnalyticsOptOutPanel />
-              <p>
-                No advertising networks, remarketing scripts, or user profiling tools are used.
-              </p>
-
-              <h2 id="open-source">7. Open Source Transparency</h2>
-              <p>
-                The entire PrivaTools codebase — frontend and backend — is open source under the MIT
-                license at{" "}
-                <a href="https://github.com/ethereaglehq/privatools" target="_blank" rel="noopener noreferrer">
-                  github.com/ethereaglehq/privatools
-                </a>
-                . You can audit every line of code that handles your files. If you prefer maximum privacy,
-                you can self-host the entire application using Docker.
-              </p>
-
-              <h2 id="childrens-privacy">8. Children's Privacy</h2>
-              <p>
-                The file tools require no account and collect no personal data, so a child using
-                them leaves nothing behind. Developer accounts are optional, are intended for
-                developers using the API, and are not directed at children. We do not knowingly
-                create an account for anyone under 13 — if you believe we have, contact us and we
-                will delete it and its keys.
-              </p>
-
-              <h2 id="changes">9. Changes to This Policy</h2>
-              <p>
-                If we change this privacy policy, we will update the "Last updated" date at the top of
-                this page. Since we collect no user data, we have no way to notify you directly — we
-                recommend checking this page periodically if privacy is a concern. Every change is
-                tracked in the public git history linked above.
-              </p>
-
-              <h2 id="contact">10. Contact</h2>
-              <p>
-                If you have questions about this privacy policy or how PrivaTools handles your files,
-                contact us at{" "}
-                <a href="mailto:hello@privatools.me">hello@privatools.me</a> or open an issue on{" "}
-                <a href="https://github.com/ethereaglehq/privatools/issues" target="_blank" rel="noopener noreferrer">
-                  GitHub
-                </a>.
-              </p>
-            </div>
-
-            {/* ── Companion docs row ── */}
-            <aside className="mt-12 pt-8 border-t border-border">
-              <p className="section-mark mb-5">Related</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <Link
-                  to="/security"
-                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
-                >
-                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">01</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Security</p>
-                    <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">Vulnerability reporting, threat model, and subprocessors.</p>
-                  </div>
-                </Link>
-                <Link
-                  to="/terms"
-                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
-                >
-                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">02</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors">Terms of Service</p>
-                    <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">The legal terms for using PrivaTools.</p>
-                  </div>
-                </Link>
-                <a
-                  href="mailto:hello@privatools.me"
-                  className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 hover:border-accent/45 hover:bg-accent/[0.04] hover:-translate-y-0.5 transition-all"
-                >
-                  <span className="font-medium text-[11px] text-accent shrink-0 mt-0.5">03</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display text-[14.5px] font-semibold text-foreground tracking-[-0.015em] group-hover:text-accent transition-colors inline-flex items-center gap-1.5">
-                      <Mail size={12} /> Email us
-                    </p>
-                    <p className="text-[12.5px] text-muted-foreground mt-1 leading-snug">hello@privatools.me — questions on this policy.</p>
-                  </div>
-                </a>
-              </div>
-            </aside>
-
-          </article>
-
-          {/* ── Sticky TOC sidebar (desktop only) ── */}
-          <aside className="hidden lg:block">
-            <div className="sticky top-8">
-              <div className="rounded-xl border border-border bg-card overflow-hidden">
-                <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 flex items-center justify-between text-[11px] text-muted-foreground">
-                  <span className="flex items-center gap-1.5"><List size={10} className="text-accent" /> Contents</span>
-                  <span className="text-accent tabular-nums">{Math.round(progress)}%</span>
-                </div>
-                <nav className="p-3 max-h-[70vh] overflow-y-auto" aria-label="Table of contents">
-                  <ul className="space-y-0.5">
-                    {SECTIONS.map(s => {
-                      const isActive = activeId === s.id;
-                      return (
-                        <li key={s.id}>
-                          <button
-                            onClick={() => scrollToHeading(s.id)}
-                            className={cn(
-                              "relative block w-full text-left text-[12px] leading-snug pl-3 py-1.5 rounded transition-colors",
-                              isActive
-                                ? "text-accent font-medium bg-accent/[0.06]"
-                                : "text-muted-foreground hover:text-foreground hover:bg-secondary/40"
-                            )}
-                          >
-                            {isActive && (
-                              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 rounded bg-accent" aria-hidden="true" />
-                            )}
-                            {s.flag && <span className="inline-block w-1 h-1 rounded-full bg-accent mr-1.5 align-middle" aria-hidden="true" />}
-                            {s.title}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </nav>
-                <div className="font-medium px-4 py-3 border-t border-border bg-paper-2/40 flex items-center gap-2 text-[11px] text-muted-foreground">
-                  <a
-                    href="https://github.com/ethereaglehq/privatools"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 hover:text-accent transition-colors"
-                  >
-                    <Github size={11} /> Source
-                  </a>
-                </div>
-              </div>
-            </div>
-          </aside>
-
-        </div>
-
-        {/* Mobile TOC — appears below header on narrow viewports */}
-        <details className="lg:hidden mt-6 rounded-xl border border-border bg-card overflow-hidden">
-          <summary className="font-medium px-4 py-3 list-none cursor-pointer flex items-center gap-2 text-[11.5px] text-muted-foreground hover:bg-secondary/40 transition-colors">
-            <List size={12} className="text-accent" />
-            <span>Table of contents</span>
-            <span className="ml-auto font-mono text-[10px] tracking-wider text-accent">{SECTIONS.length}</span>
-          </summary>
-          <ul className="px-4 pb-3 space-y-1.5">
-            {SECTIONS.map(s => (
-              <li key={s.id}>
-                <button
-                  onClick={() => scrollToHeading(s.id)}
-                  className="block w-full text-left text-[12.5px] py-1 hover:text-accent transition-colors"
-                >
-                  {s.title}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </details>
-      </article>
-
-      {/* Scroll-to-top */}
-      <button
-        onClick={scrollToTop}
-        aria-label="Scroll to top"
-        className={cn(
-          "fixed bottom-8 right-6 z-40 h-10 w-10 rounded-full border border-accent/35 bg-card text-accent shadow-lg backdrop-blur transition-all hover:bg-accent/[0.08] hover:scale-105",
-          showTop ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-2 pointer-events-none"
-        )}
-      >
-        <ArrowUp size={15} className="mx-auto" />
-      </button>
+      <h2 id="contact">10. Contact</h2>
+      <p>For questions about this policy or a request concerning your information, contact <a href="mailto:hello@privatools.me">hello@privatools.me</a>. You can also report general issues on <a href="https://github.com/ethereaglehq/privatools/issues" target="_blank" rel="noopener noreferrer">GitHub</a>. Public issues are visible to others; use email for account or personal-data requests.</p>
     </div>
-  );
+  </DocumentStudio>;
 }

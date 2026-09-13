@@ -4,6 +4,7 @@ import { SimpleProcessUI } from "./SimpleProcessUI";
 export function SanitizeUI() {
     return (
         <SimpleProcessUI
+            handoffSlug="sanitize-pdf"
             endpoint="/sanitize"
             accepts=".pdf"
             outputSuffix="sanitized"

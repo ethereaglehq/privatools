@@ -17,10 +17,19 @@ function listSourceFiles(dir: string): string[] {
 }
 
 describe("API client usage", () => {
+    it("limits analytics raw API access to its same-origin regional policy", () => {
+        const source = readFileSync(join(root, "src/lib/analyticsBeacon.ts"), "utf8");
+        const paths = [...source.matchAll(/fetch\s*\(\s*(["'`])(\/api\/[^"'`]+)\1/g)].map(match => match[2]);
+        expect(paths).toEqual(["/api/analytics/policy"]);
+        expect(source).not.toContain("resolveApiOrigin");
+    });
     it("routes app backend submissions through the shared API client", () => {
         const allowedRawFetch = new Set([
             "src/components/BackendStatusBanner.tsx",
             "src/lib/api.ts",
+            // This read-only policy must use the website's trusted ingress,
+            // never the optional DNS-only processing API origin.
+            "src/lib/analyticsBeacon.ts",
         ]);
         const files = [
             ...listSourceFiles("src/components"),

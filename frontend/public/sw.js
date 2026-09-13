@@ -1,153 +1,144 @@
-/**
- * PrivaTools service worker.
- *
- * Strategy:
- *   1. App shell (HTML + CSS + JS hashed bundles) — stale-while-revalidate.
- *      Cached at install for "/" and "/index.html"; everything else slips
- *      into the shell cache lazily as the user navigates so the next visit
- *      paints instantly even on flaky networks.
- *   2. Static assets (icons, og image, fonts) — stale-while-revalidate.
- *   3. Tool routes — the last 10 visited /tool/* and /tools/* HTML responses
- *      are kept in a separate LRU cache so users can revisit recent tools
- *      offline. /index.html is served for unknown routes (SPA fallback).
- *   4. /api/* — bypassed completely. User files and tool outputs are
- *      privacy-sensitive and must never be cached.
- *   5. Cross-origin requests — pass-through. Self-hosted font files are cached
- *      as same-origin static assets.
- *
- * Versioning: bumping CACHE_VERSION wipes old caches in `activate`.
- */
+/* PrivaTools: cache application code, never user files or account responses. */
+const CACHE_VERSION = "v2.0.0";
+const SHELL_CACHE = `privatools-shell-${CACHE_VERSION}`;
+const ASSET_CACHE = `privatools-assets-${CACHE_VERSION}`;
+const APP_CACHE_PREFIX = /^privatools-(?:shell|assets|routes|fonts)-/;
+const STATIC_LIMIT = 250;
+const PRECACHE = [
+    "/manifest.json", "/icons/icon-192.png", "/icons/icon-512.png", "/icons/icon-maskable-512.png",
+    "/experience/air-mist.png", "/experience/air-graphite.png",
+];
 
-const CACHE_VERSION = "v1.5.1";
-const SHELL_CACHE   = `privatools-shell-${CACHE_VERSION}`;
-const ASSET_CACHE   = `privatools-assets-${CACHE_VERSION}`;
-const ROUTE_CACHE   = `privatools-routes-${CACHE_VERSION}`;
-const FONT_CACHE    = `privatools-fonts-${CACHE_VERSION}`;
-const ROUTE_LIMIT   = 10;
+const isSensitivePath = (url) => /^\/(?:api|account|auth|sign-in|sign-up|signin|signup|logout|download|downloads|upload|uploads|files|outputs|jobs)(?:\/|$)/i.test(url.pathname);
+const isStaticAsset = (url) => url.origin === self.location.origin && !url.search && (
+    /^\/assets\/[\w./-]+\.(?:js|mjs|css|wasm|woff2?|png|jpe?g|svg|webp|avif)$/i.test(url.pathname)
+    || /^\/(?:fonts|icons)\/[\w./-]+\.(?:woff2?|ttf|otf|png|svg|ico)$/i.test(url.pathname)
+    || /^\/brand\/privatools-[\w-]+\.(?:png|svg)$/i.test(url.pathname)
+    // Large model runtime files are cached only after a local tool requests
+    // them. Weights use their separate integrity-checked model cache.
+    || /^\/models\/ort-wasm-simd-threaded\.(?:mjs|wasm)$/.test(url.pathname)
+    || PRECACHE.includes(url.pathname)
+);
+const cacheable = (response) => response?.ok && response.type !== "opaque"
+    && !/(?:no-store|private)/i.test(response.headers.get("cache-control") || "")
+    && !response.headers.has("content-disposition");
 
-// Files we always want available offline — the SPA shell.
-const PRECACHE = ["/", "/index.html", "/manifest.json"];
+/** Parse only same-origin static references. Dynamic imports remain on demand. */
+function dependencies(source, base, type) {
+    const references = type === "html"
+        ? Array.from(source.matchAll(/<(?:script|link)\b[^>]*\b(?:src|href)=["']([^"']+)["'][^>]*>/gi), (m) => m[1])
+        : type === "js"
+            ? Array.from(source.matchAll(/(?:\b(?:import|export)\s*[^;"'()]*?\bfrom\s*|\bimport\s*)["']([^"']+)["']/g), (m) => m[1])
+            : Array.from(source.matchAll(/url\(\s*["']?([^"')]+)["']?\s*\)/g), (m) => m[1]);
+    return references.map((path) => { try { return new URL(path, base); } catch { return null; } })
+        .filter((url) => url && isStaticAsset(url));
+}
 
-/* ───────────────────────── install ───────────────────────── */
+async function precacheShell() {
+    const shell = await caches.open(SHELL_CACHE);
+    const assets = await caches.open(ASSET_CACHE);
+    const response = await fetch(new Request("/index.html", { cache: "reload", credentials: "omit" }));
+    if (!cacheable(response)) throw new Error("The application shell could not be cached.");
+    const html = await response.clone().text();
+    const queue = [...dependencies(html, `${self.location.origin}/index.html`, "html"),
+        ...PRECACHE.map((path) => new URL(path, self.location.origin))];
+    const seen = new Set();
+    while (queue.length) {
+        const url = queue.shift();
+        if (seen.has(url.href)) continue;
+        seen.add(url.href);
+        const resource = await fetch(new Request(url.href, { cache: "reload", credentials: "omit" }));
+        if (!cacheable(resource)) throw new Error(`An application asset could not be cached: ${url.pathname}`);
+        await assets.put(url.href, resource.clone());
+        const type = /\.(?:m?js)$/.test(url.pathname) ? "js" : /\.css$/.test(url.pathname) ? "css" : null;
+        if (type) queue.push(...dependencies(await resource.text(), url.href, type));
+    }
+    // Publish the shell only after its static import graph is available.
+    await shell.put("/index.html", response);
+}
+
 self.addEventListener("install", (event) => {
-    event.waitUntil(
-        caches.open(SHELL_CACHE).then((cache) => cache.addAll(PRECACHE)),
-    );
-    self.skipWaiting();
+    event.waitUntil(precacheShell());
+    // A replacement waits. It must never reload an in-progress file task.
 });
 
-/* ───────────────────────── activate ───────────────────────── */
 self.addEventListener("activate", (event) => {
-    const ALLOW = new Set([SHELL_CACHE, ASSET_CACHE, ROUTE_CACHE, FONT_CACHE]);
-    event.waitUntil(
-        caches.keys()
-            .then((keys) => Promise.all(keys.filter((k) => !ALLOW.has(k)).map((k) => caches.delete(k))))
-            .then(() => self.clients.claim()),
-    );
+    event.waitUntil((async () => {
+        const keys = await caches.keys();
+        // Keep preceding v2 static code for existing tabs. Legacy v1 allowed
+        // arbitrary GET responses, so those caches are always removed.
+        const previousAssets = keys.filter((key) => key.startsWith("privatools-assets-v2.") && key !== ASSET_CACHE).at(-1);
+        const keep = new Set([SHELL_CACHE, ASSET_CACHE, previousAssets]);
+        await Promise.all(keys.filter((key) => APP_CACHE_PREFIX.test(key) && !keep.has(key)).map((key) => caches.delete(key)));
+        await self.clients.claim();
+    })());
 });
 
-/* ───────────────────── helpers ───────────────────────────── */
-const isApi = (url) => url.pathname.startsWith("/api/");
-const isAsset = (url) =>
-    url.origin === self.location.origin &&
-    /\.(?:js|mjs|css|png|jpg|jpeg|gif|svg|ico|webp|avif|wasm|json|xml|txt|webmanifest)$/i.test(url.pathname);
-const isToolRoute = (url) =>
-    url.origin === self.location.origin &&
-    (url.pathname.startsWith("/tool/") || url.pathname.startsWith("/tools/"));
-const isFontRequest = (url) =>
-    url.origin === self.location.origin && /\.(?:woff2?|ttf|otf|eot)(?:\?|$)/i.test(url.pathname);
-
-/** Stale-while-revalidate: return cache if present, fetch in the background, replace. */
-async function staleWhileRevalidate(request, cacheName) {
-    const cache = await caches.open(cacheName);
+async function cachedAsset(request, event) {
+    const cache = await caches.open(ASSET_CACHE);
     const cached = await cache.match(request);
-    const network = fetch(request)
-        .then((response) => {
-            if (response && response.ok) {
-                // Clone before consuming because the response body is a stream.
-                cache.put(request, response.clone()).catch(() => {});
-            }
-            return response;
-        })
-        .catch(() => cached);
-    return cached || network;
-}
-
-/** LRU trim — keep only the most recent N entries in a cache. */
-async function trimCache(cacheName, max) {
-    const cache = await caches.open(cacheName);
-    const keys = await cache.keys();
-    if (keys.length <= max) return;
-    // Caches preserve insertion order; oldest entries are at the front.
-    await Promise.all(keys.slice(0, keys.length - max).map((req) => cache.delete(req)));
-}
-
-/** Navigation handler — SPA fallback to /index.html when offline. */
-async function handleNavigation(request) {
+    if (cached) return cached;
     try {
-        const fresh = await fetch(request);
-        // Cache successful navigation in the route LRU cache (tool routes only).
-        if (fresh && fresh.ok) {
-            const url = new URL(request.url);
-            if (isToolRoute(url)) {
-                const cache = await caches.open(ROUTE_CACHE);
-                cache.put(request, fresh.clone()).catch(() => {});
-                trimCache(ROUTE_CACHE, ROUTE_LIMIT).catch(() => {});
+        const response = await fetch(request);
+        if (cacheable(response)) {
+            event.waitUntil((async () => {
+                await cache.put(request, response.clone());
+                const keys = await cache.keys();
+                // Preserve precached entry dependencies by evicting newest runtime
+                // additions when the cap is reached, not oldest shell files.
+                if (keys.length > STATIC_LIMIT) await Promise.all(keys.slice(STATIC_LIMIT).map((key) => cache.delete(key)));
+            })());
+        }
+        return response;
+    } catch {
+        // An open older tab may request an older hashed chunk after an update.
+        const old = await caches.match(request);
+        if (old) return old;
+        return Response.error();
+    }
+}
+
+async function publicNavigation(request) {
+    try { return await fetch(request); }
+    catch {
+        const shell = await (await caches.open(SHELL_CACHE)).match("/index.html");
+        // The cached root document is more restrictive than the real model
+        // route. Preserve its HTML/nonce and every other directive, adding
+        // only the WASM capability already granted to this exact server route.
+        // No script eval, remote script host, provider egress or URL caching.
+        if (shell && new URL(request.url).pathname.replace(/\/+$/, "") === "/tools/remove-background") {
+            const headers = new Headers(shell.headers);
+            const current = headers.get("Content-Security-Policy");
+            if (current) {
+                const policy = current.replace(/(^|;)\s*script-src\s+([^;]*)/i, (directive, separator, sources) =>
+                    sources.includes("'wasm-unsafe-eval'") || sources.includes("'none'") ? directive
+                        : `${separator} script-src ${sources.trim()} 'wasm-unsafe-eval'`);
+                if (policy !== current) {
+                    headers.set("Content-Security-Policy", policy);
+                    return new Response(shell.body, { status: shell.status, statusText: shell.statusText, headers });
+                }
             }
         }
-        return fresh;
-    } catch {
-        // Offline — try the exact request first, then fall through to /index.html.
-        const cached = await caches.match(request);
-        if (cached) return cached;
-        const shell = await caches.match("/index.html");
-        if (shell) return shell;
-        return new Response(
-            "<h1>You are offline</h1><p>Reconnect to load this tool.</p>",
-            { headers: { "content-type": "text/html; charset=utf-8" }, status: 503 },
-        );
+        return shell || new Response("<!doctype html><html lang='en'><meta charset='utf-8'><meta name='viewport' content='width=device-width'><title>PrivaTools is offline</title><h1>Reconnect to open PrivaTools</h1><p>Once the app is ready, previously opened browser tools can work offline. Server tools require a connection.</p></html>", {
+            status: 503, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" },
+        });
     }
 }
 
-/* ───────────────────────── fetch ────────────────────────── */
 self.addEventListener("fetch", (event) => {
     const { request } = event;
-    if (request.method !== "GET") return;
-
     const url = new URL(request.url);
-
-    // Never cache the user's files / tool outputs — privacy boundary.
-    if (isApi(url)) return;
-
-    // Navigation requests — SPA shell fallback + tool-route LRU.
+    // Strict allowlist: arbitrary same-origin GETs are deliberately untouched.
+    if (request.method !== "GET" || url.origin !== self.location.origin
+        || request.headers.has("authorization") || request.cache === "no-store"
+        || request.headers.has("range") || isSensitivePath(url)) return;
     if (request.mode === "navigate") {
-        event.respondWith(handleNavigation(request));
-        return;
+        event.respondWith(publicNavigation(request));
+    } else if (isStaticAsset(url)) {
+        event.respondWith(cachedAsset(request, event));
     }
-
-    // Cross-origin analytics/model/CDN requests pass through.
-    if (url.origin !== self.location.origin) {
-        return;
-    }
-
-    if (isFontRequest(url)) {
-        event.respondWith(staleWhileRevalidate(request, FONT_CACHE));
-        return;
-    }
-
-    // Hashed JS/CSS/asset chunks — stale-while-revalidate. Vite content-hashes
-    // filenames so cache hits are always for an immutable artifact; SWR keeps
-    // the latest copy warm for the next deploy.
-    if (isAsset(url)) {
-        event.respondWith(staleWhileRevalidate(request, ASSET_CACHE));
-        return;
-    }
-
-    // Anything else same-origin — try cache then network.
-    event.respondWith(staleWhileRevalidate(request, SHELL_CACHE));
 });
 
-/* ─────────── Allow the page to ask the SW to activate immediately ─────────── */
 self.addEventListener("message", (event) => {
     if (event.data === "SKIP_WAITING") self.skipWaiting();
 });

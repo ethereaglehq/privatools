@@ -22,7 +22,9 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
         const path = join(dir, entry.name);
         if (entry.isDirectory()) {
             sourceFiles(path, out);
-        } else if (/\.(ts|tsx)$/.test(entry.name)) {
+        } else if (/\.(ts|tsx)$/.test(entry.name) && !/\.(test|spec)\.tsx?$/.test(entry.name)) {
+            // Colocated tests deliberately exercise unknown URLs and aliases;
+            // their fixtures are not links rendered by the application.
             out.push(path);
         }
     }
@@ -89,7 +91,11 @@ describe("tool registry quality", () => {
         const opensearch = readFileSync(join(root, "public/opensearch.xml"), "utf8");
         const currentSurfaces = [blogCopy, comparePage, daylightApp, aboutPage, opensearch].join("\n");
 
-        expect(blogCopy).toContain(`${TOTAL_TOOL_COUNT} tools`);
+        // Guides need not advertise a catalogue count. Any explicit total
+        // they do publish must still match the shared registry.
+        for (const claim of blogCopy.matchAll(/\b(\d{3,}) tools\b/g)) {
+            expect(Number(claim[1])).toBe(TOTAL_TOOL_COUNT);
+        }
         expect(blogCopy).not.toMatch(/\b152\b|175\+|Tools:<\/strong> 107/);
         expect(currentSurfaces).not.toMatch(/175\+/);
         expect(comparePage).toContain("TOOL_BREADTH_LABEL");

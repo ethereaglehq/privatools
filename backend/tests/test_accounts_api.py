@@ -309,3 +309,71 @@ def test_rotating_a_recovery_code_keeps_you_signed_in(client):
     assert client.post("/api/auth/recovery-code",
                        json={"current_password": CREDS["password"]}).status_code == 200
     assert client.get("/api/auth/me").status_code == 200
+
+
+@pytest.mark.parametrize("endpoint,extra", [
+    ("/api/auth/password", {"new_password": "a-new-synthetic-passphrase"}),
+    ("/api/auth/recovery-code", {}),
+])
+def test_current_password_endpoints_respect_the_account_lockout(client, endpoint, extra):
+    from backend.app.auth import accounts as acc
+    _register(client)
+    for _ in range(acc.MAX_FAILURES):
+        acc.record_login_failure(CREDS["email"])
+    res = client.post(endpoint, json={"current_password": CREDS["password"], **extra})
+    assert res.status_code == 429
+    assert int(res.headers["retry-after"]) > 0
+
+
+@pytest.mark.parametrize("endpoint,extra", [
+    ("/api/auth/password", {"new_password": "a-new-synthetic-passphrase"}),
+    ("/api/auth/recovery-code", {}),
+])
+def test_current_password_failures_are_counted_per_account(client, endpoint, extra):
+    from backend.app.auth import accounts as acc
+    _register(client)
+    for _ in range(acc.MAX_FAILURES):
+        res = client.post(endpoint, json={"current_password": "a-wrong-synthetic-passphrase", **extra})
+        assert res.status_code == 401
+    assert acc.login_locked_until(CREDS["email"]) is not None
+
+
+def test_created_key_record_matches_the_list_contract(client):
+    _register(client)
+    record = client.post("/api/keys", json={"label": "Synthetic contract check"}).json()["record"]
+    assert record["last_used_at"] is None
+    assert record == client.get("/api/keys").json()["keys"][0]
+
+
+@pytest.mark.parametrize("endpoint,payload", [
+    ("register", CREDS),
+    ("login", CREDS),
+    ("recover", {"email": CREDS["email"], "recovery_code": "synthetic-code", "new_password": "a-new-synthetic-password"}),
+    ("password", {"current_password": CREDS["password"], "new_password": "a-new-synthetic-password"}),
+    ("recovery-code", {"current_password": CREDS["password"]}),
+])
+def test_clerk_deployment_rejects_native_credentials_before_auth_or_writes(client, monkeypatch, endpoint, payload):
+    from backend.app.routes import accounts as routes
+
+    _register(client)
+    raw_key = client.post("/api/keys", json={"label": "Retained key"}).json()["key"]
+    original_user = routes.accounts.credentials_for(CREDS["email"])
+    monkeypatch.setattr(routes.clerk_session, "is_configured", lambda: True)
+
+    def unexpected(*args, **kwargs):
+        pytest.fail("Native credentials must be rejected before verification, hashing or account writes")
+
+    with monkeypatch.context() as scoped:
+        scoped.setattr(routes.clerk_session, "verify", unexpected)
+        for name in ("hash_password", "verify"):
+            scoped.setattr(routes.hashing_pool, name, unexpected)
+        for name in ("credentials_for", "create_user_with_hash", "create_session", "record_login", "apply_recovery", "change_password", "rotate_recovery_code"):
+            scoped.setattr(routes.accounts, name, unexpected)
+        response = client.post(f"/api/auth/{endpoint}", json=payload)
+    assert response.status_code == 409
+    assert "Clerk sign-in or email password reset" in response.json()["detail"]
+    assert "set-cookie" not in response.headers
+    assert routes.accounts.credentials_for(CREDS["email"]) == original_user
+    assert raw_key.startswith("pk_")
+    monkeypatch.setattr(routes.clerk_session, "is_configured", lambda: False)
+    assert client.get("/api/keys").json()["keys"][0]["label"] == "Retained key"

@@ -71,8 +71,8 @@ def _missing(policy: str, name: str, required: set[str]) -> set[str]:
     return required - _sources(policy, name)
 
 
-ACCOUNT_PATHS = ["/account", "/account/keys", "/account/"]
-NON_ACCOUNT_PATHS = ["/", "/tool/merge-pdf", "/tool/summarize-pdf", "/about", "/accounts-payable"]
+ACCOUNT_PATHS = ["/account", "/account/keys", "/account/", "/account/sign-in", "/account/sign-up", "/account/settings", "/account/settings/"]
+NON_ACCOUNT_PATHS = ["/", "/tool/merge-pdf", "/tool/summarize-pdf", "/about", "/accounts-payable", "/settings", "/ai", "/api", "/trust"]
 
 
 @pytest.mark.parametrize("path", ACCOUNT_PATHS)

@@ -7,6 +7,7 @@ import { Loader2, CheckCircle2, AlertCircle, PenTool, Upload, RotateCcw } from "
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
 import { FileUploadZone } from "./FileUploadZone";
+import { PdfPageStage } from "./pdf/PdfPageStage";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const PAGE_W = 612;
@@ -30,6 +31,8 @@ export function SignUI() {
     const [file, setFile] = useState<File | null>(null);
     const [sigData, setSigData] = useState("");
     const [sigFile, setSigFile] = useState<File | null>(null);
+    const [sigFilePreview, setSigFilePreview] = useState<string | null>(null);
+    useEffect(() => { if (!sigFile) { setSigFilePreview(null); return; } const url = URL.createObjectURL(sigFile); setSigFilePreview(url); return () => URL.revokeObjectURL(url); }, [sigFile]);
     const [page, setPage] = useState(1);
 
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
@@ -81,7 +84,7 @@ export function SignUI() {
         e.preventDefault();
         const { x, y } = getPos(e);
         ctx.lineTo(x, y);
-        ctx.strokeStyle = "hsl(var(--foreground))";
+        ctx.strokeStyle = "#202329";
         ctx.lineWidth = 2.5;
         ctx.stroke();
     };
@@ -223,7 +226,7 @@ export function SignUI() {
                                     onPointerUp={endDraw}
                                     onPointerCancel={endDraw}
                                     aria-label="Draw your signature"
-                                    className="w-full cursor-crosshair touch-none"
+                                    className="w-full cursor-crosshair touch-none bg-white"
                                     style={{ touchAction: "none" }}
                                 />
                                 {!sigData && !sigFile && (
@@ -235,10 +238,10 @@ export function SignUI() {
                             {sigFile && (
                                 <div className="mt-2 flex items-center gap-3 rounded-md border border-border bg-paper-2/40 px-3 py-2">
                                     <img
-                                        src={URL.createObjectURL(sigFile)}
+                                        src={sigFilePreview || undefined}
                                         alt="Signature preview"
                                         className="max-h-12 max-w-[120px] object-contain"
-                                        onLoad={(e) => URL.revokeObjectURL((e.currentTarget as HTMLImageElement).src)}
+
                                     />
                                     <p className="font-medium text-[11px] text-accent truncate">
                                         <span className="text-foreground truncate">{sigFile.name}</span>
@@ -258,10 +261,10 @@ export function SignUI() {
                     {/* Placement panel */}
                     <div className="rounded-xl border border-border bg-card overflow-hidden">
                         <div className="font-medium px-4 py-2 border-b border-border bg-paper-2/40 text-[11.5px] text-muted-foreground">
-                            Placement (points)
+                            Placement · points from the bottom-left
                         </div>
-                        <div className="grid grid-cols-1 lg:grid-cols-[1fr_180px] gap-5 p-4 items-center">
-                            <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                        <div className="pdf-coordinate-workspace">
+                            <div className="pdf-coordinate-controls">
                                 {([
                                     { f: "page", label: "Page", val: page, set: setPage, min: 1 },
                                     { f: "x", label: "X", val: x, set: setX, min: 0 },
@@ -280,21 +283,7 @@ export function SignUI() {
                                 ))}
                             </div>
                             {/* Mini page preview */}
-                            <div className="relative aspect-[3/4] bg-card border border-border rounded-md mx-auto w-full max-w-[180px] overflow-hidden">
-                                <div
-                                    className="absolute border-2 border-accent bg-accent/15"
-                                    style={{
-                                        left: `${(x / PAGE_W) * 100}%`,
-                                        top: `${(y / PAGE_H) * 100}%`,
-                                        width: `${(width / PAGE_W) * 100}%`,
-                                        height: `${(height / PAGE_H) * 100}%`,
-                                        minWidth: 4, minHeight: 4,
-                                    }}
-                                >
-                                    <span className="absolute inset-0 flex items-center justify-center font-display italic text-accent text-[7px]">sign</span>
-                                </div>
-                                <span className="absolute bottom-1 left-1/2 -translate-x-1/2 font-mono text-[9px] tracking-wider text-muted-foreground">page {page}</span>
-                            </div>
+                            <PdfPageStage file={file} page={page} onPageChange={setPage} coordinateOrigin="bottom" regions={[{ id: "signature", page, x, y, width, height, image: sigFilePreview || sigData || undefined, label: "Your signature" }]} drawLabel="Place signature" disabled={state === "processing"} onDraw={region => { setX(Math.round(region.x)); setY(Math.round(region.y)); setWidth(Math.round(region.width)); setHeight(Math.round(region.height)); }} />
                         </div>
                     </div>
 
@@ -305,7 +294,7 @@ export function SignUI() {
                     )}
 
                     <div className="flex items-center gap-3">
-                        <button onClick={process} disabled={state === "processing"} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
+                        <button onClick={process} disabled={state === "processing" || (!sigData && !sigFile)} className="btn-accent disabled:opacity-60 disabled:cursor-not-allowed">
                             {state === "processing" ? <><Loader2 size={13} className="animate-spin" /> Signing…</> : <><PenTool size={13} /> Sign PDF</>}
                         </button>
                         {state !== "processing" && (

@@ -1,67 +1,89 @@
-"""Decode QR codes (and other barcodes) from images via pyzbar.
-
-pyzbar links against the libzbar system library at import time, which can
-fail on hosts where zbar isn't installed (CI containers, some macOS
-brew setups). Importing lazily inside the entrypoint keeps the rest of
-the backend serviceable on those hosts — the import only fires when the
-QR-reader route is actually hit.
-"""
-
+"""Decode QR and barcodes without allowing a native crash to kill the server."""
 from __future__ import annotations
 
+import json
 import logging
+import subprocess
+import sys
+from pathlib import Path
 
-from ..utils.exceptions import DependencyError, ValidationError
+from ..utils.exceptions import DependencyError, ExternalToolError, ToolTimeoutError, ValidationError
 from ..utils.images import open_image_safe
 
 logger = logging.getLogger(__name__)
+_DECODE_WORKER = Path(__file__).with_name("_qr_decode_worker.py")
+_DECODE_TIMEOUT_SECONDS = 10
+_MAX_OUTPUT_BYTES = 8 * 1024 * 1024
+_MAX_CODES = 1000
+
+
+def _valid_codes(value: object) -> bool:
+    if not isinstance(value, list) or len(value) > _MAX_CODES:
+        return False
+    for item in value:
+        if not isinstance(item, dict) or not isinstance(item.get("data"), str) or not isinstance(item.get("type"), str):
+            return False
+        rect = item.get("rect")
+        if not isinstance(rect, dict) or any(type(rect.get(key)) is not int for key in ("left", "top", "width", "height")):
+            return False
+        if rect["width"] < 0 or rect["height"] < 0:
+            return False
+    return True
+
+
+def _run_decoder(engine: str, image_path: str) -> tuple[str, list[dict]]:
+    """Bound native execution and return a small, validated JSON protocol."""
+    try:
+        process = subprocess.run(
+            [sys.executable, "-I", str(_DECODE_WORKER), engine, str(Path(image_path).resolve())],
+            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            timeout=_DECODE_TIMEOUT_SECONDS, check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return "timeout", []
+    except OSError:
+        return "dependency", []
+    # SIGSEGV/SIGABRT stays inside the child, and subprocess.run reaps it.
+    if process.returncode < 0 or len(process.stdout) > _MAX_OUTPUT_BYTES:
+        return "failed", []
+    try:
+        payload = json.loads(process.stdout)
+    except (ValueError, UnicodeDecodeError):
+        return "failed", []
+    if not isinstance(payload, dict):
+        return "failed", []
+    if process.returncode == 0 and payload.get("ok") is True and _valid_codes(payload.get("codes")):
+        return "ok", payload["codes"]
+    status = payload.get("error")
+    return (status if isinstance(status, str) and status in {"dependency", "invalid", "failed"} else "failed"), []
 
 
 def read_qr(image_path: str) -> list[dict]:
-    """Decode QR codes (and other barcodes) from an image.
+    """Return decoded ``data``, barcode ``type`` and pixel ``rect`` dictionaries.
 
-    Args:
-        image_path: Path to the image file.
-
-    Returns:
-        List of dicts with keys: data, type, rect.
+    Zbar remains the primary decoder for its complete barcode support. On a
+    host where its native library crashes or cannot load, the already-installed
+    OpenCV decoder handles QR and EAN/UPC instead. Both engines run in separate
+    fresh processes with independent 10-second limits, including on Linux.
     """
-    try:
-        # Import inside the call so a missing libzbar doesn't poison the
-        # whole services package import at server startup.
-        from pyzbar.pyzbar import decode  # type: ignore[import-not-found]
-    except ImportError as exc:
-        raise DependencyError(
-            "QR reader requires the zbar system library. "
-            "Install with: apt-get install libzbar0 (Debian) or brew install zbar (macOS)."
-        ) from exc
-
-    with open_image_safe(image_path) as img:
-        try:
-            decoded = decode(img)
-        except Exception as exc:
-            # pyzbar wraps a C library — anything unexpected is treated as a
-            # validation error so the user sees a sane message. Log only the
-            # error class, not the path (server temp paths leak filesystem
-            # layout to anyone with log access).
-            logger.warning(
-                "pyzbar decode failed",
-                extra={"error_class": type(exc).__name__},
-            )
-            raise ValidationError("Could not decode QR codes from this image.") from exc
-
-    results: list[dict] = []
-    for obj in decoded:
-        results.append({
-            "data": obj.data.decode("utf-8", errors="replace"),
-            "type": obj.type,
-            "rect": {
-                "left": obj.rect.left,
-                "top": obj.rect.top,
-                "width": obj.rect.width,
-                "height": obj.rect.height,
-            },
-        })
-
-    logger.info("qr_reader: decoded %d code(s)", len(results))
-    return results
+    # Retain the existing image/size validation before starting a subprocess.
+    with open_image_safe(image_path):
+        pass
+    primary_status, codes = _run_decoder("zbar", image_path)
+    if primary_status == "ok":
+        logger.info("qr_reader: decoded %d code(s)", len(codes))
+        return codes
+    if primary_status == "invalid":
+        raise ValidationError("Could not decode QR codes or barcodes from this image.")
+    logger.warning("qr_reader: isolated zbar decoder unavailable; trying OpenCV", extra={"decoder_status": primary_status})
+    fallback_status, codes = _run_decoder("opencv", image_path)
+    if fallback_status == "ok":
+        logger.info("qr_reader: decoded %d code(s) with OpenCV", len(codes))
+        return codes
+    if fallback_status == "invalid":
+        raise ValidationError("Could not decode QR codes or barcodes from this image.")
+    if "timeout" in {primary_status, fallback_status}:
+        raise ToolTimeoutError("QR and barcode reading timed out. Try a smaller image.")
+    if primary_status == fallback_status == "dependency":
+        raise DependencyError("QR reader is unavailable because its image-decoding libraries are missing on the server.")
+    raise ExternalToolError("The QR and barcode decoder could not process this image. Try another image or try again later.")

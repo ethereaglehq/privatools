@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { readThemeChoice, resolveTheme, setThemeChoice } from "./skinTheme";
+import { readThemeChoice, resolveTheme, setThemeChoice, watchThemeChoice } from "./skinTheme";
 
 beforeEach(() => {
     localStorage.clear();
@@ -26,10 +26,10 @@ describe("persistence", () => {
         expect(readThemeChoice("daylight")).toBe("dark");
     });
 
-    it("falls back to light for an unset or corrupt value", () => {
-        expect(readThemeChoice("daylight")).toBe("light");
+    it("follows the system for an unset or corrupt value", () => {
+        expect(readThemeChoice("daylight")).toBe("system");
         localStorage.setItem("privatools.daylight.theme", "chartreuse");
-        expect(readThemeChoice("daylight")).toBe("light");
+        expect(readThemeChoice("daylight")).toBe("system");
     });
 });
 
@@ -55,6 +55,21 @@ describe("painting now", () => {
 });
 
 describe("system resolution", () => {
+    it("keeps a manual override when persistence is blocked and the OS changes", () => {
+        const media = new EventTarget();
+        Object.assign(media, { matches: true });
+        vi.spyOn(window, "matchMedia").mockReturnValue(media as MediaQueryList);
+        const write = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("Storage blocked"); });
+        const changed = vi.fn();
+        const stop = watchThemeChoice("daylight", changed);
+        setThemeChoice("daylight", "dark");
+        media.dispatchEvent(new Event("change"));
+        expect(document.documentElement.dataset.theme).toBe("dark");
+        expect(changed).toHaveBeenLastCalledWith("dark");
+        stop();
+        write.mockRestore();
+        setThemeChoice("daylight", "system");
+    });
     it("resolves system against the OS, since the DOM only knows light or dark", () => {
         vi.spyOn(window, "matchMedia").mockReturnValue({ matches: true } as MediaQueryList);
         expect(resolveTheme("system")).toBe("light");

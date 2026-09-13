@@ -162,11 +162,11 @@ export function BackendStatusBanner() {
           <AlertTriangle size={12} className="text-copper" />
         </span>
         <span className="text-[11.5px] text-copper font-medium shrink-0">
-          Backend offline
+          Server tools unavailable
         </span>
         <span className="opacity-50 hidden sm:inline">—</span>
         <span className="hidden sm:inline opacity-90">
-          File tools can't run. Server-side processing needs the FastAPI backend.
+          Tools that run on this device still work. Try server processing again in a moment.
         </span>
         <button
           onClick={checkHealth}

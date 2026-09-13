@@ -1,0 +1,743 @@
+[
+  {
+    "slug": "remove-bg",
+    "name": "remove.bg",
+    "title": "PrivaTools vs remove.bg: choosing a background-removal workflow",
+    "description": "Compare background-removal workflows, transparent PNG output and processing choices, with the official remove.bg migration notice and practical checks.",
+    "summary": "PrivaTools is a fit when you want a cutout to download and use elsewhere. remove.bg says it is moving background removal into Canva. Consider that direction if background removal is one step in your Canva design workflow.",
+    "category": "Images & design",
+    "choosePrivaTools": [
+      "You want to remove an image background without creating an account and download a transparent PNG.",
+      "You want to choose the processing engine explicitly and use the result in an application of your choice."
+    ],
+    "chooseCompetitor": [
+      "You already work in Canva and want to evaluate its connected design workflow.",
+      "You depend on remove.bg's listed integrations and want to check what changes before replacing that workflow."
+    ],
+    "tradeoffs": [
+      "The reviewed migration notice does not specify a shutdown date. The remove.bg homepage still presents its background remover; a migration announcement is not proof the service has closed.",
+      "Inspect a representative result before switching. Hair, glass, shadows and similar foreground/background colours can produce imperfect cutouts. We have not benchmarked the two services.",
+      "PrivaTools' server engine uploads your image for processing. Review the engine selector and current limits before running; an account-free tool is not an unlimited or automatically local service."
+    ],
+    "features": [
+      {
+        "label": "What you keep",
+        "privatools": "A transparent PNG cutout to download. Keep the original separately and inspect the edges.",
+        "competitor": "The homepage describes transparent PNG cutouts and background changes for designs and product images.",
+        "sourceUrl": "https://www.remove.bg/"
+      },
+      {
+        "label": "Workflow direction",
+        "privatools": "A standalone background-removal workspace alongside image conversion, resizing and other file tools.",
+        "competitor": "Its FAQ announces migration of background removal into Canva.",
+        "sourceUrl": "https://www.remove.bg/faq"
+      },
+      {
+        "label": "Before switching",
+        "privatools": "Test your own image, check the selected processing path and download the accepted result.",
+        "competitor": "Its site lists an API, integrations and apps. If you use one, check its current availability and migration information directly.",
+        "sourceUrl": "https://www.remove.bg/"
+      }
+    ],
+    "sources": [
+      {
+        "label": "remove.bg migration notice",
+        "url": "https://www.remove.bg/faq"
+      },
+      {
+        "label": "remove.bg background-removal product page",
+        "url": "https://www.remove.bg/"
+      }
+    ],
+    "relatedLinks": [
+      {
+        "label": "Try Background Remover",
+        "url": "/tools/remove-background"
+      },
+      {
+        "label": "Plan a background-removal workflow",
+        "url": "/blog/remove-bg-canva-alternative"
+      },
+      {
+        "label": "Choose the processing engine",
+        "url": "/blog/remove-background-without-uploading"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "ilovepdf",
+    "name": "iLovePDF",
+    "title": "PrivaTools vs iLovePDF: everyday tools or a connected PDF suite?",
+    "description": "Compare PrivaTools and iLovePDF for everyday file tasks, mobile PDF work and desktop processing, with official sources and clear tradeoffs.",
+    "summary": "PrivaTools suits a mix of PDF, image, media and text tasks in one workspace. iLovePDF is worth considering when PDF work follows you between its web, mobile and desktop apps, or your files already live in Google Drive or Dropbox.",
+    "category": "Everyday PDF",
+    "choosePrivaTools": [
+      "You switch between PDFs, images, media and developer utilities.",
+      "You want to inspect the source or run the service on infrastructure you manage."
+    ],
+    "chooseCompetitor": [
+      "You want dedicated iOS or Android PDF apps alongside a desktop edition.",
+      "Google Drive and Dropbox integration is part of your normal PDF workflow."
+    ],
+    "tradeoffs": [
+      "iLovePDF's web and desktop editions have different processing paths. Its desktop tools include offline processing; the web service processes uploaded files.",
+      "Check the current plan and exact tool before choosing: batch allowances and some features vary. This comparison does not benchmark conversion quality."
+    ],
+    "features": [
+      {
+        "label": "Everyday work",
+        "privatools": "PDF, image, video, audio and text tools, plus batch and compatible pipelines.",
+        "competitor": "A PDF suite with web, mobile and desktop editions.",
+        "sourceUrl": "https://www.ilovepdf.com/features"
+      },
+      {
+        "label": "Offline option",
+        "privatools": "Some browser tools can work offline once their resources are available. Server tools need a connection.",
+        "competitor": "Desktop PDF tools process locally; some features can still require internet access.",
+        "sourceUrl": "https://www.ilovepdf.com/help/terms"
+      },
+      {
+        "label": "Connected files",
+        "privatools": "Start with files from your device; results download back to you.",
+        "competitor": "Google Drive and Dropbox integration is documented.",
+        "sourceUrl": "https://www.ilovepdf.com/features"
+      }
+    ],
+    "sources": [
+      {
+        "label": "iLovePDF features",
+        "url": "https://www.ilovepdf.com/features"
+      },
+      {
+        "label": "iLovePDF terms and processing distinctions",
+        "url": "https://www.ilovepdf.com/help/terms"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "smallpdf",
+    "name": "Smallpdf",
+    "title": "PrivaTools vs Smallpdf: occasional tasks or a connected PDF workflow?",
+    "description": "A sourced comparison of PrivaTools and Smallpdf covering document workflows, desktop use, cloud storage and practical reasons to choose either.",
+    "summary": "PrivaTools is a useful fit for separate file tasks across several formats. Smallpdf is worth considering when you want its connected PDF workflows, cloud integrations and mobile apps, with a Windows desktop option for offline PDF work.",
+    "category": "Everyday PDF",
+    "choosePrivaTools": [
+      "You want one workspace for PDFs and non-PDF utilities without an account for file tools.",
+      "You want source access and the option to self-host the processing service."
+    ],
+    "chooseCompetitor": [
+      "You want PDF workflows connected to Google Drive or Dropbox.",
+      "You need Smallpdf's Windows offline app or mobile scanning workflow."
+    ],
+    "tradeoffs": [
+      "Smallpdf documents different access for free and Pro accounts. Check the current plan for OCR, batch processing and desktop access.",
+      "Online processing, saved cloud documents and offline desktop work are different privacy situations. Do not treat all Smallpdf use as a server upload."
+    ],
+    "features": [
+      {
+        "label": "Workflow",
+        "privatools": "Individual tools, multi-file batches and compatible saved pipelines.",
+        "competitor": "Connected PDF workflows and cloud-storage integrations.",
+        "sourceUrl": "https://smallpdf.com/support"
+      },
+      {
+        "label": "Offline option",
+        "privatools": "The PWA can make supported browser tools available offline; hosted tools still need internet.",
+        "competitor": "A Windows desktop app offers offline PDF processing.",
+        "sourceUrl": "https://smallpdf.com/download/windows"
+      },
+      {
+        "label": "File handling",
+        "privatools": "The tool identifies browser or server processing before you run it.",
+        "competitor": "Web tools process files on its servers; account storage can retain saved documents until you remove them.",
+        "sourceUrl": "https://smallpdf.com/support"
+      }
+    ],
+    "sources": [
+      {
+        "label": "Smallpdf support and plan differences",
+        "url": "https://smallpdf.com/support"
+      },
+      {
+        "label": "Smallpdf desktop for Windows",
+        "url": "https://smallpdf.com/download/windows"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "adobe-acrobat",
+    "name": "Adobe Acrobat",
+    "title": "PrivaTools vs Adobe Acrobat: a file toolbox or a document platform?",
+    "description": "Compare PrivaTools with Adobe Acrobat for PDF editing, desktop work and signature workflows using Adobe's current product documentation.",
+    "summary": "PrivaTools suits practical file tasks across formats. Acrobat deserves a close look when ongoing PDF editing, document review, signature collection or certificate-based signing is central to your work. Its Reader, Pro and other plans serve different needs.",
+    "category": "Desktop & teams",
+    "choosePrivaTools": [
+      "You need a quick file task rather than a continuing document workspace.",
+      "You value an inspectable, self-hostable toolbox covering more than PDF."
+    ],
+    "chooseCompetitor": [
+      "You regularly edit existing PDF content, compare document versions or collect and track signatures.",
+      "Your workflow calls for Acrobat's documented certificate-based digital signature controls."
+    ],
+    "tradeoffs": [
+      "Placing a signature image and running a managed signature-request workflow are different capabilities. Choose for the signing process you actually need.",
+      "Adobe's desktop, online and plan-specific features differ. Check its current product page for your platform and subscription terms."
+    ],
+    "features": [
+      {
+        "label": "Document work",
+        "privatools": "Task-specific PDF controls alongside image, media and text utilities.",
+        "competitor": "Pro covers PDF editing, export, document comparison, forms and signature collection.",
+        "sourceUrl": "https://www.adobe.com/acrobat.html"
+      },
+      {
+        "label": "Signing",
+        "privatools": "Dedicated tools for working with signatures; check each tool's processing and output.",
+        "competitor": "Acrobat documents digital-ID signing and the option to lock a document after signing.",
+        "sourceUrl": "https://helpx.adobe.com/acrobat/desktop/e-sign-documents/fill-sign-documents/add-digital-sign.html"
+      },
+      {
+        "label": "Working environment",
+        "privatools": "A browser workspace with optional PWA installation and self-hosting.",
+        "competitor": "Desktop apps, online tools and mobile applications are offered across the Acrobat family.",
+        "sourceUrl": "https://www.adobe.com/acrobat.html"
+      }
+    ],
+    "sources": [
+      {
+        "label": "Adobe Acrobat product and plan overview",
+        "url": "https://www.adobe.com/acrobat.html"
+      },
+      {
+        "label": "Adobe digital signature documentation",
+        "url": "https://helpx.adobe.com/acrobat/desktop/e-sign-documents/fill-sign-documents/add-digital-sign.html"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "sejda",
+    "name": "Sejda PDF",
+    "title": "PrivaTools vs Sejda: a wider toolbox or a dedicated PDF desktop?",
+    "description": "Compare PrivaTools with Sejda Web and Desktop, including local processing, PDF editing and the tradeoffs between a browser toolbox and desktop software.",
+    "summary": "PrivaTools suits work that moves between PDFs, images, media and text. Sejda is a useful alternative for dedicated PDF work, especially if you want an installable desktop edition that processes documents locally on Windows, macOS or Linux.",
+    "category": "Everyday PDF",
+    "choosePrivaTools": [
+      "Your tasks span file formats beyond PDF.",
+      "You want browser access plus the option to operate your own processing server."
+    ],
+    "chooseCompetitor": [
+      "You want a dedicated desktop PDF editor on Windows, macOS or Linux.",
+      "You need Sejda's documented splitting options, such as splitting by bookmarks or text."
+    ],
+    "tradeoffs": [
+      "Sejda Web uploads and processes files on its servers. Sejda Desktop processes them on your computer; they should not be described as the same data path.",
+      "Sejda's free desktop edition has usage and document limits. Verify the current limits and plan for your workload."
+    ],
+    "features": [
+      {
+        "label": "PDF tasks",
+        "privatools": "Dedicated PDF tools within a broader file toolbox.",
+        "competitor": "Desktop editing, merging, compression and splitting by pages, size, bookmarks or text.",
+        "sourceUrl": "https://www.sejda.com/en/desktop"
+      },
+      {
+        "label": "Processing",
+        "privatools": "Browser tools stay local; hosted tools use the disclosed server. Self-hosting is optional.",
+        "competitor": "Desktop processing is local; Sejda Web processing uses its servers.",
+        "sourceUrl": "https://www.sejda.com/en/desktop"
+      },
+      {
+        "label": "Offline work",
+        "privatools": "Supported browser tools can work offline after setup; server-dependent jobs cannot.",
+        "competitor": "Sejda Desktop is designed for offline PDF processing.",
+        "sourceUrl": "https://www.sejda.com/blog/post/138374478519"
+      }
+    ],
+    "sources": [
+      {
+        "label": "Sejda Desktop features and Web comparison",
+        "url": "https://www.sejda.com/en/desktop"
+      },
+      {
+        "label": "Sejda's explanation of local processing",
+        "url": "https://www.sejda.com/blog/post/138374478519"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "pdf24",
+    "name": "PDF24",
+    "title": "PrivaTools vs PDF24: browser variety or a Windows PDF workspace?",
+    "description": "A sourced look at PrivaTools, PDF24 Online Tools and PDF24 Creator, with clear distinctions between browser access and local Windows processing.",
+    "summary": "PrivaTools is a good fit for mixed file tasks and optional self-hosting. PDF24 Creator is worth considering for a free Windows PDF workspace with offline processing, a PDF printer and scanner import. PDF24 Online Tools provide a separate web option.",
+    "category": "Desktop & teams",
+    "choosePrivaTools": [
+      "You want PDF, image, media and text utilities in the same browser workspace.",
+      "You want to inspect or operate the server-side implementation yourself."
+    ],
+    "chooseCompetitor": [
+      "You work on Windows and want local PDF processing in an installed application.",
+      "You want a virtual PDF printer or scanner and camera import in your PDF workflow."
+    ],
+    "tradeoffs": [
+      "PDF24 Creator is a Windows product. Its online tools serve other operating systems, but that changes the processing path.",
+      "Creator keeps files on the PC. PDF24 Online Tools use processing servers. Neither should be used as evidence for the other's privacy behavior."
+    ],
+    "features": [
+      {
+        "label": "Local desktop",
+        "privatools": "Browser-based, with an installable PWA and optional self-hosted service.",
+        "competitor": "PDF24 Creator is a Windows application with offline processing.",
+        "sourceUrl": "https://tools.pdf24.org/en/creator"
+      },
+      {
+        "label": "Document capture",
+        "privatools": "Select files in the relevant tool and download the result.",
+        "competitor": "Creator includes a virtual PDF printer and scanner/camera import.",
+        "sourceUrl": "https://tools.pdf24.org/en/creator"
+      },
+      {
+        "label": "Web processing",
+        "privatools": "The selected tool discloses whether it uses your browser or the server.",
+        "competitor": "Online Tools use servers; the FAQ distinguishes them from local Creator processing.",
+        "sourceUrl": "https://tools.pdf24.org/en/faq"
+      }
+    ],
+    "sources": [
+      {
+        "label": "PDF24 Creator features and platform",
+        "url": "https://tools.pdf24.org/en/creator"
+      },
+      {
+        "label": "PDF24 Online Tools FAQ",
+        "url": "https://tools.pdf24.org/en/faq"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "foxit",
+    "name": "Foxit PDF Editor",
+    "title": "PrivaTools vs Foxit: individual file tasks or connected document work?",
+    "description": "Compare PrivaTools and Foxit PDF Editor for everyday tasks, existing-text editing, cloud integrations and team document workflows.",
+    "summary": "PrivaTools suits individual file tasks across several formats. Foxit is worth evaluating when existing PDF text editing, document management or Microsoft and Google workspace integrations are part of a repeated team workflow.",
+    "category": "Desktop & teams",
+    "choosePrivaTools": [
+      "You need a task-focused file toolbox without managing a document account.",
+      "You prefer source access and an optional self-hosted processing service."
+    ],
+    "chooseCompetitor": [
+      "You need existing-text editing, searchable scans and shared PDF reviews within one product family.",
+      "You want documented Microsoft 365, SharePoint, OneDrive or Google Drive integrations."
+    ],
+    "tradeoffs": [
+      "Foxit's desktop, cloud, perpetual-license and subscription offerings have different feature sets. Compare the exact edition rather than the brand alone.",
+      "A shared cloud document workspace intentionally stores and shares documents. PrivaTools' local library is not an equivalent team document-management system."
+    ],
+    "features": [
+      {
+        "label": "Editing workflow",
+        "privatools": "Separate, focused tools for PDF and other file tasks.",
+        "competitor": "Existing-text editing, OCR, forms and document comparison in its PDF Editor offerings.",
+        "sourceUrl": "https://www.foxit.com/pdf-editor/"
+      },
+      {
+        "label": "Team integrations",
+        "privatools": "Local file selection, downloadable outputs and account-based API access.",
+        "competitor": "Cloud integrations include Microsoft 365, SharePoint, OneDrive and Google Drive.",
+        "sourceUrl": "https://www.foxit.com/pdf-editor/cloud/"
+      },
+      {
+        "label": "Document storage",
+        "privatools": "The personal library stores local preferences and history; it is not cloud file storage.",
+        "competitor": "Foxit's cloud document workspace includes storage, access controls and version history.",
+        "sourceUrl": "https://www.foxit.com/pdf-editor/cloud/"
+      }
+    ],
+    "sources": [
+      {
+        "label": "Foxit PDF Editor editions and features",
+        "url": "https://www.foxit.com/pdf-editor/"
+      },
+      {
+        "label": "Foxit cloud integrations and document workspace",
+        "url": "https://www.foxit.com/pdf-editor/cloud/"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "lightpdf",
+    "name": "LightPDF",
+    "title": "PrivaTools vs LightPDF: a file toolbox or an AI document workspace?",
+    "description": "Compare PrivaTools and LightPDF for direct file tasks, PDF editing and AI-assisted document workflows with linked official documentation.",
+    "summary": "PrivaTools suits direct file tasks with visible controls and a choice of processing paths. LightPDF is worth considering if you want document chat, AI-assisted task commands or generated document content alongside a conventional PDF editor.",
+    "category": "Document AI",
+    "choosePrivaTools": [
+      "You prefer direct controls for a specific conversion or edit.",
+      "You want a broader file toolbox and the option to use your own supported AI provider key."
+    ],
+    "chooseCompetitor": [
+      "You want an AI document agent that accepts task instructions in a chat.",
+      "You want LightPDF's document-chat workflow or its desktop PDF editing and form tools."
+    ],
+    "tradeoffs": [
+      "LightPDF's AI guide describes uploading documents for its document assistants. Review the chosen feature's data handling before using private material.",
+      "AI output still needs review. Plans, credits and available features vary; this comparison does not establish either product's inference accuracy."
+    ],
+    "features": [
+      {
+        "label": "Task interaction",
+        "privatools": "Dedicated controls, previews and result states for each tool.",
+        "competitor": "Its AI Agent accepts single-step or chained PDF task instructions.",
+        "sourceUrl": "https://lightpdf.com/help-documentation.html"
+      },
+      {
+        "label": "Document AI",
+        "privatools": "Supported local or bring-your-own-key paths depend on the tool and available resources.",
+        "competitor": "Document chat, summarization and document-generation workflows are documented.",
+        "sourceUrl": "https://lightpdf.com/help-documentation.html"
+      },
+      {
+        "label": "Desktop editing",
+        "privatools": "A browser workspace with optional PWA installation.",
+        "competitor": "The desktop editor includes PDF content editing, OCR, annotations and form controls.",
+        "sourceUrl": "https://lightpdf.com/desktop"
+      }
+    ],
+    "sources": [
+      {
+        "label": "LightPDF Web user guide",
+        "url": "https://lightpdf.com/help-documentation.html"
+      },
+      {
+        "label": "LightPDF desktop editor",
+        "url": "https://lightpdf.com/desktop"
+      },
+      {
+        "label": "LightPDF current plans and AI allowances",
+        "url": "https://lightpdf.com/pricing"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "stirling-pdf",
+    "name": "Stirling PDF",
+    "title": "PrivaTools vs Stirling PDF: choosing a self-hostable toolbox",
+    "description": "Compare two self-hostable options: PrivaTools for mixed file tasks and Stirling PDF for a dedicated PDF environment with desktop and managed deployment options.",
+    "summary": "Both products offer self-hosting. PrivaTools suits mixed PDF, image, media and developer tasks. Stirling deserves consideration for a PDF-focused environment, especially when its desktop deployment options and team administration features match your organisation's needs.",
+    "category": "Local & self-hosted",
+    "choosePrivaTools": [
+      "You want mixed file formats and developer utilities alongside PDF tools.",
+      "You prefer the PrivaTools interface and are comfortable maintaining your own deployment."
+    ],
+    "chooseCompetitor": [
+      "Your deployment primarily serves PDF workflows.",
+      "You need documented desktop fleet configuration or plan-specific team administration."
+    ],
+    "tradeoffs": [
+      "Stirling is not Docker-only: its official downloads include desktop apps and several server deployment options.",
+      "Self-hosting gives you operational responsibility as well as control. Stirling's cloud, desktop and self-hosted plans differ; verify the applicable licence and features."
+    ],
+    "features": [
+      {
+        "label": "Scope",
+        "privatools": "A toolbox covering PDF, images, media, archives and text utilities.",
+        "competitor": "A PDF-focused editor with web, desktop and self-hosted options.",
+        "sourceUrl": "https://www.stirling.com/pricing"
+      },
+      {
+        "label": "Deployment",
+        "privatools": "Use the public site or maintain your own deployment from source.",
+        "competitor": "Desktop apps, Docker, Kubernetes and manual server setup are documented.",
+        "sourceUrl": "https://www.stirling.com/download"
+      },
+      {
+        "label": "Managed desktops",
+        "privatools": "Self-hosting is available; managed desktop provisioning is not claimed here.",
+        "competitor": "Administrators can preconfigure server connections and update behavior for desktop deployments.",
+        "sourceUrl": "https://docs.stirlingpdf.com/Installation/Managed%20Deployment/"
+      }
+    ],
+    "sources": [
+      {
+        "label": "Stirling download and deployment options",
+        "url": "https://www.stirling.com/download"
+      },
+      {
+        "label": "Stirling product plans",
+        "url": "https://www.stirling.com/pricing"
+      },
+      {
+        "label": "Stirling managed desktop deployment",
+        "url": "https://docs.stirlingpdf.com/Installation/Managed%20Deployment/"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "dochub",
+    "name": "DocHub",
+    "title": "PrivaTools vs DocHub: file utilities or forms and signing workflows?",
+    "description": "Compare PrivaTools and DocHub for individual file tasks, reusable forms, signature requests and Google Drive document workflows.",
+    "summary": "PrivaTools is a fit for processing files and downloading the result. DocHub is worth considering when the task continues into reusable forms, sending documents for signatures or collaborating on documents already stored in Google Drive.",
+    "category": "Signing & forms",
+    "choosePrivaTools": [
+      "You need a conversion, page operation or other file task without setting up a document account.",
+      "You want image, media and text utilities alongside PDF tools."
+    ],
+    "chooseCompetitor": [
+      "You repeatedly send forms or documents to other people for signatures.",
+      "You want reusable templates and a document workflow connected to Google Drive."
+    ],
+    "tradeoffs": [
+      "Adding your own signature to a file is different from requesting signatures and tracking other participants. Compare those workflows separately.",
+      "DocHub is an account-based document service. PrivaTools' local personal library does not replace shared document storage or template distribution."
+    ],
+    "features": [
+      {
+        "label": "Forms and signing",
+        "privatools": "Task-specific PDF tools and downloadable outputs.",
+        "competitor": "Reusable forms, templates, e-signatures and sign requests.",
+        "sourceUrl": "https://dochub.com/"
+      },
+      {
+        "label": "Google Drive",
+        "privatools": "Select files on your device and save the processed result.",
+        "competitor": "Import, edit and sign Drive documents, then export the result back to Drive.",
+        "sourceUrl": "https://www.dochub.com/en/integrations/dochub-for-google-drive"
+      },
+      {
+        "label": "Collaboration",
+        "privatools": "An individual file workspace; a shared document approval system is not claimed.",
+        "competitor": "Share documents and collaborate within its document platform.",
+        "sourceUrl": "https://dochub.com/"
+      }
+    ],
+    "sources": [
+      {
+        "label": "DocHub product features",
+        "url": "https://dochub.com/"
+      },
+      {
+        "label": "DocHub for Google Drive",
+        "url": "https://www.dochub.com/en/integrations/dochub-for-google-drive"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "pdfescape",
+    "name": "PDFescape",
+    "title": "PrivaTools vs PDFescape: broad file tasks or PDF form editing?",
+    "description": "Compare PrivaTools with PDFescape Online and Desktop for annotations, form fields and broader file tasks using official feature documentation.",
+    "summary": "PrivaTools suits mixed file work in a shared toolbox. PDFescape Online is worth considering when your immediate need is adding annotations or building and filling basic PDF form fields. Its Windows desktop editions provide a different set of editing features.",
+    "category": "Signing & forms",
+    "choosePrivaTools": [
+      "You need PDF utilities alongside image, audio, video or text tasks.",
+      "You want an inspectable, optionally self-hosted processing service."
+    ],
+    "chooseCompetitor": [
+      "You want to create or modify basic PDF form fields in an online editor.",
+      "Your task is annotating, adding text or filling an existing PDF form."
+    ],
+    "tradeoffs": [
+      "PDFescape distinguishes adding text online from editing existing text and images in its premium desktop product. Select the edition for the exact edit you need.",
+      "The online editor starts with an uploaded document. Its desktop offering is Windows-specific; do not assume the editions are identical."
+    ],
+    "features": [
+      {
+        "label": "Forms",
+        "privatools": "PDF form tools within the larger file catalogue.",
+        "competitor": "The online feature list includes form filling and basic form-field creation.",
+        "sourceUrl": "https://www.pdfescape.com/what/features/"
+      },
+      {
+        "label": "Text editing",
+        "privatools": "Check the selected PDF editor's specific capabilities before a complex edit.",
+        "competitor": "Online insertion/annotation and premium desktop existing-text editing are separate features.",
+        "sourceUrl": "https://www.pdfescape.com/what/features/"
+      },
+      {
+        "label": "Environment",
+        "privatools": "Browser access, PWA installation and optional self-hosting.",
+        "competitor": "An online editor and a separate Windows desktop product.",
+        "sourceUrl": "https://www.pdfescape.com/"
+      }
+    ],
+    "sources": [
+      {
+        "label": "PDFescape detailed feature list",
+        "url": "https://www.pdfescape.com/what/features/"
+      },
+      {
+        "label": "PDFescape Online and Windows editions",
+        "url": "https://www.pdfescape.com/"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "nitro-pdf",
+    "name": "Nitro PDF Pro",
+    "title": "PrivaTools vs Nitro PDF Pro: one-off tasks or a desktop PDF editor?",
+    "description": "Compare PrivaTools and Nitro PDF Pro for everyday file work, existing PDF text editing, OCR and desktop document workflows.",
+    "summary": "PrivaTools suits targeted file operations across formats. Nitro PDF Pro is worth evaluating when you spend much of your day editing existing PDFs, correcting scanned text or managing forms in a desktop application. Windows and Mac features should be checked separately.",
+    "category": "Desktop & teams",
+    "choosePrivaTools": [
+      "You need occasional file operations through your browser.",
+      "You want media and developer utilities alongside PDFs, with optional self-hosting."
+    ],
+    "chooseCompetitor": [
+      "You need a desktop editor for existing PDF text, images and forms.",
+      "You want Nitro's documented OCR, annotation and document-editing workflows."
+    ],
+    "tradeoffs": [
+      "Desktop editions have platform-specific features and system requirements. Confirm the needed function in the Windows or Mac documentation.",
+      "Nitro Sign is a distinct workflow from placing a signature into a PDF. Compare signature-request requirements separately from basic file editing."
+    ],
+    "features": [
+      {
+        "label": "Text workflow",
+        "privatools": "Focused PDF editing and transformation tools.",
+        "competitor": "The PDF Pro guide describes modifying existing paragraphs, including text reflow within a bounding box.",
+        "sourceUrl": "https://www.gonitro.com/user-guide/pro/article/add-or-edit-text-in-a-pdf"
+      },
+      {
+        "label": "Mac document work",
+        "privatools": "Browser access on supported systems; output features vary by tool.",
+        "competitor": "The Mac guide documents OCR, form work, annotations and existing-image editing.",
+        "sourceUrl": "https://www.gonitro.com/user-guide/mac/article/introduction"
+      },
+      {
+        "label": "Platform",
+        "privatools": "A browser workspace with a PWA rather than a native desktop editor.",
+        "competitor": "Separate Windows, Mac and iOS system requirements are published.",
+        "sourceUrl": "https://www.gonitro.com/documentation/technical-requirements"
+      }
+    ],
+    "sources": [
+      {
+        "label": "Nitro existing-text editing guide",
+        "url": "https://www.gonitro.com/user-guide/pro/article/add-or-edit-text-in-a-pdf"
+      },
+      {
+        "label": "Nitro PDF Pro for Mac guide",
+        "url": "https://www.gonitro.com/user-guide/mac/article/introduction"
+      },
+      {
+        "label": "Nitro platform requirements",
+        "url": "https://www.gonitro.com/documentation/technical-requirements"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "tinywow",
+    "name": "TinyWow",
+    "title": "PrivaTools vs TinyWow: two broad toolboxes, different choices",
+    "description": "Compare PrivaTools and TinyWow for mixed file tasks, AI writing, processing visibility and source access without unsupported tool-count rankings.",
+    "summary": "Both products cover more than PDF. PrivaTools is a fit when processing visibility, source access and optional self-hosting matter to you. TinyWow is worth exploring when you want its collection of AI writing and image-generation tasks beside familiar file converters.",
+    "category": "Mixed file tools",
+    "choosePrivaTools": [
+      "You want to see whether a tool runs in your browser or on a server before processing.",
+      "You want source access, self-hosting or compatible saved pipelines."
+    ],
+    "chooseCompetitor": [
+      "You want task-specific AI writing generators in the same catalogue as file tools.",
+      "You need one of TinyWow's listed image-generation or creative-image workflows."
+    ],
+    "tradeoffs": [
+      "TinyWow's privacy policy describes server processing, temporary file retention, analytics and advertising. Review that policy for your intended use.",
+      "Catalogue breadth does not establish output quality. Try the specific task on a non-sensitive example and inspect the result before choosing."
+    ],
+    "features": [
+      {
+        "label": "Tool scope",
+        "privatools": "PDF, image, video, audio, archive and developer utilities.",
+        "competitor": "A catalogue spanning PDF, image, video, file conversion and AI writing.",
+        "sourceUrl": "https://tinywow.com/tools"
+      },
+      {
+        "label": "Creative tasks",
+        "privatools": "Direct file utilities and supported document-AI workflows.",
+        "competitor": "Listed tasks include AI image generation and several purpose-specific writing generators.",
+        "sourceUrl": "https://tinywow.com/tools"
+      },
+      {
+        "label": "Processing policy",
+        "privatools": "The selected tool discloses browser or server processing; self-hosting is available.",
+        "competitor": "Its policy describes uploaded-file processing and temporary server retention, plus analytics and advertising.",
+        "sourceUrl": "https://tinywow.com/privacy"
+      }
+    ],
+    "sources": [
+      {
+        "label": "TinyWow tool catalogue",
+        "url": "https://tinywow.com/tools"
+      },
+      {
+        "label": "TinyWow privacy policy",
+        "url": "https://tinywow.com/privacy"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  },
+  {
+    "slug": "ihatepdf",
+    "name": "ihatepdf.cv",
+    "title": "PrivaTools vs ihatepdf.cv: inspect the processing path",
+    "description": "Compare PrivaTools and ihatepdf.cv for local browser PDF tasks and AI document chat, distinguishing local files from text sent to a model provider.",
+    "summary": "PrivaTools suits a broad mix of file tasks with browser, server and self-hosting options. ihatepdf.cv is worth considering for its documented local PDF workflows, such as browser-based merging. Its AI chat is different: extracted document text is sent to Google Gemini.",
+    "category": "Local & self-hosted",
+    "choosePrivaTools": [
+      "You want PDF, image, media and developer utilities together.",
+      "You want to inspect the implementation or run server tools under your own control."
+    ],
+    "chooseCompetitor": [
+      "You want its documented browser-only PDF merge workflow without installing software.",
+      "You prefer its PDF-focused interface and have checked the processing path of the specific tool."
+    ],
+    "tradeoffs": [
+      "A PDF staying on your device does not mean its content never leaves. ihatepdf.cv's chat documentation says extracted text is transmitted to Gemini.",
+      "Its local-tool documentation describes browser-memory constraints. Local processing and offline behavior should be checked per tool; we did not independently benchmark them."
+    ],
+    "features": [
+      {
+        "label": "PDF merging",
+        "privatools": "Use the merge workspace and its displayed processing mode.",
+        "competitor": "The official merge page describes local browser processing with document reordering.",
+        "sourceUrl": "https://www.ihatepdf.cv/merge-pdf"
+      },
+      {
+        "label": "AI chat",
+        "privatools": "Provider-based AI sends the necessary content to the provider you select; local options depend on tool support.",
+        "competitor": "Chat with PDF extracts text locally and sends that text to Google's Gemini API using your key.",
+        "sourceUrl": "https://www.ihatepdf.cv/chat-with-pdf"
+      },
+      {
+        "label": "Local limits",
+        "privatools": "Device resources limit browser tools; server limits are disclosed by the tool.",
+        "competitor": "The merge documentation explains that practical capacity depends on device memory.",
+        "sourceUrl": "https://www.ihatepdf.cv/merge-pdf"
+      }
+    ],
+    "sources": [
+      {
+        "label": "ihatepdf.cv local PDF merge documentation",
+        "url": "https://www.ihatepdf.cv/merge-pdf"
+      },
+      {
+        "label": "ihatepdf.cv chat data-flow disclosure",
+        "url": "https://www.ihatepdf.cv/chat-with-pdf"
+      }
+    ],
+    "reviewedAt": "2026-09-14"
+  }
+]

@@ -8,6 +8,8 @@ executing JavaScript.
 from __future__ import annotations
 import json
 import logging
+import os
+from html import escape, unescape
 import re
 from datetime import date
 from functools import lru_cache
@@ -15,6 +17,7 @@ from urllib.parse import quote
 from .tool_content import TOOL_HOWTO, TOOL_FAQ
 
 BASE_URL = "https://privatools.me"
+BRAND_LOGO_URL = f"{BASE_URL}/brand/privatools-icon-512.png"
 
 # ---------------------------------------------------------------------------
 # Static page meta
@@ -28,7 +31,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/tools": (
         "All Free Online Tools — PrivaTools",
         "Browse every free PrivaTools tool by category — PDF, image, video, audio, and "
-        "developer utilities. Open source, no account, no watermarks, no daily limits.",
+        "developer utilities. Free file tools with browser and temporary server processing options.",
     ),
     "/privacy": (
         "Privacy Policy — PrivaTools",
@@ -50,22 +53,50 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/support": (
         "Support — PrivaTools",
         "Owner-funded means owner-answered: report a bug, ask a privacy question, or check "
-        "the status page. A person reads every message — no ticket maze, no chatbot.",
+        "the status page. Find contact options and include the details needed to investigate an issue.",
     ),
     "/status": (
         "Status — PrivaTools",
-        "Live status for PrivaTools processing paths — local tools always work in your "
-        "browser; this page tracks the server-backed ones honestly.",
+        "Check PrivaTools processing availability, server health, and the limits of browser-local tools.",
     ),
     "/account": (
         "Account — PrivaTools",
-        "The optional developer account: API keys and quota, nothing else. Every tool on "
-        "PrivaTools works without an account.",
+        "Manage your optional PrivaTools account, sign-in methods, developer API keys, and usage. File tools remain available to guests.",
     ),
     "/account/keys": (
         "API Keys — PrivaTools",
-        "Create and manage PrivaTools developer API keys. Accounts exist only for the API — "
-        "the tools themselves never ask for one.",
+        "Create, inspect, and revoke your PrivaTools developer API keys. Sign in to manage keys; file tools remain available to guests.",
+    ),
+    "/account/sign-in": (
+        "Sign In — PrivaTools",
+        "Sign in to your optional PrivaTools developer account. File tools remain available without an account.",
+    ),
+    "/account/sign-up": (
+        "Create an Account — PrivaTools",
+        "Create an optional account for the PrivaTools developer API. No account is required to use the tools.",
+    ),
+    "/account/settings": (
+        "Account Settings — PrivaTools",
+        "Manage your PrivaTools account, appearance preferences, and developer API access.",
+    ),
+    "/settings": (
+        "Settings — PrivaTools",
+        "Manage your PrivaTools appearance preferences and account settings.",
+    ),
+    "/ai": (
+        "AI Workspace — PrivaTools",
+        "Manage on-device AI models and your own provider connections for PrivaTools AI tools. "
+        "Review where each model runs before using it.",
+    ),
+    "/api": (
+        "Developer API — PrivaTools",
+        "Use PrivaTools from your applications. Explore API requests, authentication, "
+        "processing behavior, and developer key management.",
+    ),
+    "/trust": (
+        "Trust Center — PrivaTools",
+        "Understand where PrivaTools processes files, what stays in your browser, "
+        "and how to review privacy, security, and service status.",
     ),
     "/my-stuff/vault": (
         "Password Vault — PrivaTools",
@@ -86,7 +117,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/batch": (
         "Batch Process Files — Apply Tools to Many Files | PrivaTools",
         "Upload multiple files and apply the same tool to all at once. Batch compress, "
-        "convert, or transform PDF, image, and video files. Free, no limits.",
+        "convert, or transform supported files, review individual results, and download a ZIP.",
     ),
     "/pipeline": (
         "PDF Pipeline — Chain Multiple PDF Tools | PrivaTools",
@@ -96,152 +127,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
     "/compare": (
         "PrivaTools vs iLovePDF, Smallpdf & Adobe — Compared",
         "Compare PrivaTools with iLovePDF, Smallpdf, Adobe Acrobat, Sejda, PDF24, Foxit, and LightPDF. "
-        "See which tool is truly free, private, and open source.",
-    ),
-    "/compare/ilovepdf": (
-        "PrivaTools vs iLovePDF — Honest Feature Comparison (2026)",
-        "PrivaTools vs iLovePDF: pricing, file limits, privacy, features. PrivaTools "
-        "is 100% free with no ads, no account needed, and open source.",
-    ),
-    "/compare/smallpdf": (
-        "PrivaTools vs Smallpdf — Honest Feature Comparison (2026)",
-        "PrivaTools vs Smallpdf: no 2-tasks/day limit, no premium upsells, no watermarks. "
-        "213 tools vs 30 tools. See the full comparison.",
-    ),
-    "/compare/adobe-acrobat": (
-        "PrivaTools vs Adobe Acrobat Online — Free Alternative (2026)",
-        "PrivaTools is a free, open-source alternative to Adobe Acrobat Online. "
-        "No Adobe ID required, no subscription, 213 tools. Compare features side by side.",
-    ),
-    "/compare/sejda": (
-        "PrivaTools vs Sejda — Free PDF Tool Comparison (2026)",
-        "PrivaTools vs Sejda: unlimited tools vs Sejda's 3 tasks/hour limit. "
-        "100% free, open source, self-hostable. See how PrivaTools compares to Sejda PDF.",
-    ),
-    "/compare/pdf24": (
-        "PrivaTools vs PDF24 — Free PDF Tools Comparison (2026)",
-        "PrivaTools vs PDF24: both free, but PrivaTools is open source, self-hostable, and privacy-first. "
-        "Compare features, privacy practices, and tool breadth.",
-    ),
-    "/compare/foxit": (
-        "PrivaTools vs Foxit PDF — Free vs Paid Comparison (2026)",
-        "PrivaTools vs Foxit PDF: free, open-source tools vs Foxit's paid "
-        "subscription. 213 privacy-first tools with no account required.",
-    ),
-    "/compare/lightpdf": (
-        "PrivaTools vs LightPDF — Privacy & Feature Comparison (2026)",
-        "PrivaTools vs LightPDF: 100% free and open source vs LightPDF's freemium model. "
-        "No file limits, no account needed, no ads. Compare privacy and features.",
-    ),
-    "/compare/stirling-pdf": (
-        "PrivaTools vs Stirling PDF — Compared (2026)",
-        "PrivaTools vs Stirling PDF: two open-source, self-hostable PDF suites "
-        "compared. Which offers more tools, easier setup, and better privacy?",
-    ),
-    "/compare/dochub": (
-        "PrivaTools vs DocHub — Free Tools Compared (2026)",
-        "PrivaTools vs DocHub: free, open-source file tools vs DocHub's workflow "
-        "platform. No sign-up, no subscription. 213 tools vs DocHub's feature set.",
-    ),
-    "/compare/pdfescape": (
-        "PrivaTools vs PDFescape — Free PDF Editor Compared (2026)",
-        "PrivaTools vs PDFescape: free online PDF editors compared side by side. "
-        "PrivaTools is open source with 213 tools and handles files more privately.",
-    ),
-    "/compare/nitro-pdf": (
-        "PrivaTools vs Nitro PDF — Free vs Paid PDF Tools (2026)",
-        "PrivaTools vs Nitro PDF: 100% free open-source tools vs Nitro's paid PDF suite. "
-        "No subscription, no account, no file limits. Compare features and pricing.",
-    ),
-    "/compare/tinywow": (
-        "PrivaTools vs TinyWow — Free PDF & File Tools Compared (2026)",
-        "PrivaTools vs TinyWow: both free, but TinyWow runs ads and a CAPTCHA on every "
-        "task. Compare tool counts, file limits, ads, and how each handles your files.",
-    ),
-    "/compare/ihatepdf": (
-        "PrivaTools vs ihatepdf.cv — Browser-Based PDF Tools Compared (2026)",
-        "PrivaTools vs ihatepdf.cv: ihatepdf runs every tool in your browser but covers "
-        "PDF only. PrivaTools adds image, video, audio and developer tools. Compare both.",
+        "Review practical workflows, processing choices, tradeoffs, and source documentation.",
     ),
     "/blog": (
         "PrivaTools Blog — PDF Tool Tips, Guides & Reviews",
         "In-depth guides on PDF compression, merging, password removal, and more. "
         "Honest comparisons of free PDF tools. Written by the PrivaTools team.",
-    ),
-    "/blog/compress-pdf-without-losing-quality": (
-        "How to Compress a PDF Without Losing Quality (2026 Guide)",
-        "Learn how to reduce PDF file size by up to 90% without visible quality "
-        "loss. Online tools, desktop apps, and command-line compared.",
-    ),
-    "/blog/merge-pdf-files-online-free": (
-        "How to Merge PDF Files Online for Free — No Sign-Up Required",
-        "Step-by-step guide to combining PDF files online for free. "
-        "Drag, drop, reorder, and merge — no software, no account, no watermarks.",
-    ),
-    "/blog/best-free-pdf-tools-2026": (
-        "Best Free PDF Tools in 2026: Honest Comparison of 8 Options",
-        "We tested 8 free PDF tool suites in 2026. Here's the honest verdict: "
-        "which are truly free, which have hidden limits, and which respect your privacy.",
-    ),
-    "/blog/remove-password-from-pdf": (
-        "How to Remove a Password from a PDF (3 Methods)",
-        "Three ways to remove or bypass a PDF password you own. "
-        "Online tool, Adobe Acrobat, and command-line — explained step by step.",
-    ),
-    "/blog/convert-word-to-pdf-free": (
-        "How to Convert Word to PDF for Free (No MS Office)",
-        "5 ways to convert .docx files to PDF without Microsoft Office. "
-        "Online tools, Google Docs, LibreOffice — plus which method preserves formatting best.",
-    ),
-    "/blog/edit-pdf-online-free-no-sign-up": (
-        "How to Edit a PDF Online for Free — No Sign-Up Required",
-        "Step-by-step guide to editing PDF text, images, and annotations online "
-        "without creating an account. Compare 5 free methods.",
-    ),
-    "/blog/split-pdf-online-free": (
-        "How to Split a PDF File Online — 3 Free Methods",
-        "Three ways to split PDF files for free: by page range, by file size, "
-        "and by bookmarks. No software needed, no sign-up.",
-    ),
-    "/blog/redact-pdf-free-guide": (
-        "How to Redact Sensitive Information from PDFs — Free Guide",
-        "Learn how to permanently black out names, SSNs, addresses, and confidential text in PDFs. "
-        "Understand why covering text with black boxes isn't enough.",
-    ),
-    "/blog/best-free-online-pdf-editors-2026": (
-        "Best Free Online PDF Editors in 2026 — No Downloads",
-        "We tested 7 free online PDF editors in 2026. Which ones are truly free, "
-        "which add watermarks, and which respect your privacy.",
-    ),
-    "/blog/ai-pdf-summarizer-browser-2026": (
-        "AI PDF Summarizer: Browser-Only (2026 Guide)",
-        "How AI-powered PDF summarizers work and how to summarize a 100-page PDF "
-        "entirely in your browser — no upload, no API key. Step-by-step walkthrough.",
-    ),
-    "/blog/ilovepdf-alternatives-2026": (
-        "10 Best iLovePDF Alternatives in 2026 (Free & Private)",
-        "iLovePDF charges, uploads, and shows ads. Here are 10 alternatives ranked "
-        "by features, privacy, and price — including self-hostable options.",
-    ),
-    "/blog/redact-pdf-permanently-guide": (
-        "How to Redact a PDF Properly (Not Black Boxes) — 2026",
-        "Drawing black rectangles over PDF text doesn't redact anything — the text is still "
-        "underneath. Learn the right way to permanently remove sensitive content.",
-    ),
-    "/blog/online-pdf-tools-tracking-you": (
-        "Online PDF Tools Are Tracking You (And What to Do)",
-        "A look at what actually happens when you upload a PDF: the trackers, retention "
-        "windows, third-party pixels, and how to stay private with sensitive documents.",
-    ),
-    "/blog/heic-conversion-guide-2026": (
-        "Convert HEIC to PDF, JPG, PNG on Any Device (2026)",
-        "Every way to convert iPhone HEIC photos: online tools, native Mac, Windows "
-        "extensions, command line, batch conversion — plus how to stop your iPhone using HEIC.",
-    ),
-    "/blog/decode-jwt-tokens-safely-guide": (
-        "How to Decode a JWT Token Safely (Each Part Explained)",
-        "JWT tokens are everywhere in modern web auth. Learn the structure, how to decode "
-        "one safely, what each claim means, and why most online JWT decoders are risky.",
     ),
 }
 
@@ -254,6 +145,10 @@ NOINDEX_PATHS: frozenset[str] = frozenset({
     "/my-stuff/vault",
     "/account",
     "/account/keys",
+    "/account/sign-in",
+    "/account/sign-up",
+    "/account/settings",
+    "/settings",
 })
 
 # ---------------------------------------------------------------------------
@@ -492,38 +387,133 @@ _BLOG_POSTS: dict[str, dict] = {
 # ---------------------------------------------------------------------------
 from pathlib import Path as _Path
 
-_BLOG_JSON = _Path(__file__).parent.parent.parent / "frontend" / "dist" / "blog-content.json"
+_CONTENT_DIR = _Path(os.environ.get("FRONTEND_PATH", str(_Path(__file__).parent.parent.parent / "frontend" / "dist")))
+_BLOG_JSON = _CONTENT_DIR / "blog-content.json"
+_COMPARE_JSON = _CONTENT_DIR / "compare-content.json"
+_TOOL_JSON = _CONTENT_DIR / "tool-content.json"
 
 
-def blog_content_mtime_ns() -> int:
-    """Return a cache-buster for generated blog body content."""
+def _mtime(path: _Path) -> int:
     try:
-        return _BLOG_JSON.stat().st_mtime_ns
+        return path.stat().st_mtime_ns
     except OSError:
         return 0
 
 
-@lru_cache(maxsize=8)
-def _load_blog_bodies(_mtime_ns: int) -> dict[str, dict]:
+def blog_content_mtime_ns() -> int:
+    """Opaque cache revision for generated articles, comparisons and tools."""
+    return hash((str(_BLOG_JSON), _mtime(_BLOG_JSON), str(_COMPARE_JSON), _mtime(_COMPARE_JSON), str(_TOOL_JSON), _mtime(_TOOL_JSON)))
+
+
+@lru_cache(maxsize=16)
+def _load_manifest(path: str, revision: int) -> dict[str, dict] | None:
+    """Build-owned JSON is authoritative, including an intentionally empty list.
+
+    A missing/invalid artifact falls back to the legacy registry. No legacy
+    entries are merged into a valid artifact, so removed articles stay removed.
+    """
     try:
-        if _BLOG_JSON.exists():
-            with _BLOG_JSON.open("r", encoding="utf-8") as _f:
-                data = {p["slug"]: p for p in json.load(_f)}
-            if len(data) != len(_BLOG_POSTS):
-                logging.getLogger(__name__).warning(
-                    "blog-content.json carries %d posts but _BLOG_POSTS has %d — "
-                    "the difference gets title-only SSR (rebuild the frontend)",
-                    len(data), len(_BLOG_POSTS))
-            return data
-    except Exception:
-        # Missing or malformed blog-content.json must not crash the app — fall
-        # back to the lighter title-only SSR rendering.
-        return {}
-    return {}
+        data = json.loads(_Path(path).read_text(encoding="utf-8"))
+        if isinstance(data, dict):
+            rows = [{**value, "slug": key} for key, value in data.items() if isinstance(value, dict)]
+            if len(rows) != len(data):
+                raise ValueError("Editorial manifest values must be objects")
+        elif isinstance(data, list):
+            rows = data
+        else:
+            raise ValueError("Editorial manifest must be an array or a slug-keyed object")
+        result = {}
+        for row in rows:
+            if not isinstance(row, dict) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", row.get("slug", "")):
+                raise ValueError("Editorial manifest has an invalid slug")
+            if path.endswith("tool-content.json") and isinstance(row.get("name"), str):
+                row = {**row, "title": row.get("title") or row["name"]}
+            if not isinstance(row.get("title"), str) or not row["title"].strip():
+                raise ValueError("Editorial manifest has no title")
+            if row["slug"] in result:
+                raise ValueError("Editorial manifest has duplicate slugs")
+            result[row["slug"]] = row
+        return result
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError, TypeError):
+        logging.getLogger(__name__).warning("Cannot read editorial manifest %s", path)
+        return None
+
+
+@lru_cache(maxsize=8)
+def _load_blog_bodies(_revision: int) -> dict[str, dict]:
+    return _load_manifest(str(_BLOG_JSON), _revision) or {}
+
+
+def _blog_posts() -> dict[str, dict]:
+    data = _load_manifest(str(_BLOG_JSON), blog_content_mtime_ns())
+    return data if data is not None else _BLOG_POSTS
 
 
 def _blog_bodies() -> dict[str, dict]:
     return _load_blog_bodies(blog_content_mtime_ns())
+
+
+def _comparisons() -> dict[str, dict]:
+    data = _load_manifest(str(_COMPARE_JSON), blog_content_mtime_ns())
+    return data if data is not None else _COMPARE_DATA
+
+
+def _tool_registries() -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str]]]:
+    data = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
+    if data is None:
+        return _PDF_TOOLS, _NONPDF_TOOLS
+    pdf, nonpdf = {}, {}
+    for slug, row in data.items():
+        prefix = (row.get("path") or "").rsplit("/", 1)[0]
+        if prefix not in ("/tool", "/tools"):
+            logging.getLogger(__name__).warning("Tool manifest has an invalid path for %s", slug)
+            return _PDF_TOOLS, _NONPDF_TOOLS
+        (pdf if prefix == "/tool" else nonpdf)[slug] = (row.get("name") or row["title"], row.get("longDescription") or row.get("description") or "")
+    return pdf, nonpdf
+
+
+def _reviewed_date(entry: dict) -> str | None:
+    for field in ("reviewedAt", "dateModified", "updatedAt", "publishedAt", "date"):
+        value = entry.get(field)
+        if isinstance(value, str):
+            try:
+                return date.fromisoformat(value[:10]).isoformat()
+            except ValueError:
+                pass
+    return None
+
+
+def _sources(entry: dict) -> list[dict]:
+    sources = []
+    for source in entry.get("sources") or []:
+        if not isinstance(source, dict) or not isinstance(source.get("url"), str):
+            continue
+        url = source["url"]
+        if "\\" in url or any(ord(char) < 32 for char in url):
+            continue
+        if url.startswith("/") and not url.startswith("//"):
+            # Editorial sources can cite our own processing/privacy documents.
+            # Canonical absolute URLs work in both visible links and JSON-LD.
+            url = BASE_URL + url
+        if url.startswith(("https://", "http://")):
+            sources.append({**source, "url": url})
+    return sources
+
+
+def _source_html(entry: dict) -> str:
+    sources = _sources(entry)
+    if not sources:
+        return ""
+    return '<h2>Sources</h2><ul>' + ''.join(
+        f'<li><a href="{escape(source["url"], quote=True)}">{escape(source.get("label") or source["url"])}</a></li>'
+        for source in sources) + '</ul>'
+
+
+def _organization() -> dict:
+    return {"@type": "Organization", "@id": f"{BASE_URL}/#organization", "name": "PrivaTools", "url": BASE_URL,
+            "logo": {"@type": "ImageObject", "url": BRAND_LOGO_URL, "width": 512, "height": 512}}
 
 
 # Reverse map: tool_slug -> list of blog post dicts that reference it via the
@@ -680,11 +670,6 @@ def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
 # back when a user asks "how do I {action} a PDF online?".
 # ---------------------------------------------------------------------------
 _TLDR_OVERRIDES: dict[str, str] = {
-    # Hand-written TL;DRs for the highest-volume tools where the
-    # auto-generated one is too generic. AI engines and voice assistants
-    # quote these sentences verbatim — they should fully answer "how do I
-    # X" in one read.
-    # ── PDF: top-volume operations ─────────────────────────────────────
     "merge-pdf":        "Drop two or more PDFs, drag to reorder, click Merge — you get one combined PDF in seconds, no sign-up, no watermarks.",
     "split-pdf":        "Upload a PDF, type the page range you want (e.g. 1-3, 5, 7-end), and download the extracted pages as a new PDF.",
     "compress-pdf":     "Upload a PDF, pick a compression level (Light / Recommended / Extreme), and download the smaller version — typically 50-75% smaller.",
@@ -843,10 +828,6 @@ _TLDR_OVERRIDES: dict[str, str] = {
     "pixelate-image":   "Upload an image, pick mosaic pixelation or Gaussian blur, set strength, and download a censored copy for privacy-safe sharing.",
     "rotate-image":     "Upload an image, pick 90°, 180°, 270°, or type a custom angle, and download the rotated version — transparency preserved for PNG and WEBP.",
     "flip-image":       "Upload an image and download a horizontally or vertically mirrored copy — fixes selfie-mirroring and lets you build perfect reflections.",
-    # Bespoke, spec-grounded TL;DRs for the format-conversion and dev tools that
-    # previously fell back to the generic "upload, click, download" line. Each
-    # states the real specific (lossy/lossless, transparency, compatibility) so
-    # the long tail is no longer near-duplicate.
     "bookmarks": "Adds a clickable bookmark outline to a PDF so readers can jump between sections; you can create, rename, reorder, and nest entries to build a table of contents.",
     "png-to-pdf": "Wraps one or more PNG images into a single PDF, keeping transparency, and lets you reorder pages before exporting.",
     "heic-to-pdf": "Bundles iPhone HEIC/HEIF photos into one PDF document with no Apple device needed; great for sharing camera shots as a portable file.",
@@ -920,7 +901,10 @@ _TLDR_OVERRIDES: dict[str, str] = {
 
 
 def _tldr_for(slug: str, name: str) -> str:
-    """Return a voice-friendly 1-sentence answer for this tool."""
+    """Use the current visible summary when a tool manifest is available."""
+    manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
+    if manifest is not None and slug in manifest:
+        return manifest[slug].get("description") or manifest[slug].get("longDescription") or name
     if slug in _TLDR_OVERRIDES:
         return _TLDR_OVERRIDES[slug]
     # Fall back to a generic-but-helpful template.
@@ -1008,7 +992,7 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
     "pdf-to-long-image": ("PDF to Long Image", "Stitch a whole PDF into one long image online for free — every page is rendered and stacked vertically into a single tall PNG or JPG, ready to share or scroll. Unlike PDF-to-Image (one file per page), you get the entire document as one picture. Files are processed privately and deleted on response."),
     "pdf-to-pptx": ("PDF to PowerPoint", "Convert PDF to PowerPoint online for free — create a PPTX presentation where each page becomes a slide. Great for presenting PDF content in meetings."),
     "pdf-to-text": ("PDF to Text", "Extract text from PDF online for free — pull all readable text content from your PDF into a clean plain-text document. Works with both text-based and searchable PDFs."),
-    "pdf-to-word": ("PDF to Word", "Convert PDF to Word online for free — extract text, paragraphs, and images into an editable DOCX document. No watermarks, no file limits."),
+    "pdf-to-word": ("PDF to Word", "Convert PDF to Word online for free — extract text, paragraphs, and images into an editable DOCX document. No PrivaTools watermarks. Server upload and capacity limits apply."),
     "pdf-to-epub": ("PDF to EPUB", "Convert PDF to EPUB online for free — transform PDF documents into reflowable e-book format compatible with Kindle, Kobo, Apple Books, and all modern e-reader devices."),
     "pdf-to-markdown": ("PDF to Markdown", "Convert PDF to Markdown online for free — extract content with automatic heading detection, bold text preservation, and clean formatting. Perfect for documentation and wikis."),
     "extract-tables": ("PDF Table Extractor", "Extract tables from PDF to CSV online for free. Automatically detect and extract tabular data from invoices, reports, and financial statements into clean, editable CSV format."),
@@ -1057,8 +1041,8 @@ _PDF_TOOLS: dict[str, tuple[str, str]] = {
 # Non-PDF tool meta  (slug → (name, long_description))
 # ---------------------------------------------------------------------------
 _NONPDF_TOOLS: dict[str, tuple[str, str]] = {
-    "image-compressor": ("Image Compressor", "Compress images online for free — reduce JPEG, PNG, and WebP file sizes by up to 80% without visible quality loss. Drag multiple files, see live savings, and download instantly. No upload to external servers."),
-    "image-converter": ("Image Format Converter", "Convert images online for free — change between WebP, PNG, JPG, TIFF, BMP and HEIC formats instantly. Perfect for converting iPhone HEIC photos to JPG. No upload required."),
+    "image-compressor": ("Image Compressor", "Compress images online for free — reduce JPEG, PNG, and WebP file sizes by up to 80% without visible quality loss. Select files, compare sizes, and download the result. Review the processing notice for browser or server handling."),
+    "image-converter": ("Image Format Converter", "Convert images online for free — change between WebP, PNG, JPG, TIFF, BMP and HEIC formats. Review the processing notice; some conversions use the server."),
     "remove-exif": ("Remove EXIF Data", "Remove EXIF data from photos online for free — strip GPS location, camera model, timestamps, and all metadata before sharing images online. Protect your privacy with one click."),
     "resize-crop-image": ("Resize & Crop Image", "Resize and crop images online for free — set exact dimensions, aspect ratios, or pixel sizes. Bulk resize multiple images for social media, thumbnails, profile pictures, and websites."),
     "video-to-gif": ("Video to GIF Converter", "Convert video to GIF online for free — upload MP4, MOV, or WebM files, select the clip range, and export a looping animated GIF. Adjust FPS and resolution. No watermarks."),
@@ -1189,14 +1173,6 @@ _DEV_MICRO_TOOLS: dict[str, tuple[str, str]] = {
 _NONPDF_TOOLS.update(_DEV_MICRO_TOOLS)
 
 
-# ---------------------------------------------------------------------------
-# Aliases / synonyms — what users actually type into search engines.
-# AI engines (Perplexity, ChatGPT) reuse these in their citation index, so
-# emitting them as `alternateName` and inside the keyword list makes the
-# tool show up for "jpeg to pdf" even when the canonical name is "JPG to PDF".
-# Hand-picked for the highest-volume tools; everything else falls back to
-# a deterministic algorithm.
-# ---------------------------------------------------------------------------
 _TOOL_ALIASES: dict[str, list[str]] = {
     "merge-pdf":       ["Combine PDF", "Join PDF", "Concatenate PDF", "PDF Merger", "Add PDFs together"],
     "split-pdf":       ["Separate PDF", "Divide PDF", "PDF Splitter", "Break PDF apart"],
@@ -1323,9 +1299,6 @@ def _howto_name_for(name: str) -> str:
     return f"How to use the {normalized} tool on PrivaTools"
 
 
-# `<meta name="description">` is shown in SERP snippets — Google truncates at
-# ~155–160 chars. JSON-LD descriptions can be longer and are read more carefully
-# by AI engines, so we keep the truncation only at the meta-tag level.
 def _tool_desc(desc: str) -> str:
     if len(desc) <= _DESC_MAX:
         return desc
@@ -1350,7 +1323,7 @@ def _tool_desc(desc: str) -> str:
 # utilities) without parsing slugs.
 # ---------------------------------------------------------------------------
 TOOL_META: dict[str, dict[str, str]] = {}
-for _slug, (_name, _desc) in _PDF_TOOLS.items():
+for _slug, (_name, _desc) in _tool_registries()[0].items():
     TOOL_META[_slug] = {
         "name": _name,
         "title": _tool_title(_name),
@@ -1359,7 +1332,7 @@ for _slug, (_name, _desc) in _PDF_TOOLS.items():
         "url_path": f"/tool/{_slug}",
         "category": "pdf",
     }
-for _slug, (_name, _desc) in _NONPDF_TOOLS.items():
+for _slug, (_name, _desc) in _tool_registries()[1].items():
     TOOL_META[_slug] = {
         "name": _name,
         "title": _tool_title(_name),
@@ -1368,74 +1341,21 @@ for _slug, (_name, _desc) in _NONPDF_TOOLS.items():
         "url_path": f"/tools/{_slug}",
         "category": "non-pdf",
     }
-del _slug, _name, _desc
 
 
-# Per-tool trust paragraph. Previously a single identical block was emitted on
-# every /tool/* and /tools/* page, which triggered Google's near-duplicate
-# detection across the tool-page corpus. Six variants, picked deterministically by slug
-# hash, preserve the same privacy/freedom claims with materially different
-# wording so each URL has a unique paragraph.
 _TRUST_VARIANTS: tuple[str, ...] = (
-    "{name} runs on the same privacy-first stack as every PrivaTools utility: "
-    "files enter an isolated Docker container, use temporary per-request "
-    "storage, and are unlinked the moment your download begins. No account, no "
-    "watermark, no daily quota.",
-
-    "Like the rest of the {total}-tool PrivaTools suite, {name} is MIT-licensed "
-    "and self-hostable. The public demo deletes your file as soon as the "
-    "response leaves the server — verifiable in the open-source codebase on "
-    "GitHub.",
-
-    "{name} is part of PrivaTools — a free, open-source alternative to "
-    "iLovePDF, Smallpdf, and Adobe. Server-side tools process your file in an "
-    "isolated container and discard it immediately; many tools never upload "
-    "at all and run entirely in your browser.",
-
-    "Using {name} doesn't require an account, an email address, or a paid plan. "
-    "Your file is held in isolated temporary storage only for the duration of "
-    "processing, then permanently unlinked. No watermarks, no upsells, no "
-    "behavioural tracking.",
-
-    "{name} is one of {total}+ free file utilities on PrivaTools. The entire "
-    "stack is open source under the MIT license, so the privacy guarantees can "
-    "be audited end-to-end. You can also run all {total} tools on your own "
-    "infrastructure with one docker compose command.",
-
-    "Every PrivaTools tool — including {name} — is genuinely free with no "
-    "premium tier, no per-day limit, and no watermark on the output. Files are "
-    "deleted from the server within seconds of your download completing. "
-    "Source code: github.com/ethereaglehq/privatools.",
-
-    "{name} was built around one rule: your file is yours. Browser-only helpers "
-    "never upload anything; anything that needs the server runs in a throwaway "
-    "container and the file is wiped the instant the response is sent. No "
-    "sign-in, no email, no catch.",
-
-    "There is no paywall behind {name}. It is part of an open-source suite of "
-    "{total} tools released under the MIT license, so you can read exactly how "
-    "your file is handled — or fork it and run the whole thing on a server you "
-    "control.",
-
-    "{name} keeps nothing. The public demo processes your upload in isolated "
-    "temporary storage and unlinks it the moment you have your result — no "
-    "retention window, no analytics on file contents, no third-party file "
-    "sharing. The privacy claim is auditable in the GitHub repo.",
-
-    "Unlike the freemium tools it replaces, {name} has no 'pro' upsell, no "
-    "task-per-day cap, and no stamp on your output. Server-side processing "
-    "happens in a sandboxed container that forgets your file as soon as the "
-    "download finishes.",
-
-    "{name} is free because the whole {total}-tool PrivaTools project is open "
-    "source, not ad-supported. No trackers load in your browser, no account is "
-    "created, and files are deleted immediately after processing — self-host it "
-    "if you want the guarantees on your own hardware.",
-
-    "Reach for {name} when you want the job done without handing your file to a "
-    "data broker. Browser-native tools stay on your device; the rest use a "
-    "single-request isolated container that deletes the file right after "
-    "responding. MIT-licensed and ad-free.",
+    "{name} is free to use without an account. Check its processing notice before starting: "
+    "browser tools keep input on this device, server tools upload it for temporary processing, "
+    "and optional AI provider connections send the disclosed input directly to your chosen provider. "
+    "Server capacity limits and API quotas apply where indicated.",
+    "{name} is part of the open-source PrivaTools suite. You can review the implementation or "
+    "self-host it. Temporary server files are removed after the response completes; a periodic "
+    "cleanup also handles leftover files. Browser-local work and downloaded results remain under "
+    "your control. Read the privacy and security pages for the limits of this model.",
+    "You can use {name} as a guest. Signing in is optional for account settings and developer API "
+    "keys; it does not turn local browser storage into cloud backup. Keep an original copy of "
+    "important files, review outputs before sharing, and choose the processing option that suits "
+    "your document's sensitivity.",
 )
 
 
@@ -1555,7 +1475,7 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
     use_cases = _use_cases_for(slug, name, subject, tool_kind)
     use_case_html = "".join(f"<li>{item}</li>" for item in use_cases)
     return (
-        '<section class="tool-depth" data-speakable="true">'
+        '<section class="tool-depth">'
         f"<h2>What {name} is best for</h2>"
         f"<p>{desc} Use it when you need a quick, private, no-account way to handle a {subject.lower()} in the browser, "
         f"or when you want an auditable open-source alternative to {comparable}. The page at <code>{route}</code> is designed "
@@ -1564,7 +1484,7 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
         f"<ul>{use_case_html}</ul>"
         f"<h2>Privacy model for {name}</h2>"
         f"<p>{privacy_mode} Temporary input and output files are not used for analytics, model training, advertising profiles, "
-        "or product telemetry. The public demo uses anonymous page-view analytics only; file bytes, extracted text, filenames, "
+        "or product telemetry. Optional analytics measures public page visits and selected tool actions; file bytes, extracted text, filenames, "
         "passwords, signatures, and generated results are outside that analytics path. If your organization needs stricter "
         f"controls, you can self-host all {total} PrivaTools utilities and keep processing on your own infrastructure.</p>"
         "<h2>Quality checklist</h2>"
@@ -1580,31 +1500,18 @@ def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: i
         "The interface avoids accounts and cloud folders on purpose: the safest default for private files is to process only the "
         "current request, return the result, and leave long-term storage under your control.</p>"
         f"<h2>Using {name} on any device</h2>"
-        f"<p>{name} runs in any modern browser on Windows, macOS, Linux, Android, and iOS — there is nothing to install, no "
+        f"<p>{name} runs in supported modern browsers on desktop and mobile — there is nothing to install, no "
         "extension to add, and no desktop app to keep updated. Because the interface is a single page, you can bookmark it, send "
-        "the link to a colleague, or open it on a phone and get the same result you would on a laptop. There are no watermarks "
+        "the link to a colleague, or open it on a phone while reviewing the tool’s device and memory requirements. There are no watermarks "
         "stamped onto your output, no sign-in wall before the download, and no paid tier that unlocks the &ldquo;real&rdquo; "
         f"version later — the {name} you see is the complete tool. For teams that would rather keep everything in-house, the same "
-        "endpoint ships in the MIT-licensed, self-hostable build, so you can run it behind your own firewall with identical "
-        "behaviour and no outbound calls. That combination — instant in the browser for individuals, fully self-hostable for "
-        "organizations — is what keeps a private file genuinely private from upload to download.</p>"
+        "implementation ships in the MIT-licensed, self-hostable build. The environment determines available codecs, fonts, and "
+        "models; optional model downloads, AI providers, and URL tools can require network access. Review those dependencies "
+        "before relying on an offline or restricted deployment.</p>"
         "</section>"
     )
 
 
-# ---------------------------------------------------------------------------
-# Per-tool lastReviewed dates.
-#
-# Earlier versions of this file set `lastReviewed: date.today().isoformat()`
-# on every render. That inflated freshness signals — Google treats a large
-# corpus where every page claims to have been reviewed *today* as suspicious,
-# and it eventually devalues the field entirely. Worse, it conflicts with the
-# fixed `datePublished` by implying constant re-review when no review happened.
-#
-# Fix: hand-curated dates for the top-30 most-trafficked tools (kept reasonably
-# accurate as we revisit copy and behaviour) and a single fallback date for
-# the long tail. Update individual entries when you actually re-audit a tool.
-# ---------------------------------------------------------------------------
 TOOL_LAST_REVIEWED_DEFAULT = "2026-05-01"
 TOOL_LAST_REVIEWED: dict[str, str] = {
     # Top-30 tools — dates spread across Jan–May 2026 reflect actual review
@@ -1694,6 +1601,9 @@ TOOL_LAST_REVIEWED: dict[str, str] = {
 
 def _last_reviewed_for(slug: str) -> str:
     """Return the hand-curated last-reviewed date for a tool, or the default."""
+    manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
+    if manifest is not None and slug in manifest:
+        return _reviewed_date({"reviewedAt": manifest[slug].get("lastReviewed")}) or "2026-09-13"
     return TOOL_LAST_REVIEWED.get(slug, TOOL_LAST_REVIEWED_DEFAULT)
 
 
@@ -1712,36 +1622,32 @@ _TOP_LEVEL_SPA_ROUTES = frozenset({
     "/my-stuff/vault",
     "/account",
     "/account/keys",
+    "/account/sign-in",
+    "/account/sign-up",
+    "/account/settings",
+    "/settings",
+    "/ai",
+    "/api",
+    "/trust",
     "/status",
     "/support",
 })
 
 
-@lru_cache(maxsize=1024)
 def path_is_known(path: str) -> bool:
-    """
-    Return True iff the path resolves to a real, content-bearing route.
-
-    Used by the SPA middleware to decide whether to return HTTP 200 with
-    SEO-injected content, or HTTP 404 — so Google doesn't flag /tool/foo
-    (where foo doesn't exist) as a Soft 404.
-
-    Called on every SPA request, so the result is memoized. 1024 entries
-    covers every legitimate route plus a healthy buffer for the 404
-    fuzz traffic that bots throw at production.
-    """
+    """Whether the current frontend build has this route, without a soft 404."""
+    _PDF_TOOLS, _NONPDF_TOOLS = _tool_registries()
     p = path.rstrip("/") or "/"
+    if p.startswith("/blog/"):
+        return p[len("/blog/"):] in _blog_posts()
+    if p.startswith("/compare/"):
+        return p[len("/compare/"):] in _comparisons()
     if p in _STATIC_META:
         return True
     if p.startswith("/tool/"):
         return p[len("/tool/"):] in _PDF_TOOLS
     if p.startswith("/tools/"):
         return p[len("/tools/"):] in _NONPDF_TOOLS
-    if p.startswith("/blog/"):
-        return p[len("/blog/"):] in _BLOG_POSTS
-    if p.startswith("/compare/"):
-        # Static-meta covers /compare/ilovepdf etc. /compare itself is in _STATIC_META.
-        return p in _STATIC_META
     # Top-level SPA routes the frontend handles.
     #
     # Kept in step with App.tsx's <Route path=...> declarations by
@@ -1787,16 +1693,17 @@ _STATIC_META = {
     for k, (t, d) in _STATIC_META.items()
 }
 
-@lru_cache(maxsize=512)
 def get_meta_for_path(path: str) -> tuple[str, str]:
-    """Return (title, description) for the given URL path.
-
-    Pure function of the input path — there are ~200 known paths, so a
-    512-entry LRU covers the full catalog with room for the bots that
-    probe random URLs. Each entry is ~200 B (two short strings) so the
-    total cache footprint is well under 200 KB.
-    """
+    """Return current build metadata, or a genuine not-found response."""
+    _PDF_TOOLS, _NONPDF_TOOLS = _tool_registries()
     path = path.rstrip("/") or "/"
+
+    for prefix, entries in (("/blog/", _blog_posts), ("/compare/", _comparisons)):
+        if path.startswith(prefix):
+            entry = entries().get(path[len(prefix):])
+            if entry is None:
+                return _NOT_FOUND_META
+            return (entry["title"], entry.get("description") or entry.get("summary") or "")
 
     # Static page lookup
     if path in _STATIC_META:
@@ -1819,29 +1726,18 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
             return _tool_title(name), _tool_desc(desc)
         return _NOT_FOUND_META
 
-    # /blog listing and /blog/<slug>
-    if path == "/blog":
-        return _STATIC_META["/blog"]
-    if path.startswith("/blog/"):
-        if path in _STATIC_META:
-            return _STATIC_META[path]
-        # Fall back to the post registry so a post never needs a second,
-        # hand-maintained _STATIC_META entry — the drift that shipped seven
-        # sitemap-advertised posts with a 404 title on an HTTP-200 page.
-        slug = path.removeprefix("/blog/")
-        post = _BLOG_POSTS.get(slug)
-        if post:
-            return (f"{post['title']} | PrivaTools", post["description"])
-        return _NOT_FOUND_META
-
-    # /compare/<slug>
-    if path.startswith("/compare/"):
-        if path in _STATIC_META:
-            return _STATIC_META[path]
-        return _NOT_FOUND_META
-
     # Any other unknown top-level path
     return _NOT_FOUND_META
+
+
+_HOME_FAQ = [
+    ("Is PrivaTools really free?", "The file tools are free to use without an account and do not add PrivaTools watermarks. Server capacity limits apply. The developer API has per-key quotas, and optional AI providers may bill your own account."),
+    ("Do you upload my files anywhere?", "It depends on the tool and processing option. Browser tools keep input on this device. Server tools upload files for temporary processing and remove temporary files after the response completes; periodic cleanup handles leftovers. Optional bring-your-own-key AI sends the disclosed input directly to your selected provider. Review the processing notice before starting."),
+    ("Can I self-host PrivaTools?", f"Yes. PrivaTools is MIT-licensed and ships as a Docker Compose project. See github.com/ethereaglehq/privatools to host all {_TOTAL_TOOLS} tools on your own infrastructure. Some optional models, providers and external URLs still require network access."),
+    ("What file size limit does PrivaTools have?", "The default server upload limit is 500 MB. Individual tools and browser memory can impose lower limits, and server rate or capacity limits can delay processing. Developer API requests have separate daily quotas."),
+    ("Does PrivaTools use AI?", "AI tools offer browser models and, where supported, your own OpenAI, Anthropic or Gemini connection. Review the selected model and processing notice first. Smart Redact detects suggestions locally or through the selected provider; applying approved redactions sends the PDF to the backend."),
+    ("How does PrivaTools compare to other file tools?", "Our comparison pages explain practical workflows, processing choices, and tradeoffs with links to source documentation. Review the sources and date because competitors' plans and features can change."),
+]
 
 
 def get_jsonld_for_path(path: str) -> dict | None:
@@ -1862,6 +1758,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
     builders that all run on every SSR render. Memoising the final dict
     cuts the per-request cost to a hash lookup.
     """
+    _PDF_TOOLS, _NONPDF_TOOLS = _tool_registries()
     path = path.rstrip("/") or "/"
     title, description = get_meta_for_path(path)
     canonical_url = BASE_URL + (path if path != "/" else "")
@@ -1871,9 +1768,6 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
     ]
 
     if path == "/":
-        # ItemList of headline tools — gives Google a clean enumerated grid
-        # of WebApplications that AI engines can also cite as "what does the
-        # site offer". We include a curated top-25 rather than the full catalog.
         featured_slugs = [
             ("merge-pdf", "/tool/merge-pdf"),
             ("split-pdf", "/tool/split-pdf"),
@@ -1900,9 +1794,6 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
             ("audio-converter", "/tools/audio-converter"),
             ("jwt-decoder", "/tools/jwt-decoder"),
             ("regex-tester", "/tools/regex-tester"),
-            # Free-winnable niche dev tools — surfaced here so the homepage
-            # entity graph also points AI engines at the pages we can actually
-            # rank for (the PDF heads are owned by DA80-90 incumbents).
             ("semver-bumper", "/tools/semver-bumper"),
             ("env-validator", "/tools/env-validator"),
             ("cron-parser", "/tools/cron-parser"),
@@ -1932,9 +1823,10 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "@id": f"{BASE_URL}/#website",
                     "url": BASE_URL,
                     "name": "PrivaTools",
+                    "alternateName": ["Priva Tools", "PrivaTools.me"],
                     "description": description,
                     "inLanguage": "en",
-                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": BRAND_LOGO_URL}},
                     "potentialAction": {
                         "@type": "SearchAction",
                         "target": {"@type": "EntryPoint", "urlTemplate": f"{BASE_URL}/?q={{search_term_string}}"},
@@ -1949,25 +1841,15 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "url": BASE_URL,
                     "logo": {
                         "@type": "ImageObject",
-                        "url": f"{BASE_URL}/icons/icon-512.png",
+                        "url": BRAND_LOGO_URL,
                         "width": 512,
                         "height": 512,
                     },
-                    "image": f"{BASE_URL}/icons/icon-512.png",
+                    "image": BRAND_LOGO_URL,
                     "email": "hello@privatools.me",
                     "foundingDate": "2026-03-01",
                     "description": "Free, open-source, privacy-first file tools — PDF, image, video, audio, and developer utilities. MIT-licensed and self-hostable via Docker.",
                     "license": "https://opensource.org/licenses/MIT",
-                    # knowsAbout is a high-leverage GEO signal: it tells AI
-                    # engines (which build their citation graphs around
-                    # entity-topic edges) exactly which queries this org is
-                    # an authority for. Wikipedia URLs anchor the entity to
-                    # the canonical knowledge-graph node so PrivaTools is
-                    # disambiguated from random other "Priva" companies.
-                    # Topic entities anchored to their Wikipedia/Wikidata nodes
-                    # via sameAs — this links PrivaTools into the knowledge graph
-                    # AI engines use to decide which entity is an authority on a
-                    # topic, far stronger than bare topic strings.
                     "knowsAbout": [
                         {"@type": "Thing", "name": "PDF",
                          "sameAs": "https://en.wikipedia.org/wiki/PDF"},
@@ -2014,48 +1896,13 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                 },
                 {
                     "@type": "FAQPage",
-                    "speakable": {"@type": "SpeakableSpecification", "cssSelector": [".tool-faq", ".tool-tldr"]},
-                    "mainEntity": [
-                        {
-                            "@type": "Question",
-                            "name": "Is PrivaTools really free?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."},
-                        },
-                        {
-                            "@type": "Question",
-                            "name": "Do you upload my files anywhere?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload file content."},
-                        },
-                        {
-                            "@type": "Question",
-                            "name": "Can I self-host PrivaTools?",
-                            "acceptedAnswer": {"@type": "Answer", "text": f"Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/ethereaglehq/privatools and run `docker compose up --build` to host all {_TOTAL_TOOL_COUNT} tools on your own server."},
-                        },
-                        {
-                            "@type": "Question",
-                            "name": "What file size limit does PrivaTools have?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."},
-                        },
-                        {
-                            "@type": "Question",
-                            "name": "Does PrivaTools use AI?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "Two tools use AI without third-party AI APIs. Summarize PDF runs distilbart-cnn-12-6 in your browser. Smart Redact runs BERT-base-NER in your browser for detection, then sends the PDF and approved strings to the isolated backend only to permanently apply redactions."},
-                        },
-                        {
-                            "@type": "Question",
-                            "name": "How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?",
-                            "acceptedAnswer": {"@type": "Answer", "text": "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."},
-                        },
-                    ],
+
+                    "mainEntity": [{"@type": "Question", "name": q, "acceptedAnswer": {"@type": "Answer", "text": a}} for q, a in _HOME_FAQ],
                 },
             ],
         }
 
     if path == "/tools":
-        # Directory hub: a CollectionPage that ties the all-tools index into the
-        # site's entity graph and exposes a crawlable breadcrumb. The full link
-        # list lives in the SSR body (_build_ssr_content) so PageRank flows to
-        # every tool from a second hub besides the homepage.
         return {
             "@context": "https://schema.org",
             "@graph": [
@@ -2068,7 +1915,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "inLanguage": "en",
                     "isPartOf": {"@id": f"{BASE_URL}/#website"},
                     "about": {"@id": f"{BASE_URL}/#organization"},
-                    "speakable": {"@type": "SpeakableSpecification", "cssSelector": ["h1", "h2"]},
+
                 },
                 {
                     "@type": "BreadcrumbList",
@@ -2118,7 +1965,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
         # Perplexity when summarizing "what does this tool do" — the
         # bullets get pulled directly into the model's answer.
         feature_list = [
-            "Free with no daily quota",
+            "Free file tools; server limits apply",
             "No account, email, or sign-up required",
             "No watermarks on output",
             "Files processed in isolated container and deleted immediately",
@@ -2137,9 +1984,6 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
         # are honest and don't get devalued by Google for inflation.
         reviewed = _last_reviewed_for(slug)
         graph: list[dict] = [
-            # WebPage wrapper — gives Google a single root node to attach
-            # speakable, lastReviewed, and breadcrumb context to. The
-            # SoftwareApplication below is the mainEntity of this page.
             {
                 "@type": "WebPage",
                 "@id": f"{canonical_url}#webpage",
@@ -2158,13 +2002,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                 "dateModified": reviewed,
                 "lastReviewed": reviewed,
                 "reviewedBy": {"@id": f"{BASE_URL}/#organization"},
-                # speakable surfaces (TL;DR, tool intro, FAQ, headings) feed
-                # voice assistants and AI engines a coherent audio excerpt of
-                # the page — Google Assistant, Alexa, Perplexity Voice.
-                "speakable": {
-                    "@type": "SpeakableSpecification",
-                    "cssSelector": [".tool-tldr", ".tool-intro", ".tool-faq", "h1", "h2"],
-                },
+
                 "mainEntity": {"@id": f"{canonical_url}#app"},
             },
             {
@@ -2192,12 +2030,6 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "category": "Free",
                 },
                 "provider": {"@id": f"{BASE_URL}/#organization"},
-                # Inline `creator` block so AI engines that crawl a single tool
-                # page (no homepage @graph context) still resolve the
-                # publishing organisation. The full Organization node lives on
-                # `/` via `#organization`; this inline copy gives single-page
-                # crawlers (Perplexity Voice, Bing AI snippets) the same
-                # attribution.
                 "creator": {
                     "@type": "Organization",
                     "name": "PrivaTools",
@@ -2210,10 +2042,6 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
             },
             {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
         ]
-        # HowTo schema — AI engines (Google AI Overviews, ChatGPT,
-        # Perplexity, Gemini) extract this to generate "step-by-step" answers.
-        # Pair it with the existing speakable hint so voice assistants can
-        # read the steps aloud.
         if slug in TOOL_HOWTO:
             steps_count = len(TOOL_HOWTO[slug])
             # Rough estimate: each step ~30s of read+do time. Tools that
@@ -2240,15 +2068,10 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     for i, step in enumerate(TOOL_HOWTO[slug])
                 ],
             })
-        # FAQPage schema. We attach `speakable` so voice assistants (Google
-        # Assistant, Alexa) can read the Q&A aloud.
         if slug in TOOL_FAQ:
             graph.append({
                 "@type": "FAQPage",
-                "speakable": {
-                    "@type": "SpeakableSpecification",
-                    "cssSelector": [".tool-faq", "h2", "h3"],
-                },
+
                 "mainEntity": [
                     {
                         "@type": "Question",
@@ -2261,140 +2084,59 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
         return {"@context": "https://schema.org", "@graph": graph}
 
     if path.startswith("/compare/"):
-        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Compare", "item": f"{BASE_URL}/compare"})
-        breadcrumbs.append({"@type": "ListItem", "position": 3, "name": title, "item": canonical_url})
-        slug = path[len("/compare/"):]
-        comp_data = _COMPARE_DATA.get(slug, {})
-        competitor_name = comp_data.get("name", "")
-        graph_items: list[dict] = [
-            {
-                "@type": ["Article", "Review"],
-                "@id": f"{canonical_url}#article",
-                "headline": title,
-                "description": description,
-                "url": canonical_url,
-                "image": f"{BASE_URL}/api/og-image?p={quote(path)}",
-                "datePublished": "2026-03-22",
-                # Fixed compare-page review date instead of date.today() —
-                # avoids freshness inflation on a static comparison whose
-                # data only changes when we actually re-audit competitors.
-                "dateModified": "2026-05-15",
-                "inLanguage": "en",
-                "author": {
-                    "@type": "Organization",
-                    "name": "PrivaTools",
-                    "url": BASE_URL,
-                },
-                "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
-                "mainEntityOfPage": {
-                    "@type": "WebPage",
-                    "@id": canonical_url,
-                },
-                "speakable": {
-                    "@type": "SpeakableSpecification",
-                    "cssSelector": ["h1", "h2", ".tagline"],
-                },
-            },
-            {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
-        ]
-        # Review-itemReviewed pair — declares this is PrivaTools' published
-        # comparison of itself against `competitor_name`. AI engines use this
-        # to attribute the comparison verdict to PrivaTools when surfacing
-        # "X vs Y" queries. Each competitor gets its own honestly-graded
-        # rating — uniform 4/5 across the board makes the schema look like
-        # boilerplate and erodes the signal AI engines weigh.
-        if competitor_name:
-            graph_items[0]["itemReviewed"] = {
-                "@type": "SoftwareApplication",
-                "name": competitor_name,
-                "applicationCategory": "BusinessApplication",
-            }
-            rating_value = comp_data.get("rating", "3.5")
-            rating_note = comp_data.get("rating_note", "")
-            graph_items[0]["reviewRating"] = {
-                "@type": "Rating",
-                "ratingValue": rating_value,
-                "bestRating": "5",
-                "worstRating": "1",
-                "ratingExplanation": (
-                    f"PrivaTools rates {competitor_name} at {rating_value}/5"
-                    + (f" ({rating_note})." if rating_note else ".")
-                ),
-            }
-        return {
-            "@context": "https://schema.org",
-            "@graph": graph_items,
+        entry = _comparisons().get(path[len("/compare/"):])
+        if entry is None:
+            return None
+        breadcrumbs.extend([
+            {"@type": "ListItem", "position": 2, "name": "Compare", "item": f"{BASE_URL}/compare"},
+            {"@type": "ListItem", "position": 3, "name": title, "item": canonical_url},
+        ])
+        article = {
+            "@type": "Article", "@id": f"{canonical_url}#article",
+            "headline": title, "description": description, "url": canonical_url,
+            "image": f"{BASE_URL}/api/og-image?p={quote(path)}", "inLanguage": "en",
+            "author": _organization(), "publisher": _organization(),
+            "mainEntityOfPage": {"@type": "WebPage", "@id": canonical_url},
         }
+        if reviewed := _reviewed_date(entry):
+            article["dateModified"] = reviewed
+        if sources := _sources(entry):
+            article["citation"] = [source["url"] for source in sources]
+        return {"@context": "https://schema.org", "@graph": [article,
+            {"@type": "BreadcrumbList", "itemListElement": breadcrumbs}]}
 
     if path.startswith("/blog/"):
-        slug = path[len("/blog/"):]
-        post = _BLOG_POSTS.get(slug)
-        breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Blog", "item": f"{BASE_URL}/blog"})
-        if post:
-            breadcrumbs.append({"@type": "ListItem", "position": 3, "name": post["title"], "item": canonical_url})
-            # Compute wordCount from the full body if available — the static
-            # frontmatter often omits it, and Google explicitly reads
-            # wordCount when ranking guides.
-            body_data = _blog_bodies().get(slug, {})
-            body_text = body_data.get("body", "") or ""
-            word_count = post.get("wordCount") or len(re.findall(r"\w+", body_text)) or None
-            blog_post_node = {
-                "@type": "BlogPosting",
-                "@id": f"{canonical_url}#article",
-                "headline": post["title"],
-                "description": post["description"],
-                "url": canonical_url,
-                "image": f"{BASE_URL}/api/og-image?p={quote(path)}",
-                "datePublished": post["publishedAt"],
-                # Use the published date for dateModified unless the body has
-                # been updated. Google penalises dateModified inflation that
-                # isn't matched by real content changes.
-                "dateModified": post.get("dateModified") or post.get("updatedAt") or post["publishedAt"],
-                "inLanguage": "en",
-                "articleSection": "Blog",
-                "keywords": ", ".join(post.get("tags", [])),
-                "author": {
-                    "@type": "Person",
-                    "@id": f"{BASE_URL}/about#author",
-                    "name": post.get("author") or "Lakshya Lodha",
-                    "url": f"{BASE_URL}/about",
-                    "sameAs": ["https://github.com/ethereaglehq/privatools"],
-                },
-                "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
-                "mainEntityOfPage": {
-                    "@type": "WebPage",
-                    "@id": canonical_url,
-                },
-                # speakable selector covers the headline, TL;DR, intro paragraph,
-                # and section headings — gives voice assistants (Google Assistant,
-                # Alexa) and AI surfaces a quick auditory excerpt of the post.
-                "speakable": {
-                    "@type": "SpeakableSpecification",
-                    "cssSelector": ["h1", ".post-tldr", ".post-intro", "h2"],
-                },
-            }
-            if word_count:
-                blog_post_node["wordCount"] = word_count
-            # articleBody — Google explicitly reads this for excerpt selection
-            # and AI engines use it when summarising the post for citations.
-            # Truncate to ~5000 chars to keep the JSON-LD lean (over-stuffing
-            # the schema with the entire post text harms parse-time and
-            # adds no signal Google can't get from the visible HTML body).
-            if body_text:
-                blog_post_node["articleBody"] = body_text[:5000]
-            return {
-                "@context": "https://schema.org",
-                "@graph": [
-                    blog_post_node,
-                    {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
-                ],
-            }
-        return {"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": breadcrumbs}
+        post = _blog_posts().get(path[len("/blog/"):])
+        if post is None:
+            return None
+        breadcrumbs.extend([
+            {"@type": "ListItem", "position": 2, "name": "Blog", "item": f"{BASE_URL}/blog"},
+            {"@type": "ListItem", "position": 3, "name": post["title"], "item": canonical_url},
+        ])
+        article = {
+            "@type": "BlogPosting", "@id": f"{canonical_url}#article",
+            "headline": post["title"], "description": description, "url": canonical_url,
+            "image": f"{BASE_URL}/api/og-image?p={quote(path)}", "inLanguage": "en",
+            "articleSection": "Blog", "keywords": ", ".join(post.get("tags", [])),
+            "author": _organization(), "publisher": _organization(),
+            "mainEntityOfPage": {"@type": "WebPage", "@id": canonical_url},
+        }
+        if published := post.get("publishedAt") or post.get("date"):
+            article["datePublished"] = published
+        if reviewed := _reviewed_date(post):
+            article["dateModified"] = reviewed
+        if sources := _sources(post):
+            article["citation"] = [source["url"] for source in sources]
+        body = unescape(re.sub(r"<[^>]*>", " ", post.get("body") or ""))
+        if body.strip():
+            article["wordCount"] = len(re.findall(r"\w+", body))
+        return {"@context": "https://schema.org", "@graph": [article,
+            {"@type": "BreadcrumbList", "itemListElement": breadcrumbs}]}
 
     if path == "/blog":
         breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Blog", "item": canonical_url})
         blog_items = []
-        for i, (slug, post) in enumerate(_BLOG_POSTS.items(), start=1):
+        for i, (slug, post) in enumerate(_blog_posts().items(), start=1):
             blog_items.append({
                 "@type": "ListItem",
                 "position": i,
@@ -2411,23 +2153,23 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "description": description,
                     "url": canonical_url,
                     "inLanguage": "en",
-                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": BRAND_LOGO_URL}},
                     "blogPost": [
                         {
                             "@type": "BlogPosting",
                             "headline": p["title"],
                             "description": p["description"],
                             "url": f"{BASE_URL}/blog/{s}",
-                            "datePublished": p["publishedAt"],
-                            "author": {"@type": "Person", "name": p.get("author") or "PrivaTools Team"},
+                            "dateModified": _reviewed_date(p),
+                            "author": _organization(),
                         }
-                        for s, p in _BLOG_POSTS.items()
+                        for s, p in _blog_posts().items()
                     ],
                 },
                 {
                     "@type": "ItemList",
                     "name": "PrivaTools Blog Posts",
-                    "numberOfItems": len(_BLOG_POSTS),
+                    "numberOfItems": len(_blog_posts()),
                     "itemListElement": blog_items,
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
@@ -2443,11 +2185,11 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
             },
             {
                 "q": "What happens to files I upload?",
-                "a": "Server-side tools hold your file in isolated temporary storage only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all.",
+                "a": "Server tools use temporary input and output files, removed after the response completes. Periodic cleanup handles leftovers. Browser tools keep input on the device; optional AI provider connections send the disclosed input directly to that provider. Read the selected tool’s processing notice.",
             },
             {
                 "q": "Is PrivaTools really free?",
-                "a": "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. We do not sell user data, run ads, or operate a freemium tier.",
+                "a": "File tools are free to use without an account. Server rate, upload, and capacity limits apply. Developer API keys have quotas, and optional AI providers may charge your account.",
             },
             {
                 "q": "Can I self-host PrivaTools?",
@@ -2455,7 +2197,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
             },
             {
                 "q": "What's the difference between PrivaTools and Smallpdf, iLovePDF, or Adobe?",
-                "a": "PrivaTools is free with no daily limits, requires no account, does not retain your files, and is open source. See the side-by-side comparisons at privatools.me/compare for specifics.",
+                "a": "PrivaTools offers free guest file tools and an open-source, self-hostable codebase. Review our dated comparison pages and their source links to choose an appropriate workflow.",
             },
         ]
         return {
@@ -2471,10 +2213,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "isPartOf": {"@id": f"{BASE_URL}/#website"},
                     "about": {"@id": f"{BASE_URL}/#organization"},
                     "mainEntity": {"@id": f"{BASE_URL}/#organization"},
-                    "speakable": {
-                        "@type": "SpeakableSpecification",
-                        "cssSelector": ["h1", ".about-tldr", "h2"],
-                    },
+
                 },
                 {
                     "@type": "FAQPage",
@@ -2507,7 +2246,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "isPartOf": {"@id": f"{BASE_URL}/#website"},
                     "datePublished": "2026-03-15",
                     "dateModified": "2026-03-29" if path == "/privacy" else "2026-03-29",
-                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": BRAND_LOGO_URL}},
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
             ],
@@ -2530,7 +2269,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "applicationCategory": "BusinessApplication",
                     "operatingSystem": "Any (browser-based)",
                     "offers": {"@type": "Offer", "price": "0", "priceCurrency": "USD"},
-                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": f"{BASE_URL}/icons/icon-512.png"}},
+                    "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": BRAND_LOGO_URL}},
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
             ],
@@ -2539,7 +2278,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
     if path == "/compare":
         breadcrumbs.append({"@type": "ListItem", "position": 2, "name": "Compare", "item": canonical_url})
         compare_items = []
-        for i, (cslug, cdata) in enumerate(_COMPARE_DATA.items(), start=1):
+        for i, (cslug, cdata) in enumerate(_comparisons().items(), start=1):
             compare_items.append({
                 "@type": "ListItem",
                 "position": i,
@@ -2561,13 +2300,18 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                 {
                     "@type": "ItemList",
                     "name": "PrivaTools competitor comparisons",
-                    "numberOfItems": len(_COMPARE_DATA),
+                    "numberOfItems": len(_comparisons()),
                     "itemListElement": compare_items,
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
             ],
         }
 
+    if path in _STATIC_META and path not in NOINDEX_PATHS:
+        return {"@context": "https://schema.org", "@graph": [{
+            "@type": "WebPage", "@id": canonical_url + "#webpage", "url": canonical_url,
+            "name": title, "description": description, "inLanguage": "en", "publisher": _organization(),
+        }]}
     return None
 
 
@@ -2580,35 +2324,21 @@ _TOOL_BREADTH_FEATURE = f"{_TOTAL_TOOL_COUNT} tools (PDF, image, video, audio, d
 _PRIVATOOLS_FEATURES: dict[str, str] = {
     "Free to use": "Yes — 100% free",
     "No account required": "Yes",
-    "No file size limits": "Yes (500 MB per file)",
+    "Upload limits": "Default server limit 500 MB; tool-specific limits may be lower",
     "No ads": "Yes",
     "Open source": "Yes (MIT license)",
     "Self-hostable": "Yes (Docker)",
-    "Files processed privately": "Yes (server-side, deleted within minutes)",
+    "Processing": "Browser-local, temporary server processing, or optional direct AI provider connection",
     "No watermarks on free tier": "Yes",
     _TOOL_BREADTH_FEATURE: f"Yes ({_TOTAL_TOOL_COUNT} tools)",
     "Works offline / client-side tools": "Some tools (client-side)",
     "Desktop app included": "No (web-based)",
-    "API available": "Self-hosted API",
+    "API available": "Key-authenticated hosted API and self-hosting",
     "E-signatures": "Yes (free)",
     "JSON-LD structured data": "Yes",
 }
 
-_COMPARE_DATA: dict[str, dict] = {
-    "ilovepdf": {"name": "iLovePDF", "rating": "3.5", "rating_note": "ads + cloud upload reduce score", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No (25 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
-    "smallpdf": {"name": "Smallpdf", "rating": "3", "rating_note": "2 tasks/day limit + cloud upload", "features": {"Free to use": "Limited (2 tasks/day)", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (21 tools, PDF only)"}},
-    "adobe-acrobat": {"name": "Adobe Acrobat Online", "rating": "4", "rating_note": "excellent features but $23/mo + cloud", "features": {"Free to use": "Very limited", "No account required": "No (Adobe ID required)", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Adobe cloud)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
-    "sejda": {"name": "Sejda PDF", "rating": "3.5", "rating_note": "3 tasks/hour limit", "features": {"Free to use": "Limited (3 tasks/hour)", "No account required": "No", "No file size limits": "No (50 MB free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
-    "tinywow": {"name": "TinyWow", "rating": "3.5", "rating_note": "free with ads + CAPTCHA", "features": {"Free to use": "Yes (ads + CAPTCHA)", "No account required": "Yes", "No file size limits": "No (500 MB)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded, deleted after 1 hour)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "Yes (PDF, image, video, AI writing)"}},
-    "ihatepdf": {"name": "ihatepdf.cv", "rating": "4.0", "rating_note": "browser-local, PDF only", "features": {"Free to use": "Yes (donation-funded)", "No account required": "Yes", "No file size limits": "Limited by device memory", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "Yes (never uploaded)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
-    "pdf24": {"name": "PDF24", "rating": "4", "rating_note": "generous free tier — cloud upload only deduction", "features": {"Free to use": "Yes", "No account required": "Yes", "No file size limits": "Limited", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
-    "foxit": {"name": "Foxit PDF", "rating": "3", "rating_note": "paywall + cloud upload", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "Enterprise only", "Files processed privately": "No (Foxit cloud)", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
-    "lightpdf": {"name": "LightPDF", "rating": "2.5", "rating_note": "aggressive paywall + cloud upload", "features": {"Free to use": "Limited", "No account required": "No", "No file size limits": "No", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (files uploaded to their servers)", "No watermarks on free tier": "Limited", _TOOL_BREADTH_FEATURE: "No (PDF + basic image)"}},
-    "stirling-pdf": {"name": "Stirling PDF", "rating": "4.5", "rating_note": "open source + self-hostable — fellow privacy advocate", "features": {"Free to use": "Yes", "No account required": "Yes (self-hosted)", "No file size limits": "Depends on your server", "No ads": "Yes", "Open source": "Yes (GPL-3.0)", "Self-hostable": "Yes (Docker required)", "Files processed privately": "Yes (your own server)", "No watermarks on free tier": "Yes", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
-    "dochub": {"name": "DocHub", "rating": "3", "rating_note": "5 docs/month free is limiting", "features": {"Free to use": "Limited (1 user, 5 docs/month)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (DocHub cloud)", _TOOL_BREADTH_FEATURE: "No (document editing only)"}},
-    "pdfescape": {"name": "PDFescape", "rating": "3", "rating_note": "10MB + 100 page limit", "features": {"Free to use": "Limited (10 MB, 100 pages)", "No account required": "Yes (online version)", "No file size limits": "No (10 MB limit free)", "No ads": "No", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (uploaded to their servers)", _TOOL_BREADTH_FEATURE: "No (basic PDF editing only)"}},
-    "nitro-pdf": {"name": "Nitro PDF", "rating": "2.5", "rating_note": "no free tier — paid only", "features": {"Free to use": "No (paid subscription)", "No account required": "No", "No file size limits": "No", "No ads": "Yes", "Open source": "No", "Self-hostable": "No", "Files processed privately": "No (Nitro cloud)", _TOOL_BREADTH_FEATURE: "No (PDF only)"}},
-}
+_COMPARE_DATA: dict[str, dict] = {'ilovepdf': {'name': 'iLovePDF', 'title': 'PrivaTools vs iLovePDF', 'description': 'Compare PrivaTools and iLovePDF for your file workflow.', 'features': [], 'sources': []}, 'smallpdf': {'name': 'Smallpdf', 'title': 'PrivaTools vs Smallpdf', 'description': 'Compare PrivaTools and Smallpdf for your file workflow.', 'features': [], 'sources': []}, 'adobe-acrobat': {'name': 'Adobe Acrobat Online', 'title': 'PrivaTools vs Adobe Acrobat Online', 'description': 'Compare PrivaTools and Adobe Acrobat Online for your file workflow.', 'features': [], 'sources': []}, 'sejda': {'name': 'Sejda PDF', 'title': 'PrivaTools vs Sejda PDF', 'description': 'Compare PrivaTools and Sejda PDF for your file workflow.', 'features': [], 'sources': []}, 'tinywow': {'name': 'TinyWow', 'title': 'PrivaTools vs TinyWow', 'description': 'Compare PrivaTools and TinyWow for your file workflow.', 'features': [], 'sources': []}, 'ihatepdf': {'name': 'ihatepdf.cv', 'title': 'PrivaTools vs ihatepdf.cv', 'description': 'Compare PrivaTools and ihatepdf.cv for your file workflow.', 'features': [], 'sources': []}, 'pdf24': {'name': 'PDF24', 'title': 'PrivaTools vs PDF24', 'description': 'Compare PrivaTools and PDF24 for your file workflow.', 'features': [], 'sources': []}, 'foxit': {'name': 'Foxit PDF', 'title': 'PrivaTools vs Foxit PDF', 'description': 'Compare PrivaTools and Foxit PDF for your file workflow.', 'features': [], 'sources': []}, 'lightpdf': {'name': 'LightPDF', 'title': 'PrivaTools vs LightPDF', 'description': 'Compare PrivaTools and LightPDF for your file workflow.', 'features': [], 'sources': []}, 'stirling-pdf': {'name': 'Stirling PDF', 'title': 'PrivaTools vs Stirling PDF', 'description': 'Compare PrivaTools and Stirling PDF for your file workflow.', 'features': [], 'sources': []}, 'dochub': {'name': 'DocHub', 'title': 'PrivaTools vs DocHub', 'description': 'Compare PrivaTools and DocHub for your file workflow.', 'features': [], 'sources': []}, 'pdfescape': {'name': 'PDFescape', 'title': 'PrivaTools vs PDFescape', 'description': 'Compare PrivaTools and PDFescape for your file workflow.', 'features': [], 'sources': []}, 'nitro-pdf': {'name': 'Nitro PDF', 'title': 'PrivaTools vs Nitro PDF', 'description': 'Compare PrivaTools and Nitro PDF for your file workflow.', 'features': [], 'sources': []}}
 
 
 def _build_ssr_content(path: str, title: str, description: str) -> str:
@@ -2617,6 +2347,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     can read without executing JavaScript.  This content is placed inside
     <div id="root"> so that React hydration replaces it once JS loads.
     """
+    _PDF_TOOLS, _NONPDF_TOOLS = _tool_registries()
     parts: list[str] = []
 
     # ── 404 / unknown route ────────────────────────────────────────────────
@@ -2643,41 +2374,13 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
 
     # ── Homepage ───────────────────────────────────────────────────────────
     if path == "/":
-        parts.append(f"<h1>PrivaTools — Free, Open-Source Privacy-First File Tools</h1>")
-        parts.append(
-            f"<p>PrivaTools provides {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} free online file tools — {len(_PDF_TOOLS)} PDF tools and {len(_NONPDF_TOOLS)} image, video, audio, "
-            "and developer utilities. The entire stack is open source under the MIT license and "
-            "self-hostable via Docker for teams that want their own infrastructure. On the public demo, "
-            "files are processed in an isolated container and deleted immediately after the response "
-            "is returned — never stored, never shared with third parties. The public site uses first-party "
-            "aggregate pageview telemetry only, with no browser-loaded Google analytics scripts. No account needed, no behavioural profiling.</p>"
-        )
-        # Citable "key facts" block: a self-contained, statistic-dense passage AI
-        # engines (ChatGPT/Perplexity/Claude/Gemini) can extract verbatim when
-        # answering "best free private PDF tool" / "free PDF tools without upload".
-        parts.append(
-            "<h2>PrivaTools at a glance</h2><ul>"
-            f"<li><strong>{len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} free tools</strong> across PDF, image, video, audio, and developer categories — no premium tier.</li>"
-            "<li><strong>500 MB per file</strong> with <strong>no daily or monthly quota</strong> — process unlimited files.</li>"
-            "<li><strong>Zero files retained:</strong> server-side files are deleted on the response; many tools (Summarize PDF, Smart Redact detection, JWT Decoder, JSON/XML formatters) run entirely in your browser and never upload.</li>"
-            "<li><strong>No account, no watermark, no third-party AI APIs.</strong> The two in-browser AI tools run open models (distilbart, BERT-base-NER) on-device.</li>"
-            "<li><strong>MIT-licensed and self-hostable</strong> with one Docker command — the whole stack is auditable on GitHub.</li>"
-            "</ul>"
-        )
-        parts.append(
-            '<h2>Chain tools with <a href="/pipeline">Pipeline</a></h2>'
-            "<p>PrivaTools is the only free PDF suite with a chained pipeline: queue Merge → "
-            "Compress → Watermark → Sign in a single click and download one final PDF. No competitor "
-            "offers this in their free tier.</p>"
-        )
-        parts.append(
-            '<h2>Process many files with <a href="/batch">Batch</a></h2>'
-            "<p>Bulk-apply any compatible tool to dozens of files at once. Drop a folder of "
-            "PDFs into Batch Compress, get a ZIP of compressed outputs back — no per-file clicking.</p>"
-        )
-        parts.append(
-            f'<p><a href="/tools">Browse the full directory of all {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} tools &rarr;</a></p>'
-        )
+        parts.append('<h1>PrivaTools — Free, Open-Source File Tools</h1>')
+        parts.append(f'<p>Browse {_TOTAL_TOOL_COUNT} tools for PDFs, images, video, audio, archives, and developer tasks. Use file tools without an account. Choose Air or Play and the appearance that feels comfortable for your work.</p>')
+        parts.append('<h2>Choose where your files are processed</h2><ul><li>Browser tools keep the input on your device.</li><li>Server tools upload files for temporary processing. Cleanup runs after responses and periodically for leftovers.</li><li>Optional AI providers receive the disclosed input directly when you connect your own key. Local models depend on your device and may need a model download.</li></ul>')
+        parts.append('<p>Open source under the MIT license and self-hostable. The hosted service has upload, rate, and capacity limits; developer API keys have separate quotas. Read the <a href="/privacy">privacy policy</a> and <a href="/security">security approach</a> before processing sensitive files.</p>')
+        parts.append('<h2><a href="/pipeline">Build a PDF pipeline</a></h2><p>Chain compatible steps such as compression, rotation, and metadata removal. Save a recipe in this browser or share its tool sequence without including your file.</p>')
+        parts.append('<h2><a href="/batch">Process a batch</a></h2><p>Apply a supported operation to several files, review individual results, and download completed outputs together.</p>')
+        parts.append('<p><a href="/tools">Browse all tools</a> · <a href="/ai">AI Studio</a> · <a href="/api">Developer API</a> · <a href="/blog">Practical guides</a> · <a href="/compare">Compare options</a></p>')
         parts.append("<h2>PDF Tools</h2><ul>")
         for slug, (name, desc) in _by_popularity(_PDF_TOOLS.items()):
             parts.append(f'<li><a href="/tool/{slug}">{name}</a> — {desc[:120]}</li>')
@@ -2688,27 +2391,16 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("</ul>")
         # FAQ section so the JSON-LD FAQPage above has matching visible content.
         parts.append('<h2 class="tool-faq">Frequently Asked Questions</h2>')
-        for q, a in [
-            ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. There is no premium tier. We do not sell data, run ads, or operate a freemium model."),
-            ("Do you upload my files anywhere?", "For server-side tools, files enter an isolated Docker container, use temporary per-request storage, and are unlinked immediately after the response. They are never written to permanent storage, never logged, and never used to train models. Many tools (Summarize PDF, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) run entirely in your browser and never upload file content."),
-            ("Can I self-host PrivaTools?", f"Yes. The entire stack is MIT-licensed and ships as a Docker Compose project. Clone github.com/ethereaglehq/privatools and run docker compose up --build to host all {_TOTAL_TOOL_COUNT} tools on your own server."),
-            ("What file size limit does PrivaTools have?", "500 MB per file. There is no daily or monthly quota — you can process unlimited files per day."),
-            ("Does PrivaTools use AI?", "Two tools use AI without third-party AI APIs. Summarize PDF runs distilbart-cnn-12-6 in your browser. Smart Redact runs BERT-base-NER in your browser for detection, then sends the PDF and approved strings to the isolated backend only to permanently apply redactions."),
-            ("How does PrivaTools compare to iLovePDF, Smallpdf, or Adobe Acrobat?", "PrivaTools is free with no daily quota, requires no account, never retains your files, and is fully open source. See side-by-side comparisons at privatools.me/compare for each major competitor."),
-        ]:
+        for q, a in _HOME_FAQ:
             parts.append(f"<h3>{q}</h3><p>{a}</p>")
         return "\n".join(parts)
 
-    # ── All-tools directory hub (/tools) ───────────────────────────────────
-    # A second crawlable hub besides the homepage: a flat, category-grouped
-    # index that links every tool with real <a href> anchors, so internal
-    # PageRank reaches the long-tail tool pages from more than one place.
     if path == "/tools":
         parts.append("<h1>All Free Online Tools</h1>")
         parts.append('<p><a href="/">PrivaTools</a> &rsaquo; All Tools</p>')
         parts.append(
             f"<p>Every one of the {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} PrivaTools utilities, grouped by category. "
-            "All free and open source under the MIT license — no account, no watermarks, no daily limits. "
+            "Free and open source under the MIT license. File tools need no account; server limits and developer API quotas apply. "
             "Browser-only where possible; server-side tools run in an isolated container and delete your file "
             "immediately after the response.</p>"
         )
@@ -2734,10 +2426,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(f"<h1>{name} Online Free — PrivaTools</h1>")
             # TL;DR — voice-friendly 1-2 sentence answer for AEO/voice-search.
             tldr = _tldr_for(slug, name)
-            parts.append(f'<p class="tool-tldr" data-speakable="true"><strong>TL;DR:</strong> {tldr}</p>')
-            # .tool-intro pairs with the JSON-LD speakable selector so voice
-            # assistants read the per-tool unique description (not the trust
-            # paragraph, which is one of six recycled boilerplates).
+            parts.append(f'<p class="tool-tldr"><strong>TL;DR:</strong> {tldr}</p>')
             parts.append(f'<p class="tool-intro">{desc}</p>')
             parts.append(
                 f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
@@ -2797,9 +2486,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
             parts.append(f"<h1>{name} Online Free — PrivaTools</h1>")
             # TL;DR — voice-friendly 1-2 sentence answer for AEO/voice-search.
             tldr = _tldr_for(slug, name)
-            parts.append(f'<p class="tool-tldr" data-speakable="true"><strong>TL;DR:</strong> {tldr}</p>')
-            # .tool-intro pairs with the JSON-LD speakable selector — see
-            # the /tool/ branch above for full rationale.
+            parts.append(f'<p class="tool-tldr"><strong>TL;DR:</strong> {tldr}</p>')
             parts.append(f'<p class="tool-intro">{desc}</p>')
             parts.append(
                 f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
@@ -2850,103 +2537,73 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
 
     # ── Compare pages ──────────────────────────────────────────────────────
     if path.startswith("/compare/") or path == "/compare":
-        parts.append(f"<h1>{title}</h1>")
-        parts.append(f"<p>{description}</p>")
-        parts.append(
-            f"<p>PrivaTools is a free, open-source alternative with {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ file tools, "
-            "no file limits, no sign-ups, and no behavioural tracking. Compare features, pricing, "
-            "and privacy practices side by side.</p>"
-        )
+        parts.extend([f"<h1>{escape(title)}</h1>", f"<p>{escape(description)}</p>"])
         slug = path[len("/compare/"):] if path.startswith("/compare/") else ""
-        if slug and slug in _COMPARE_DATA:
-            comp = _COMPARE_DATA[slug]
-            parts.append(f"<h2>PrivaTools vs {comp['name']} — Feature Comparison</h2>")
-            parts.append("<table><thead><tr><th>Feature</th><th>PrivaTools</th>"
-                         f"<th>{comp['name']}</th></tr></thead><tbody>")
-            for feature, their_val in comp["features"].items():
-                our_val = _PRIVATOOLS_FEATURES.get(feature, "Yes")
-                parts.append(f"<tr><td>{feature}</td><td>{our_val}</td><td>{their_val}</td></tr>")
-            parts.append("</tbody></table>")
-            parts.append(
-                f"<h2>Why Choose PrivaTools Over {comp['name']}?</h2>"
-                f"<p>Unlike {comp['name']}, PrivaTools is 100% free with no premium tiers, "
-                "a generous 500 MB per-file limit, no account required, and no ads. "
-                "Files are processed in an isolated container and deleted immediately after the "
-                "response is returned — never stored, never shared with third parties. PrivaTools "
-                "is open source under the MIT license and self-hostable via Docker, so you can "
-                "run the entire stack on your own infrastructure for complete control.</p>"
-            )
-        if not slug:
-            parts.append("<h2>All Comparisons</h2><ul>")
-            for cslug, cdata in _COMPARE_DATA.items():
-                parts.append(f'<li><a href="/compare/{cslug}">PrivaTools vs {cdata["name"]}</a></li>')
-            parts.append("</ul>")
-        # Internal links down to the specific tools these comparisons are about,
-        # so any external authority the compare pages earn (they're the natural
-        # outreach landing targets) flows to the individual tool pages.
-        popular = [(s, n) for s, (n, _) in _by_popularity(_PDF_TOOLS.items())][:10]
-        parts.append("<h2>Popular free PrivaTools tools</h2><ul>")
-        for s, n in popular:
-            parts.append(f'<li><a href="/tool/{s}">{n}</a></li>')
-        parts.append('<li><a href="/tools">Browse all tools &rarr;</a></li>')
-        parts.append("</ul>")
+        entry = _comparisons().get(slug)
+        if entry:
+            if entry.get("summary"):
+                parts.append(f'<p>{escape(entry["summary"])}</p>')
+            if reviewed := _reviewed_date(entry):
+                parts.append(f'<p>By PrivaTools · Last reviewed: <time datetime="{reviewed}">{reviewed}</time></p>')
+            for field, heading in (("choosePrivaTools", "When PrivaTools fits"),
+                                   ("chooseCompetitor", f'When {entry["name"]} fits'),
+                                   ("tradeoffs", "Tradeoffs to consider")):
+                values = entry.get(field) or []
+                if values:
+                    parts.append(f'<h2>{escape(heading)}</h2><ul>' + ''.join(f'<li>{escape(value)}</li>' for value in values) + '</ul>')
+            if entry.get("features"):
+                parts.append(f'<h2>Feature comparison</h2><table><thead><tr><th scope="col">Feature</th><th scope="col">PrivaTools</th><th scope="col">{escape(entry["name"])}</th></tr></thead><tbody>')
+                for feature in entry["features"]:
+                    source = feature.get("sourceUrl") or ""
+                    citation = f' <a href="{escape(source, quote=True)}">Source</a>' if source.startswith(("https://", "http://")) else ""
+                    parts.append(f'<tr><th scope="row">{escape(feature["label"])}</th><td>{escape(feature["privatools"])}</td><td>{escape(feature["competitor"])}{citation}</td></tr>')
+                parts.append('</tbody></table>')
+            parts.append(_source_html(entry))
+        else:
+            parts.append('<h2>All comparisons</h2><ul>')
+            for cslug, cdata in _comparisons().items():
+                parts.append(f'<li><a href="/compare/{cslug}">{escape(cdata["title"])}</a> — {escape(cdata.get("description", ""))}</li>')
+            parts.append('</ul>')
+        parts.append('<p><a href="/compare">Compare file tools</a> · <a href="/tools">Browse all PrivaTools tools</a></p>')
         return "\n".join(parts)
 
     # ── Blog pages ─────────────────────────────────────────────────────────
     if path.startswith("/blog/"):
         slug = path[len("/blog/"):]
-        post = _BLOG_POSTS.get(slug)
+        post = _blog_posts().get(slug)
         if post:
-            body_data = _blog_bodies().get(slug, {})
-            tldr = body_data.get("tldr")
-
-            parts.append(f"<h1>{post['title']}</h1>")
-            if tldr:
-                parts.append(
-                    '<p class="post-tldr" data-speakable="true">'
-                    f'<strong>TL;DR:</strong> {tldr}</p>'
-                )
-            # .post-intro pairs with the JSON-LD BlogPosting.speakable
-            # selector so voice assistants and AI surfaces can read the
-            # post's lead paragraph as an audio excerpt.
-            parts.append(f'<p class="post-intro">{post["description"]}</p>')
-            parts.append(
-                f'<p class="post-meta">Published: {post["publishedAt"]} · '
-                f'{post["readTime"]} · By the PrivaTools team</p>'
-            )
-
-            # Full HTML article body — sourced from frontend/src/data/blog.ts via
-            # the build-time blog-content.json. Without this, the page ships only
-            # a title to crawlers and Google flags it as thin content.
-            body_html = body_data.get("body", "").strip()
-            if body_html:
-                parts.append('<article class="post-body">')
-                parts.append(body_html)
-                parts.append('</article>')
-
-            # Internal linking back to other posts gives every blog URL outbound
-            # links and helps Google discover/re-crawl the cluster as a unit.
-            other_posts = [(s, p) for s, p in _BLOG_POSTS.items() if s != slug][:6]
-            if other_posts:
-                parts.append('<h2>More from the PrivaTools Blog</h2><ul>')
-                for s, p in other_posts:
-                    parts.append(f'<li><a href="/blog/{s}">{p["title"]}</a></li>')
-                parts.append('</ul>')
-
+            parts.append(f'<h1>{escape(post["title"])}</h1>')
+            if post.get("tldr"):
+                parts.append(f'<p class="post-tldr">{escape(post["tldr"])}</p>')
+            parts.append(f'<p class="post-intro">{escape(post.get("description", ""))}</p>')
+            parts.append('<p class="post-meta">By PrivaTools</p>')
+            if published := post.get("publishedAt") or post.get("date"):
+                parts.append(f'<p>Published: <time datetime="{escape(published)}">{escape(published)}</time></p>')
+            if reviewed := _reviewed_date(post):
+                parts.append(f'<p>Last reviewed: <time datetime="{reviewed}">{reviewed}</time></p>')
+            # HTML is generated from the same source-controlled body as the React page.
+            if body := (post.get("body") or "").strip():
+                parts.append(f'<article class="post-body">{body}</article>')
+            parts.append(_source_html(post))
+            related = [TOOL_META[tool] for tool in post.get("relatedTools", []) if tool in TOOL_META]
+            if related:
+                parts.append('<h2>Tools in this guide</h2><ul>' + ''.join(f'<li><a href="{tool["url_path"]}">{escape(tool["name"])}</a></li>' for tool in related) + '</ul>')
+            others = [(s, p) for s, p in _blog_posts().items() if s != slug][:6]
+            if others:
+                parts.append('<h2>More guides</h2><ul>' + ''.join(f'<li><a href="/blog/{s}">{escape(p["title"])}</a></li>' for s, p in others) + '</ul>')
             return "\n".join(parts)
     elif path == "/blog":
-        parts.append("<h1>PrivaTools Blog — PDF & File Tools Tips, Guides & Comparisons</h1>")
-        parts.append("<ul>")
-        for slug, post in _BLOG_POSTS.items():
-            parts.append(f'<li><a href="/blog/{slug}">{post["title"]}</a> — {post["description"]}</li>')
-        parts.append("</ul>")
+        parts.append('<h1>PrivaTools guides</h1><p>Practical file workflows, processing choices, and comparisons.</p><ul>')
+        for slug, post in _blog_posts().items():
+            parts.append(f'<li><a href="/blog/{slug}">{escape(post["title"])}</a> — {escape(post.get("description", ""))}</li>')
+        parts.append('</ul>')
         return "\n".join(parts)
 
     # ── About page ─────────────────────────────────────────────────────────
     if path == "/about":
         parts.append("<h1>About PrivaTools</h1>")
         parts.append(
-            '<p class="about-tldr" data-speakable="true"><strong>TL;DR:</strong> '
+            '<p class="about-tldr"><strong>TL;DR:</strong> '
             "PrivaTools is a free, open-source, privacy-first suite of "
             f"{len(_PDF_TOOLS) + len(_NONPDF_TOOLS)}+ file tools. "
             "MIT-licensed, self-hostable, no account needed, no ads, no data resale. "
@@ -2958,15 +2615,15 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             f"<p>PrivaTools provides {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} free online file tools across PDF, "
             "image, video, audio, archive, and developer workflows. The codebase is MIT-licensed and "
-            "self-hostable via Docker, so the privacy guarantees can be audited end-to-end. The public demo "
+            "self-hostable via Docker, so the implementation can be reviewed. The public demo "
             "at privatools.me processes server-side tasks inside an isolated container and deletes the input "
             "the moment the response leaves the server.</p>"
         )
         parts.append("<h2>Frequently Asked Questions</h2>")
         for q, a in [
             ("Who runs PrivaTools?", "PrivaTools is an open-source project under the MIT license — see the code on GitHub at ethereaglehq/privatools. The public demo at privatools.me is maintained by independent contributors, with no advertisers, investors, or data brokers in the picture."),
-            ("What happens to files I upload?", "Server-side tools hold your file in isolated temporary storage only for the duration of processing. The moment the response is delivered the file is unlinked; a cleanup task purges any stragglers every five minutes. No backups, thumbnails, or metadata are retained. Many tools run entirely in your browser and never upload at all."),
-            ("Is PrivaTools really free?", "Yes. Every tool is free with no daily quota, no watermark, no account, and no upsell. We do not sell user data, run ads, or operate a freemium tier."),
+            ("What happens to files I upload?", "Server tools use temporary input and output files, removed after the response completes. Periodic cleanup handles leftovers. Browser tools keep input on the device; optional AI provider connections send the disclosed input directly to that provider. Read the selected tool’s processing notice."),
+            ("Is PrivaTools really free?", "File tools are free to use without an account. Server rate, upload, and capacity limits apply. Developer API keys have quotas, and optional AI providers may charge your account."),
             ("Can I self-host PrivaTools?", "Yes. The full stack is MIT-licensed and ships as a Docker Compose project. Clone the repo and run docker compose up --build to host the whole thing on your own server."),
         ]:
             parts.append(f"<h3>{q}</h3><p>{a}</p>")
@@ -2975,18 +2632,20 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     # ── Privacy page ───────────────────────────────────────────────────────
     if path == "/privacy":
         parts.append("<h1>Privacy Policy</h1>")
-        parts.append("<p><strong>Last updated:</strong> May 15, 2026</p>")
+        parts.append("<p><strong>Last updated:</strong> September 14, 2026</p>")
         parts.append(
             "<p>Your files are private. Server-side tools use isolated temporary storage and delete files "
             "immediately after the response is delivered — never kept in permanent storage, never inspected, "
-            "never retained. We collect only first-party aggregate pageview telemetry, and Do Not Track, "
-            "Global Privacy Control, local opt-out, and standard blockers disable the browser beacon.</p>"
+            "never retained. Optional Google Analytics measures public page visits, browser sessions, time spent, "
+            "and selected tool actions. It uses pseudonymous browser identifiers and cookies. It requires opt-in "
+            "unless a reviewed regional policy permits an opt-out default. Unknown regions require opt-in. "
+            "Do Not Track, Global Privacy Control, and the Privacy page control keep analytics off.</p>"
         )
         parts.append("<h2>1. Files You Upload</h2>")
         parts.append(
             "<p>Server-side tools (Merge, Compress, OCR, etc.) hold your file in isolated temporary storage "
             "for the duration of processing. The moment the response is delivered, the file is "
-            "unlinked from the temp directory; a cleanup task purges any stragglers every 5 minutes. "
+            "unlinked from the temp directory; a periodic cleanup task handles leftover temporary files. "
             "No backups, thumbnails, or metadata are retained.</p>"
         )
         parts.append("<h2>2. Client-Side Tools (Zero Upload)</h2>")
@@ -3001,7 +2660,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             "<p>No account needed, no behavioural profiling, no advertising cookies, "
             "no remarketing audiences, no session recordings, no file metadata, no canvas / browser "
-            "fingerprints. Just aggregate pageview counts through a first-party proxy.</p>"
+            "fingerprints. Optional Google Analytics receives technical connection and browser data, but never file contents, filenames, account identity, passwords, or API keys. Advertising features are disabled.</p>"
         )
         parts.append("<h2>4. Open Source &amp; Self-Hosting</h2>")
         parts.append(
@@ -3100,11 +2759,13 @@ def inject_seo(html: str, path: str) -> str:
     # Robots directive — for unknown paths, force noindex,nofollow so 404 URLs
     # never get indexed. Real pages keep the index.html default
     # (index,follow,max-image-preview:large).
-    if not path_is_known(path) or path.rstrip("/") in NOINDEX_PATHS:
-        html = _set_meta(html, 'name="robots"', "noindex,nofollow")
+    if not path_is_known(path):
+        html = _ensure_meta(html, 'name="robots"', "noindex,nofollow")
+    elif path.rstrip("/") in NOINDEX_PATHS:
+        html = _ensure_meta(html, 'name="robots"', "noindex,follow")
 
     # Replace <title>
-    html = re.sub(r"<title>[^<]*</title>", f"<title>{t}</title>", html, count=1)
+    html = re.sub(r"<title>[^<]*</title>", lambda _match: f"<title>{t}</title>", html, count=1)
 
     # Update meta description
     html = _set_meta(html, 'name="description"', d)
@@ -3142,13 +2803,14 @@ def inject_seo(html: str, path: str) -> str:
     html = _set_meta(html, 'property="og:image"', og_image_url)
     html = _ensure_meta(html, 'name="twitter:image"', og_image_url)
     # Image alt text is a legitimate accessibility + AI-discovery signal.
+    html = _ensure_meta(html, 'property="og:site_name"', 'PrivaTools')
     html = _ensure_meta(html, 'property="og:image:alt"', t)
     html = _ensure_meta(html, 'name="twitter:image:alt"', t)
 
     # Inject JSON-LD structured data
     jsonld = get_jsonld_for_path(path)
     if jsonld:
-        jsonld_tag = f'<script type="application/ld+json" id="jsonld-seo">{json.dumps(jsonld, ensure_ascii=False, separators=(",", ":"))}</script>'
+        jsonld_tag = f'<script type="application/ld+json" id="jsonld-seo">{json.dumps(jsonld, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")}</script>'
         html = html.replace("</head>", f"  {jsonld_tag}\n</head>", 1)
 
     # Inject SSR content into <div id="root"> so crawlers see real content.
@@ -3163,12 +2825,12 @@ def inject_seo(html: str, path: str) -> str:
 def _set_meta(html: str, attr: str, value: str) -> str:
     """Update the content attribute of a meta tag identified by `attr`."""
     pattern = rf'(<meta\s+{re.escape(attr)}\s+content=")[^"]*(")'
-    replacement = rf'\g<1>{value}\g<2>'
+    replacement = lambda match: match[1] + value + match[2]
     new_html, n = re.subn(pattern, replacement, html, count=1)
     if n == 0:
         # Also try reversed attribute order: content="..." name="..."
         pattern2 = rf'(<meta\s+content=")[^"]*("\s+{re.escape(attr)}[^>]*>)'
-        new_html, n2 = re.subn(pattern2, rf'\g<1>{value}\g<2>', html, count=1)
+        new_html, n2 = re.subn(pattern2, replacement, html, count=1)
         return new_html if n2 else html
     return new_html
 
@@ -3181,7 +2843,7 @@ def _ensure_meta(html: str, attr: str, value: str) -> str:
     SSR response so social-card crawlers and AI engines see the alt text.
     """
     updated = _set_meta(html, attr, value)
-    if updated != html:
+    if updated != html or re.search(rf'<meta\b[^>]*{re.escape(attr)}(?=\s|/?>)', html):
         return updated
     # Tag was missing — inject a fresh one. Value is already HTML-escaped by
     # the caller via esc().
