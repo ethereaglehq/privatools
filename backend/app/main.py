@@ -486,6 +486,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 _SKIP_SEO_PREFIXES = (
     "/api/", "/api-docs", "/sitemap", "/robots", "/manifest", "/sw.js",
+    # Starter source/README downloads include .py and .md. Limit this bypass
+    # to their build directory rather than treating those extensions as public
+    # assets at every arbitrary URL.
+    "/api-starters/",
     "/icons", "/assets", "/favicon", "/og-image", "/llms",
     "/.well-known/",
     # Health / readiness probes must return JSON, never the SPA shell.
@@ -1120,7 +1124,7 @@ if _frontend_path.exists():
                 resp.headers["Cache-Control"] = "no-cache"
             return resp
         # Missing build assets must fail as assets, never as a 200 HTML shell.
-        if full_path.startswith(("assets/", "fonts/", "icons/", "pwa/", "experience/", "models/")) or Path(full_path).suffix.lower() in _STATIC_EXTENSIONS:
+        if full_path.startswith(("assets/", "fonts/", "icons/", "pwa/", "experience/", "models/", "api-starters/")) or Path(full_path).suffix.lower() in _STATIC_EXTENSIONS:
             return JSONResponse({"detail": "Not found"}, status_code=404)
         # Fall back to index.html for SPA routing
         index = _frontend_path / "index.html"

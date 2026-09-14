@@ -23,6 +23,7 @@ import re
 import secrets
 import sqlite3
 import uuid
+from contextlib import closing
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 
@@ -339,16 +340,28 @@ def issue_api_key(user_id: str, label: str) -> tuple[str, KeyRecord]:
     return raw, KeyRecord(key_id, user_id, clean_label, created, None, False)
 
 
-def resolve_key(raw: str) -> KeyRecord | None:
-    """Look up a raw API key. The interface the API foundation spec named."""
+def resolve_key(raw: str, *, read_timeout: float | None = None) -> KeyRecord | None:
+    """Look up a random API key, optionally with a short read-only connection.
+
+    Optional telemetry must not initialize/migrate the database or enter the
+    normal store's ten-second lock wait. All callers still use the same digest,
+    constant-time comparison, revocation check, and returned key record.
+    """
     if not raw:
         return None
-    store.init()
+    if read_timeout is None:
+        store.init()
     digest = _sha256(raw)
-    with store.read() as conn:
-        row = conn.execute(
-            "SELECT * FROM api_keys WHERE key_id = ?", (digest[:16],)
-        ).fetchone()
+    query = "SELECT * FROM api_keys WHERE key_id = ?"
+    if read_timeout is None:
+        with store.read() as conn:
+            row = conn.execute(query, (digest[:16],)).fetchone()
+    else:
+        # URI mode=ro cannot create a missing store or write to an existing one.
+        with closing(sqlite3.connect(store.DB_PATH.resolve().as_uri() + "?mode=ro",
+                                     uri=True, timeout=read_timeout)) as conn:
+            conn.row_factory = sqlite3.Row
+            row = conn.execute(query, (digest[:16],)).fetchone()
     if row is None or not hmac.compare_digest(row["key_hash"], digest):
         return None
     if row["revoked_at"] is not None:

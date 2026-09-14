@@ -297,6 +297,29 @@ def test_busy_database_drops_optional_write_promptly_and_fallback_auth_is_read_o
     assert len(activity.summary(user.id)["recent"]) == 1
 
 
+def test_optional_key_lookup_reuses_authentication_and_revocation_without_touching_usage(environment):
+    _, user, raw, key, *_ = environment
+    assert accounts.resolve_key(raw, read_timeout=0.025) == accounts.resolve_key(raw)
+    assert activity._known_key(raw) == key.key_id
+    assert accounts.list_keys(user.id)[0].last_used_at is None
+    assert quota.peek(key.key_id).units_used == 0
+    assert accounts.resolve_key("invalid-key", read_timeout=0.025) is None
+    accounts.revoke_key(user.id, key.key_id)
+    assert accounts.resolve_key(raw, read_timeout=0.025) is None
+    assert activity._known_key(raw) is None
+
+
+def test_optional_key_lookup_never_initializes_or_creates_a_missing_store(tmp_path, monkeypatch):
+    missing = tmp_path / "no-existing-store.db"
+    monkeypatch.setattr(store, "DB_PATH", missing)
+    def no_init():
+        pytest.fail("Optional key lookup must not initialize a database")
+    monkeypatch.setattr(store, "init", no_init)
+    with pytest.raises(sqlite3.OperationalError):
+        accounts.resolve_key("synthetic-random-api-key", read_timeout=0.025)
+    assert not missing.exists()
+
+
 def test_janitor_drains_expired_capacity_in_separate_bounded_transactions(environment, monkeypatch):
     _, user, _, key, *_ = environment
     monkeypatch.setattr(activity, "MAX_RECENT_PER_KEY", 10)

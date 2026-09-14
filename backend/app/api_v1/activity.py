@@ -6,8 +6,6 @@ must not affect processing, quota accounting, or the response.
 """
 from __future__ import annotations
 
-import hashlib
-import hmac
 import logging
 import re
 import sqlite3
@@ -117,19 +115,10 @@ def _window(now: float) -> tuple[datetime, datetime]:
 
 
 def _known_key(raw: str) -> str | None:
-    """Read-only authentication fallback with telemetry's short busy timeout.
-
-    Matches accounts.resolve_key; no touch/update and no second auth lookup on
-    normal authenticated requests. A parsing failure must not enter the quota
-    store's ten-second connection/lock wait just to collect optional metadata.
-    """
-    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
-    conn = sqlite3.connect(store.DB_PATH, timeout=0.025)
-    try:
-        row = conn.execute("SELECT key_hash,revoked_at FROM api_keys WHERE key_id=?", (digest[:16],)).fetchone()
-        return digest[:16] if row and row[1] is None and hmac.compare_digest(row[0], digest) else None
-    finally:
-        conn.close()
+    """Reuse verified-key authentication with the optional telemetry lock budget."""
+    from ..auth import accounts
+    record = accounts.resolve_key(raw, read_timeout=0.025)
+    return record.key_id if record else None
 
 
 @contextmanager
