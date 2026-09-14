@@ -10,6 +10,8 @@ import "./skins/experience/secondary-pages.css";
 import "./skins/experience/workflows.css";
 import { registerServiceWorker } from "./lib/sw-register";
 import { isClerkDocument } from "./lib/clerk/instance";
+import { documentPath } from "./lib/documentLocation";
+import { initializeNavigation } from "./lib/navigation";
 
 /**
  * Clerk is the account provider; it is neither mounted nor downloaded without a key.
@@ -38,11 +40,12 @@ const clerkPublishableKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY as
 
 // Tool documents deliberately lack Clerk's CSP permissions. Account links
 // request a real account document before starting identity services.
-const ClerkGate = clerkPublishableKey && isClerkDocument()
+const navigation = initializeNavigation();
+const ClerkGate = clerkPublishableKey && isClerkDocument(documentPath)
     ? lazy(() => import("./lib/clerk/ClerkGate"))
     : null;
 
-createRoot(document.getElementById("root")!).render(
+if (navigation.ready) createRoot(document.getElementById("root")!).render(
     ClerkGate ? (
         <Suspense fallback={null}>
             <ClerkGate publishableKey={clerkPublishableKey!}>

@@ -10,7 +10,7 @@
  * server-side storage — the thing every competitor charges for.
  */
 import { useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { navigateTo } from "@/lib/navigation";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { storeFileHandoff } from "@/lib/file-handoff";
 import { nextStepsFor } from "@/lib/tool-chains";
@@ -22,7 +22,7 @@ interface Props {
 }
 
 export function ResultHandoff({ blob, filename, fromSlug }: Props) {
-    const navigate = useNavigate();
+    const navigate = navigateTo;
     const [sending, setSending] = useState<string | null>(null);
     const steps = nextStepsFor(fromSlug, filename);
 

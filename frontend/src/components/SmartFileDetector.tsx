@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Upload, FileText, ImageIcon, FileArchive, FileVideo, X, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools } from "@/data/tools";
@@ -38,7 +38,6 @@ export function SmartFileDetector() {
     const [fileName, setFileName] = useState("");
     const [show, setShow] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
-    const navigate = useNavigate();
 
     const handleFile = useCallback((file: File) => {
         const ext = file.name.split(".").pop()?.toLowerCase() || "";

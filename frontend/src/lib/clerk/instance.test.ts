@@ -7,13 +7,22 @@ const clerk = (loaded: boolean) => ({ loaded } as ClerkInstance);
 
 describe("Clerk readiness without polling", () => {
   it("does not wait for a provider on a document whose CSP excludes it", async () => {
-    const state = await import("./instance");
     vi.stubGlobal("location", { pathname: "/", hash: "#/account" });
+    const state = await import("./instance");
     expect(await state.whenClerkReady()).toBeNull(); expect(vi.getTimerCount()).toBe(0);
     expect(state.isClerkDocument("/account")).toBe(true);
     expect(state.isClerkDocument("/account/settings")).toBe(true);
     expect(state.isClerkDocument("/accounting")).toBe(false);
     expect(state.isClerkDocument("/tools/markdown-html")).toBe(false);
+  });
+  it("retains account document readiness after the visible path changes", async () => {
+    const state = await import("./instance");
+    vi.stubGlobal("location", { pathname: "/tools" });
+    expect(state.isClerkDocument()).toBe(true);
+    const pending = state.whenClerkReady();
+    const ready = clerk(true); state.setClerkInstance(ready);
+    expect(await pending).toBe(ready);
+    expect(vi.getTimerCount()).toBe(0);
   });
   it("settles immediately when a newly ready instance replaces its loading instance", async () => {
     const state = await import("./instance");

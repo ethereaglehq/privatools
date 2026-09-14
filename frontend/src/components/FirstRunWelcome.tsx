@@ -15,7 +15,7 @@
  * the `useFirstRun` hook — see that file for the storage key + reset.
  */
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { navigateTo } from "@/lib/navigation";
 import { Sparkles, FileText, Search, PlayCircle, X, ShieldCheck, ArrowRight, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -35,7 +35,7 @@ interface FirstRunWelcomeProps {
 const AUTO_COMPLETE_MS = 5 * 60 * 1000;
 
 export function FirstRunWelcome({ onComplete }: FirstRunWelcomeProps) {
-    const navigate = useNavigate();
+    const navigate = navigateTo;
     const [loadingSample, setLoadingSample] = useState(false);
     const timerRef = useRef<number | null>(null);
 

@@ -4,6 +4,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { formatRelativeTime } from '@/hooks/useHistory';
 import { formatFileSize } from '@/lib/api';
 import { storeFileHandoffs, clearFileHandoffs } from '@/lib/file-handoff';
+import { navigateTo } from '@/lib/navigation';
 import { FavoriteButton, ToolIcon } from './ConsumerChrome';
 import { catalogue, commonSlugs, fileSuggestions, savedWorkflows, searchTools, toolBySlug, toolHref, workflowHref, type ConsumerTool, type RecentTool } from './catalogue';
 
@@ -48,7 +49,7 @@ export function ConsumerHome({history,onClearHistory,files,onFiles,onBrowse,onAi
     setSending(true);setHandoffError('');
     try{
       await storeFileHandoffs(files,tool.slug);
-      location.hash='#/tool/'+tool.slug;
+      navigateTo(toolHref(tool));
       onFiles([]);
     }catch{setHandoffError('Those files could not be opened. Your selection is still here; try again.');}
     finally{setSending(false);}

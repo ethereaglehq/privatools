@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { navigateTo } from "@/lib/navigation";
 import { Search, ArrowRight, Clock, GitBranch, Layers, BookOpen, Scale, Info, Home, Zap, FileUp, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { tools, categoryMeta, Category } from "@/data/tools";
@@ -358,7 +358,7 @@ export default function CommandPalette({ defaultOpen = false }: CommandPalettePr
     // Remember the element that had focus when the palette opened so we
     // can restore it on close — accessibility (WCAG 2.4.3 focus order).
     const previouslyFocused = useRef<HTMLElement | null>(null);
-    const navigate = useNavigate();
+    const navigate = navigateTo;
     const { history } = useHistory();
 
     const openResult = useCallback((result: { href: string; slug: string; isAction?: boolean }) => {
