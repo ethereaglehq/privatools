@@ -1,0 +1,16 @@
+{
+  "environment": "local fixture only",
+  "platform": "macOS-26.6.2-arm64-arm-64bit",
+  "checks": {
+    "worker_ready": true,
+    "anonymous_catalog": true,
+    "sync_merge_two_pages": true,
+    "validation_refund": true,
+    "async_submit_poll_repeat_download": true,
+    "idempotency_no_double_charge": true,
+    "explicit_delete_removes_result": true
+  },
+  "catalog_operations": 147,
+  "catalog_cold_ms": 128,
+  "units_used": 2
+}

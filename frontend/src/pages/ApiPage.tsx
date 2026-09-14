@@ -3,18 +3,11 @@ import { ArrowRight, Check, Code2, Copy, KeyRound, Loader2, RefreshCw, ShieldChe
 import { apiUrl } from "@/lib/api";
 import { StudioPage, StudioHeader, StudioAction } from "@/skins/experience/Studio";
 import "@/skins/experience/secondary-pages.css";
+import ApiReference from "@/components/ApiReference";
 
 type Language = "curl" | "JavaScript" | "Python";
 type KeyIdentity = { key_id: string; label: string; created_at: string };
 type Usage = { key_id: string; label: string; units: { used: number; limit: number; remaining: number }; bytes: { used: number; limit: number }; resets_at: string };
-
-const reference = [
-    { method: "GET", path: "/whoami", name: "Check your key", detail: "Returns key_id, label and created_at. Requires a valid key; does not charge processing units." },
-    { method: "GET", path: "/usage", name: "Read current usage", detail: "Returns units used, limit and remaining; bytes used and limit; and resets_at. Checking usage does not consume units." },
-    { method: "POST", path: "/merge", name: "Merge PDFs", detail: "Multipart files: 2–100 PDFs in the desired order. Optional page_ranges: a JSON array with one range string per file, such as [\"1-3\",\"all\"]. Returns a PDF." },
-    { method: "POST", path: "/compress", name: "Compress PDFs", detail: "Multipart files: one or more PDFs. Optional level defaults to recommended; also accepts light, extreme, email, print, archive, web or custom. One result returns a PDF; multiple results return a ZIP." },
-    { method: "POST", path: "/rotate", name: "Rotate PDF", detail: "Multipart file: one PDF. Optional angle defaults to 90 and must be a multiple of 90 between −360 and 360. Optional pages defaults to all. Returns a PDF." },
-];
 
 function apiBase() {
     const path = apiUrl("/v1");
@@ -124,10 +117,7 @@ export default function ApiPage() {
                 <footer><span><ShieldCheck size={15} />Keep keys in your server environment.</span><span>Successful requests return the file directly.</span></footer>
             </section>
 
-            <section className="pt-api-reference" aria-labelledby="reference-title"><div className="pt-section-title"><h2 id="reference-title">A few good starting points.</h2><p>Open an operation for its fields and response format.</p></div>
-                <div className="pt-api-endpoints">{reference.map(item => <details key={item.path} className="pt-api-endpoint"><summary><span>{item.method}</span><code>{item.path}</code><strong>{item.name}</strong><ArrowRight size={16} /></summary><p>{item.detail}</p></details>)}</div>
-                <div className="pt-api-base"><span>Your API base</span><code>{apiBase()}</code><p>Send an <code>X-API-Key</code> header. File operations use multipart form data. Responses use standard HTTP status codes.</p></div>
-            </section>
+            <ApiReference />
         </div>
     </StudioPage>;
 }

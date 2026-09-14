@@ -4,11 +4,11 @@ import logging
 import os
 import secrets
 
-from fastapi import HTTPException, Security
+from fastapi import HTTPException, Request, Security
 from fastapi.security import APIKeyHeader
 
 API_KEY_HEADER = "X-API-Key"
-api_key_header = APIKeyHeader(name=API_KEY_HEADER, auto_error=False)
+api_key_header = APIKeyHeader(name=API_KEY_HEADER, scheme_name="XAPIKey", auto_error=False)
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ def _configured_keys() -> list[str]:
     return [key.strip() for key in raw.split(",") if key.strip()]
 
 
-async def require_api_key(api_key: str | None = Security(api_key_header)) -> str:
+async def require_api_key(api_key: str | None = Security(api_key_header), request: Request = None) -> str:
     """Resolve the caller's API key to an identity string.
 
     Two sources, checked in order:
@@ -34,6 +34,12 @@ async def require_api_key(api_key: str | None = Security(api_key_header)) -> str
     A deployment with neither configured stays open, which is what keeps local
     and self-hosted installs usable out of the box.
     """
+    # The versioned dependency has already verified either header scheme.
+    # In particular a Bearer key must not face a second X-API-Key-only gate.
+    if request is not None and request.url.path.startswith("/api/v1/"):
+        verified = getattr(request.state, "v1_key_id", None)
+        if verified:
+            return f"key:{verified}"
     if api_key:
         # Imported lazily: the tool routes that depend on this must not pay for
         # database import at module load, and self-hosters without a data

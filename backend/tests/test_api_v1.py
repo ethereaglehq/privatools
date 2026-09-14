@@ -193,3 +193,13 @@ def test_a_request_rejected_in_validation_costs_nothing(client, api_key):
 
     after = client.get("/api/v1/usage", headers={"X-API-Key": raw}).json()["units"]["used"]
     assert after == before, f"three rejected requests cost {after - before} units"
+
+
+def test_v1_bearer_key_does_not_face_the_legacy_static_key_gate(client, api_key, monkeypatch):
+    raw, record = api_key
+    monkeypatch.setenv("PRIVATOOLS_API_KEYS", "operator-static-key")
+    response = client.post("/api/v1/pipeline/validate", headers={"Authorization": f"Bearer {raw}"}, json={"steps": ["compress-pdf"]})
+    assert response.status_code == 200
+    assert quota.peek(record.key_id).units_used == 0
+    # The unversioned gate retains its operator-configured semantics.
+    assert client.post("/api/pipeline/validate", json={"steps": ["compress-pdf"]}).status_code == 401

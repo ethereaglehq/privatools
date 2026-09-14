@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import uuid
@@ -39,6 +38,7 @@ from ..utils.cleanup import (
     validate_pdf_content,
 )
 from ..utils.route_helpers import no_store_headers, read_upload, safe_stem
+from ..utils.concurrency import run_bounded
 
 router = APIRouter(tags=["developer"])
 
@@ -238,7 +238,16 @@ def _run_step(slug: str, input_path: str) -> str:
 
 
 @router.get("/developer/status")
-async def developer_status(_: str = Depends(require_api_key)):
+async def developer_status(request: Request, _: str = Depends(require_api_key)):
+    if request.url.path.startswith("/api/v1/"):
+        return JSONResponse({
+            "status": "ok",
+            "docs": "https://privatools.me/api",
+            "openapi": "/api/v1/openapi.json",
+            "operations": "/api/v1/operations",
+            "apiKeyHeader": "X-API-Key",
+            "authConfigured": True,
+        })
     return JSONResponse(
         {
             "status": "ok",
@@ -294,7 +303,7 @@ async def run_pipeline(
 
         current_path = str(input_path)
         for slug in normalized_steps:
-            current_path = await asyncio.to_thread(_run_step, slug, current_path)
+            current_path = await run_bounded(_run_step, slug, current_path)
             paths.append(current_path)
 
         cleanup = BackgroundTask(remove_files, *paths)

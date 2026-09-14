@@ -28,6 +28,15 @@ services:
       - PRIVATOOLS_BUILD_SHA=${GIT_SHA:-unknown}
       - PORT=8000
       - PRIVATOOLS_DATA_DIR=/app/data
+      # Optional durable jobs run beside the web workers in this container,
+      # sharing its existing 4 GB / 1.8 CPU envelope. Enable after validating
+      # worker readiness and the retained-result lifecycle on the target host.
+      - API_V1_JOBS_ENABLED=${API_V1_JOBS_ENABLED:-false}
+      - API_V1_DAILY_UNITS=${API_V1_DAILY_UNITS:-500}
+      - API_V1_DAILY_BYTES=${API_V1_DAILY_BYTES:-262144000}
+      - API_V1_MAX_JOBS_PER_KEY=${API_V1_MAX_JOBS_PER_KEY:-3}
+      - API_V1_MAX_HTTP_REQUESTS=${API_V1_MAX_HTTP_REQUESTS:-6}
+      - MAX_CONCURRENT_HEAVY=${MAX_CONCURRENT_HEAVY:-2}
       - ENVIRONMENT=production
       - REQUEST_TIMEOUT_SECONDS=300
       - TRUSTED_HOSTS=privatools.me,www.privatools.me,127.0.0.1,localhost
@@ -72,6 +81,7 @@ services:
       - GA_TRUSTED_COUNTRY_HEADER=${GA_TRUSTED_COUNTRY_HEADER:-false}
       - GA_DEFAULT_ON_COUNTRIES=${GA_DEFAULT_ON_COUNTRIES:-}
     restart: unless-stopped
+    stop_grace_period: 45s
     # Bound container stdout/stderr on disk. The default json-file driver is
     # unbounded — a 5xx storm or a left-on DEBUG session would fill the VM disk,
     # which fails temp writes -> /readyz 503 -> docker wedge. Cap at 5×50 MB.

@@ -32,6 +32,8 @@
 #   # 3. prove it installs before committing
 #   pip install --dry-run --require-hashes -r requirements.lock
 fastapi==0.141.1
+# Used directly for cancellation-safe database work and reservation cleanup.
+anyio==4.14.2
 uvicorn[standard]==0.52.3
 python-multipart==0.0.32
 pikepdf==8.12.0

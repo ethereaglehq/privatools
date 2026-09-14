@@ -6,11 +6,12 @@ import ApiPage from "./ApiPage";
 const identity = { key_id: "hash_1234", label: "Local test", created_at: "2026-09-13T12:00:00Z" };
 const usage = { ...identity, units: { used: 15, limit: 500, remaining: 485 }, bytes: { used: 1048576, limit: 262144000 }, resets_at: "2026-09-14T00:00:00Z" };
 const response = (body: unknown) => ({ ok: true, status: 200, json: async () => body });
+const publicDocs = () => response({ schema_version: "1", operations: [], components: {}, limits: { daily_units: 500, daily_bytes: 262144000 }, unavailable_tools: [] });
 afterEach(() => vi.unstubAllGlobals());
 
 describe("API page credential checks", () => {
     it("sends a supplied key only in headers and renders actual usage", async () => {
-        const fetchMock = vi.fn().mockImplementation(async (path: string) => response(path.endsWith("/usage") ? usage : identity));
+        const fetchMock = vi.fn().mockImplementation(async (path: string) => path.endsWith("/operations") ? publicDocs() : response(path.endsWith("/usage") ? usage : identity));
         vi.stubGlobal("fetch", fetchMock);
         const stored = vi.spyOn(Storage.prototype, "setItem");
         render(<ApiPage />);
@@ -19,8 +20,9 @@ describe("API page credential checks", () => {
         await user.click(screen.getByRole("button", { name: "Check key & usage" }));
         expect(await screen.findByText("Key verified: Local test")).toBeInTheDocument();
         expect(screen.getByText("15 / 500")).toBeInTheDocument();
-        expect(fetchMock).toHaveBeenCalledTimes(2);
-        for (const [url, options] of fetchMock.mock.calls) {
+        const credentialCalls = fetchMock.mock.calls.filter(([url]) => !url.endsWith("/operations"));
+        expect(credentialCalls).toHaveLength(2);
+        for (const [url, options] of credentialCalls) {
             expect(url).not.toContain("pk_TEST_SECRET");
             expect(options.headers["X-API-Key"]).toBe("pk_TEST_SECRET");
             expect(options.cache).toBe("no-store");
@@ -33,7 +35,7 @@ describe("API page credential checks", () => {
     });
 
     it("rejects failed key checks without a success state", async () => {
-        vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 401 }));
+        vi.stubGlobal("fetch", vi.fn().mockImplementation(async (path: string) => path.endsWith("/operations") ? publicDocs() : { ok: false, status: 401 }));
         render(<ApiPage />);
         fireEvent.change(screen.getByLabelText("PrivaTools API key"), { target: { value: "pk_INVALID" } });
         fireEvent.click(screen.getByRole("button", { name: "Check key & usage" }));
@@ -43,7 +45,7 @@ describe("API page credential checks", () => {
 
     it("cannot repopulate old results after clearing during a request", async () => {
         const finish: ((value: unknown) => void)[] = [];
-        vi.stubGlobal("fetch", vi.fn().mockImplementation(() => new Promise(resolve => finish.push(resolve))));
+        vi.stubGlobal("fetch", vi.fn().mockImplementation((path: string) => path.endsWith("/operations") ? Promise.resolve(publicDocs()) : new Promise(resolve => finish.push(resolve))));
         render(<ApiPage />);
         fireEvent.change(screen.getByLabelText("PrivaTools API key"), { target: { value: "pk_OLD" } });
         fireEvent.click(screen.getByRole("button", { name: "Check key & usage" }));
@@ -55,7 +57,7 @@ describe("API page credential checks", () => {
     });
 
     it("shows an unexpected response as an error rather than inventing usage", async () => {
-        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(response({ ok: true })));
+        vi.stubGlobal("fetch", vi.fn().mockImplementation(async (path: string) => path.endsWith("/operations") ? publicDocs() : response({ ok: true })));
         render(<ApiPage />);
         fireEvent.change(screen.getByLabelText("PrivaTools API key"), { target: { value: "pk_TEST" } });
         fireEvent.click(screen.getByRole("button", { name: "Check key & usage" }));

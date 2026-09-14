@@ -41,3 +41,36 @@ def test_readyz_response_includes_build_sha(client):
     assert "build_sha" in body
     assert "checks" in body
     assert "free_disk" in body["checks"]
+
+
+def test_enabled_jobs_require_a_healthy_worker(client, monkeypatch):
+    from backend.app import main
+    from backend.app.api_v1 import jobs
+
+    monkeypatch.setenv("API_V1_JOBS_ENABLED", "true")
+    monkeypatch.setattr(main, "run_readiness_checks", lambda: (True, {}))
+    monkeypatch.setattr(jobs, "capability", lambda: {"available": False})
+    response = client.get("/readyz")
+    assert response.status_code == 503
+    assert response.json()["checks"]["api_job_worker"] is False
+
+    monkeypatch.setattr(jobs, "capability", lambda: {"available": True})
+    response = client.get("/readyz")
+    assert response.status_code == 200
+    assert response.json()["checks"]["api_job_worker"] is True
+
+
+def test_disabled_jobs_do_not_block_existing_api_readiness(client, monkeypatch):
+    from backend.app import main
+    from backend.app.api_v1 import jobs
+
+    monkeypatch.setenv("API_V1_JOBS_ENABLED", "false")
+    monkeypatch.setattr(main, "run_readiness_checks", lambda: (True, {}))
+
+    def unexpected_probe():
+        raise AssertionError("disabled jobs must not require a worker")
+
+    monkeypatch.setattr(jobs, "capability", unexpected_probe)
+    response = client.get("/readyz")
+    assert response.status_code == 200
+    assert "api_job_worker" not in response.json()["checks"]

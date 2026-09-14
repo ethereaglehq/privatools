@@ -24,6 +24,22 @@ from ..utils.exceptions import ToolError
 
 logger = logging.getLogger("privatools.errors")
 
+_V1_ERROR_CODES = {
+    400: "invalid_request", 401: "unauthorized", 403: "forbidden",
+    404: "not_found", 405: "method_not_allowed", 409: "conflict",
+    410: "gone", 413: "payload_too_large", 415: "unsupported_media_type",
+    422: "validation_error", 429: "rate_limited", 500: "processing_failed",
+    501: "not_implemented", 503: "service_unavailable", 504: "processing_timeout",
+}
+_V1_SERVICE_MESSAGES = {
+    "server_busy": "The API is busy. Retry shortly.",
+    "admission_unavailable": "API admission is temporarily unavailable. Try again shortly.",
+}
+
+
+def _is_v1(request: Request | None) -> bool:
+    return request is not None and request.url.path.startswith("/api/v1/")
+
 
 def _json(
     status: int,
@@ -33,9 +49,18 @@ def _json(
     extra: dict[str, Any] | None = None,
     passthrough_headers: dict[str, str] | None = None,
 ) -> JSONResponse:
+    if _is_v1(request) and status >= 500:
+        detail = {
+            501: "This feature is not available.",
+            503: "The service is temporarily unavailable. Please try again.",
+            504: "The operation timed out. Try a smaller file.",
+        }.get(status, "Processing failed. Please try again.")
     body: dict[str, Any] = {"detail": detail}
     if extra:
         body.update(extra)
+    if _is_v1(request):
+        body.setdefault("code", _V1_ERROR_CODES.get(status, "request_failed"))
+        body.setdefault("message", detail)
     # Headers set on the HTTPException are part of the answer, not decoration:
     # a 429 without Retry-After tells the client nothing about when to try
     # again, and a 401 without WWW-Authenticate omits the scheme.
@@ -65,6 +90,9 @@ async def tool_error_handler(request: Request, exc: ToolError) -> JSONResponse:
 def _json_payload(status: int, payload: dict, *, request: Request, headers=None) -> JSONResponse:
     """Return a structured body verbatim, keeping the request id and headers."""
     body = dict(payload)
+    body.setdefault("code", _V1_ERROR_CODES.get(status, "request_failed"))
+    body.setdefault("message", body.get("detail", "Request failed"))
+    body.setdefault("detail", body["message"])
     rid = getattr(request.state, "request_id", None)
     if rid:
         body.setdefault("request_id", rid)
@@ -83,10 +111,18 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     # Flattening that to "Request failed" would take the contract away; it is
     # only passed through on 4xx, where the detail is author-curated, and only
     # on the versioned surface.
+    if _is_v1(request) and exc.status_code == 503 and isinstance(exc.detail, dict):
+        code = exc.detail.get("code")
+        if code in _V1_SERVICE_MESSAGES:
+            return _json_payload(
+                503, {"code": code, "message": _V1_SERVICE_MESSAGES[code]},
+                request=request,
+                headers={k: v for k, v in (exc.headers or {}).items() if k.lower() == "retry-after"},
+            )
     if (
         isinstance(exc.detail, dict)
         and exc.status_code < 500
-        and request.url.path.startswith("/api/v1")
+        and _is_v1(request)
     ):
         return _json_payload(exc.status_code, exc.detail, request=request,
                              headers=getattr(exc, "headers", None))
@@ -123,6 +159,14 @@ async def validation_error_handler(
     the original list under `errors` for developers.
     """
     errors = exc.errors()
+    if _is_v1(request):
+        # A known framework validation rejection is refundable. A tool may
+        # independently return 422 after computing, so status alone is unsafe.
+        request.state.v1_validation_rejected = True
+        # Describe invalid fields without reflecting submitted content or
+        # non-serializable exception objects from Pydantic's input/ctx fields.
+        errors = [{k: error[k] for k in ("type", "loc", "msg") if k in error}
+                  for error in errors]
     if errors:
         first = errors[0]
         loc = ".".join(str(p) for p in first.get("loc", ()) if p not in ("body", "query"))

@@ -11,13 +11,13 @@ documented as unstable — because the site's own frontend calls them.
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, Request
 
 from ..auth import accounts
 from . import quota
 from .deps import enforce_quota, require_v1_key
+from .body_accounting import database_call
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +31,7 @@ async def usage(key: accounts.KeyRecord = Depends(require_v1_key)):
     Deliberately outside the quota dependency: checking your remaining quota
     must not consume any.
     """
-    state = quota.peek(key.key_id)
+    state = await database_call(quota.peek, key.key_id)
     return {
         "key_id": key.key_id,
         "label": key.label,
@@ -39,6 +39,7 @@ async def usage(key: accounts.KeyRecord = Depends(require_v1_key)):
                   "remaining": state.units_remaining},
         "bytes": {"used": state.bytes_used, "limit": state.bytes_limit},
         "resets_at": state.reset_at.isoformat(),
+        "limits": quota.policy(),
     }
 
 
@@ -64,27 +65,6 @@ def mount(app, routers: list) -> int:
 
 
 async def attach_quota_headers(request: Request, call_next):
-    """Report the key's standing on every v1 reply.
-
-    A client should not have to call /usage to discover it is nearly out.
-    """
+    """Compatibility shim; V1AccountingMiddleware owns accounting and headers."""
     response = await call_next(request)
-    state = getattr(request.state, "v1_quota", None)
-    if state is None:
-        return response
-
-    # 422 is FastAPI rejecting the request during validation, which happens
-    # before the handler body runs — so nothing was computed and the charge
-    # taken up front should go back. Every other status is left alone: a 4xx
-    # the handler itself raised may well have done work first, and guessing
-    # which did would be worse than charging for it.
-    if response.status_code == 422:
-        key_id = getattr(request.state, "v1_key_id", None)
-        units = getattr(request.state, "v1_charged_units", 0)
-        size = getattr(request.state, "v1_charged_bytes", 0)
-        if key_id:
-            state = quota.refund(key_id, units, size)
-
-    for name, value in quota.headers(state).items():
-        response.headers[name] = value
     return response
