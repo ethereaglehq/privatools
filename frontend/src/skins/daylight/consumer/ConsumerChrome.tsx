@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as Dropdown from '@radix-ui/react-dropdown-menu';
-import { ArrowRight, Archive, Braces, Check, FileDown, FileImage, FileOutput, FilePlus2, Files, FileText, Film, Folder, Grid2X2, Home, Image, Keyboard, Layers, Menu, Minimize2, Monitor, Moon, Search, ShieldCheck, Sparkles, Star, Sun, CircleHelp } from 'lucide-react';
+import { ArrowRight, Archive, Braces, Check, FileDown, FileImage, FileOutput, FilePlus2, Files, FileText, Film, Folder, Grid2X2, Home, Image, Keyboard, Layers, Menu, Minimize2, Monitor, Moon, Search, ShieldCheck, Sparkles, Star, Sun, CircleHelp, UserRound } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { useFavorites } from '@/hooks/useFavorites';
 import type { ThemeChoice } from '@/lib/skinTheme';
@@ -67,7 +67,7 @@ export function ConsumerHeader({ view, theme, onTheme, onSearch, onAi, onInstall
             </Dropdown.RadioGroup>
           </Dropdown.Content></Dropdown.Portal>
         </Dropdown.Root>
-        <a href="/account" className="cp-account-link">{signedIn ? 'Account' : 'Sign in'}</a>
+        <a href={signedIn ? '/account/settings' : '/account/sign-in?next=/account/settings'} className="cp-account-link" aria-label={signedIn ? 'Account settings' : 'Sign in'} aria-current={view === 'settings' ? 'page' : undefined}><UserRound size={19} aria-hidden="true"/><span>{signedIn ? 'Account' : 'Sign in'}</span></a>
         {!signedIn && <a href="/account?mode=signup" className="cp-button cp-button-outline cp-create-account">Create account</a>}
         <Dropdown.Root>
           <Dropdown.Trigger className="cp-icon-button cp-menu-trigger" aria-label="Open navigation menu"><Menu size={25}/></Dropdown.Trigger>
@@ -79,7 +79,7 @@ export function ConsumerHeader({ view, theme, onTheme, onSearch, onAi, onInstall
             <Dropdown.Item className="cp-menu-item" onSelect={onInstall}>Install the app<Layers size={16}/></Dropdown.Item>
             <Dropdown.Item className="cp-menu-item" onSelect={() => window.setTimeout(() => window.dispatchEvent(new Event(START_TOUR_EVENT)), 0)}>Quick tour<CircleHelp size={16}/></Dropdown.Item>
             <Dropdown.Item className="cp-menu-item" onSelect={() => window.setTimeout(() => window.dispatchEvent(new Event(SHOW_SHORTCUTS_EVENT)), 0)}>Keyboard shortcuts<Keyboard size={16}/></Dropdown.Item>
-            <Dropdown.Item asChild><a href="/account" className="cp-menu-item">{signedIn ? 'Your account' : 'Sign in / create account'}<ArrowRight size={15}/></a></Dropdown.Item>
+            <Dropdown.Item asChild><a href={signedIn ? '/account/settings' : '/account/sign-in?next=/account/settings'} className="cp-menu-item">{signedIn ? 'Account settings' : 'Sign in / create account'}<ArrowRight size={15}/></a></Dropdown.Item>
           </Dropdown.Content></Dropdown.Portal>
         </Dropdown.Root>
       </div>

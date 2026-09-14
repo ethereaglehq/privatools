@@ -97,9 +97,15 @@ See [Clerk's Google setup guide](https://clerk.com/docs/guides/configure/auth-st
 Configure a Clerk webhook for `user.deleted` at
 `https://privatools.me/api/clerk/webhook`, and set `CLERK_WEBHOOK_SECRET` on the
 server. This removes local API keys when an identity is deleted through Clerk.
-Application-initiated deletion first removes local API access, then deletes the
-Clerk identity. The webhook remains necessary for deletion initiated in Clerk
-or another client; without it those deletions cannot notify this key store.
+Application-initiated deletion first completes Clerk's identity check and deletes
+the Clerk identity. Cancelling verification does not remove local API access.
+The browser then removes local API data using a token captured from the original
+account before deletion. If that cleanup fails or times out, the UI confirms the
+identity deletion and warns that API cleanup could not be confirmed; it does not
+repeat identity deletion. The signed webhook is the fallback for interrupted
+browser cleanup and deletions initiated in Clerk or another client. Its production
+delivery must be configured and verified separately; a configured signing secret
+alone does not prove Clerk is sending events.
 
 Before release, verify signed-in key access, sign-out, email recovery, new-device
 verification and a real passkey on the HTTPS origin. Passkeys and Google provider

@@ -286,7 +286,9 @@ const localAccountApi = {
  * methods local auth cannot honour are declared here and throw — a clear
  * refusal beats a missing property that only fails at the call site.
  */
-export type AccountApi = Omit<typeof localAccountApi, "register" | "login"> & {
+export type AccountApi = Omit<typeof localAccountApi, "register" | "login" | "changePassword" | "deleteAccount"> & {
+    deleteAccount(expectedAccountId?: string): Promise<{ ok: true; cleanupPending?: boolean }>;
+    changePassword(currentPassword: string, newPassword: string, expectedAccountId?: string): Promise<{ ok: true }>;
     register(
         email: string,
         password: string,

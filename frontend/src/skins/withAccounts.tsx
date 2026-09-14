@@ -13,13 +13,19 @@
  * `renderVals()` is extended, never replaced.
  */
 import { mergeNavItem } from "./navInject";
+import { lazy, Suspense } from "react";
+import { toast } from "sonner";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
     MIN_PASSWORD_LENGTH, ACCOUNT_COPY, EMAIL_RESET,
 } from "./accountLogic";
-import { CLERK_BLOCKED_MESSAGE, clerkInstance, clerkLoadFailed, subscribeClerkInstance, whenClerkReady } from "@/lib/clerk/instance";
+import { CLERK_BLOCKED_MESSAGE, clerkInstance, clerkLoadFailed, isClerkDocument, isClerkEnabled, subscribeClerkInstance, whenClerkReady } from "@/lib/clerk/instance";
+import { documentPath } from "@/lib/documentLocation";
+import { AccountSecurityError, ACCOUNT_CLEANUP_PENDING, securityErrorMessage } from "@/lib/clerk/securityActions";
 import { captureAccountReturn, consumeAccountReturn, clearAccountReturn } from "@/lib/account-return";
 import { SSO_RETURN } from "@/lib/clerk/accountApi";
+
+const AccountReverificationBridge = lazy(() => import("@/components/account/AccountReverificationBridge"));
 
 const ACCOUNT_PATH = /^\/account(?:\/(?:keys|settings|sign-in|sign-up))?\/?$/;
 const ACCOUNT_HINT_KEY = "privatools.account-present";
@@ -62,6 +68,12 @@ export function accountModeForLocation(current: AccountLocation | null = typeof 
  */
 export function withAccounts(Base, config) {
     return class WithAccounts extends Base {
+        _setAccountSecurityRunner = runner => { this._accountSecurityRunner = runner; };
+
+        render() {
+            return <>{isClerkEnabled() && isClerkDocument(documentPath) && <Suspense fallback={null}><AccountReverificationBridge onReady={this._setAccountSecurityRunner} /></Suspense>}{super.render()}</>;
+        }
+
         constructor(props) {
             super(props);
             this.state = { ...this.state, acct: { ...initialAccountState, mode: accountModeForLocation(), accountHint: accountHint(), resolved: false } };
@@ -510,21 +522,42 @@ export function withAccounts(Base, config) {
                 .catch(() => this._setAcct({ busy: false, error: "You could not be signed out. Check your connection and try again." }));
         };
 
-        _acctDelete = () => {
-            if (this.state.acct.busy) return;
-            if (!this.state.acct.confirmingDelete) {
+        _acctDelete = (confirmed = false) => {
+            if (this.state.acct.busy || this._deleteRequest || !this.state.acct.user) return;
+            if (confirmed !== true && !this.state.acct.confirmingDelete) {
                 this._setAcct({ confirmingDelete: true });
                 return;
             }
+            const accountId = this.state.acct.user.id;
+            const request = {}; this._deleteRequest = request;
+            const isCurrent = () => !this._accountUnmounted && this._deleteRequest === request && this.state.acct.user?.id === accountId;
             this._setAcct({ busy: true, error: "" });
-            accountApi.deleteAccount()
-                .then(() => {
+            const run = EMAIL_RESET ? this._accountSecurityRunner : action => action();
+            const perform = async () => {
+                if (!run) throw new AccountSecurityError("verification_incomplete");
+                return run(() => {
+                    if (!isCurrent()) throw new AccountSecurityError("account_changed");
+                    return accountApi.deleteAccount(accountId);
+                });
+            };
+            perform()
+                .then(result => {
+                    // Clerk may have already published the expected signed-out state.
+                    if (this._accountUnmounted || (this.state.acct.user && this.state.acct.user.id !== accountId)) return;
                     rememberAccountHint(false);
                     clearAccountReturn();
                     this._keysRequestId = (this._keysRequestId || 0) + 1;
                     this._setAcct({ ...initialAccountState, accountHint: false, resolved: true });
+                    if (result.cleanupPending) toast.warning(ACCOUNT_CLEANUP_PENDING, { duration: 15_000 });
+                    else toast.success("Your account has been deleted.");
                 })
-                .catch((err) => this._setAcct({ busy: false, error: err.message, confirmingDelete: false }));
+                .catch(err => { if (isCurrent()) this._setAcct({ error: securityErrorMessage(err, "Your account could not be deleted. Complete the identity check and try again."), confirmingDelete: false }); })
+                .finally(() => {
+                    if (this._deleteRequest === request) {
+                        this._deleteRequest = null;
+                        if (!this._accountUnmounted && (!this.state.acct.user || this.state.acct.user.id === accountId)) this._setAcct({ busy: false });
+                    }
+                });
         };
 
         _acctGo = (e) => {

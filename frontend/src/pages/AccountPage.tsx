@@ -5,18 +5,37 @@
  * shapes and the error handling stay identical across every skin; only the
  * presentation differs.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Check, Copy, Download, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SocialSignIn } from "@/components/account/SocialSignIn";
 import ApiActivity from "@/components/account/ApiActivity";
+import AccountWorkspaceHeader from "@/components/account/AccountWorkspaceHeader";
+import { isClerkEnabled } from "@/lib/clerk/instance";
+import { AccountSecurityError, ACCOUNT_CLEANUP_PENDING, securityErrorMessage } from "@/lib/clerk/securityActions";
+import { runAccountAction, useAccountReverification, type AccountSecurityRunner } from "@/lib/clerk/useAccountReverification";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
     strengthOf, type AccountState, ACCOUNT_COPY,
 } from "@/skins/accountLogic";
 
 export default function AccountPage() {
+    return isClerkEnabled() ? <HostedAccountPage /> : <AccountBody runSecurity={runAccountAction} />;
+}
+
+function HostedAccountPage() {
+    const runSecurity = useAccountReverification();
+    return <AccountBody runSecurity={runSecurity} />;
+}
+
+function AccountBody({ runSecurity }: { runSecurity: AccountSecurityRunner }) {
     const [s, setS] = useState<AccountState>(initialAccountState);
+    const alive = useRef(false);
+    const deleting = useRef<object | null>(null);
+    const currentAccount = useRef(s.user?.id);
+    currentAccount.current = s.user?.id;
+    useEffect(() => { alive.current = true; return () => { alive.current = false; }; }, []);
     const patch = useCallback((p: Partial<AccountState>) => setS(prev => ({ ...prev, ...p })), []);
 
     const loadKeys = useCallback(() => {
@@ -115,27 +134,41 @@ export default function AccountPage() {
     };
 
     const remove = () => {
+        if (s.busy || deleting.current || !s.user) return;
         if (!s.confirmingDelete) { patch({ confirmingDelete: true }); return; }
-        accountApi.deleteAccount()
-            .then(() => setS(initialAccountState))
-            .catch((err: Error) => patch({ error: err.message, confirmingDelete: false }));
+        const accountId = s.user.id;
+        const request = {}; deleting.current = request;
+        const isCurrent = () => alive.current && deleting.current === request && currentAccount.current === accountId;
+        patch({ busy: true, error: "" });
+        runSecurity(() => {
+            if (!isCurrent()) throw new AccountSecurityError("account_changed");
+            return accountApi.deleteAccount(accountId);
+        })
+            .then(result => {
+                if (!isCurrent()) return;
+                setS(initialAccountState);
+                if (result.cleanupPending) toast.warning(ACCOUNT_CLEANUP_PENDING, { duration: 15_000 });
+                else toast.success("Your account has been deleted.");
+            })
+            .catch(err => { if (isCurrent()) patch({ error: securityErrorMessage(err, "Your account could not be deleted. Complete the identity check and try again."), confirmingDelete: false }); })
+            .finally(() => { if (deleting.current === request) { deleting.current = null; if (alive.current && (!currentAccount.current || currentAccount.current === accountId)) patch({ busy: false }); } });
     };
 
     const field = "w-full rounded-lg border border-border bg-card px-3 py-2.5 text-[13.5px] text-foreground " +
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
     return (
-        <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14">
+        <div className={cn("mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-14", s.user && "pt-account-workspace")}>
             {/* Signed out, the card carries its own heading — repeating it here
                 gave the page two titles saying the same word, with the form
                 marooned below both. Signed in, this is the page title. */}
             {s.user && (
-                <>
-                    <h1 className="font-display text-[30px] font-bold tracking-[-0.025em]">Account</h1>
-                    <p className="mt-1.5 text-[14px] text-muted-foreground">
-                        Manage the API keys issued to this account.
-                    </p>
-                </>
+                <AccountWorkspaceHeader active="api" email={s.user.email} title="API access"
+                    description="Manage the keys your scripts use and keep track of your free API allowance."
+                    actions={<>
+                        <button type="button" onClick={newKey} disabled={s.busy} className="pt-studio-button"><Plus size={14} aria-hidden="true" /> Create key</button>
+                        <button type="button" onClick={signOut} disabled={s.busy} className="pt-studio-link"><LogOut size={14} aria-hidden="true" /> Sign out</button>
+                    </>} />
             )}
 
             {s.recoveryCode && (
@@ -272,10 +305,10 @@ export default function AccountPage() {
                 <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,1fr)] items-start">
                     <section className="rounded-2xl border border-border bg-card p-5">
                         <div className="flex items-center justify-between gap-3">
-                            <h2 className="font-display text-[15px] font-semibold">API keys</h2>
-                            <button onClick={newKey}
-                                    className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-3 text-[12.5px] font-semibold text-primary-foreground">
-                                <Plus size={13} aria-hidden="true" /> New key
+                            <h2 className="font-display text-[20px] font-semibold tracking-[-0.025em]">Your API keys</h2>
+                            <button type="button" onClick={loadKeys} disabled={s.busy}
+                                    className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 text-[12px] font-medium text-muted-foreground hover:text-foreground">
+                                <RefreshCw size={13} aria-hidden="true" /> Refresh keys
                             </button>
                         </div>
 
@@ -303,8 +336,8 @@ export default function AccountPage() {
                                         <p className="text-[11.5px] text-muted-foreground">{describeKey(k)}</p>
                                     </div>
                                     {!k.revoked && (
-                                        <button onClick={() => revoke(k.key_id)} aria-label={`Revoke ${k.label}`}
-                                                className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-border px-2.5 text-[12px] text-destructive">
+                                        <button type="button" onClick={() => revoke(k.key_id)} aria-label={`Revoke ${k.label}`}
+                                                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border px-2.5 text-[12px] text-destructive">
                                             <Trash2 size={12} aria-hidden="true" /> Revoke
                                         </button>
                                     )}
@@ -314,23 +347,19 @@ export default function AccountPage() {
                     </section>
 
                     <aside className="rounded-2xl border border-border bg-secondary/40 p-5">
-                        <h2 className="font-display text-[15px] font-semibold">Signed in</h2>
-                        <p className="mt-1.5 break-all text-[13px] text-muted-foreground">{s.user.email}</p>
-                        <button onClick={signOut}
-                                className="mt-4 inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-lg border border-border text-[13px] font-medium">
-                            <LogOut size={13} aria-hidden="true" /> Sign out
-                        </button>
+                        <h2 className="font-display text-[20px] font-semibold tracking-[-0.025em]">Account controls</h2>
+                        <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">Manage your password and sign-in options in <a href="/account/settings" className="text-primary underline underline-offset-4">Settings &amp; security</a>.</p>
                         <RotateRecovery
                             onIssued={code => patch({ recoveryCode: code, recoverySaved: false, error: "" })}
                         />
 
-                        <button onClick={remove}
+                        <button onClick={remove} disabled={s.busy}
                                 className="mt-4 h-9 w-full rounded-lg border border-destructive text-[13px] font-medium text-destructive">
-                            {s.confirmingDelete ? "Press again to delete for good" : "Delete account"}
+                            {s.busy ? "Deleting account…" : s.confirmingDelete ? "Press again to delete for good" : "Delete account"}
                         </button>
                         {s.error && <p role="alert" className="mt-2 text-[12.5px] text-destructive">{s.error}</p>}
                         <p className="mt-3 text-[11.5px] leading-relaxed text-muted-foreground">
-                            Deleting removes your email, your password hash and every key. It cannot be undone.
+                            Deletes your sign-in account and removes its API access. You may need to verify your identity first. This cannot be undone.
                         </p>
                     </aside>
                     <ApiActivity accountId={s.user.id} keyVersion={s.keys.map(key => `${key.key_id}:${key.revoked}`).join(",")} />
