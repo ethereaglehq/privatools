@@ -28,6 +28,7 @@ import {
     BookmarkPlus, Bookmark, Square, RefreshCw, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { navigateTo } from "@/lib/navigation";
 import { tools } from "@/data/tools";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
 import { downloadBlob, formatErrorForClipboard, postFormData } from "@/lib/api";
@@ -286,7 +287,7 @@ export default function PipelinePage() {
     const loadRecipe = (slugs: string[]) => {
         if (processing) return;
         if (slugs.length === 1 && slugs[0] === "merge-pdf") {
-            window.location.hash = "#/tool/merge-pdf";
+            navigateTo("/tool/merge-pdf");
             return;
         }
         const stepObjs: PipelineStep[] = slugs

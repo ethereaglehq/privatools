@@ -13,7 +13,6 @@
  *   withVault      `this.state.vlt` + the real AES-GCM vault
  *   withRealTools  `renderVals().realToolUI` — the same 112 real tool
  *                  components the house design mounts
- *   withPathRoutes path → hash bridging, outermost, same as Aurora/Carbon
  *
  * The base's markup consumes that state directly; nothing is duplicated.
  */
@@ -22,7 +21,7 @@ import Base from "../daylight/SkinApp";
 import { withAccounts } from "../withAccounts";
 import { withVault } from "../withVault";
 import { withRealTools } from "../withRealTools";
-import { withPathRoutes } from "../withPathRoutes";
+import { navigateTo } from "@/lib/navigation";
 
 const noopNav = () => ({
     // Daylight's nav is its own markup; the mixins' nav injection lands in the
@@ -38,8 +37,8 @@ const REAL_TOOLS = {
     slugOf: (state) => (state.view === "tool" ? state.slug : ""),
     suppressFlags: [],
     icon: "build",
-    go: (route) => { location.hash = "#/" + route; },
-    goTool: (slug) => { location.hash = "#/tool/" + slug; },
+    go: (route) => { navigateTo("/" + route); },
+    goTool: (slug) => { navigateTo("/tool/" + slug); },
     // The base draws its own chips from the registry's clientOnly flag; the
     // mixin's chip bindings are simply unused.
     chips: () => [],
@@ -47,10 +46,10 @@ const REAL_TOOLS = {
 
 const Skin: React.ComponentType = withRealTools(
     withVault(
-        withAccounts(Base, { ...noopNav(), route: "#/account" }),
-        { ...noopNav(), route: "#/my-stuff/vault" },
+        withAccounts(Base, { ...noopNav(), route: "/account" }),
+        { ...noopNav(), route: "/my-stuff/vault" },
     ),
     REAL_TOOLS,
 );
 
-export default withPathRoutes(Skin);
+export default Skin;

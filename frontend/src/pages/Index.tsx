@@ -8,7 +8,8 @@
  * This page assumes the user has already arrived and wants to *work*.
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
+import { navigateTo } from "@/lib/navigation";
 import {
     Search, X, ArrowRight, Upload, Command, GitBranch,
     Sparkles, FileText, Image as ImageIcon, Video, Code as CodeIcon,
@@ -102,7 +103,7 @@ function getToolsForExtension(ext: string) {
 }
 
 export default function Index() {
-    const navigate = useNavigate();
+    const navigate = navigateTo;
     const { history } = useHistory();
     const { favorites } = useFavorites();
     const { isFirstRun, markCompleted } = useFirstRun();

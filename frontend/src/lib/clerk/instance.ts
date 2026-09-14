@@ -14,11 +14,12 @@
  */
 
 import type { useClerk } from "@clerk/react";
+import { documentPath } from "../documentLocation";
 
 export type ClerkInstance = ReturnType<typeof useClerk>;
 
 /** Matches the backend's account-only Clerk CSP. Hashes cannot grant it. */
-export function isClerkDocument(pathname = typeof location === "undefined" ? "" : location.pathname): boolean {
+export function isClerkDocument(pathname = documentPath): boolean {
     return /^\/account(?:\/|$)/.test(pathname);
 }
 

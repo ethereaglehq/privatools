@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { navigateTo } from '@/lib/navigation';
 import { ArrowDown, ArrowRight, Braces, File, FileText, Image, Layers, Music2, Plus, Search, ShieldCheck, Sparkles, Star, Workflow, X } from 'lucide-react';
 import { useExperience } from '@/lib/experience';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -23,7 +24,7 @@ export function ExperienceHome({history,onClearHistory,files,onFiles,onBrowse}: 
   const pinned=favorites.map(slug=>toolBySlug.get(slug)).filter((x):x is ConsumerTool=>!!x);
   const shown=query.trim()?searchTools(query).slice(0,12):commonSlugs.map(slug=>toolBySlug.get(slug)).filter((x):x is ConsumerTool=>!!x);
   const suggestions=fileSuggestions(files);
-  async function openFiles(tool:ConsumerTool) {if(busy)return;setBusy(true);setError('');try{await storeFileHandoffs(files,tool.slug);location.hash='#'+toolHref(tool);onFiles([]);}catch{setError('We couldn’t open that selection. Your files are still here. Please try again.');}finally{setBusy(false);}}
+  async function openFiles(tool:ConsumerTool) {if(busy)return;setBusy(true);setError('');try{await storeFileHandoffs(files,tool.slug);navigateTo(toolHref(tool));onFiles([]);}catch{setError('We couldn’t open that selection. Your files are still here. Please try again.');}finally{setBusy(false);}}
   return <div className="pt-home">
     <section className="pt-hero">
       <div className="pt-hero-copy"><span className="pt-eyebrow"><span/>{experience==='air'?'A little space to get things done':'YOUR EVERYDAY TOOLKIT, WITH A TWIST'}</span><h1>{experience==='air'?<>Your files.<br/>A little lighter.</>:<>Small tasks.<br/><em>Big relief.</em></>}</h1><p>{experience==='air'?'A thoughtful home for your PDFs, images, text and more. Find your tool, finish your task, get back to your day.':'A whole box of clever tools for the things between you and the fun stuff. Let’s make a little room.'}</p><form className="pt-home-search" role="search" onSubmit={event=>{event.preventDefault();onBrowse(query);}}><Search size={22}/><input aria-label="Find a tool or task" value={query} onChange={event=>setQuery(event.target.value)} placeholder="What would you like to do?"/><button type="submit" aria-label="Search all tools"><ArrowRight size={20}/></button></form><div className="pt-hero-actions"><button type="button" className="pt-button pt-primary" onClick={()=>input.current?.click()}><Plus size={20}/>Start with a file</button><a href="/tools" className="pt-text-link">Explore {catalogue.length} tools <ArrowRight size={17}/></a></div><small className="pt-hero-note"><ShieldCheck size={15}/>Free to use. No account needed.</small><input type="file" multiple hidden ref={input} aria-label="Choose files on this device" onChange={event=>{if(event.target.files?.length)onFiles(Array.from(event.target.files));event.target.value='';}}/></div>

@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/compone
 import { useFavorites } from '@/hooks/useFavorites';
 import type { ThemeChoice } from '@/lib/skinTheme';
 import { START_TOUR_EVENT, SHOW_SHORTCUTS_EVENT } from '@/lib/events';
+import { navigateTo } from '@/lib/navigation';
 import { catalogue, searchTools, toolHref, type ConsumerTool, type RecentTool, toolBySlug } from './catalogue';
 
 export function ConsumerLogo() {
@@ -109,7 +110,7 @@ export function ConsumerSearch({ open, onOpenChange, history }: { open: boolean;
     if (!item) return;
     onOpenChange(false);
     if (item.href.startsWith('/account')) location.assign(item.href);
-    else location.hash = '#' + item.href;
+    else navigateTo(item.href);
   };
   return <Dialog open={open} onOpenChange={onOpenChange}><DialogContent className="cp-search-dialog" onCloseAutoFocus={event => { event.preventDefault(); returnFocus.current?.focus(); }}>
     <DialogTitle className="sr-only">Search tools and pages</DialogTitle>

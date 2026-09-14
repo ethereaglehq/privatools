@@ -1,7 +1,6 @@
 import { Suspense, lazy, useEffect, useState } from "react";
 import DaylightApp from "./extensions/daylight";
-import { hashForPath } from "./pathRoutes";
-import { accountNavigationFor, documentNavigationFor } from "./cspRoutes";
+import { canonicalPath, currentRoute, navigateTo } from "@/lib/navigation";
 
 /**
  * Mounts Daylight — the site's design.
@@ -20,13 +19,13 @@ const BackendStatusBanner = lazy(() =>
 const BatchResumeBanner = lazy(() =>
     import("@/components/BatchResumeBanner").then((m) => ({ default: m.BatchResumeBanner })));
 
-/** Whether Daylight is currently showing the batch surface (hash router). */
+/** Whether Daylight is currently showing the batch surface. */
 function useOnBatch(): boolean {
-    const [on, setOn] = useState(() => /^#\/batch(\/|\?|$)/.test(window.location.hash));
+    const [on, setOn] = useState(() => /^\/batch(\/|\?|$)/.test(currentRoute()));
     useEffect(() => {
-        const read = () => setOn(/^#\/batch(\/|\?|$)/.test(window.location.hash));
-        window.addEventListener("hashchange", read);
-        return () => window.removeEventListener("hashchange", read);
+        const read = () => setOn(/^\/batch(\/|\?|$)/.test(currentRoute()));
+        window.addEventListener("popstate", read);
+        return () => window.removeEventListener("popstate", read);
     }, []);
     return on;
 }
@@ -75,13 +74,8 @@ export function SkinAppHost() {
         };
     }, []);
 
-    // The mounted house pages (Pipeline, Batch, Status, My Stuff, the tool
-    // components, the banners) link by path — <a href="/batch">, router
-    // <Link>s. Daylight navigates by hash, and only load/popstate go through
-    // the withPathRoutes bridge, so an unintercepted click would change the
-    // URL without changing the screen (router links) or trigger a full
-    // reload (plain anchors). Capture-phase, so it runs before react-router's
-    // own handler, which respects defaultPrevented.
+    // Keep app links in the mounted workspace. Capture-phase also handles
+    // React Router links before their own history handler runs.
     const onClickCapture = (e: React.MouseEvent) => {
         if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
         const a = (e.target as HTMLElement).closest?.("a");
@@ -90,32 +84,9 @@ export function SkinAppHost() {
         if (target && target !== "_self") return;
         if (a.hasAttribute("download")) return;
         const href = a.getAttribute("href") || "";
-        const accountTarget = accountNavigationFor(window.location.pathname, href);
-        if (accountTarget) {
-            e.preventDefault();
-            window.history.pushState(null, "", accountTarget);
-            window.dispatchEvent(new PopStateEvent("popstate"));
-            window.scrollTo(0, 0);
-            return;
-        }
-        const documentTarget = documentNavigationFor(window.location.pathname, href);
-        if (documentTarget) {
-            // A hash cannot acquire the destination's model/auth CSP. Request
-            // the canonical page only when its capabilities are missing.
-            e.preventDefault();
-            window.location.assign(documentTarget);
-            return;
-        }
-        if (!href.startsWith("/") || href.startsWith("//")) return;
-        const path = href.split("?")[0].split("#")[0];
-        // Account pages need their path-specific CSP; workflow share links
-        // carry a real query consumed on first mount. Keep both intact.
-        if (path.startsWith("/account") || href.includes("?")) return;
-        const hash = path === "/" ? "#/" : hashForPath(path);
-        if (!hash) return; // no mapping — let the browser navigate; the bridge handles it on load
+        if (!canonicalPath(href)) return;
         e.preventDefault();
-        if (window.location.hash !== hash) window.location.hash = hash;
-        else window.scrollTo(0, 0);
+        navigateTo(href);
     };
 
     return (

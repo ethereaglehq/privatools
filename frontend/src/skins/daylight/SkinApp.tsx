@@ -2,11 +2,12 @@
 // @ts-nocheck
 import { passkeysSupported } from "@/lib/clerk/accountApi";
 import { accountsConfigured, usernameAccountsEnabled, passkeyAccountsEnabled } from "@/lib/auth-mode";
+import { canonicalPath, currentRoute, navigateTo } from "@/lib/navigation";
 /**
  * Consumer application shell. Catalogue and counts derive from the registries.
  * withRealTools mounts the existing processing components; withVault and
  * withAccounts retain the existing state and persistence contracts.
- * withPathRoutes bridges public URLs to this shell's hash router.
+ * Public paths determine the shell's active view.
  * The approved Home, navigation and search live in ./consumer.
  */
 import React from "react";
@@ -89,15 +90,16 @@ const POPULAR = [...ALL_TOOLS].sort((a, b) => (a.popularity ?? 999) - (b.popular
 /* ═════════════════════════════ routing ═════════════════════════════ */
 
 /**
- * Hash → view. Exported for the unit test.
+ * Public path → view. Exported for the unit test.
  *
- * Accepts the site's own URL shapes (what withPathRoutes produces from real
- * paths) plus this design's internal links. `/tools/<slug>` — the non-PDF tool
- * path — folds into the single tool view exactly as it does in Aurora.
+ * Also accepts legacy hash links. `/tools/<slug>` — the non-PDF tool path —
+ * folds into the same tool view as `/tool/<slug>`.
  */
-export function parseHash(hash) {
-    const h = (hash || "#/").replace(/^#\/?/, "");
-    const [path, query = ""] = h.split("?");
+export function parseRoute(route) {
+    const href = (route || "/").replace(/^#\/?/, "/").split("#", 1)[0];
+    const queryIndex = href.indexOf("?");
+    const path = queryIndex < 0 ? href : href.slice(0, queryIndex);
+    const query = queryIndex < 0 ? "" : href.slice(queryIndex + 1);
     const seg = path.replace(/\/+$/, "").split("/").filter(Boolean);
     const cat = new URLSearchParams(query).get("cat") || "";
 
@@ -120,7 +122,9 @@ export function parseHash(hash) {
     return { view: "notfound" };
 }
 
-const go = (hash) => { location.hash = hash; };
+export const parseHash = parseRoute;
+
+const go = (href) => navigateTo(href);
 
 const fmtDate = (iso) => {
     const [y, m, d] = iso.split("-").map(Number);
@@ -820,9 +824,9 @@ export default class DaylightSkinApp extends React.Component {
         super(props);
         this.state = {
             aiHub: false,
-            ...parseHash(typeof location !== "undefined" ? location.hash : "#/"),
+            ...parseRoute(currentRoute()),
             themeMode: this.readTheme(),
-            q: "", catFilter: parseHash(typeof location !== "undefined" ? location.hash : "#/").cat || "", idxView: "tiles", blogTag: "",
+            q: "", catFilter: parseRoute(currentRoute()).cat || "", idxView: "tiles", blogTag: "",
             palOpen: false, palQ: "", palSel: 0,
             dragging: false, dropped: null,
             toast: "",
@@ -868,8 +872,8 @@ export default class DaylightSkinApp extends React.Component {
     /* ── lifecycle ── */
     componentDidMount() {
         if (super.componentDidMount) super.componentDidMount();
-        this._onHash = () => {
-            const r = parseHash(location.hash);
+        this._onRoute = () => {
+            const r = parseRoute(currentRoute());
             this.setState({ ...r, ...(r.view === "tools" ? { catFilter: r.cat || "" } : {}) }, () => {
                 window.scrollTo(0, 0);
                 document.title = this.titleFor(this.state);
@@ -877,7 +881,7 @@ export default class DaylightSkinApp extends React.Component {
                 if (r.view === "tool" && BY_SLUG.has(r.slug)) this.logHistory(r.slug);
             });
         };
-        window.addEventListener("hashchange", this._onHash);
+        window.addEventListener("popstate", this._onRoute);
 
         this._onKey = (e) => {
             if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -962,7 +966,7 @@ export default class DaylightSkinApp extends React.Component {
             const files = [...((e.dataTransfer && e.dataTransfer.files) || [])];
             this.setState({ dragging: false });
             if (!files.length) return;
-            go("#/");
+            go("/");
             this.pickHomeFiles(files);
         };
         window.addEventListener("dragenter", this._onDragEnter);
@@ -976,16 +980,6 @@ export default class DaylightSkinApp extends React.Component {
         this._stopThemeWatch = watchThemeChoice("daylight", (themeMode) => this.setState({ themeMode }));
         if (new URLSearchParams(location.search).get("mode") === "signup" && location.pathname.startsWith("/account")) this._setAcct?.({ mode: "signup" });
 
-        // A path the bridge could not translate (and no hash to rescue it) is
-        // a dead URL — show the 404 view instead of the homepage wearing the
-        // wrong address. Deferred a tick so withPathRoutes has synced first.
-        this._timers.push(setTimeout(() => {
-            const path = location.pathname.replace(/\/+$/, "");
-            if (!location.hash && path && this.state.view === "home") {
-                this.setState({ view: "notfound" }, () => { document.title = this.titleFor(this.state); });
-            }
-        }, 0));
-
         // First mount can already be deep-linked to a tool.
         document.title = this.titleFor(this.state);
         if (this.state.view === "tool" && BY_SLUG.has(this.state.slug)) this.logHistory(this.state.slug);
@@ -993,7 +987,7 @@ export default class DaylightSkinApp extends React.Component {
 
     componentWillUnmount() {
         if (super.componentWillUnmount) super.componentWillUnmount();
-        window.removeEventListener("hashchange", this._onHash);
+        window.removeEventListener("popstate", this._onRoute);
         window.removeEventListener("keydown", this._onKey);
         window.removeEventListener("beforeinstallprompt", this._onBip);
         window.removeEventListener("appinstalled", this._onInstalled);
@@ -1053,7 +1047,7 @@ export default class DaylightSkinApp extends React.Component {
 
     ToolCard(t, i) {
         return (
-            <a key={t.slug} className="dl-card" href={`#/tool/${t.slug}`}
+            <a key={t.slug} className="dl-card" href={canonicalPath(`/tool/${t.slug}`)}
                 style={{ "--dl-cc": FAMILY_HUE[t.category] || "var(--dl-green)", animation: `dlRise .4s ${0.04 * Math.min(i, 8)}s var(--dl-eo) both` }}>
                 <span className="tr">
                     <span className="glyph"><Glyph d={glyphPath(t)} /></span>
@@ -1070,7 +1064,7 @@ export default class DaylightSkinApp extends React.Component {
             <footer className="dl-foot">
                 <div className="cols">
                     <div className="brand">
-                        <a className="dl-brand" href="#/"><ConsumerLogo /> PrivaTools</a>
+                        <a className="dl-brand" href="/"><ConsumerLogo /> PrivaTools</a>
                         <p>{TOTAL} tools for PDFs, images, text and everyday work. Free to use, with no account needed for tools.</p>
                         <button type="button" className={cn(buttonVariants({ variant: "outline" }), "finstall")} onClick={this._installApp}>
                             <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true"><path d="M7 1.5 V9 M4 6.5 L7 9.5 L10 6.5 M2 12.5 H12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>
@@ -1094,24 +1088,24 @@ export default class DaylightSkinApp extends React.Component {
                         </div>
                     </div>
                     <div><h4>Popular</h4><ul>
-                        {POPULAR.slice(0, 5).map((t) => <li key={t.slug}><a href={`#/tool/${t.slug}`}>{t.name}</a></li>)}
+                        {POPULAR.slice(0, 5).map((t) => <li key={t.slug}><a href={canonicalPath(`/tool/${t.slug}`)}>{t.name}</a></li>)}
                     </ul></div>
                     <div><h4>Browse</h4><ul>
-                        <li><a href="#/tools">All {TOTAL} tools</a></li>
-                        <li><a href="#/pipeline">Workflows & pipelines</a></li>
-                        <li><a href="#/batch">Batch</a></li>
-                        <li><a href="#/compare">Compare</a></li>
-                        <li><a href="#/blog">Blog</a></li>
+                        <li><a href="/tools">All {TOTAL} tools</a></li>
+                        <li><a href="/pipeline">Workflows & pipelines</a></li>
+                        <li><a href="/batch">Batch</a></li>
+                        <li><a href="/compare">Compare</a></li>
+                        <li><a href="/blog">Blog</a></li>
                     </ul></div>
                     <div><h4>Product</h4><ul>
-                        <li><a href="#/security">Trust &amp; security</a></li>
-                        <li><a href="#/my-stuff">My Stuff</a></li>
-                        <li><a href="#/my-stuff/vault">Vault</a></li>
-                        <li><a href="#/status">Status</a></li>
-                        <li><a href="#/support">Support</a></li>
-                        <li><a href="#/about">About</a></li>
-                        <li><a href="#/privacy">Privacy</a></li>
-                        <li><a href="#/terms">Terms</a></li>
+                        <li><a href="/security">Trust &amp; security</a></li>
+                        <li><a href="/my-stuff">My Stuff</a></li>
+                        <li><a href="/my-stuff/vault">Vault</a></li>
+                        <li><a href="/status">Status</a></li>
+                        <li><a href="/support">Support</a></li>
+                        <li><a href="/about">About</a></li>
+                        <li><a href="/privacy">Privacy</a></li>
+                        <li><a href="/terms">Terms</a></li>
                     </ul></div>
                 </div>
                 <div className="base"><div>
@@ -1218,7 +1212,7 @@ export default class DaylightSkinApp extends React.Component {
     Home() {
         return <ExperienceHome history={this.state.history} onClearHistory={this.clearHistory}
             files={this._droppedFiles || []} onFiles={this.pickHomeFiles}
-            onBrowse={(q) => { this.setState({ q, catFilter: "" }); go("#/tools"); }}
+            onBrowse={(q) => { this.setState({ q, catFilter: "" }); go("/tools"); }}
             onAi={() => this.setState({ aiHub: true })} />;
     }
 
@@ -1241,7 +1235,7 @@ export default class DaylightSkinApp extends React.Component {
             return (
                 <div className="dl-wrap">
                     <div className="dl-nf">
-                        <div className="dl-crumb"><a href="#/tools">All tools</a></div>
+                        <div className="dl-crumb"><a href="/tools">All tools</a></div>
                         <h1 style={{ marginTop: 14 }}>No tool at that address</h1>
                         <p>That slug doesn’t match anything in the catalogue — you tried <code>/tool/{slug}</code>. Your files are untouched; nothing was opened or uploaded. The closest matches:</p>
                         <div className="dl-grid" style={{ marginTop: 22 }}>{close.map((t, i) => this.ToolCard(t, i))}</div>
@@ -1279,7 +1273,11 @@ export default class DaylightSkinApp extends React.Component {
 
     NotFound() { return <MissingStudio />; }
 
-    Pipeline() { return this.HousePage(HousePipeline, "Pipeline"); }
+    Pipeline() {
+        // Shared recipes initialize on mount; only a changed recipe resets the editor.
+        const recipe = new URLSearchParams(window.location.search).get("p") || "";
+        return this.HousePage(HousePipeline, "Pipeline", { key: recipe });
+    }
 
     Batch() { return this.HousePage(HouseBatch, "Batch"); }
 
@@ -1668,7 +1666,7 @@ export default class DaylightSkinApp extends React.Component {
             <div className="dl-panel dl-facts">
                 <h3>Don’t take our word</h3>
                 <p className="fine">Every claim here has a check you can run from your own browser.</p>
-                <a className={buttonVariants({ variant: "outline" })} href="#/security">Verify it yourself →</a>
+                <a className={buttonVariants({ variant: "outline" })} href="/security">Verify it yourself →</a>
             </div>
         </>);
     }
@@ -1689,7 +1687,7 @@ export default class DaylightSkinApp extends React.Component {
             <div className="dl-panel dl-facts">
                 <h3>Something unclear?</h3>
                 <p className="fine">A person reads every message.</p>
-                <a className={buttonVariants({ variant: "outline" })} href="#/support">Ask on Support →</a>
+                <a className={buttonVariants({ variant: "outline" })} href="/support">Ask on Support →</a>
             </div>
         </>);
     }
