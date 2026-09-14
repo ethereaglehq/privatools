@@ -82,25 +82,33 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           sbom: true
           provenance: true
-      # Scan the built image (OS packages + installed libs) for known CVEs.
-      # The repo's other Trivy job is scan-type:fs (source tree only) — this is
-      # the S2 gap: we were shipping a signed-but-unscanned artifact. Report-only
-      # for now (continue-on-error + no failing exit-code): surface findings to
-      # the Security tab without blocking releases. Tighten to a hard gate once
-      # the base image + native parser CVEs are triaged.
-      - name: Scan built image for CVEs (report-only)
+      # Require a successful scan with no fixable HIGH/CRITICAL CVEs in the
+      # published image's OS packages or installed libraries before signing.
+      # A failed scan leaves the image unsigned and blocks release publication.
+      - name: Gate release on image vulnerabilities
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
-        continue-on-error: true
         env:
           # Match the ARM64-only image index, regardless of Trivy's default.
           TRIVY_PLATFORM: linux/arm64
         with:
           scan-type: image
           image-ref: ${{ env.IMAGE_NAME }}@${{ steps.build.outputs.digest }}
+          scanners: vuln
           format: sarif
           output: trivy-image.sarif
           severity: CRITICAL,HIGH
+          # The action otherwise removes the severity filter for SARIF.
+          limit-severities-for-sarif: true
           ignore-unfixed: true
+          exit-code: '1'
+      - name: Preserve image scan report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: ${{ !cancelled() && hashFiles('trivy-image.sarif') != '' }}
+        with:
+          name: trivy-image-sarif
+          path: trivy-image.sarif
+          if-no-files-found: error
+          retention-days: 14
       - uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v3
         if: ${{ !cancelled() && hashFiles('trivy-image.sarif') != '' }}
         continue-on-error: true

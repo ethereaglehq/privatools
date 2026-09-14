@@ -37,8 +37,34 @@ RUN npm run build \
 # Stage 2: Production
 FROM python:3.12-slim@sha256:2c941e860699f878900b0edc2403613c234d4b32eda3cc9fa7036991a2a63c4a
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# Install system dependencies and explicitly upgrade affected base packages.
+# Trixie binary-version floors for the nine CVEs recorded in the v2.3.0 scan:
+# SQLite, OpenSSL, gzip, util-linux and PCRE2. Keep bsdutils/login's epochs and
+# login's compatibility prefix: source-package versions are not valid floors
+# for those binaries. See https://packages.debian.org/trixie/<package>.
+# Updating this list invalidates the apt layer; stale mirrors fail the checks.
+RUN set -eu; \
+    security_minimums='bsdutils=1:2.41.5-0+deb13u1 \
+        gzip=1.13-1+deb13u1 \
+        libblkid1=2.41.5-0+deb13u1 \
+        liblastlog2-2=2.41.5-0+deb13u1 \
+        libmount1=2.41.5-0+deb13u1 \
+        libpcre2-8-0=10.46-1~deb13u2 \
+        libsmartcols1=2.41.5-0+deb13u1 \
+        libsqlite3-0=3.46.1-7+deb13u2 \
+        libssl3t64=3.5.7-1~deb13u2 \
+        libuuid1=2.41.5-0+deb13u1 \
+        login=1:4.16.0-2+really2.41.5-0+deb13u1 \
+        mount=2.41.5-0+deb13u1 \
+        openssl=3.5.7-1~deb13u2 \
+        openssl-provider-legacy=3.5.7-1~deb13u2 \
+        util-linux=2.41.5-0+deb13u1'; \
+    set --; \
+    for specification in $security_minimums; do \
+        set -- "$@" "${specification%%=*}"; \
+    done; \
+    apt-get -o APT::Update::Error-Mode=any update; \
+    apt-get install -y --no-install-recommends "$@" \
     tesseract-ocr \
     tesseract-ocr-eng \
     tesseract-ocr-fra \
@@ -72,8 +98,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libreoffice-writer-nogui \
     libreoffice-calc-nogui \
     libreoffice-impress-nogui \
-    qpdf \
-    && rm -rf /var/lib/apt/lists/*
+    qpdf; \
+    for specification in $security_minimums; do \
+        package=${specification%%=*}; \
+        minimum=${specification#*=}; \
+        installed=$(dpkg-query -W -f='${Version}' "$package"); \
+        if ! dpkg --compare-versions "$installed" ge "$minimum"; then \
+            printf '%s version %s is older than required %s\n' "$package" "$installed" "$minimum" >&2; \
+            exit 1; \
+        fi; \
+    done; \
+    rm -rf /var/lib/apt/lists/*
 
 # Fail the image build if the distro changes FFmpeg capabilities. A process
 # existing is insufficient: subtitle burn-in needs libass; MP4 exports need
