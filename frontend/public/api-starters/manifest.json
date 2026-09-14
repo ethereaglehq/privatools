@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "baseUrl": "https://api.privatools.me/api/v1",
+  "operations": [
+    "merge",
+    "compress",
+    "pdf-to-text"
+  ],
+  "files": [
+    {
+      "name": "README.md",
+      "url": "/api-starters/README.md",
+      "bytes": 11606,
+      "sha256": "0f0abbb971e265876f6f98c13d47bd18bc0be0665a5961ca28d2e7a81258fac7"
+    },
+    {
+      "name": "n8n-compress.json",
+      "url": "/api-starters/n8n-compress.json",
+      "bytes": 19685,
+      "sha256": "dfeaedf815cde708f244f0c62a80ae22cfeb1632b057337df968d1648a8d39e5"
+    },
+    {
+      "name": "n8n-delete-job.json",
+      "url": "/api-starters/n8n-delete-job.json",
+      "bytes": 2351,
+      "sha256": "c7d3646def30db410cdf3c92caa75dfa10739db18828dd81215c05474f13428e"
+    },
+    {
+      "name": "n8n-merge.json",
+      "url": "/api-starters/n8n-merge.json",
+      "bytes": 20724,
+      "sha256": "2bf1cddf9663ea55df7d3606d5a5f58b2e9e749d6aaafe852e5444e2280f31e4"
+    },
+    {
+      "name": "n8n-pdf-to-text.json",
+      "url": "/api-starters/n8n-pdf-to-text.json",
+      "bytes": 19668,
+      "sha256": "2f8fc4d82cc6805329214aeeff32d4ddcfe67f4188bee98ee550e3889d28c9b7"
+    },
+    {
+      "name": "privatools.mjs",
+      "url": "/api-starters/privatools.mjs",
+      "bytes": 13849,
+      "sha256": "023abd5ef2560d8a2e30002644155502d6123bf9dd28d1b58581f4c46c0afe13"
+    },
+    {
+      "name": "privatools.postman_collection.json",
+      "url": "/api-starters/privatools.postman_collection.json",
+      "bytes": 12089,
+      "sha256": "aaa1872baaa9f1229deb30fb75cd49b481249de9b21fef083fc209cffe1ad892"
+    },
+    {
+      "name": "privatools.py",
+      "url": "/api-starters/privatools.py",
+      "bytes": 17205,
+      "sha256": "398aed4095e5c1f177e28707de93b5d5977d27c8ae55b67247b85a51605906a4"
+    },
+    {
+      "name": "sample-first.pdf",
+      "url": "/api-starters/sample-first.pdf",
+      "bytes": 596,
+      "sha256": "08fd9bb56850482969412236cd127a174c5c7e3bc6062a08a306ea0a5e5cfb8c"
+    },
+    {
+      "name": "sample-second.pdf",
+      "url": "/api-starters/sample-second.pdf",
+      "bytes": 596,
+      "sha256": "7cf403543411b63c3fa5ec84e8badb74860431111acef509fee2594697ccf6d7"
+    }
+  ]
+}

@@ -61,6 +61,7 @@ def _json(
     if _is_v1(request):
         body.setdefault("code", _V1_ERROR_CODES.get(status, "request_failed"))
         body.setdefault("message", detail)
+        request.state.v1_error_code = body["code"]
     # Headers set on the HTTPException are part of the answer, not decoration:
     # a 429 without Retry-After tells the client nothing about when to try
     # again, and a 401 without WWW-Authenticate omits the scheme.
@@ -93,6 +94,8 @@ def _json_payload(status: int, payload: dict, *, request: Request, headers=None)
     body.setdefault("code", _V1_ERROR_CODES.get(status, "request_failed"))
     body.setdefault("message", body.get("detail", "Request failed"))
     body.setdefault("detail", body["message"])
+    if _is_v1(request):
+        request.state.v1_error_code = body["code"]
     rid = getattr(request.state, "request_id", None)
     if rid:
         body.setdefault("request_id", rid)
@@ -283,4 +286,11 @@ def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_error_handler)
     # Keep this last — it's the catch-all.
-    app.add_exception_handler(Exception, builtin_exception_handler)
+    async def final_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        response = await builtin_exception_handler(request, exc)
+        if getattr(request.state, "v1_activity_deferred", False):
+            from ..api_v1.activity import finish
+            await finish(request.scope, response.status_code)
+        return response
+
+    app.add_exception_handler(Exception, final_exception_handler)

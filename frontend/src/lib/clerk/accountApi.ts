@@ -22,6 +22,7 @@
  */
 
 import type { AccountUser, ApiKey } from "@/skins/accountLogic";
+import type { ApiActivityData } from "@/lib/api-activity";
 import { apiUrl } from "@/lib/api";
 import { clerkToken, requireClerk, requireClerkClient } from "./instance";
 
@@ -393,6 +394,7 @@ export const clerkAccountApi = {
     // our own database and are unchanged. Only the credential differs: a bearer
     // token instead of the session cookie.
     listKeys: () => callWithToken<{ keys: ApiKey[] }>("/keys"),
+    apiActivity: (keyId?: string, signal?: AbortSignal) => callWithToken<ApiActivityData>(`/account/api-activity${keyId ? `?key_id=${encodeURIComponent(keyId)}` : ""}`, { signal }),
     createKey: (label: string) =>
         callWithToken<{ key: string; record: ApiKey }>("/keys", {
             method: "POST",

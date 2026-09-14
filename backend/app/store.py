@@ -172,6 +172,50 @@ MIGRATIONS: list[tuple[int, str]] = [
         );
         """,
     ),
+    (
+        4,
+        """
+        -- API activity contains identifiers and HTTP outcomes only. Daily
+        -- aggregates survive eviction from the bounded recent-request list.
+        CREATE TABLE api_activity_recent (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            key_id TEXT NOT NULL REFERENCES api_keys(key_id) ON DELETE CASCADE,
+            request_id TEXT NOT NULL,
+            operation TEXT NOT NULL,
+            method TEXT NOT NULL,
+            status_code INTEGER NOT NULL,
+            error_code TEXT,
+            duration_ms INTEGER NOT NULL,
+            created_at REAL NOT NULL
+        );
+        CREATE INDEX api_activity_recent_key ON api_activity_recent(key_id, id DESC);
+        CREATE INDEX api_activity_recent_created ON api_activity_recent(created_at, id);
+        CREATE TABLE api_activity_daily (
+            key_id TEXT NOT NULL REFERENCES api_keys(key_id) ON DELETE CASCADE,
+            day TEXT NOT NULL,
+            requests INTEGER NOT NULL DEFAULT 0,
+            succeeded INTEGER NOT NULL DEFAULT 0,
+            failed INTEGER NOT NULL DEFAULT 0,
+            duration_ms INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (key_id, day)
+        );
+        CREATE INDEX api_activity_daily_day ON api_activity_daily(day);
+        CREATE TABLE api_activity_maintenance (
+            singleton INTEGER PRIMARY KEY CHECK(singleton=1),
+            recent_count INTEGER NOT NULL DEFAULT 0,
+            cleaned_at REAL NOT NULL DEFAULT 0
+        );
+        INSERT INTO api_activity_maintenance(singleton) VALUES(1);
+        CREATE TRIGGER api_activity_insert_count AFTER INSERT ON api_activity_recent
+        BEGIN
+            UPDATE api_activity_maintenance SET recent_count=recent_count+1 WHERE singleton=1;
+        END;
+        CREATE TRIGGER api_activity_delete_count AFTER DELETE ON api_activity_recent
+        BEGIN
+            UPDATE api_activity_maintenance SET recent_count=recent_count-1 WHERE singleton=1;
+        END;
+        """,
+    ),
 ]
 
 

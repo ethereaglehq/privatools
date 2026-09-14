@@ -1,0 +1,90 @@
+{
+  "checks": [
+    {
+      "operation": "merge",
+      "download_bytes": 1219,
+      "usage": "Usage change during this run\n\n1 unit \u00b7 1,676 request bytes\n\nMeasured from before/after usage checks. Includes any other activity on this key.\n\n492 units remaining today."
+    },
+    {
+      "operation": "compress",
+      "download_bytes": 769,
+      "usage": "Usage change during this run\n\n1 unit \u00b7 963 request bytes\n\nMeasured from before/after usage checks. Includes any other activity on this key.\n\n491 units remaining today."
+    },
+    {
+      "operation": "pdf-to-text",
+      "download_bytes": 238,
+      "usage": "Usage change during this run\n\n5 units \u00b7 859 request bytes\n\nMeasured from before/after usage checks. Includes any other activity on this key.\n\n486 units remaining today."
+    },
+    {
+      "account_dashboard": 6
+    }
+  ],
+  "screenshots": [
+    {
+      "width": 1440,
+      "scroll": 1440,
+      "experience": "air",
+      "theme": "light",
+      "areas": "\"connect example\" \"playground playground\" \"starters starters\" \"reference reference\""
+    },
+    {
+      "width": 1440,
+      "scroll": 1440,
+      "experience": "air",
+      "theme": "dark",
+      "areas": "\"connect example\" \"playground playground\" \"starters starters\" \"reference reference\""
+    },
+    {
+      "width": 1440,
+      "scroll": 1440,
+      "experience": "play",
+      "theme": "light",
+      "areas": "\"example connect\" \"playground playground\" \"starters starters\" \"reference reference\""
+    },
+    {
+      "width": 1440,
+      "scroll": 1440,
+      "experience": "play",
+      "theme": "dark",
+      "areas": "\"example connect\" \"playground playground\" \"starters starters\" \"reference reference\""
+    },
+    {
+      "width": 390,
+      "scroll": 390,
+      "experience": "air",
+      "theme": "light",
+      "areas": "\"connect example\" \"playground playground\" \"starters starters\" \"reference reference\""
+    },
+    {
+      "width": 390,
+      "scroll": 390,
+      "experience": "air",
+      "theme": "dark",
+      "areas": "\"connect example\" \"playground playground\" \"starters starters\" \"reference reference\""
+    },
+    {
+      "width": 390,
+      "scroll": 390,
+      "experience": "play",
+      "theme": "light",
+      "areas": "\"example connect\" \"playground playground\" \"starters starters\" \"reference reference\""
+    },
+    {
+      "width": 390,
+      "scroll": 390,
+      "experience": "play",
+      "theme": "dark",
+      "areas": "\"example connect\" \"playground playground\" \"starters starters\" \"reference reference\""
+    },
+    {
+      "width": 1440,
+      "scroll": 1440
+    },
+    {
+      "width": 390,
+      "scroll": 390
+    }
+  ],
+  "environment": "Local full API and Vite, synthetic account/key, external browser requests blocked",
+  "passed": true
+}

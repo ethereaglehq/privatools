@@ -17,7 +17,7 @@ import logging
 import os
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
 from ..auth import accounts, clerk_session
@@ -345,6 +345,28 @@ async def list_keys(user: accounts.User = Depends(current_user)):
             for k in accounts.list_keys(user.id)
         ]
     }
+
+
+@router.get("/account/api-activity")
+async def api_activity(
+    response: Response,
+    key_id: str | None = Query(default=None, min_length=1, max_length=128),
+    user: accounts.User = Depends(current_user),
+):
+    """Seven UTC dates of processing HTTP metadata for the signed-in account."""
+    import sqlite3
+    from ..api_v1 import activity
+    from ..api_v1.body_accounting import database_call
+
+    response.headers["Cache-Control"] = "no-store"
+    try:
+        return await database_call(activity.summary, user.id, key_id)
+    except KeyError:
+        raise HTTPException(404, "No such key", headers={"Cache-Control": "no-store"}) from None
+    except sqlite3.Error:
+        from fastapi.responses import JSONResponse
+        return JSONResponse({"detail": "API activity is temporarily unavailable."}, status_code=503,
+                            headers={"Cache-Control": "no-store", "Retry-After": "5"})
 
 
 @router.post("/keys")

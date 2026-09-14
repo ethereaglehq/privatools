@@ -4,6 +4,8 @@ import { apiUrl } from "@/lib/api";
 import { StudioPage, StudioHeader, StudioAction } from "@/skins/experience/Studio";
 import "@/skins/experience/secondary-pages.css";
 import ApiReference from "@/components/ApiReference";
+import ApiPlayground from "@/components/ApiPlayground";
+import ApiStarters from "@/components/ApiStarters";
 
 type Language = "curl" | "JavaScript" | "Python";
 type KeyIdentity = { key_id: string; label: string; created_at: string };
@@ -117,6 +119,8 @@ export default function ApiPage() {
                 <footer><span><ShieldCheck size={15} />Keep keys in your server environment.</span><span>Successful requests return the file directly.</span></footer>
             </section>
 
+            <ApiPlayground />
+            <ApiStarters />
             <ApiReference />
         </div>
     </StudioPage>;

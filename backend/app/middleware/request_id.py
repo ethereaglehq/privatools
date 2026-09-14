@@ -7,9 +7,10 @@ response header. The error handlers in
 body, so a user can paste the ID into a bug report and we can grep logs
 for that single request.
 
-We respect an inbound ``X-Request-ID`` header if the client sends one
-(useful when a reverse proxy already tagged the request), otherwise we
-mint a fresh 12-character hex token. 12 hex chars = 48 bits of entropy,
+Versioned API requests always get a fresh server-generated ID so their
+metadata history cannot retain private client text. Other routes respect a
+safe inbound ``X-Request-ID`` (useful when a proxy already tagged a request)
+or mint a fresh 12-character hex token. 12 hex chars = 48 bits of entropy,
 plenty for collision avoidance within a server's log retention window
 without being unwieldy in the UI.
 """
@@ -65,7 +66,13 @@ class RequestIDMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):  # type: ignore[override]
-        rid = _safe_inbound(request.headers.get(_INBOUND_HEADER)) or _generate_request_id()
+        if request.url.path.startswith("/api/v1/"):
+            # Durable API history must never retain arbitrary client text in
+            # this field. Accounting generates the same ID before this layer.
+            rid = (getattr(request.state, "request_id", None)
+                   if getattr(request.state, "v1_body_meter_installed", False) else None) or _generate_request_id()
+        else:
+            rid = _safe_inbound(request.headers.get(_INBOUND_HEADER)) or _generate_request_id()
         request.state.request_id = rid
         token = request_id_var.set(rid)
         try:

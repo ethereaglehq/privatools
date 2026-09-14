@@ -1,0 +1,95 @@
+{
+  "name": "PrivaTools delete or cancel a saved job",
+  "active": false,
+  "nodes": [
+    {
+      "id": "manual",
+      "name": "Delete deliberately",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "job",
+      "name": "Set saved job ID",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const jobId = ''; // Paste the saved job ID. This also cancels running jobs.\nif (!/^[A-Za-z0-9_-]{1,128}$/.test(jobId)) throw new Error('Set a valid jobId after saving the result, or to cancel deliberately.');\nreturn [{ json: { jobId } }];"
+      }
+    },
+    {
+      "id": "delete",
+      "name": "Delete server result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "method": "DELETE",
+        "url": "={{ 'https://api.privatools.me/api/v1/jobs/' + $json.jobId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notes": "Select Header Auth with Name X-API-Key. deletion_pending=true means cancellation is waiting for worker cleanup. Repeated DELETE is safe.",
+      "notesInFlow": true
+    }
+  ],
+  "connections": {
+    "Delete deliberately": {
+      "main": [
+        [
+          {
+            "node": "Set saved job ID",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set saved job ID": {
+      "main": [
+        [
+          {
+            "node": "Delete server result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "executionTimeout": 60,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false
+  },
+  "pinData": {},
+  "tags": []
+}

@@ -71,6 +71,12 @@ jobs:
       - name: Run backend tests
         run: python -m pytest backend/tests -q
 
+      - name: Verify downloadable API starters
+        run: |
+          python scripts/api-starters-build.py --check
+          python scripts/api-starters-test.py
+          node --test scripts/api-starters-artifacts.test.mjs
+
   frontend:
     name: Frontend tests (vitest)
     runs-on: ubuntu-latest

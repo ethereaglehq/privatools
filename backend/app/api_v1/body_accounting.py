@@ -5,13 +5,15 @@ import asyncio
 import logging
 import os
 import sqlite3
+import time
 from contextlib import suppress
 
 import anyio
 from fastapi import HTTPException
 from starlette.datastructures import MutableHeaders
 
-from . import admission, quota
+from . import activity, admission, quota
+from ..middleware.request_id import _generate_request_id
 
 logger = logging.getLogger(__name__)
 
@@ -50,6 +52,9 @@ class V1AccountingMiddleware:
         state["v1_received_bytes"] = 0
         state["v1_body_complete"] = False
         state["v1_body_meter_installed"] = True
+        state["request_id"] = _generate_request_id()
+        state["v1_activity_started"] = time.perf_counter()
+        state["v1_activity_status"] = None
 
         async def counted_receive():
             message = await receive()
@@ -64,10 +69,12 @@ class V1AccountingMiddleware:
 
         async def report_send(message):
             if message["type"] == "http.response.start":
+                state["v1_activity_status"] = message["status"]
                 token = state.get("v1_reservation")
                 if token and (state.get("v1_validation_rejected") or state.get("v1_prework_rejected")):
                     await database_call(quota.refund_reservation, token)
                 key_id = state.get("v1_key_id")
+                MutableHeaders(scope=message)["X-Request-ID"] = state["request_id"]
                 if key_id:
                     headers = MutableHeaders(scope=message)
                     try:
@@ -84,6 +91,13 @@ class V1AccountingMiddleware:
 
         try:
             await self.app(scope, counted_receive, report_send)
+        except Exception:
+            # Starlette's outer error handler chooses the final status for an
+            # uncaught exception before headers. Once streaming has started,
+            # keep the status already sent to the caller.
+            if state["v1_activity_status"] is None:
+                state["v1_activity_deferred"] = True
+            raise
         finally:
             # An HTTP slot is separate from surviving native work. Do not claim
             # this release stops an arbitrary C extension or subprocess.
@@ -97,3 +111,5 @@ class V1AccountingMiddleware:
                 token = state.get("v1_reservation")
                 if token:
                     await database_call(admission.release, token)
+                if not state.get("v1_activity_deferred"):
+                    await activity.finish(scope, state.get("v1_activity_status") or 499)

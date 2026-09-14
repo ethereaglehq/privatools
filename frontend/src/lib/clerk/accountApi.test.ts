@@ -11,6 +11,14 @@ beforeEach(() => {
 afterEach(() => vi.unstubAllGlobals());
 
 describe("Clerk account contracts", () => {
+  it("loads filtered API activity with the account session and supports cancellation", async () => {
+    fixture.token.mockResolvedValue("synthetic-session-token");
+    const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ keys: [], recent: [] }) }); vi.stubGlobal("fetch", fetch);
+    const controller = new AbortController();
+    await clerkAccountApi.apiActivity("key/one", controller.signal);
+    expect(fetch).toHaveBeenCalledWith("https://api.privatools.example/api/account/api-activity?key_id=key%2Fone", expect.objectContaining({ signal: controller.signal, credentials: "omit", cache: "no-store", headers: expect.objectContaining({ Authorization: "Bearer synthetic-session-token" }) }));
+  });
+
   it("uses the configured API origin and a fresh bearer token without cookies", async () => {
     fixture.token.mockResolvedValue("synthetic-session-token");
     const fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ keys: [] }) }); vi.stubGlobal("fetch", fetch);

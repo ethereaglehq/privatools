@@ -121,9 +121,11 @@ async def _cleanup_task():
             # Maintenance keeps running even when new async jobs are disabled.
             from .api_v1.jobs import maintenance as maintain_jobs
             from .api_v1.quota import cleanup_accounting
+            from .api_v1.activity import cleanup as cleanup_activity
 
             await asyncio.to_thread(maintain_jobs)
             await asyncio.to_thread(cleanup_accounting)
+            await asyncio.to_thread(cleanup_activity)
         except asyncio.CancelledError:
             raise
         except Exception:  # noqa: BLE001 — never let the janitor die

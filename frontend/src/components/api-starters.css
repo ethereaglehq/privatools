@@ -1,0 +1,13 @@
+.pt-api-starters { grid-area: starters; min-width: 0; padding: 32px; background: var(--pt-surface); border: 1px solid var(--pt-line); border-radius: 23px; color: var(--pt-ink); }
+.pt-api-starters > header { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 24px; }
+.pt-api-starters > header > div { max-width: 580px; }
+.pt-api-starters h2 { font-size: clamp(24px, 3vw, 34px); line-height: 1.2; letter-spacing: -.03em; margin: 8px 0 12px; font-weight: 600; }
+.pt-api-starters p { font-size: 13px; line-height: 1.8; color: var(--pt-muted); }
+.pt-starter-options { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px; margin-top: 30px; padding-top: 28px; border-top: 1px solid var(--pt-line); }
+.pt-starter-options article { min-width: 0; }
+.pt-starter-options h3 { font-size: 20px; font-weight: 600; margin: 8px 0 12px; }
+.pt-starter-options article > div { display: flex; flex-wrap: wrap; gap: 12px 18px; margin-top: 18px; }
+.pt-api-starters a:not(.pt-studio-button) { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--pt-action); text-decoration: underline; text-underline-offset: 4px; }
+.pt-api-starters footer { display: flex; flex-wrap: wrap; gap: 16px 24px; border-top: 1px solid var(--pt-line); padding-top: 22px; margin-top: 30px; }
+.pt-api-starters footer p { flex-basis: 100%; font-size: 11px; }
+@media (max-width: 760px) { .pt-api-starters { padding: 24px; } .pt-starter-options { grid-template-columns: 1fr; gap: 24px; } .pt-starter-options article + article { padding-top: 24px; border-top: 1px solid var(--pt-line); } }

@@ -1,0 +1,413 @@
+{
+  "started_at": "2026-09-14T13:05:46.185025+00:00",
+  "fixture_bytes": {
+    "text-2-pages": 1190,
+    "text-40-pages": 13882,
+    "image-20-pages": 5843023
+  },
+  "cpu_max": "180000 100000",
+  "memory_max": "4294967296",
+  "cpu_before": "usage_usec 25728740\nuser_usec 23306713\nsystem_usec 2422027\ncore_sched.force_idle_usec 0\nnr_periods 2228\nnr_throttled 45\nthrottled_usec 391223\nnr_bursts 0\nburst_usec 0",
+  "memory_events_before": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+  "cases": [
+    {
+      "operation": "merge",
+      "fixture": "text-2-pages",
+      "concurrency": 1,
+      "requests": 2,
+      "p50_ms": 45.33,
+      "p95_ms": 48.81,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 48.81,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 41.85,
+          "valid_result": true
+        }
+      ]
+    },
+    {
+      "operation": "merge",
+      "fixture": "text-2-pages",
+      "concurrency": 3,
+      "requests": 6,
+      "p50_ms": 66.13,
+      "p95_ms": 85.7,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 56.85,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 80.01,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 68.11,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 56.37,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 64.15,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 85.7,
+          "valid_result": true
+        }
+      ]
+    },
+    {
+      "operation": "merge",
+      "fixture": "text-2-pages",
+      "concurrency": 6,
+      "requests": 12,
+      "p50_ms": 134.72,
+      "p95_ms": 160.62,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 86.03,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 124.3,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 138.28,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 129.09,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 129.05,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 133.09,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 115.35,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 160.62,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 147.4,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 136.34,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 146.61,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 149.3,
+          "valid_result": true
+        }
+      ]
+    },
+    {
+      "operation": "pdf-to-text",
+      "fixture": "text-40-pages",
+      "concurrency": 1,
+      "requests": 2,
+      "p50_ms": 71.73,
+      "p95_ms": 72.55,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 70.91,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 72.55,
+          "valid_result": true
+        }
+      ]
+    },
+    {
+      "operation": "pdf-to-text",
+      "fixture": "text-40-pages",
+      "concurrency": 3,
+      "requests": 6,
+      "p50_ms": 124.43,
+      "p95_ms": 149.92,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 90.29,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 142.69,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 106.17,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 148.4,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 149.92,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 91.89,
+          "valid_result": true
+        }
+      ]
+    },
+    {
+      "operation": "pdf-to-text",
+      "fixture": "text-40-pages",
+      "concurrency": 6,
+      "requests": 12,
+      "p50_ms": 243.94,
+      "p95_ms": 357.01,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 354.88,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 262.02,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 177.34,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 357.01,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 258.1,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 354.03,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 169.51,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 122.06,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 161.98,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 229.77,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 280.25,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 222.23,
+          "valid_result": true
+        }
+      ]
+    },
+    {
+      "operation": "compress",
+      "fixture": "image-20-pages",
+      "concurrency": 1,
+      "requests": 2,
+      "p50_ms": 669.04,
+      "p95_ms": 680.24,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 680.24,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 657.83,
+          "valid_result": true
+        }
+      ]
+    },
+    {
+      "operation": "compress",
+      "fixture": "image-20-pages",
+      "concurrency": 3,
+      "requests": 6,
+      "p50_ms": 1396.76,
+      "p95_ms": 1419.48,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 1386.25,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 1410.74,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 783.22,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 1407.28,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 806.93,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 1419.48,
+          "valid_result": true
+        }
+      ]
+    },
+    {
+      "operation": "compress",
+      "fixture": "image-20-pages",
+      "concurrency": 6,
+      "requests": 12,
+      "p50_ms": 2352.53,
+      "p95_ms": 2868.51,
+      "results": [
+        {
+          "status": 200,
+          "duration_ms": 2422.86,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 1588.17,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 2529.58,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 2823.09,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 1553.03,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 2796.24,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 2855.66,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 1704.87,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 2868.51,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 1704.35,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 2282.19,
+          "valid_result": true
+        },
+        {
+          "status": 200,
+          "duration_ms": 2250.74,
+          "valid_result": true
+        }
+      ]
+    }
+  ],
+  "cleanup_complete": true,
+  "peak_memory_bytes": 601612288,
+  "cpu_after": "usage_usec 42696873\nuser_usec 38741267\nsystem_usec 3955605\ncore_sched.force_idle_usec 0\nnr_periods 3337\nnr_throttled 69\nthrottled_usec 582361\nnr_bursts 0\nburst_usec 0",
+  "memory_events_after": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0",
+  "finished_at": "2026-09-14T13:07:45.769276+00:00",
+  "all_results_valid": true,
+  "image": "ghcr.io/ethereaglehq/privatools@sha256:aff7b6726affbc0ba17250c632d976fb68480b75533f7665e1c8d80526154f9a",
+  "environment": "Isolated Oracle container, separate synthetic data/temp volumes, same4GiB/1.8CPU envelope as production",
+  "interpretation": "60 successful fixture requests in bursts of1,3,6, using2 keys; not a throughput guarantee. Preserve existing fair limits. Production readiness remained healthy during measurement."
+}

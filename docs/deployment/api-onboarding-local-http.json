@@ -1,0 +1,247 @@
+{
+  "started_at": "2026-09-14T13:13:07.695573+00:00",
+  "target": "local full middleware HTTP server",
+  "checks": [
+    {
+      "name": "full server ready",
+      "passed": true
+    },
+    {
+      "name": "usage response authenticated",
+      "passed": true
+    },
+    {
+      "name": "synchronous conversion valid PDF",
+      "passed": true,
+      "status": 200,
+      "result_bytes": 1121
+    },
+    {
+      "name": "usage response authenticated",
+      "passed": true
+    },
+    {
+      "name": "quota counts actual multipart body",
+      "passed": true,
+      "request_body_bytes": 1551
+    },
+    {
+      "name": "inbound request ID replaced with server ID",
+      "passed": true
+    },
+    {
+      "name": "success activity matches HTTP response",
+      "passed": true
+    },
+    {
+      "name": "usage response authenticated",
+      "passed": true
+    },
+    {
+      "name": "framework missing-files rejection",
+      "passed": true,
+      "status": 422
+    },
+    {
+      "name": "pre-auth multipart parse rejection",
+      "passed": true,
+      "status": 400
+    },
+    {
+      "name": "invalid async options rejected safely",
+      "passed": true,
+      "status": 422
+    },
+    {
+      "name": "usage response authenticated",
+      "passed": true
+    },
+    {
+      "name": "validation failures do not spend allowance",
+      "passed": true
+    },
+    {
+      "name": "all validation errors appear in history",
+      "passed": true
+    },
+    {
+      "name": "metadata excludes every synthetic private marker",
+      "passed": true
+    },
+    {
+      "name": "account history is no-store",
+      "passed": true
+    },
+    {
+      "name": "account session owns only its keys",
+      "passed": true
+    },
+    {
+      "name": "foreign account key filter is denied",
+      "passed": true,
+      "status": 404
+    },
+    {
+      "name": "API key cannot authenticate account dashboard",
+      "passed": true,
+      "status": 401
+    },
+    {
+      "name": "owned key filter succeeds",
+      "passed": true
+    },
+    {
+      "name": "python merge state excludes credentials and input paths",
+      "passed": true
+    },
+    {
+      "name": "python merge output valid",
+      "passed": true
+    },
+    {
+      "name": "python merge server result deleted after save",
+      "passed": true
+    },
+    {
+      "name": "python compress state excludes credentials and input paths",
+      "passed": true
+    },
+    {
+      "name": "python compress output valid",
+      "passed": true
+    },
+    {
+      "name": "python compress server result deleted after save",
+      "passed": true
+    },
+    {
+      "name": "python pdf-to-text state excludes credentials and input paths",
+      "passed": true
+    },
+    {
+      "name": "python pdf-to-text output valid",
+      "passed": true
+    },
+    {
+      "name": "python pdf-to-text server result deleted after save",
+      "passed": true
+    },
+    {
+      "name": "node merge state excludes credentials and input paths",
+      "passed": true
+    },
+    {
+      "name": "node merge output valid",
+      "passed": true
+    },
+    {
+      "name": "node merge server result deleted after save",
+      "passed": true
+    },
+    {
+      "name": "node compress state excludes credentials and input paths",
+      "passed": true
+    },
+    {
+      "name": "node compress output valid",
+      "passed": true
+    },
+    {
+      "name": "node compress server result deleted after save",
+      "passed": true
+    },
+    {
+      "name": "node pdf-to-text state excludes credentials and input paths",
+      "passed": true
+    },
+    {
+      "name": "node pdf-to-text output valid",
+      "passed": true
+    },
+    {
+      "name": "node pdf-to-text server result deleted after save",
+      "passed": true
+    },
+    {
+      "name": "usage response authenticated",
+      "passed": true
+    },
+    {
+      "name": "six starter jobs charge each operation exactly once",
+      "passed": true,
+      "used_units": 15
+    },
+    {
+      "name": "polling downloads and deletion do not create history rows",
+      "passed": true,
+      "requests": 10
+    },
+    {
+      "name": "synthetic account activity cascades on deletion",
+      "passed": true
+    },
+    {
+      "name": "browser fixture account retained",
+      "passed": true
+    }
+  ],
+  "starters": [
+    {
+      "runtime": "python",
+      "operation": "merge",
+      "exit_code": 0,
+      "passed": true,
+      "result_bytes": 1107,
+      "server_result_deleted": true,
+      "state_contains_no_key": true
+    },
+    {
+      "runtime": "python",
+      "operation": "compress",
+      "exit_code": 0,
+      "passed": true,
+      "result_bytes": 712,
+      "server_result_deleted": true,
+      "state_contains_no_key": true
+    },
+    {
+      "runtime": "python",
+      "operation": "pdf-to-text",
+      "exit_code": 0,
+      "passed": true,
+      "result_bytes": 108,
+      "server_result_deleted": true,
+      "state_contains_no_key": true
+    },
+    {
+      "runtime": "node",
+      "operation": "merge",
+      "exit_code": 0,
+      "passed": true,
+      "result_bytes": 1107,
+      "server_result_deleted": true,
+      "state_contains_no_key": true
+    },
+    {
+      "runtime": "node",
+      "operation": "compress",
+      "exit_code": 0,
+      "passed": true,
+      "result_bytes": 712,
+      "server_result_deleted": true,
+      "state_contains_no_key": true
+    },
+    {
+      "runtime": "node",
+      "operation": "pdf-to-text",
+      "exit_code": 0,
+      "passed": true,
+      "result_bytes": 108,
+      "server_result_deleted": true,
+      "state_contains_no_key": true
+    }
+  ],
+  "cleanup_complete": true,
+  "passed": true,
+  "finished_at": "2026-09-14T13:13:21.054905+00:00"
+}
