@@ -1,0 +1,323 @@
+{
+  "auth": "synthetic local session; native password form",
+  "checks": [
+    "API access to settings; native current password required",
+    "Settings to API keys and usage",
+    "Synthetic key creation, one-time reveal acknowledgment, revocation and real processing activity"
+  ],
+  "screenshots": [
+    {
+      "path": "/tmp/priva-account-settings-air-light-1440.png",
+      "route": "settings",
+      "width": 1440,
+      "scroll": 1440,
+      "main": 1440,
+      "experience": "air",
+      "theme": "light",
+      "account_target": {
+        "width": 110.234375,
+        "height": 40
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-air-dark-1440.png",
+      "route": "settings",
+      "width": 1440,
+      "scroll": 1440,
+      "main": 1440,
+      "experience": "air",
+      "theme": "dark",
+      "account_target": {
+        "width": 110.234375,
+        "height": 40
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-play-light-1440.png",
+      "route": "settings",
+      "width": 1440,
+      "scroll": 1440,
+      "main": 1440,
+      "experience": "play",
+      "theme": "light",
+      "account_target": {
+        "width": 105.78125,
+        "height": 40
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-play-dark-1440.png",
+      "route": "settings",
+      "width": 1440,
+      "scroll": 1440,
+      "main": 1440,
+      "experience": "play",
+      "theme": "dark",
+      "account_target": {
+        "width": 105.78125,
+        "height": 40
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-air-light-390.png",
+      "route": "settings",
+      "width": 390,
+      "scroll": 390,
+      "main": 390,
+      "experience": "air",
+      "theme": "light",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-air-dark-390.png",
+      "route": "settings",
+      "width": 390,
+      "scroll": 390,
+      "main": 390,
+      "experience": "air",
+      "theme": "dark",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-play-light-390.png",
+      "route": "settings",
+      "width": 390,
+      "scroll": 390,
+      "main": 390,
+      "experience": "play",
+      "theme": "light",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-play-dark-390.png",
+      "route": "settings",
+      "width": 390,
+      "scroll": 390,
+      "main": 390,
+      "experience": "play",
+      "theme": "dark",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-air-light-320.png",
+      "route": "settings",
+      "width": 320,
+      "scroll": 320,
+      "main": 320,
+      "experience": "air",
+      "theme": "light",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-air-dark-320.png",
+      "route": "settings",
+      "width": 320,
+      "scroll": 320,
+      "main": 320,
+      "experience": "air",
+      "theme": "dark",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-play-light-320.png",
+      "route": "settings",
+      "width": 320,
+      "scroll": 320,
+      "main": 320,
+      "experience": "play",
+      "theme": "light",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-settings-play-dark-320.png",
+      "route": "settings",
+      "width": 320,
+      "scroll": 320,
+      "main": 320,
+      "experience": "play",
+      "theme": "dark",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-air-light-1440.png",
+      "route": "keys",
+      "width": 1440,
+      "scroll": 1440,
+      "main": 1440,
+      "experience": "air",
+      "theme": "light",
+      "account_target": {
+        "width": 110.234375,
+        "height": 40
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-air-dark-1440.png",
+      "route": "keys",
+      "width": 1440,
+      "scroll": 1440,
+      "main": 1440,
+      "experience": "air",
+      "theme": "dark",
+      "account_target": {
+        "width": 110.234375,
+        "height": 40
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-play-light-1440.png",
+      "route": "keys",
+      "width": 1440,
+      "scroll": 1440,
+      "main": 1440,
+      "experience": "play",
+      "theme": "light",
+      "account_target": {
+        "width": 105.78125,
+        "height": 40
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-play-dark-1440.png",
+      "route": "keys",
+      "width": 1440,
+      "scroll": 1440,
+      "main": 1440,
+      "experience": "play",
+      "theme": "dark",
+      "account_target": {
+        "width": 105.78125,
+        "height": 40
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-air-light-390.png",
+      "route": "keys",
+      "width": 390,
+      "scroll": 390,
+      "main": 390,
+      "experience": "air",
+      "theme": "light",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-air-dark-390.png",
+      "route": "keys",
+      "width": 390,
+      "scroll": 390,
+      "main": 390,
+      "experience": "air",
+      "theme": "dark",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-play-light-390.png",
+      "route": "keys",
+      "width": 390,
+      "scroll": 390,
+      "main": 390,
+      "experience": "play",
+      "theme": "light",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-play-dark-390.png",
+      "route": "keys",
+      "width": 390,
+      "scroll": 390,
+      "main": 390,
+      "experience": "play",
+      "theme": "dark",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-air-light-320.png",
+      "route": "keys",
+      "width": 320,
+      "scroll": 320,
+      "main": 320,
+      "experience": "air",
+      "theme": "light",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-air-dark-320.png",
+      "route": "keys",
+      "width": 320,
+      "scroll": 320,
+      "main": 320,
+      "experience": "air",
+      "theme": "dark",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-play-light-320.png",
+      "route": "keys",
+      "width": 320,
+      "scroll": 320,
+      "main": 320,
+      "experience": "play",
+      "theme": "light",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "path": "/tmp/priva-account-keys-play-dark-320.png",
+      "route": "keys",
+      "width": 320,
+      "scroll": 320,
+      "main": 320,
+      "experience": "play",
+      "theme": "dark",
+      "account_target": {
+        "width": 44,
+        "height": 44
+      }
+    }
+  ],
+  "passed": true
+}

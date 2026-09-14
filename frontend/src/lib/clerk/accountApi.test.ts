@@ -6,7 +6,7 @@ vi.mock("./instance", () => ({ requireClerk: () => fixture.clerk, requireClerkCl
 vi.mock("@/lib/api", () => ({ apiUrl: (path: string) => `https://api.privatools.example/api${path}` }));
 beforeEach(() => {
   fixture.token.mockReset();
-  fixture.clerk = { user: { id: "synthetic", primaryEmailAddress: { emailAddress: "synthetic@example.test" }, createdAt: new Date("2026-09-13"), updatePassword: vi.fn().mockResolvedValue({}) }, setActive: vi.fn().mockResolvedValue(undefined), client: { signIn: {}, signUp: {} } };
+  fixture.clerk = { user: { id: "synthetic", primaryEmailAddress: { emailAddress: "synthetic@example.test" }, createdAt: new Date("2026-09-13"), updatePassword: vi.fn().mockResolvedValue({}) }, session: { getToken: fixture.token }, setActive: vi.fn().mockResolvedValue(undefined), client: { signIn: {}, signUp: {} } };
 });
 afterEach(() => vi.unstubAllGlobals());
 
@@ -50,6 +50,34 @@ describe("Clerk account contracts", () => {
   it("ends other sessions on a password change, matching native auth", async () => {
     await clerkAccountApi.changePassword("synthetic-old", "synthetic-new");
     expect(fixture.clerk.user.updatePassword).toHaveBeenCalledWith({ currentPassword: "synthetic-old", newPassword: "synthetic-new", signOutOfOtherSessions: true });
+  });
+
+  it("omits currentPassword only when the SDK confirms the account has none", async () => {
+    fixture.clerk.user.passwordEnabled = false;
+    await clerkAccountApi.changePassword("ignored-form-value", "synthetic-new", "synthetic");
+    expect(fixture.clerk.user.updatePassword).toHaveBeenCalledExactlyOnceWith({ newPassword: "synthetic-new", signOutOfOtherSessions: true });
+  });
+
+  it.each([true, undefined])("requires the existing password when SDK passwordEnabled is %s", async passwordEnabled => {
+    fixture.clerk.user.passwordEnabled = passwordEnabled;
+    await expect(clerkAccountApi.changePassword("", "synthetic-new", "synthetic")).rejects.toThrow("Enter your current password");
+    expect(fixture.clerk.user.updatePassword).not.toHaveBeenCalled();
+  });
+
+  it("rejects credentials addressed to a different signed-in account", async () => {
+    await expect(clerkAccountApi.changePassword("synthetic-old", "synthetic-new", "previous-account")).rejects.toThrow("Your sign-in has changed");
+    expect(fixture.clerk.user.updatePassword).not.toHaveBeenCalled();
+  });
+
+  it("preserves Clerk’s structured security challenge for the verification hook", async () => {
+    const challenge = { errors: [{ code: "session_reverification_required", message: "Verify first" }] };
+    fixture.clerk.user.updatePassword.mockRejectedValue(challenge);
+    await expect(clerkAccountApi.changePassword("synthetic-old", "synthetic-new", "synthetic")).rejects.toBe(challenge);
+  });
+
+  it("does not claim completion for an SDK account that changed during the update", async () => {
+    fixture.clerk.user.updatePassword.mockImplementation(async () => { fixture.clerk.user.id = "another-account"; });
+    await expect(clerkAccountApi.changePassword("synthetic-old", "synthetic-new", "synthetic")).rejects.toThrow("Your sign-in has changed");
   });
 });
 
@@ -144,21 +172,66 @@ describe("username, passkeys and new-device verification", () => {
 
 
 describe("Clerk account deletion", () => {
-  it("cleans local API access before deleting the Clerk identity", async () => {
+  it("deletes the verified identity before cleaning local API data with the captured token", async () => {
     fixture.token.mockResolvedValue("synthetic-session-token");
     const calls: string[] = [];
-    const fetch = vi.fn().mockImplementation(async () => { calls.push("local"); return { ok: true, json: async () => ({ ok: true }) }; });
+    const fetch = vi.fn().mockImplementation(async () => { calls.push("local"); return { ok: true }; });
     vi.stubGlobal("fetch", fetch);
-    fixture.clerk.user.delete = vi.fn().mockImplementation(async () => { calls.push("identity"); });
-    await clerkAccountApi.deleteAccount();
-    expect(calls).toEqual(["local", "identity"]);
-    expect(fetch).toHaveBeenCalledWith("https://api.privatools.example/api/auth/me", expect.objectContaining({ method: "DELETE" }));
+    fixture.clerk.user.delete = vi.fn().mockImplementation(async () => { calls.push("identity"); fixture.clerk.user = null; fixture.clerk.session = null; });
+    await expect(clerkAccountApi.deleteAccount("synthetic")).resolves.toEqual({ ok: true, cleanupPending: false });
+    expect(calls).toEqual(["identity", "local"]);
+    expect(fixture.token).toHaveBeenCalledExactlyOnceWith({ skipCache: true });
+    expect(fetch).toHaveBeenCalledWith("https://api.privatools.example/api/auth/me", expect.objectContaining({ method: "DELETE", credentials: "omit", cache: "no-store", headers: { Authorization: "Bearer synthetic-session-token" } }));
   });
-  it("retains the identity if local key cleanup could not finish", async () => {
+
+  it.each(["session_reverification_required", "reverification_cancelled", "identity_failure"])("does not delete local data after %s", async code => {
     fixture.token.mockResolvedValue("synthetic-session-token");
-    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 503, json: async () => ({ detail: "Unavailable" }) }));
-    fixture.clerk.user.delete = vi.fn();
-    await expect(clerkAccountApi.deleteAccount()).rejects.toThrow("Unavailable");
+    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    const failure = { errors: [{ code, message: "private response" }] };
+    fixture.clerk.user.delete = vi.fn().mockRejectedValue(failure);
+    await expect(clerkAccountApi.deleteAccount("synthetic")).rejects.toBe(failure);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("retries identity verification before one successful deletion and one local cleanup", async () => {
+    fixture.token.mockResolvedValue("synthetic-session-token");
+    const fetch = vi.fn().mockResolvedValue({ ok: true }); vi.stubGlobal("fetch", fetch);
+    const deleted = vi.fn().mockRejectedValueOnce({ errors: [{ code: "session_reverification_required" }] }).mockResolvedValue({ id: "synthetic", deleted: true });
+    fixture.clerk.user.delete = deleted;
+    await expect(clerkAccountApi.deleteAccount("synthetic")).rejects.toMatchObject({ errors: [{ code: "session_reverification_required" }] });
+    expect(fetch).not.toHaveBeenCalled();
+    await expect(clerkAccountApi.deleteAccount("synthetic")).resolves.toMatchObject({ ok: true, cleanupPending: false });
+    expect(deleted).toHaveBeenCalledTimes(2);
+    expect(fixture.token).toHaveBeenCalledTimes(2);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["http", "network"])("reports pending local cleanup after %s failure without deleting the identity again", async failure => {
+    fixture.token.mockResolvedValue("synthetic-session-token");
+    const fetch = failure === "http" ? vi.fn().mockResolvedValue({ ok: false, status: 503 }) : vi.fn().mockRejectedValue(new Error("private response"));
+    vi.stubGlobal("fetch", fetch);
+    const deleted = vi.fn().mockImplementation(async () => { fixture.clerk.user = null; }); fixture.clerk.user.delete = deleted;
+    await expect(clerkAccountApi.deleteAccount("synthetic")).resolves.toEqual({ ok: true, cleanupPending: true });
+    expect(deleted).toHaveBeenCalledTimes(1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not touch either account if identity changes while capturing the token", async () => {
+    const deleted = vi.fn(); fixture.clerk.user.delete = deleted;
+    fixture.token.mockImplementation(async () => { fixture.clerk.user = { id: "other-account", delete: vi.fn() }; return "synthetic-session-token"; });
+    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    await expect(clerkAccountApi.deleteAccount("synthetic")).rejects.toThrow("Your sign-in has changed");
+    expect(deleted).not.toHaveBeenCalled();
     expect(fixture.clerk.user.delete).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("does not begin destruction without a usable original-account token", async () => {
+    fixture.token.mockResolvedValue(null);
+    fixture.clerk.user.delete = vi.fn();
+    const fetch = vi.fn(); vi.stubGlobal("fetch", fetch);
+    await expect(clerkAccountApi.deleteAccount("synthetic")).rejects.toThrow("Not signed in");
+    expect(fixture.clerk.user.delete).not.toHaveBeenCalled();
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

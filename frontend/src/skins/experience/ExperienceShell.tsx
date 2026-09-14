@@ -54,7 +54,7 @@ export function ExperienceShell({view,signedIn,onSearch,children}: {view:string;
       <div className="pt-header-actions">
         <button className="pt-icon-button pt-search-trigger" type="button" onClick={onSearch} aria-label="Search tools"><Search size={19}/><kbd>⌘ K</kbd></button>
         <AppearanceControls/>
-        <a className="pt-account-button" href={signedIn ? '/account' : '/account/sign-in'} aria-label={signedIn ? 'Account' : 'Sign in'}><span>{signedIn ? 'Account' : 'Sign in'}</span><ArrowRight size={15}/><UserRound className="pt-account-person" size={18}/></a>
+        <a className="pt-account-button" href={signedIn ? '/account/settings' : '/account/sign-in?next=/account/settings'} aria-label={signedIn ? 'Account settings' : 'Sign in'} aria-current={view === 'settings' ? 'page' : undefined} title={signedIn ? 'Account settings and security' : 'Sign in'}><span>{signedIn ? 'Account' : 'Sign in'}</span><ArrowRight size={15}/><UserRound className="pt-account-person" size={18}/></a>
       </div>
     </header>
     <main id="dl-main" className="pt-main" tabIndex={-1}>{children}</main>
@@ -67,7 +67,7 @@ export function ExperienceShell({view,signedIn,onSearch,children}: {view:string;
         <nav className="pt-footer-groups" aria-label="Footer navigation">
           {[
             { id:'workspace', title:'Workspace', links:[['/tools','All tools'],['/pipeline','Pipeline'],['/batch','Batch'],['/ai','AI Studio'],['/my-stuff/vault','Vault'],['/my-stuff','My Stuff'],['/api','Dev API']] },
-            { id:'explore', title:'Explore', links:[['/about','About'],['/support','Support'],['/blog','Guides'],['/compare','Compare'],['/account','Account']] },
+            { id:'explore', title:'Explore', links:[['/about','About'],['/support','Support'],['/blog','Guides'],['/compare','Compare'],['/account/settings','Account settings']] },
             { id:'trust', title:'Trust', links:[['/trust','Trust center'],['/status','Status'],['/privacy','Privacy'],['/terms','Terms'],['/security','Security'],['https://github.com/ethereaglehq/privatools','Source']] },
           ].map(group => <section className={'pt-footer-group pt-footer-group-'+group.id} aria-labelledby={'footer-'+group.id} key={group.id}>
             <h2 id={'footer-'+group.id}>{group.title}</h2>

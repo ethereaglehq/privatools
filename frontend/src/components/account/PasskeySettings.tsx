@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { CheckCircle2, Fingerprint, KeyRound, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { passkeyAccountsEnabled } from "@/lib/auth-mode";
-import { passkeysSupported, readablePasskeyError } from "@/lib/clerk/accountApi";
+import { passkeysSupported } from "@/lib/clerk/accountApi";
 import { requireClerk, whenClerkReady } from "@/lib/clerk/instance";
+import { AccountSecurityError, securityErrorMessage } from "@/lib/clerk/securityActions";
+import { useAccountReverification } from "@/lib/clerk/useAccountReverification";
 import "./passkey-settings.css";
 
 type ClerkUser = NonNullable<ReturnType<typeof requireClerk>["user"]>;
@@ -14,12 +16,12 @@ function dateLabel(date: Date | null): string {
         : "Not used yet";
 }
 
-function errorMessage(error: unknown): string {
+function errorMessage(error: unknown, fallback = "Passkeys could not be updated. Check your connection and try again."): string {
     const value = error as { name?: string; errors?: Array<{ code?: string }> };
     if (value?.name === "NotAllowedError" || value?.name === "AbortError" || value?.errors?.some(item => /passkey.*(cancel|not_allowed)/.test(item.code ?? ""))) {
         return "The passkey request was cancelled or timed out. You can try again when you’re ready.";
     }
-    return readablePasskeyError(error).message;
+    return securityErrorMessage(error, fallback);
 }
 
 /** Local accounts never load the hosted passkey controls. Account changes reset sensitive UI state. */
@@ -41,10 +43,11 @@ function EnabledPasskeySettings({ accountId }: { accountId: string }) {
     const alive = useRef(false);
     const working = useRef(false);
     const supported = passkeysSupported();
+    const runSecurity = useAccountReverification();
 
     function currentUser(): ClerkUser {
         const user = requireClerk().user;
-        if (!user || user.id !== accountId) throw new Error("Your sign-in has changed. Reload this page before managing passkeys.");
+        if (!alive.current || !user || user.id !== accountId) throw new AccountSecurityError("account_changed");
         return user;
     }
 
@@ -59,7 +62,7 @@ function EnabledPasskeySettings({ accountId }: { accountId: string }) {
                 const refreshed = await user.reload();
                 if (!cancelled) { currentUser(); setPasskeys([...refreshed.passkeys]); setReady(true); }
             } catch (err) {
-                if (!cancelled) { setError(errorMessage(err)); setReady(false); }
+                if (!cancelled) { setError(errorMessage(err, "Account security could not load. Check your connection and try again.")); setReady(false); setPasskeys([]); }
             } finally { if (!cancelled) setChecking(false); }
         })();
         return () => { cancelled = true; alive.current = false; };
@@ -70,21 +73,33 @@ function EnabledPasskeySettings({ accountId }: { accountId: string }) {
     async function mutate(action: string, operation: (user: ClerkUser) => Promise<Passkey[]>, message: string) {
         if (working.current || checking || !ready) return;
         working.current = true; setPending(action); setError(""); setNotice("");
+        let attempts = 0;
         try {
-            // Enrollment starts directly in the click handler, preserving browser user activation.
-            const user = currentUser();
-            const updated = await operation(user);
+            const updated = await runSecurity(() => {
+                const user = currentUser();
+                // Reverification resumes asynchronously. Enrollment needs a fresh click
+                // for browsers that require transient activation for WebAuthn.
+                if (action === "create" && attempts > 0) throw new AccountSecurityError("enrollment_ready");
+                attempts += 1;
+                return operation(user);
+            });
             if (!alive.current) return;
-            currentUser();
+            const user = currentUser();
             setPasskeys(updated); setEditing(""); setRemoving(""); setNotice(message);
             try {
                 const refreshed = await user.reload();
                 if (alive.current) { currentUser(); setPasskeys([...refreshed.passkeys]); }
             } catch {
-                if (alive.current) setNotice(`${message} The list could not refresh; refresh it when your connection is back.`);
+                if (alive.current) { currentUser(); setNotice(`${message} The list could not refresh; refresh it when your connection is back.`); }
             }
         } catch (err) {
-            if (alive.current) setError(errorMessage(err));
+            if (alive.current) {
+                if (err instanceof AccountSecurityError && err.code === "enrollment_ready") setNotice(err.message);
+                else {
+                    setError(errorMessage(err));
+                    if (err instanceof AccountSecurityError && err.code === "account_changed") { setPasskeys([]); setReady(false); setEditing(""); setRemoving(""); setName(""); setNotice(""); }
+                }
+            }
         } finally {
             working.current = false;
             if (alive.current) setPending("");
@@ -105,7 +120,7 @@ function EnabledPasskeySettings({ accountId }: { accountId: string }) {
         if (!nextName) { setError("Give your passkey a name so you can recognise it later."); return; }
         void mutate(id, async user => {
             const passkey = user.passkeys.find(item => item.id === id);
-            if (!passkey) throw new Error("This passkey is no longer on your account. Refresh the list to continue.");
+            if (!passkey) throw new AccountSecurityError("passkey_missing");
             const updated = await passkey.update({ name: nextName });
             return user.passkeys.map(item => item.id === id ? updated : item);
         }, "Passkey name updated.");
@@ -114,7 +129,7 @@ function EnabledPasskeySettings({ accountId }: { accountId: string }) {
     function remove(id: string) {
         void mutate(id, async user => {
             const passkey = user.passkeys.find(item => item.id === id);
-            if (!passkey) throw new Error("This passkey is no longer on your account. Refresh the list to continue.");
+            if (!passkey) throw new AccountSecurityError("passkey_missing");
             await passkey.delete();
             return user.passkeys.filter(item => item.id !== id);
         }, "Passkey removed from your account. You can also remove its saved copy from your device or password manager.");
@@ -124,8 +139,8 @@ function EnabledPasskeySettings({ accountId }: { accountId: string }) {
     return <section className="pt-passkeys" aria-labelledby="passkeys-title">
         <div className="pt-passkeys-intro">
             <span className="pt-passkeys-symbol"><Fingerprint size={30} strokeWidth={1.4} /></span>
-            <p className="pt-workspace-caption">A familiar way in</p>
-            <h2 id="passkeys-title">Your device.<br />Your key.</h2>
+            <p className="pt-workspace-caption">Account security</p>
+            <h2 id="passkeys-title">Passkeys</h2>
             <p>Sign in with a passkey saved on your device or in your password manager. Your browser will ask you to confirm with your screen lock, security key, or biometrics.</p>
             <p className="pt-passkeys-privacy">PrivaTools never receives your fingerprint, face scan, or device PIN.</p>
             <button type="button" className="pt-studio-button" onClick={enroll} disabled={disabled || !supported} aria-describedby={!supported ? "passkey-device-help" : undefined}>

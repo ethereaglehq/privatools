@@ -25,6 +25,7 @@ import type { AccountUser, ApiKey } from "@/skins/accountLogic";
 import type { ApiActivityData } from "@/lib/api-activity";
 import { apiUrl } from "@/lib/api";
 import { clerkToken, requireClerk, requireClerkClient } from "./instance";
+import { AccountSecurityError } from "./securityActions";
 
 /** Query flag we add to the OAuth return URL; see signInWithSocial. */
 export const SSO_RETURN = "__pt_sso";
@@ -321,34 +322,51 @@ export const clerkAccountApi = {
     changePassword: async (
         currentPassword: string,
         newPassword: string,
+        expectedAccountId?: string,
     ): Promise<{ ok: true }> => {
         const clerk = requireClerk();
         if (!clerk.user) throw new Error("Not signed in.");
-        try {
-            await clerk.user.updatePassword({
-                currentPassword,
-                newPassword,
-                // Match native auth: retain this session and end the others.
-                signOutOfOtherSessions: true,
-            });
-            return { ok: true };
-        } catch (err) {
-            throw readable(err);
-        }
+        if (expectedAccountId && clerk.user.id !== expectedAccountId) throw new AccountSecurityError("account_changed");
+        const user = clerk.user;
+        const accountId = user.id;
+        const needsCurrent = user.passwordEnabled !== false;
+        if (needsCurrent && !currentPassword) throw new AccountSecurityError("current_password_required");
+        // Preserve Clerk's structured reverification error for useReverification.
+        await user.updatePassword({
+            ...(needsCurrent ? { currentPassword } : {}),
+            newPassword,
+            signOutOfOtherSessions: true,
+        });
+        if (requireClerk().user?.id !== accountId) throw new AccountSecurityError("account_changed");
+        return { ok: true };
     },
 
-    deleteAccount: async (): Promise<{ ok: true }> => {
+    deleteAccount: async (expectedAccountId?: string): Promise<{ ok: true; cleanupPending: boolean }> => {
         const clerk = requireClerk();
         if (!clerk.user) throw new Error("Not signed in.");
+        const user = clerk.user;
+        const accountId = user.id;
+        if (expectedAccountId && accountId !== expectedAccountId) throw new AccountSecurityError("account_changed");
+        // Keep the original account token for cleanup after Clerk clears its session.
+        const token = await clerk.session?.getToken({ skipCache: true });
+        if (!token) throw new Error("Not signed in.");
+        if (requireClerk().user?.id !== accountId) throw new AccountSecurityError("account_changed");
+        // This protected mutation must finish before any local data is removed.
+        // Preserve its structured challenge so useReverification can retry safely.
+        await user.delete();
+
+        // Never retry identity deletion after this point. A signed user.deleted
+        // webhook also performs this idempotent cleanup if the browser disconnects.
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 10_000);
         try {
-            // Remove local API access while a valid Clerk session still exists.
-            // The webhook covers deletion initiated outside this application.
-            await callWithToken<{ ok: true }>("/auth/me", { method: "DELETE" });
-            await clerk.user.delete();
-            return { ok: true };
-        } catch (err) {
-            throw readable(err);
-        }
+            const response = await fetch(apiUrl("/auth/me"), {
+                method: "DELETE", credentials: "omit", cache: "no-store",
+                headers: { Authorization: `Bearer ${token}` }, signal: controller.signal,
+            });
+            return { ok: true, cleanupPending: !response.ok };
+        } catch { return { ok: true, cleanupPending: true }; }
+        finally { clearTimeout(timeout); }
     },
 
     /**
