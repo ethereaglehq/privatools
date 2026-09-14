@@ -117,6 +117,13 @@ async def _cleanup_task():
                 inflight_count(),
                 max_rss_mb(),
             )
+            # Retained API files have a separate lifecycle from app-temp.
+            # Maintenance keeps running even when new async jobs are disabled.
+            from .api_v1.jobs import maintenance as maintain_jobs
+            from .api_v1.quota import cleanup_accounting
+
+            await asyncio.to_thread(maintain_jobs)
+            await asyncio.to_thread(cleanup_accounting)
         except asyncio.CancelledError:
             raise
         except Exception:  # noqa: BLE001 — never let the janitor die
@@ -131,8 +138,10 @@ async def lifespan(app: FastAPI):
     # fresh deploy is ready before the first request.
     try:
         from .store import init as init_store
+        from .api_v1.jobs import init_schema as init_job_schema
 
         init_store()
+        init_job_schema()
     except Exception:
         logger.exception("lifespan: durable store unavailable; accounts disabled")
     # Runs after uvicorn has set up its own loggers, so this sticks: route
@@ -782,6 +791,9 @@ app.add_middleware(
 # uvicorn listener binds to so the systemd health probe (curl /healthz
 # against 127.0.0.1) doesn't get rejected.
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=_trusted_hosts)
+from .middleware.v1_cors import V1CORSMiddleware  # noqa: E402
+
+app.add_middleware(V1CORSMiddleware)
 app.add_middleware(RequestIDMiddleware)
 
 
@@ -872,8 +884,9 @@ app.include_router(accessibility.router, prefix="/api")
 # unversioned /api/* routes stay open and unmetered — the site's own
 # frontend calls them — and are documented as unstable.
 from .api_v1 import router as api_v1  # noqa: E402
+from .api_v1.body_accounting import V1AccountingMiddleware  # noqa: E402
 
-app.middleware("http")(api_v1.attach_quota_headers)
+app.add_middleware(V1AccountingMiddleware)
 api_v1.mount(app, [
     merge.router,
     split.router,
@@ -944,6 +957,12 @@ api_v1.mount(app, [
     accessibility.router,
 ])
 
+from .api_v1.jobs import router as api_job_router  # noqa: E402
+from .api_v1 import docs as api_v1_docs  # noqa: E402
+
+app.include_router(api_job_router, prefix="/api/v1")
+api_v1_docs.mount(app)
+
 app.include_router(sitemap.router)
 app.include_router(og_image.router)
 
@@ -1001,7 +1020,19 @@ async def readyz():
     deps_ok, checks = run_readiness_checks()
     checks["temp_dir"] = fs_ok
 
-    if deps_ok and fs_ok:
+    from .api_v1.jobs import capability as job_capability
+    from .api_v1.jobs.config import enabled as jobs_enabled
+
+    jobs_ok = True
+    if jobs_enabled():
+        try:
+            jobs_ok = (await asyncio.to_thread(job_capability))["available"]
+        except Exception:
+            jobs_ok = False
+            logger.warning("readyz: API job worker unavailable")
+        checks["api_job_worker"] = jobs_ok
+
+    if deps_ok and fs_ok and jobs_ok:
         return JSONResponse(
             {"status": "ready", "build_sha": _BUILD_SHA, "checks": checks}
         )

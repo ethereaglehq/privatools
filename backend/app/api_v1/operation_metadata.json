@@ -1,0 +1,1528 @@
+{
+  "operations": {
+    "/accessibility-check": {
+      "category": "Accessibility",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "accessibility-check"
+      ]
+    },
+    "/add-attachment": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "add-attachment"
+      ]
+    },
+    "/add-hyperlinks": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "add-hyperlinks"
+      ]
+    },
+    "/add-shapes": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "add-shapes"
+      ]
+    },
+    "/add-subtitles": {
+      "category": "Audio and video",
+      "response_media": [
+        "video/mp4"
+      ],
+      "tool_aliases": [
+        "add-subtitles"
+      ]
+    },
+    "/alternate-mix": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "alternate-mix"
+      ]
+    },
+    "/annotate-pdf": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "annotate-pdf"
+      ]
+    },
+    "/audio-converter": {
+      "category": "Audio and video",
+      "response_media": [
+        "audio/aac",
+        "audio/flac",
+        "audio/mpeg",
+        "audio/ogg",
+        "audio/wav"
+      ],
+      "tool_aliases": [
+        "audio-converter",
+        "m4a-to-mp3",
+        "mp3-to-wav",
+        "wav-to-mp3",
+        "flac-to-mp3",
+        "ogg-to-mp3",
+        "aac-to-mp3",
+        "mp3-to-ogg",
+        "mp3-to-flac",
+        "mp3-to-aac",
+        "wav-to-flac",
+        "wav-to-ogg"
+      ]
+    },
+    "/audio-merge": {
+      "category": "Audio and video",
+      "response_media": [
+        "audio/mpeg"
+      ],
+      "tool_aliases": [
+        "audio-merge"
+      ]
+    },
+    "/audio-trim": {
+      "category": "Audio and video",
+      "response_media": [
+        "audio/aac",
+        "audio/flac",
+        "audio/mp4",
+        "audio/mpeg",
+        "audio/ogg",
+        "audio/wav",
+        "audio/x-ms-wma"
+      ],
+      "tool_aliases": [
+        "audio-trim"
+      ]
+    },
+    "/auto-crop": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "auto-crop"
+      ]
+    },
+    "/batch-compress-pdf": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "batch-compress-pdf"
+      ]
+    },
+    "/bates-numbering": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "bates-numbering"
+      ]
+    },
+    "/bates-numbering-batch": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/zip"
+      ]
+    },
+    "/bates-remove": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "bates-remove"
+      ]
+    },
+    "/booklet": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "booklet-pdf"
+      ]
+    },
+    "/bookmarks": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "bookmarks"
+      ]
+    },
+    "/compare": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json",
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "compare-pdf"
+      ]
+    },
+    "/compress": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf",
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "compress-pdf"
+      ]
+    },
+    "/compress-video": {
+      "category": "Audio and video",
+      "response_media": [
+        "video/mp4"
+      ],
+      "tool_aliases": [
+        "compress-video"
+      ]
+    },
+    "/create-zip": {
+      "category": "Archive",
+      "response_media": [
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "create-zip"
+      ]
+    },
+    "/crop": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "crop-pdf"
+      ]
+    },
+    "/csv-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "csv-to-pdf"
+      ]
+    },
+    "/delete-annotations": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "delete-annotations"
+      ]
+    },
+    "/delete-pages": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "delete-pages"
+      ]
+    },
+    "/deskew": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "deskew-pdf"
+      ]
+    },
+    "/developer/status": {
+      "category": "Workflow and developer metadata",
+      "response_media": [
+        "application/json"
+      ]
+    },
+    "/edit-pdf": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "edit-pdf"
+      ]
+    },
+    "/epub-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "epub-to-pdf"
+      ]
+    },
+    "/esign-pdf": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "esign-pdf"
+      ]
+    },
+    "/excel-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "excel-to-pdf"
+      ]
+    },
+    "/extract-archive": {
+      "category": "Archive",
+      "response_media": [
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "extract-archive"
+      ]
+    },
+    "/extract-audio": {
+      "category": "Audio and video",
+      "response_media": [
+        "audio/aac",
+        "audio/flac",
+        "audio/mpeg",
+        "audio/ogg",
+        "audio/wav"
+      ],
+      "tool_aliases": [
+        "extract-audio",
+        "mp4-to-mp3"
+      ]
+    },
+    "/extract-images": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "extract-images"
+      ]
+    },
+    "/extract-pages": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "extract-pages"
+      ]
+    },
+    "/extract-tables": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "text/csv"
+      ],
+      "tool_aliases": [
+        "extract-tables"
+      ]
+    },
+    "/fill-form": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "fill-form"
+      ]
+    },
+    "/fill-form/fields": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ]
+    },
+    "/flatten": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "flatten-pdf"
+      ]
+    },
+    "/flip-image": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "tool_aliases": [
+        "flip-image"
+      ]
+    },
+    "/form-creator": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "form-creator"
+      ]
+    },
+    "/generate-barcode": {
+      "category": "QR and barcode",
+      "response_media": [
+        "image/png"
+      ],
+      "tool_aliases": [
+        "generate-barcode"
+      ]
+    },
+    "/generate-favicon": {
+      "category": "Image",
+      "response_media": [
+        "image/x-icon"
+      ],
+      "tool_aliases": [
+        "generate-favicon"
+      ]
+    },
+    "/gif-to-mp4": {
+      "category": "Audio and video",
+      "response_media": [
+        "video/mp4"
+      ],
+      "tool_aliases": [
+        "gif-to-mp4"
+      ]
+    },
+    "/grayscale": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "grayscale-pdf"
+      ]
+    },
+    "/header-footer": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "header-footer"
+      ]
+    },
+    "/heic-to-jpg": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg"
+      ],
+      "tool_aliases": [
+        "heic-to-jpg"
+      ]
+    },
+    "/highlight": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "highlight-pdf"
+      ]
+    },
+    "/html-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "html-to-pdf"
+      ]
+    },
+    "/image-compressor": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "tool_aliases": [
+        "image-compressor"
+      ]
+    },
+    "/image-converter": {
+      "category": "Image",
+      "response_media": [
+        "image/bmp",
+        "image/jpeg",
+        "image/png",
+        "image/tiff",
+        "image/webp"
+      ],
+      "tool_aliases": [
+        "image-converter",
+        "webp-to-jpg",
+        "webp-to-png",
+        "heic-to-png",
+        "jpg-to-png",
+        "png-to-jpg",
+        "jpg-to-webp",
+        "png-to-webp",
+        "tiff-to-jpg",
+        "tiff-to-png",
+        "bmp-to-jpg",
+        "bmp-to-png",
+        "gif-to-jpg",
+        "gif-to-png",
+        "jpg-to-tiff",
+        "png-to-tiff",
+        "webp-to-tiff",
+        "jpg-to-bmp",
+        "png-to-bmp",
+        "webp-to-bmp"
+      ]
+    },
+    "/image-ocr": {
+      "category": "Image",
+      "response_media": [
+        "application/json",
+        "text/plain"
+      ],
+      "tool_aliases": [
+        "image-ocr"
+      ]
+    },
+    "/image-palette": {
+      "category": "Image",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "image-palette"
+      ]
+    },
+    "/image-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "image-to-pdf",
+        "jpg-to-pdf",
+        "png-to-pdf",
+        "heic-to-pdf",
+        "webp-to-pdf",
+        "tiff-to-pdf",
+        "bmp-to-pdf",
+        "gif-to-pdf",
+        "svg-to-pdf"
+      ]
+    },
+    "/image-upscaler": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "tool_aliases": [
+        "image-upscaler"
+      ]
+    },
+    "/image-watermark": {
+      "category": "Image",
+      "response_media": [
+        "image/png"
+      ],
+      "tool_aliases": [
+        "image-watermark"
+      ]
+    },
+    "/invert-colors": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "invert-colors"
+      ]
+    },
+    "/json-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "json-to-pdf"
+      ]
+    },
+    "/make-collage": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg"
+      ],
+      "tool_aliases": [
+        "make-collage"
+      ]
+    },
+    "/markdown-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "markdown-to-pdf"
+      ]
+    },
+    "/merge": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "merge-pdf"
+      ]
+    },
+    "/merge-images": {
+      "category": "Image",
+      "response_media": [
+        "image/png"
+      ],
+      "tool_aliases": [
+        "merge-images"
+      ]
+    },
+    "/metadata": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "metadata"
+      ]
+    },
+    "/metadata/update": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ]
+    },
+    "/mute-video": {
+      "category": "Audio and video",
+      "response_media": [
+        "video/mp4"
+      ],
+      "tool_aliases": [
+        "mute-video"
+      ]
+    },
+    "/nup": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "nup"
+      ]
+    },
+    "/ocr": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json",
+        "application/pdf",
+        "text/plain"
+      ],
+      "tool_aliases": [
+        "ocr-pdf"
+      ]
+    },
+    "/office-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "odt-to-pdf",
+        "office-to-pdf"
+      ]
+    },
+    "/organize-pages": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "organize-pages"
+      ]
+    },
+    "/organize-pages/thumbnails": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ]
+    },
+    "/overlay": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "overlay"
+      ]
+    },
+    "/page-numbers": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "page-numbers"
+      ]
+    },
+    "/pdf-page-counter": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "pdf-page-counter"
+      ]
+    },
+    "/pdf-to-epub": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/epub+zip"
+      ],
+      "tool_aliases": [
+        "pdf-to-epub"
+      ]
+    },
+    "/pdf-to-excel": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      ],
+      "tool_aliases": [
+        "pdf-to-excel"
+      ]
+    },
+    "/pdf-to-html": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "text/html"
+      ],
+      "tool_aliases": [
+        "pdf-to-html"
+      ]
+    },
+    "/pdf-to-image": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/zip",
+        "image/bmp",
+        "image/gif",
+        "image/jpeg",
+        "image/png",
+        "image/tiff",
+        "image/webp"
+      ],
+      "tool_aliases": [
+        "pdf-to-image",
+        "pdf-to-tiff",
+        "pdf-to-bmp",
+        "pdf-to-gif",
+        "pdf-to-jpg",
+        "pdf-to-png"
+      ]
+    },
+    "/pdf-to-long-image": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "image/jpeg",
+        "image/png"
+      ],
+      "tool_aliases": [
+        "pdf-to-long-image"
+      ]
+    },
+    "/pdf-to-markdown": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "text/markdown"
+      ],
+      "tool_aliases": [
+        "pdf-to-markdown"
+      ]
+    },
+    "/pdf-to-pdfa": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "pdf-to-pdfa"
+      ]
+    },
+    "/pdf-to-pptx": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation"
+      ],
+      "tool_aliases": [
+        "pdf-to-pptx"
+      ]
+    },
+    "/pdf-to-rtf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/rtf"
+      ],
+      "tool_aliases": [
+        "pdf-to-rtf"
+      ]
+    },
+    "/pdf-to-svg": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/zip",
+        "image/svg+xml"
+      ],
+      "tool_aliases": [
+        "pdf-to-svg"
+      ]
+    },
+    "/pdf-to-text": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "pdf-to-text"
+      ]
+    },
+    "/pdf-to-word": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+      ],
+      "tool_aliases": [
+        "pdf-to-word"
+      ]
+    },
+    "/pdfa-validator": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "pdfa-validator"
+      ]
+    },
+    "/pipeline": {
+      "category": "Workflow and developer metadata",
+      "response_media": [
+        "application/pdf"
+      ]
+    },
+    "/pipeline/templates": {
+      "category": "Workflow and developer metadata",
+      "response_media": [
+        "application/json"
+      ]
+    },
+    "/pipeline/validate": {
+      "category": "Workflow and developer metadata",
+      "response_media": [
+        "application/json"
+      ]
+    },
+    "/pixelate-image": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg",
+        "image/png"
+      ],
+      "tool_aliases": [
+        "pixelate-image"
+      ]
+    },
+    "/pptx-to-pdf-convert": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "pptx-to-pdf-convert"
+      ]
+    },
+    "/protect": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf",
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "protect-pdf"
+      ]
+    },
+    "/qr-code": {
+      "category": "QR and barcode",
+      "response_media": [
+        "application/pdf",
+        "image/png"
+      ],
+      "tool_aliases": [
+        "qr-code"
+      ]
+    },
+    "/read-qr": {
+      "category": "QR and barcode",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "qr-reader"
+      ]
+    },
+    "/redact": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "redact-pdf"
+      ]
+    },
+    "/remove-background": {
+      "category": "Image",
+      "response_media": [
+        "image/png"
+      ],
+      "tool_aliases": [
+        "remove-background"
+      ]
+    },
+    "/remove-blank-pages": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "remove-blank-pages"
+      ]
+    },
+    "/remove-exif": {
+      "category": "Image",
+      "response_media": [
+        "application/zip",
+        "image/bmp",
+        "image/jpeg",
+        "image/png",
+        "image/tiff",
+        "image/webp"
+      ],
+      "tool_aliases": [
+        "remove-exif"
+      ]
+    },
+    "/remove-image-watermark": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "tool_aliases": [
+        "remove-image-watermark"
+      ]
+    },
+    "/remove-watermark/apply": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "remove-watermark"
+      ]
+    },
+    "/remove-watermark/detect": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ]
+    },
+    "/repair": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "repair-pdf"
+      ]
+    },
+    "/resize": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "resize-pdf"
+      ]
+    },
+    "/resize-crop-image": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg",
+        "image/png"
+      ],
+      "tool_aliases": [
+        "resize-crop-image"
+      ]
+    },
+    "/reverse-pdf": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "reverse-pdf"
+      ]
+    },
+    "/reverse-video": {
+      "category": "Audio and video",
+      "response_media": [
+        "video/mp4"
+      ],
+      "tool_aliases": [
+        "reverse-video"
+      ]
+    },
+    "/rotate": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "rotate-pdf"
+      ]
+    },
+    "/rotate-image": {
+      "category": "Image",
+      "response_media": [
+        "image/jpeg",
+        "image/png",
+        "image/webp"
+      ],
+      "tool_aliases": [
+        "rotate-image"
+      ]
+    },
+    "/rtf-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "rtf-to-pdf"
+      ]
+    },
+    "/sanitize": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "sanitize-pdf"
+      ]
+    },
+    "/set-permissions": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "set-permissions"
+      ]
+    },
+    "/sign-pdf": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "sign-pdf"
+      ]
+    },
+    "/smart-redact": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "smart-redact"
+      ]
+    },
+    "/split": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf",
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "split-pdf"
+      ]
+    },
+    "/split-by-bookmarks": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "split-by-bookmarks"
+      ]
+    },
+    "/split-by-size": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "split-by-size"
+      ]
+    },
+    "/split-by-text": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "split-by-text"
+      ]
+    },
+    "/split-in-half": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "split-in-half"
+      ]
+    },
+    "/stamp-pdf": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "stamp-pdf"
+      ]
+    },
+    "/strip-metadata": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf",
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "strip-metadata"
+      ]
+    },
+    "/svg-to-png": {
+      "category": "Image",
+      "response_media": [
+        "image/png"
+      ],
+      "tool_aliases": [
+        "svg-to-png"
+      ]
+    },
+    "/transparency/janitor": {
+      "category": "Transparency",
+      "response_media": [
+        "application/json"
+      ]
+    },
+    "/transparent-background": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "transparent-background"
+      ]
+    },
+    "/trim-media": {
+      "category": "Audio and video",
+      "response_media": [
+        "application/octet-stream",
+        "audio/aac",
+        "audio/flac",
+        "audio/mp4",
+        "audio/mpeg",
+        "audio/ogg",
+        "audio/wav",
+        "video/mp4",
+        "video/quicktime",
+        "video/webm",
+        "video/x-matroska",
+        "video/x-msvideo"
+      ],
+      "tool_aliases": [
+        "trim-media"
+      ]
+    },
+    "/txt-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "txt-to-pdf"
+      ]
+    },
+    "/unlock": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf",
+        "application/zip"
+      ],
+      "tool_aliases": [
+        "unlock-pdf"
+      ]
+    },
+    "/url-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "url-to-pdf"
+      ]
+    },
+    "/verify-signature": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "verify-signature"
+      ]
+    },
+    "/video-converter": {
+      "category": "Audio and video",
+      "response_media": [
+        "application/octet-stream",
+        "video/mp4",
+        "video/quicktime",
+        "video/webm",
+        "video/x-matroska",
+        "video/x-msvideo"
+      ],
+      "tool_aliases": [
+        "video-converter",
+        "mov-to-mp4",
+        "avi-to-mp4",
+        "webm-to-mp4",
+        "mp4-to-webm",
+        "mkv-to-mp4",
+        "mp4-to-mov",
+        "mov-to-webm",
+        "mkv-to-webm",
+        "mp4-to-avi",
+        "avi-to-webm",
+        "webm-to-mov",
+        "mov-to-mkv"
+      ]
+    },
+    "/video-merge": {
+      "category": "Audio and video",
+      "response_media": [
+        "video/mp4"
+      ],
+      "tool_aliases": [
+        "video-merge"
+      ]
+    },
+    "/video-resizer": {
+      "category": "Audio and video",
+      "response_media": [
+        "video/mp4"
+      ],
+      "tool_aliases": [
+        "video-resizer"
+      ]
+    },
+    "/video-speed": {
+      "category": "Audio and video",
+      "response_media": [
+        "video/mp4"
+      ],
+      "tool_aliases": [
+        "video-speed"
+      ]
+    },
+    "/video-thumbnail": {
+      "category": "Audio and video",
+      "response_media": [
+        "image/jpeg"
+      ],
+      "tool_aliases": [
+        "video-thumbnail"
+      ]
+    },
+    "/video-to-gif": {
+      "category": "Audio and video",
+      "response_media": [
+        "image/gif"
+      ],
+      "tool_aliases": [
+        "video-to-gif",
+        "webm-to-gif",
+        "mov-to-gif"
+      ]
+    },
+    "/video-to-pdf": {
+      "category": "Audio and video",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "video-to-pdf"
+      ]
+    },
+    "/view-exif": {
+      "category": "Image",
+      "response_media": [
+        "application/json"
+      ],
+      "tool_aliases": [
+        "view-exif"
+      ]
+    },
+    "/watermark": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "watermark"
+      ]
+    },
+    "/web-optimize": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "web-optimize-pdf"
+      ]
+    },
+    "/whiteout-pdf": {
+      "category": "PDF processing",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "whiteout-pdf"
+      ]
+    },
+    "/word-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "word-to-pdf"
+      ]
+    },
+    "/xml-to-pdf": {
+      "category": "Document and PDF conversion",
+      "response_media": [
+        "application/pdf"
+      ],
+      "tool_aliases": [
+        "xml-to-pdf"
+      ]
+    }
+  },
+  "unavailable_tools": [
+    {
+      "slug": "summarize-pdf",
+      "name": "Summarize PDF (AI)",
+      "reason": "Runs in the browser or with a user-selected AI provider; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "chat-with-pdf",
+      "name": "Chat with PDF",
+      "reason": "Runs in the browser or with a user-selected AI provider; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "translate-pdf",
+      "name": "Translate PDF",
+      "reason": "Runs in the browser or with a user-selected AI provider; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "subtitle-converter",
+      "name": "Subtitle Converter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "json-xml-formatter",
+      "name": "JSON / XML Formatter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "text-diff",
+      "name": "Text Diff / Comparator",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "base64",
+      "name": "Base64 Encoder / Decoder",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "hash-generator",
+      "name": "Hash Generator",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "csv-json",
+      "name": "CSV \u2194 JSON Converter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "markdown-html",
+      "name": "Markdown Editor & HTML",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "password-generator",
+      "name": "Password Generator",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "uuid-generator",
+      "name": "UUID Generator",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "lorem-ipsum",
+      "name": "Lorem Ipsum Generator",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "word-counter",
+      "name": "Word & Character Counter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "color-converter",
+      "name": "Color Converter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "url-encoder",
+      "name": "URL Encoder / Decoder",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "transcribe-audio",
+      "name": "Transcribe Audio (AI)",
+      "reason": "Runs in the browser or with a user-selected AI provider; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "jwt-decoder",
+      "name": "JWT Decoder",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "regex-tester",
+      "name": "Regex Tester",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "timestamp-converter",
+      "name": "Timestamp Converter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "yaml-to-json",
+      "name": "YAML to JSON",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "json-to-yaml",
+      "name": "JSON to YAML",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "case-converter",
+      "name": "Case Converter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "cron-parser",
+      "name": "Cron Parser",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "sql-formatter",
+      "name": "SQL Formatter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "graphql-formatter",
+      "name": "GraphQL Formatter",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "yaml-toml-converter",
+      "name": "YAML to TOML",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "gitignore-generator",
+      "name": ".gitignore Generator",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "semver-bumper",
+      "name": "SemVer Bumper",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "env-validator",
+      "name": ".env Validator",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    },
+    {
+      "slug": "json-to-csv-schema",
+      "name": "JSON to CSV Schema",
+      "reason": "Browser-only utility; no v1 HTTP endpoint."
+    }
+  ]
+}

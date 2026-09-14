@@ -40,6 +40,8 @@ const facts = `PrivaTools offers ${total} tools for PDFs, images, video, audio, 
 - [Privacy](${BASE}/privacy): File handling, account data, and telemetry.
 - [Security](${BASE}/security): Security boundaries and reporting.
 - [Developer API](${BASE}/api): API access and key management.
+- [API operation catalog](https://api.privatools.me/api/v1/operations): Public machine-readable operations, request fields, response media types, current costs, limits, and async availability. Browser-only website tools are listed as unavailable through HTTP.
+- [Versioned OpenAPI](https://api.privatools.me/api/v1/openapi.json): The public v1 contract for developer and AI/workflow integrations. Processing requires a PrivaTools API key; discovery does not.
 - [About](${BASE}/about): Project context and source code.
 - [Source code](https://github.com/ethereaglehq/privatools): Implementation and issue tracker.
 `;

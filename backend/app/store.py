@@ -147,6 +147,31 @@ MIGRATIONS: list[tuple[int, str]] = [
         );
         """,
     ),
+    (
+        3,
+        """
+        CREATE TABLE IF NOT EXISTS api_quota (
+            key_id TEXT NOT NULL, day TEXT NOT NULL,
+            units INTEGER NOT NULL DEFAULT 0, bytes INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (key_id, day)
+        );
+        CREATE TABLE api_v1_reservations (
+            token TEXT PRIMARY KEY, key_id TEXT NOT NULL, day TEXT NOT NULL,
+            units INTEGER NOT NULL, bytes INTEGER NOT NULL, created_at REAL NOT NULL,
+            refunded INTEGER NOT NULL DEFAULT 0
+        );
+        CREATE INDEX api_v1_reservations_created ON api_v1_reservations(created_at);
+        CREATE TABLE api_v1_leases (
+            token TEXT PRIMARY KEY REFERENCES api_v1_reservations(token),
+            key_id TEXT NOT NULL, owner_pid INTEGER NOT NULL, owner_start TEXT NOT NULL,
+            expires_at REAL NOT NULL
+        );
+        CREATE INDEX api_v1_leases_key ON api_v1_leases(key_id);
+        CREATE TABLE api_v1_rate_buckets (
+            key_id TEXT PRIMARY KEY, tokens REAL NOT NULL, updated_at REAL NOT NULL
+        );
+        """,
+    ),
 ]
 
 
@@ -166,7 +191,17 @@ def init() -> None:
         for version, ddl in MIGRATIONS:
             if version in applied:
                 continue
-            conn.executescript(ddl)
+            # executescript implicitly commits the write transaction first,
+            # allowing a second worker to race the same migration. Execute
+            # complete statements inside the existing BEGIN IMMEDIATE instead.
+            statement = ""
+            for line in ddl.splitlines(keepends=True):
+                statement += line
+                if sqlite3.complete_statement(statement):
+                    conn.execute(statement)
+                    statement = ""
+            if statement.strip():
+                conn.execute(statement)
             conn.execute("INSERT INTO schema_version (version) VALUES (?)", (version,))
             logger.info("store: applied migration %d", version)
     _initialised = True

@@ -57,6 +57,16 @@ _DEFAULT_RATE = os.environ.get("RATE_LIMIT", "30/minute")
 # script trying to wedge the worker pool absolutely will.
 EXPENSIVE_RATE_LIMIT = os.environ.get("RATE_LIMIT_EXPENSIVE", "5/minute")
 
-limiter = Limiter(key_func=_client_ip, default_limits=[_DEFAULT_RATE])
+class WebsiteLimiter(Limiter):
+    """Keep anonymous IP limits; verified v1 admission owns its shared key limit."""
+    def _check_request_limit(self, request, endpoint_func, in_middleware=True):
+        if request.url.path.startswith("/api/v1/") and getattr(request.state, "v1_admitted", False):
+            # SlowAPI's wrapper reads this even when headers are disabled.
+            request.state.view_rate_limit = None
+            return
+        return super()._check_request_limit(request, endpoint_func, in_middleware)
+
+
+limiter = WebsiteLimiter(key_func=_client_ip, default_limits=[_DEFAULT_RATE])
 
 __all__ = ["limiter", "EXPENSIVE_RATE_LIMIT"]

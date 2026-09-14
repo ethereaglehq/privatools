@@ -96,3 +96,35 @@ def test_leaked_heavy_op_does_not_starve_light_io(monkeypatch):
             release.set()
 
     assert asyncio.run(main()) == "ok"
+
+
+def test_cancellation_keeps_admission_until_native_work_finishes(monkeypatch):
+    """A disconnected client must not free capacity while its thread is alive."""
+    monkeypatch.setattr(concurrency, "MAX_CONCURRENT_HEAVY", 1)
+    monkeypatch.setattr(concurrency, "_sem", None)
+    monkeypatch.setattr(concurrency, "_executor", None)
+    started = threading.Event()
+    finish = threading.Event()
+
+    def work():
+        started.set()
+        finish.wait(5)
+
+    async def check():
+        task = asyncio.create_task(run_bounded(work))
+        while not started.is_set():
+            await asyncio.sleep(0.005)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        try:
+            assert concurrency._sem.locked(), "canceled native work still occupies its slot"
+        finally:
+            finish.set()
+        # The native completion callback must release the slot, allowing the
+        # next job to run without reconstructing the executor or semaphore.
+        assert await asyncio.wait_for(run_bounded(lambda: "next"), 2) == "next"
+
+    asyncio.run(check())

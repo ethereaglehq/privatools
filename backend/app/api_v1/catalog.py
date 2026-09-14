@@ -1,0 +1,97 @@
+"""Public operation metadata, backed by the installed routes and quota policy.
+
+operation_metadata.json is a reviewed response-MIME/category/website-alias
+inventory. Request schemas always come from FastAPI, never that inventory.
+New routes are included automatically; undeclared response shapes remain
+unspecified until their owner adds a reviewed contract or OpenAPI metadata.
+"""
+from __future__ import annotations
+
+import json
+import re
+from pathlib import Path
+
+from fastapi.routing import APIRoute, iter_route_contexts
+
+from . import quota
+
+PREFIX = "/api/v1"
+DISCOVERY_PATHS = {f"{PREFIX}/operations", f"{PREFIX}/openapi.json"}
+_METADATA = json.loads(Path(__file__).with_name("operation_metadata.json").read_text())
+
+CONSTRAINTS = {
+    "/merge": ["Upload 2–100 PDFs using repeated files fields, in output order.", "page_ranges is a JSON-encoded array with one entry per file; null, an empty string, or all includes every page."],
+    "/compress": ["Upload 1–100 PDFs. One file returns PDF; multiple files return ZIP.", "level=custom requires at least one of jpeg_quality, max_image_dim, or target_size_mb.", "target_size_mb is a requested target, not a guarantee of the resulting file size."],
+    "/rotate": ["angle must be a multiple of 90 between -360 and 360. pages defaults to all."],
+    "/pipeline": ["steps is a JSON-encoded array of 1–12 supported step identifiers. Read /pipeline/templates for the current supportedSteps.", "The processing charge is the sum of the selected step costs."],
+    "/pipeline/validate": ["Validates the pipeline definition without processing a file. Use supportedSteps from /pipeline/templates."],
+    "/smart-redact": ["needles is a JSON-encoded array of up to 500 text strings. The API applies supplied terms; browser-side entity detection is not part of this endpoint."],
+    "/pdf-to-long-image": ["format accepts png, jpg, or jpeg. At most 200 PDF pages; rendering DPI is clamped to 36–200."],
+    "/verify-signature": ["Detects signature fields; it does not perform cryptographic signature verification."],
+}
+
+
+def public_routes(app):
+    """Resolve lazy includes using FastAPI's effective mounted route contexts."""
+    return [
+        route for route in iter_route_contexts(app.routes)
+        if isinstance(route.original_route, APIRoute)
+        and route.path.startswith(PREFIX + "/")
+        and route.path not in DISCOVERY_PATHS
+        and route.include_in_schema
+    ]
+
+
+def operation_id(method: str, path: str) -> str:
+    # Method + public path remains stable through Python handler/module renames.
+    parts = path.removeprefix(PREFIX).strip("/").split("/")
+    slug = "_".join("by_" + part[1:-1] if part.startswith("{") else part.replace("-", "_") for part in parts)
+    return "v1_" + method.lower() + "_" + re.sub(r"[^a-zA-Z0-9_]", "_", slug)
+
+
+def metadata(path: str) -> dict:
+    short = path.removeprefix(PREFIX)
+    if short in {"/whoami", "/usage"}:
+        return {"category": "Key and usage", "response_media": ["application/json"]}
+    return _METADATA["operations"].get(short, {"category": "Jobs" if short.startswith("/jobs") else "Other", "response_media": []})
+
+
+def cost(path: str) -> dict:
+    if path == PREFIX + "/pipeline":
+        return {"units": None, "mode": "pipeline_steps", "description": "Sum of the selected pipeline step costs.", "step_units": getattr(quota, "PIPELINE_STEP_COSTS", {})}
+    if path == PREFIX + "/jobs":
+        return {"units": None, "mode": "operation", "description": "Charge for the selected operation on accepted submission; idempotent replay does not repeat the processing charge."}
+    units = quota.cost_for(path)
+    return {"units": units, "mode": "fixed", "description": "No processing units." if units == 0 else f"{units} processing unit{'s' if units != 1 else ''} per admitted request."}
+
+
+def build_catalog(app) -> dict:
+    from .schema import build_schema
+
+    schema = build_schema(app)
+    operations = []
+    for path, methods in sorted(schema["paths"].items()):
+        for method, operation in sorted(methods.items()):
+            info = metadata(path)
+            extra = operation.get("x-privatools", {})
+            operations.append({
+                "id": operation["operationId"], "method": method.upper(), "path": path,
+                "summary": operation.get("summary", path), "description": operation.get("description", ""),
+                "category": info["category"], "tool_aliases": info.get("tool_aliases", []),
+                "request_body": operation.get("requestBody"), "parameters": operation.get("parameters", []),
+                "responses": operation["responses"], "cost": cost(path),
+                "async": extra.get("async", {"supported": False}),
+                "constraints": CONSTRAINTS.get(path.removeprefix(PREFIX), []),
+                "retry_safe": method in {"get", "head"},
+            })
+    limits = quota.policy() if hasattr(quota, "policy") else {
+        "daily_units": quota.DAILY_UNITS, "daily_request_bytes": quota.DAILY_BYTES,
+        "byte_accounting": "Request-body bytes, including multipart overhead.",
+    }
+    return {
+        "schema_version": "1", "api_version": "v1", "base_path": PREFIX,
+        "openapi_url": PREFIX + "/openapi.json", "limits": limits,
+        "operations": operations, "components": schema.get("components", {}),
+        "async": schema.get("x-privatools-async", {}),
+        "unavailable_tools": _METADATA["unavailable_tools"],
+    }

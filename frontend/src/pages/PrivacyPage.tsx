@@ -127,6 +127,7 @@ export default function PrivacyPage() {
         <li><strong>Your copies:</strong> The original on your device and the result you download remain under your control. Server cleanup does not delete those copies or files saved in your browser’s local Vault.</li>
         <li><strong>Limits:</strong> File-size, image-dimension, resource and rate limits apply. Availability and acceptable inputs vary by tool and deployment.</li>
       </ul>
+      <p><strong>Optional API background jobs:</strong> When background processing is available, inputs are held while the job is queued or running and removed when they are no longer needed. Completed results are available to the submitting API key for up to one hour, including repeat downloads after a connection failure. You can request deletion immediately through the job API; a running job must stop before its files are removed. Expired results cannot be downloaded, and a background sweep removes their files. Minimal job and retry records are eligible for cleanup 24 hours after the job finishes; these are separate from the result files.</p>
       <p>Read the processing label and any engine selector before running. The <a href="/trust">trust center</a> explains the workflow; the <a href="/blog/what-deleted-means">deletion guide</a> distinguishes temporary files, local copies and operational records.</p>
 
       <h2 id="client-side-tools">2. Client-Side Tools</h2>

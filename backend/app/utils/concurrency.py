@@ -13,9 +13,9 @@ Two problems this solves:
    it only engages under a spike, converting cliff-edge collapse into bounded
    queueing. Tune with `MAX_CONCURRENT_HEAVY`.
 2. The timed-out-thread leak. When a request times out (or the client
-   disconnects), asyncio cancels the awaiting coroutine and the semaphore frees
-   immediately — but CPython can't kill the thread, so the blocking op runs to
-   completion. In the shared default executor that leaked thread would starve
+   disconnects), asyncio cancels the awaiting coroutine — but CPython can't kill
+   the thread, so the blocking op runs to completion. The admission slot stays
+   occupied until that native future completes. In the shared executor it would starve
    *light* `to_thread` work (file copies, small reads) too. Here it only ever
    consumes one of at most `MAX_CONCURRENT_HEAVY` dedicated "heavy" threads, so
    leaked/slow ops degrade into bounded queueing of heavy work and leave the
@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import asyncio
 import contextvars
-import functools
 import os
 from concurrent.futures import ThreadPoolExecutor
 
@@ -52,13 +51,16 @@ def _budget() -> int:
 MAX_CONCURRENT_HEAVY = _budget()
 
 _sem: asyncio.Semaphore | None = None
+_sem_loop: asyncio.AbstractEventLoop | None = None
 _executor: ThreadPoolExecutor | None = None
 
 
 def _semaphore() -> asyncio.Semaphore:
-    global _sem
-    if _sem is None:
+    global _sem, _sem_loop
+    loop = asyncio.get_running_loop()
+    if _sem is None or _sem_loop is not loop:
         _sem = asyncio.Semaphore(MAX_CONCURRENT_HEAVY)
+        _sem_loop = loop
     return _sem
 
 
@@ -79,23 +81,41 @@ async def run_bounded(func, /, *args, **kwargs):
     gated by the heavy-work semaphore. Drop-in for
     `await asyncio.to_thread(func, *args, **kwargs)`.
 
-    The semaphore frees on cancellation. The thread itself can't be killed
-    (CPython), but it runs in the dedicated bounded pool, so a leaked op is
-    isolated to a heavy slot and never starves the default executor. The current
+    Admission is released by native completion, including when the awaiting
+    request is canceled. Cancellation may cancel work that has not started;
+    running threads remain in the bounded pool until they finish. The current
     context (request-id contextvar et al.) is copied into the thread, matching
     `asyncio.to_thread`, so service-side logs keep their request correlation.
     """
     ctx = contextvars.copy_context()
     loop = asyncio.get_running_loop()
-    async with _semaphore():
-        return await loop.run_in_executor(
-            _heavy_executor(), functools.partial(ctx.run, func, *args, **kwargs)
-        )
+    semaphore = _semaphore()
+    await semaphore.acquire()
+    try:
+        future = _heavy_executor().submit(ctx.run, func, *args, **kwargs)
+    except BaseException:
+        semaphore.release()
+        raise
+
+    def completed(_):
+        # This callback belongs to the concurrent.futures.Future, not its
+        # asyncio wrapper: canceling the latter does not mean the thread exited.
+        # A closed loop is a completed lifespan; its semaphore is never reused.
+        try:
+            loop.call_soon_threadsafe(semaphore.release)
+        except RuntimeError:
+            if not loop.is_closed():
+                raise
+
+    future.add_done_callback(completed)
+    return await asyncio.wrap_future(future, loop=loop)
 
 
 def shutdown() -> None:
     """Tear down the heavy-work pool (best effort). For lifespan shutdown/tests."""
-    global _executor
+    global _executor, _sem, _sem_loop
     if _executor is not None:
         _executor.shutdown(wait=False, cancel_futures=True)
         _executor = None
+    _sem = None
+    _sem_loop = None

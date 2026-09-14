@@ -180,8 +180,8 @@ An account exists only to hold API keys — the tools themselves never ask for
 one. Sign up at `/account`, create a key, and call the versioned API:
 
 ```
-curl -X POST https://privatools.me/api/v1/compress \
-  -H "X-API-Key: pk_…" \
+curl -X POST https://api.privatools.me/api/v1/compress \
+  -H "X-API-Key: $PRIVATOOLS_API_KEY" \
   -F files=@in.pdf -F level=recommended -o out.pdf
 ```
 
@@ -189,15 +189,34 @@ curl -X POST https://privatools.me/api/v1/compress \
 
 - `GET /api/v1/whoami` — confirm a key works
 - `GET /api/v1/usage` — what today's quota looks like without spending any
-- Free tier: 500 cost units and 250 MB per key per day, reset daily.
-  Every reply carries `X-RateLimit-Limit`, `-Remaining` and `-Reset`, so a
+- `GET /api/v1/operations` — public operation catalog, current costs/limits and background-job availability
+- `GET /api/v1/openapi.json` — public schema containing only the versioned API
+- Free tier: 500 cost units and 250 MiB of actual request-body bytes per key
+  per day, reset at 00:00 UTC. Multipart boundaries and fields count too.
+  Authenticated replies carry `X-RateLimit-Limit`, `-Remaining` and `-Reset`, so a
   client never has to call `/usage` to find out it is nearly out.
 - Over quota is a `429` with `Retry-After`.
 - Errors carry a machine-readable `code` beside the human `message`, so a
-  client can branch without matching on prose.
+  client can branch without matching on prose. Existing `detail` fields remain.
+- Authenticated processing has a shared 30-request/minute token bucket with
+  a burst of six, three admitted HTTP requests per key, and a default ceiling
+  of six across web workers. These are admission limits, not a promise that
+  an arbitrary native thread stops when its HTTP client disconnects.
+- Published operation costs are explicit; pipelines cost the sum of their steps.
+  Framework validation rejections refund the original reservation. Failures
+  after processing starts can still consume units.
 
-Unlike the unversioned `/api/*` routes above, v1 always requires a key: it
-meters real compute, and an open metered endpoint is a free compute farm.
+V1 processing and account/usage queries require a key. Its catalog and schema
+are public and do not spend processing quota. The website continues to use
+the unversioned `/api/*` routes.
+
+Background processing is optional (`API_V1_JOBS_ENABLED=true`). It adds
+`POST /api/v1/jobs` with an `Idempotency-Key`, authenticated status/result
+retrieval, and explicit deletion. The initial adapters are `merge`, `compress`,
+`grayscale`, and `pdf-to-text`; the catalog reports actual availability.
+One worker shares the existing web container's 4 GB / 1.8 CPU limits.
+Results expire one hour after completion; repeat downloads are supported
+until expiry or deletion. See [API integration and rollout](docs/api-usage.md).
 
 Clerk accounts recover access by email; users do not need to save a recovery
 code. When Clerk is configured, native password/recovery endpoints are retired.
