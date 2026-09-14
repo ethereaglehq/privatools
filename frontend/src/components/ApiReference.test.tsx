@@ -17,7 +17,7 @@ it("loads public metadata without a key and searches exact request and output de
     const fetcher = vi.fn().mockResolvedValue({ ok: true, json: async () => catalogFixture });
     vi.stubGlobal("fetch", fetcher);
     render(<ApiReference />);
-    expect(await screen.findByText("2 operations available")).toBeInTheDocument();
+    expect(await screen.findByText("2 documented operations")).toBeInTheDocument();
     expect(fetcher).toHaveBeenCalledWith("/api/v1/operations", expect.objectContaining({ credentials: "omit" }));
     expect(fetcher.mock.calls[0][1].headers).toBeUndefined();
     fireEvent.change(screen.getByRole("searchbox", { name: "Search API operations" }), { target: { value: "merge" } });
@@ -41,7 +41,7 @@ it("shows a recoverable reference error for malformed data", async () => {
 it("keeps empty searches understandable and shows HTTP workflow guidance", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, json: async () => catalogFixture }));
     render(<ApiReference />);
-    await screen.findByText("2 operations available");
+    await screen.findByText("2 documented operations");
     fireEvent.change(screen.getByRole("searchbox"), { target: { value: "not-an-operation" } });
     expect(screen.getByText("No operations match. Try another name, path, or category.")).toBeInTheDocument();
     expect(screen.getByText(/In n8n/)).toBeInTheDocument();
