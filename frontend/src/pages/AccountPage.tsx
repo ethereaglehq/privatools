@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Check, Copy, Download, Eye, EyeOff, KeyRound, LifeBuoy, LogOut, Plus, RefreshCw, ShieldCheck, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SocialSignIn } from "@/components/account/SocialSignIn";
+import ApiActivity from "@/components/account/ApiActivity";
 import {
     accountApi, describeKey, defaultKeyLabel, downloadRecoveryCode, initialAccountState,
     strengthOf, type AccountState, ACCOUNT_COPY,
@@ -332,6 +333,7 @@ export default function AccountPage() {
                             Deleting removes your email, your password hash and every key. It cannot be undone.
                         </p>
                     </aside>
+                    <ApiActivity accountId={s.user.id} keyVersion={s.keys.map(key => `${key.key_id}:${key.revoked}`).join(",")} />
                 </div>
             )}
         </div>

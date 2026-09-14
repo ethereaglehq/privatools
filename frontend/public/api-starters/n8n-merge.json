@@ -1,0 +1,591 @@
+{
+  "name": "PrivaTools async merge",
+  "nodes": [
+    {
+      "id": "run-sample",
+      "name": "Run sample",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "sample-pdfs",
+      "name": "Sample PDFs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Replace this node with your source: one item, binary.pdf and binary.pdf2.\nreturn [{ json: {}, binary: {\"pdf\": {\"data\": \"JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNTMgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA1MCA3NDAgVGQgKFByaXZhVG9vbHMgc2FtcGxlIG9uZSkgVGogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDMxMSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQxMwolJUVPRgo=\", \"mimeType\": \"application/pdf\", \"fileName\": \"sample-first.pdf\"}, \"pdf2\": {\"data\": \"JVBERi0xLjQKMSAwIG9iago8PCAvVHlwZSAvQ2F0YWxvZyAvUGFnZXMgMiAwIFIgPj4KZW5kb2JqCjIgMCBvYmoKPDwgL1R5cGUgL1BhZ2VzIC9LaWRzIFszIDAgUl0gL0NvdW50IDEgPj4KZW5kb2JqCjMgMCBvYmoKPDwgL1R5cGUgL1BhZ2UgL1BhcmVudCAyIDAgUiAvTWVkaWFCb3ggWzAgMCA2MTIgNzkyXSAvUmVzb3VyY2VzIDw8IC9Gb250IDw8IC9GMSA0IDAgUiA+PiA+PiAvQ29udGVudHMgNSAwIFIgPj4KZW5kb2JqCjQgMCBvYmoKPDwgL1R5cGUgL0ZvbnQgL1N1YnR5cGUgL1R5cGUxIC9CYXNlRm9udCAvSGVsdmV0aWNhID4+CmVuZG9iago1IDAgb2JqCjw8IC9MZW5ndGggNTMgPj4Kc3RyZWFtCkJUIC9GMSAxOCBUZiA1MCA3NDAgVGQgKFByaXZhVG9vbHMgc2FtcGxlIHR3bykgVGogRVQKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNgowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMDkgMDAwMDAgbiAKMDAwMDAwMDA1OCAwMDAwMCBuIAowMDAwMDAwMTE1IDAwMDAwIG4gCjAwMDAwMDAyNDEgMDAwMDAgbiAKMDAwMDAwMDMxMSAwMDAwMCBuIAp0cmFpbGVyCjw8IC9TaXplIDYgL1Jvb3QgMSAwIFIgPj4Kc3RhcnR4cmVmCjQxMwolJUVPRgo=\", \"mimeType\": \"application/pdf\", \"fileName\": \"sample-second.pdf\"}} }];"
+      }
+    },
+    {
+      "id": "configure-request",
+      "name": "Configure request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        440,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// The base is explicitly configured here; never take it from an API response.\nconst baseUrl = 'https://api.privatools.me/api/v1';\nconst operation = 'merge';\nconst options = {};\n// To resume, supply json.jobId from the earlier Remember job output.\n// To retry a submission in a NEW execution, supply its original json.idempotencyKey.\nconst source = $input.first();\nif ($input.all().length !== 1) throw new Error('Process one logical request/item at a time.');\nconst jobId = source.json.jobId || '';\nconst idempotencyKey = source.json.idempotencyKey || 'priva-n8n-' + $execution.id;\nif (!/^[A-Za-z0-9_-]{1,128}$/.test(idempotencyKey)) throw new Error('Invalid idempotency key.');\nif (jobId && !/^[A-Za-z0-9_-]{1,128}$/.test(jobId)) throw new Error('Invalid resume job ID.');\nif (!jobId) {\n  let bytes = 0;\n  for (const field of [\"pdf\", \"pdf2\"]) {\n    if (!source.binary?.[field]) throw new Error('Missing binary.' + field);\n    const pdf = await this.helpers.getBinaryDataBuffer(0, field);\n    if (pdf.subarray(0, 5).toString() !== '%PDF-') throw new Error('Input must be a PDF.');\n    bytes += pdf.length;\n  }\n  if (bytes > 50 * 1024 * 1024) throw new Error('Input exceeds 50 MiB.');\n}\nreturn [{ json: { baseUrl, operation, options, idempotencyKey, jobId,\n  action: jobId ? 'resume' : 'submit', deadline: Date.now() + 20 * 60 * 1000 }, binary: source.binary }];\n"
+      }
+    },
+    {
+      "id": "resume-existing-job",
+      "name": "Resume existing job",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        660,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "resume",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "submit-async-job",
+      "name": "Submit async job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        200
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.baseUrl + '/jobs' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Idempotency-Key",
+              "value": "={{ $json.idempotencyKey }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formData",
+              "name": "operation",
+              "value": "={{ $json.operation }}"
+            },
+            {
+              "parameterType": "formData",
+              "name": "options",
+              "value": "={{ JSON.stringify($json.options) }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "pdf"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "files",
+              "inputDataFieldName": "pdf2"
+            }
+          ]
+        }
+      },
+      "notes": "Select a Header Auth credential with Name X-API-Key and your key as Value.",
+      "notesInFlow": true
+    },
+    {
+      "id": "check-submission",
+      "name": "Check submission",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1100,
+        200
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const config = $('Configure request').first().json;\nconst response = $input.first().json;\nif (Date.now() >= config.deadline) throw new Error('Deadline reached. Recover with the same idempotency key.');\nfunction delay(headers, fallback) {\n  const raw = headers?.['retry-after'] ?? headers?.['Retry-After'];\n  let seconds = raw == null || raw === '' ? NaN : Number(raw);\n  if (!Number.isFinite(seconds) || seconds < 0) {\n    const date = Date.parse(raw);\n    seconds = Number.isFinite(date) ? Math.max(0, (date - Date.now()) / 1000) : fallback;\n  }\n  seconds = Math.max(1, seconds);\n  if (Date.now() + seconds * 1000 >= config.deadline) throw new Error('Retry delay exceeds deadline. Save the job ID/idempotency key and resume later.');\n  return seconds;\n}\nif (response.statusCode === 202) {\n  const job = response.body;\n  if (!job || !/^[A-Za-z0-9_-]{1,128}$/.test(job.id)) throw new Error('Invalid job response.');\n  return [{ json: { ...config, action: 'accepted', jobId: job.id } }];\n}\nif ([429, 502, 503, 504].includes(response.statusCode) && $runIndex < 4) {\n  return [{ json: { ...config, action: 'retry', waitSeconds: delay(response.headers, 2 ** $runIndex) },\n    binary: $('Configure request').first().binary }];\n}\nthrow new Error('Submission HTTP ' + response.statusCode + '. Keep the original idempotency key when retrying; correct authentication/input errors first.');\n"
+      }
+    },
+    {
+      "id": "submission-accepted",
+      "name": "Submission accepted",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1320,
+        200
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "accepted",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wait-to-resubmit",
+      "name": "Wait to resubmit",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1320,
+        460
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.waitSeconds }}",
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "remember-job",
+      "name": "Remember job",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "// Save this jobId and idempotencyKey for later recovery. No API key is in this data.\nreturn [{ json: $input.first().json }];"
+      }
+    },
+    {
+      "id": "poll-job",
+      "name": "Poll job",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Remember job').first().json.baseUrl + '/jobs/' + $('Remember job').first().json.jobId }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "notes": "Select a Header Auth credential with Name X-API-Key and your key as Value.",
+      "notesInFlow": true
+    },
+    {
+      "id": "check-status",
+      "name": "Check status",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1980,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const config = $('Remember job').first().json;\nconst response = $input.first().json;\nif (Date.now() >= config.deadline || $runIndex >= 600) throw new Error('Polling budget reached. Resume with saved jobId; result retained.');\nfunction delay(headers, fallback) {\n  const raw = headers?.['retry-after'] ?? headers?.['Retry-After'];\n  let seconds = raw == null || raw === '' ? NaN : Number(raw);\n  if (!Number.isFinite(seconds) || seconds < 0) {\n    const date = Date.parse(raw);\n    seconds = Number.isFinite(date) ? Math.max(0, (date - Date.now()) / 1000) : fallback;\n  }\n  seconds = Math.max(1, seconds);\n  if (Date.now() + seconds * 1000 >= config.deadline) throw new Error('Retry delay exceeds deadline. Save the job ID/idempotency key and resume later.');\n  return seconds;\n}\nif ([429, 502, 503, 504].includes(response.statusCode)) {\n  return [{ json: { action: 'wait', waitSeconds: delay(response.headers, 2) } }];\n}\nif (response.statusCode !== 200) throw new Error('Status HTTP ' + response.statusCode + '. Result was not deleted.');\nconst job = response.body;\nif (!job || job.id !== config.jobId) throw new Error('Job ID mismatch.');\nif (job.state === 'succeeded') {\n  const bytes = job.result?.bytes;\n  if (!Number.isInteger(bytes) || bytes <= 0 || bytes > 100 * 1024 * 1024) throw new Error('Invalid result size.');\n  return [{ json: { action: 'ready', jobId: job.id, bytes, expiresAt: job.expires_at } }];\n}\nif (['failed', 'canceled', 'expired'].includes(job.state)) throw new Error('Job ' + job.state + '. No automatic deletion was performed.');\nif (!['queued', 'running'].includes(job.state)) throw new Error('Unknown job state.');\nreturn [{ json: { action: 'wait', waitSeconds: delay(response.headers, 2) } }];\n"
+      }
+    },
+    {
+      "id": "result-ready",
+      "name": "Result ready",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2200,
+        0
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "condition",
+              "leftValue": "={{ $json.action }}",
+              "rightValue": "ready",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "wait-before-polling",
+      "name": "Wait before polling",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        2200,
+        260
+      ],
+      "parameters": {
+        "resume": "timeInterval",
+        "amount": "={{ $json.waitSeconds }}",
+        "unit": "seconds"
+      }
+    },
+    {
+      "id": "ready-result",
+      "name": "Ready result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2420,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "return $input.all();"
+      }
+    },
+    {
+      "id": "download-result",
+      "name": "Download result",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2640,
+        0
+      ],
+      "parameters": {
+        "method": "GET",
+        "url": "={{ $('Remember job').first().json.baseUrl + '/jobs/' + $('Remember job').first().json.jobId + '/result' }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {
+          "timeout": 30000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "neverError": false,
+              "responseFormat": "file",
+              "outputPropertyName": "result"
+            }
+          }
+        }
+      },
+      "notes": "Select a Header Auth credential with Name X-API-Key and your key as Value.",
+      "notesInFlow": true
+    },
+    {
+      "id": "result-binary",
+      "name": "Result binary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const item = $input.first();\nconst ready = $('Ready result').first().json;\nif (item.json.statusCode !== 200 || !item.binary?.result) throw new Error('Result download failed; server result retained.');\nconst data = await this.helpers.getBinaryDataBuffer(0, 'result');\nif (data.length !== ready.bytes) throw new Error('Incomplete result; resume to download again.');\n// Connect your storage node here. Delete only AFTER that storage node succeeds.\n// The supplied manual delete workflow is an explicit separate action.\nreturn [{ json: { jobId: ready.jobId, bytes: data.length, expiresAt: ready.expiresAt,\n  serverResultRetained: true }, binary: { result: item.binary.result } }];\n"
+      }
+    },
+    {
+      "id": "read-before-running",
+      "name": "Read before running",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        -450
+      ],
+      "parameters": {
+        "content": "## PrivaTools: merge\n1. Select Header Auth (X-API-Key) in all HTTP nodes.\n2. Execute with the synthetic sample, or replace Sample PDFs with binary input.\n3. Save Remember job output to resume. Reuse idempotencyKey only for the same operation/options/ordered file bytes.\n4. Save binary.result to your destination. Results expire one hour after completion.\n5. Run n8n-delete-job.json only after saving, or to cancel deliberately.\n\nUploads/results may also be saved by YOUR n8n execution history. Configure its retention. No credentials are embedded. Network errors stop safely; retry with the same key/job ID.",
+        "height": 380,
+        "width": 620
+      }
+    }
+  ],
+  "connections": {
+    "Run sample": {
+      "main": [
+        [
+          {
+            "node": "Sample PDFs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sample PDFs": {
+      "main": [
+        [
+          {
+            "node": "Configure request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configure request": {
+      "main": [
+        [
+          {
+            "node": "Resume existing job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit async job": {
+      "main": [
+        [
+          {
+            "node": "Check submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check submission": {
+      "main": [
+        [
+          {
+            "node": "Submission accepted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait to resubmit": {
+      "main": [
+        [
+          {
+            "node": "Submit async job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Remember job": {
+      "main": [
+        [
+          {
+            "node": "Poll job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Poll job": {
+      "main": [
+        [
+          {
+            "node": "Check status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check status": {
+      "main": [
+        [
+          {
+            "node": "Result ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait before polling": {
+      "main": [
+        [
+          {
+            "node": "Poll job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ready result": {
+      "main": [
+        [
+          {
+            "node": "Download result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download result": {
+      "main": [
+        [
+          {
+            "node": "Result binary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resume existing job": {
+      "main": [
+        [
+          {
+            "node": "Remember job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Submit async job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submission accepted": {
+      "main": [
+        [
+          {
+            "node": "Remember job",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait to resubmit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result ready": {
+      "main": [
+        [
+          {
+            "node": "Ready result",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait before polling",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "executionTimeout": 1230,
+    "saveDataSuccessExecution": "none",
+    "saveDataErrorExecution": "none",
+    "saveManualExecutions": false
+  },
+  "pinData": {},
+  "tags": []
+}

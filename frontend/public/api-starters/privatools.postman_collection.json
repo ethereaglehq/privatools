@@ -1,0 +1,360 @@
+{
+  "info": {
+    "name": "PrivaTools async PDF starters",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Import, then create a private environment variable PRIVATOOLS_API_KEY. Choose one Submit recipe, poll status, Send and Download, then delete explicitly. Do not Run collection: requests are interactive recipes. No key is included. Derived from PrivaTools v1 jobs OpenAPI contract; current schema is available in the last request."
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-API-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{PRIVATOOLS_API_KEY}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.privatools.me/api/v1"
+    },
+    {
+      "key": "jobId",
+      "value": ""
+    },
+    {
+      "key": "confirmDeleteJobId",
+      "value": ""
+    },
+    {
+      "key": "mergeIdempotencyKey",
+      "value": ""
+    },
+    {
+      "key": "compressIdempotencyKey",
+      "value": ""
+    },
+    {
+      "key": "pdf_to_textIdempotencyKey",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Submit merge",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/jobs",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{mergeIdempotencyKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "operation",
+              "value": "merge",
+              "type": "text"
+            },
+            {
+              "key": "options",
+              "value": "{}",
+              "type": "text"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "sample-first.pdf"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "sample-second.pdf"
+            }
+          ]
+        },
+        "description": "Select local PDF files in Body before sending. This uses one logical idempotency key until you clear its collection variable. Keep it for identical retries; clear it before new files/options. The scripts save jobId on 202. Use individual requests; this collection does not automatically poll, download to disk, or delete."
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('mergeIdempotencyKey')) pm.collectionVariables.set('mergeIdempotencyKey', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Accepted or explicit rejection', () => pm.expect([202,400,401,403,409,413,422,429,503]).to.include(pm.response.code));",
+              "if (pm.response.code === 202) {",
+              "  const job = pm.response.json();",
+              "  pm.test('Job ID is safe', () => pm.expect(job.id).to.match(/^[A-Za-z0-9_-]{1,128}$/));",
+              "  if (/^[A-Za-z0-9_-]{1,128}$/.test(job.id)) pm.collectionVariables.set('jobId', job.id);",
+              "}",
+              "// For 429/503, inspect Retry-After. Retry manually with the SAME idempotency key."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit compress",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/jobs",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{compressIdempotencyKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "operation",
+              "value": "compress",
+              "type": "text"
+            },
+            {
+              "key": "options",
+              "value": "{\"level\": \"recommended\"}",
+              "type": "text"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "sample-first.pdf"
+            }
+          ]
+        },
+        "description": "Select local PDF files in Body before sending. This uses one logical idempotency key until you clear its collection variable. Keep it for identical retries; clear it before new files/options. The scripts save jobId on 202. Use individual requests; this collection does not automatically poll, download to disk, or delete."
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('compressIdempotencyKey')) pm.collectionVariables.set('compressIdempotencyKey', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Accepted or explicit rejection', () => pm.expect([202,400,401,403,409,413,422,429,503]).to.include(pm.response.code));",
+              "if (pm.response.code === 202) {",
+              "  const job = pm.response.json();",
+              "  pm.test('Job ID is safe', () => pm.expect(job.id).to.match(/^[A-Za-z0-9_-]{1,128}$/));",
+              "  if (/^[A-Za-z0-9_-]{1,128}$/.test(job.id)) pm.collectionVariables.set('jobId', job.id);",
+              "}",
+              "// For 429/503, inspect Retry-After. Retry manually with the SAME idempotency key."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Submit pdf-to-text",
+      "request": {
+        "method": "POST",
+        "url": "{{baseUrl}}/jobs",
+        "header": [
+          {
+            "key": "Idempotency-Key",
+            "value": "{{pdf_to_textIdempotencyKey}}"
+          }
+        ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "operation",
+              "value": "pdf-to-text",
+              "type": "text"
+            },
+            {
+              "key": "options",
+              "value": "{}",
+              "type": "text"
+            },
+            {
+              "key": "files",
+              "type": "file",
+              "src": "sample-first.pdf"
+            }
+          ]
+        },
+        "description": "Select local PDF files in Body before sending. This uses one logical idempotency key until you clear its collection variable. Keep it for identical retries; clear it before new files/options. The scripts save jobId on 202. Use individual requests; this collection does not automatically poll, download to disk, or delete."
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!pm.collectionVariables.get('pdf_to_textIdempotencyKey')) pm.collectionVariables.set('pdf_to_textIdempotencyKey', pm.variables.replaceIn('{{$guid}}'));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Accepted or explicit rejection', () => pm.expect([202,400,401,403,409,413,422,429,503]).to.include(pm.response.code));",
+              "if (pm.response.code === 202) {",
+              "  const job = pm.response.json();",
+              "  pm.test('Job ID is safe', () => pm.expect(job.id).to.match(/^[A-Za-z0-9_-]{1,128}$/));",
+              "  if (/^[A-Za-z0-9_-]{1,128}$/.test(job.id)) pm.collectionVariables.set('jobId', job.id);",
+              "}",
+              "// For 429/503, inspect Retry-After. Retry manually with the SAME idempotency key."
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get job status",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/jobs/{{jobId}}",
+        "description": "Repeat only after Retry-After (normally two seconds). Stop on succeeded, failed, canceled, or expired. Stop after 20 minutes and resume later. Polling spends no processing units."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!/^[A-Za-z0-9_-]{1,128}$/.test(pm.variables.get('jobId') || '')) { console.warn('Set jobId from a successful submission.'); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (pm.response.code === 200) pm.test('Known state', () => pm.expect(['queued','running','succeeded','failed','canceled','expired']).to.include(pm.response.json().state));"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Download completed result",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/jobs/{{jobId}}/result",
+        "description": "After succeeded, use Send and Download to save the PDF (or JSON for pdf-to-text). Check the local file before deleting. The server result remains available for one hour after completion."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!/^[A-Za-z0-9_-]{1,128}$/.test(pm.variables.get('jobId') || '')) { console.warn('Set jobId from a successful submission.'); pm.execution.skipRequest(); }"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Delete or cancel job explicitly",
+      "request": {
+        "method": "DELETE",
+        "url": "{{baseUrl}}/jobs/{{jobId}}",
+        "description": "Set confirmDeleteJobId to the SAME jobId only after verifying your saved result, or to cancel deliberately. This request can cancel a running job. Clear confirmation after use. Never run it automatically after an unsaved download."
+      },
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if (!/^[A-Za-z0-9_-]{1,128}$/.test(pm.variables.get('jobId') || '')) { console.warn('Set jobId from a successful submission.'); pm.execution.skipRequest(); }",
+              "if (pm.variables.get('confirmDeleteJobId') !== pm.variables.get('jobId')) { console.warn('Set confirmDeleteJobId to this job ID to explicitly authorize deletion/cancellation.'); pm.execution.skipRequest(); }"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "if ([200,202].includes(pm.response.code)) pm.collectionVariables.set('confirmDeleteJobId', '');"
+            ]
+          }
+        }
+      ],
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "Current operation catalog",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/operations",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    },
+    {
+      "name": "OpenAPI schema",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/openapi.json",
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "protocolProfileBehavior": {
+        "followRedirects": false
+      }
+    }
+  ]
+}

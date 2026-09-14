@@ -14,6 +14,7 @@
 
 import { usesClerkAccounts, configuredSocialProviders } from "@/lib/auth-mode";
 import { isClerkEnabled } from "@/lib/clerk/instance";
+import type { ApiActivityData } from "@/lib/api-activity";
 import { clerkAccountApi, SOCIAL_PROVIDERS, type SocialProvider, type SignInResult, type PasswordResetResult } from "@/lib/clerk/accountApi";
 
 export interface ApiKey {
@@ -257,6 +258,7 @@ const localAccountApi = {
     logout: () => call<{ ok: true }>("/auth/logout", { method: "POST" }),
     deleteAccount: () => call<{ ok: true }>("/auth/me", { method: "DELETE" }),
     listKeys: () => call<{ keys: ApiKey[] }>("/keys"),
+    apiActivity: (keyId?: string, signal?: AbortSignal) => call<ApiActivityData>(`/account/api-activity${keyId ? `?key_id=${encodeURIComponent(keyId)}` : ""}`, { signal }),
     createKey: (label: string) =>
         call<{ key: string; record: ApiKey }>("/keys", {
             method: "POST", body: JSON.stringify({ label }),

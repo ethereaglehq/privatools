@@ -39,6 +39,7 @@ async def require_v1_key(
         record = await database_call(accounts.resolve_key, api_key)
         if record is None:
             raise _error(401, "invalid_api_key", "That key is not recognised, or it has been revoked.", {"WWW-Authenticate": "Bearer"})
+        request.state.v1_key_id = record.key_id
         await database_call(accounts.touch_key, record.key_id)
     except sqlite3.Error:
         raise _error(503, "admission_unavailable", "API admission is temporarily unavailable. Try again shortly.", {"Retry-After": "5"}) from None

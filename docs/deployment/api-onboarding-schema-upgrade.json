@@ -1,0 +1,23 @@
+{
+  "baseline_release": "v2.3.1",
+  "schema_before": 3,
+  "schema_after": 4,
+  "regression": "backend/tests/test_api_activity.py::test_schema_three_upgrade_and_rollback_preserve_accounts_quota_and_completed_job",
+  "regression_passed": true,
+  "comparison": {
+    "legacy_store_functions_unchanged": true,
+    "historical_migrations_unchanged": true
+  },
+  "verified": [
+    "existing account and session still resolve",
+    "original API key still authenticates",
+    "daily units and multipart byte quota preserved",
+    "completed durable result metadata and bytes preserved",
+    "result downloads while new job submissions disabled",
+    "legacy init and reads tolerate added schema version and tables",
+    "legacy quota writes still work after upgrade",
+    "new activity history survives rollback and re-upgrade",
+    "foreign_key_check and quick_check pass",
+    "synthetic saved result explicitly deleted"
+  ]
+}

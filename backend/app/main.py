@@ -121,9 +121,11 @@ async def _cleanup_task():
             # Maintenance keeps running even when new async jobs are disabled.
             from .api_v1.jobs import maintenance as maintain_jobs
             from .api_v1.quota import cleanup_accounting
+            from .api_v1.activity import cleanup as cleanup_activity
 
             await asyncio.to_thread(maintain_jobs)
             await asyncio.to_thread(cleanup_accounting)
+            await asyncio.to_thread(cleanup_activity)
         except asyncio.CancelledError:
             raise
         except Exception:  # noqa: BLE001 — never let the janitor die
@@ -484,6 +486,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # ---------------------------------------------------------------------------
 _SKIP_SEO_PREFIXES = (
     "/api/", "/api-docs", "/sitemap", "/robots", "/manifest", "/sw.js",
+    # Starter source/README downloads include .py and .md. Limit this bypass
+    # to their build directory rather than treating those extensions as public
+    # assets at every arbitrary URL.
+    "/api-starters/",
     "/icons", "/assets", "/favicon", "/og-image", "/llms",
     "/.well-known/",
     # Health / readiness probes must return JSON, never the SPA shell.
@@ -1118,7 +1124,7 @@ if _frontend_path.exists():
                 resp.headers["Cache-Control"] = "no-cache"
             return resp
         # Missing build assets must fail as assets, never as a 200 HTML shell.
-        if full_path.startswith(("assets/", "fonts/", "icons/", "pwa/", "experience/", "models/")) or Path(full_path).suffix.lower() in _STATIC_EXTENSIONS:
+        if full_path.startswith(("assets/", "fonts/", "icons/", "pwa/", "experience/", "models/", "api-starters/")) or Path(full_path).suffix.lower() in _STATIC_EXTENSIONS:
             return JSONResponse({"detail": "Not found"}, status_code=404)
         # Fall back to index.html for SPA routing
         index = _frontend_path / "index.html"

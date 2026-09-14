@@ -123,6 +123,7 @@ async def submit(request: Request, key: KeyRecord = Depends(require_v1_key)):
             headers.update(quota.headers(state))
         return JSONResponse(storage.public(row),status_code=202,headers=headers)
     except storage.JobError as exc:
+        request.state.v1_error_code = exc.code
         return error_response(exc)
     finally:
         if identifier is not None:
