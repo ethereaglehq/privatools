@@ -1939,6 +1939,49 @@ _PRIVATOOLS_FEATURES: dict[str, str] = {
 _COMPARE_DATA: dict[str, dict] = {'ilovepdf': {'name': 'iLovePDF', 'title': 'PrivaTools vs iLovePDF', 'description': 'Compare PrivaTools and iLovePDF for your file workflow.', 'features': [], 'sources': []}, 'smallpdf': {'name': 'Smallpdf', 'title': 'PrivaTools vs Smallpdf', 'description': 'Compare PrivaTools and Smallpdf for your file workflow.', 'features': [], 'sources': []}, 'adobe-acrobat': {'name': 'Adobe Acrobat Online', 'title': 'PrivaTools vs Adobe Acrobat Online', 'description': 'Compare PrivaTools and Adobe Acrobat Online for your file workflow.', 'features': [], 'sources': []}, 'sejda': {'name': 'Sejda PDF', 'title': 'PrivaTools vs Sejda PDF', 'description': 'Compare PrivaTools and Sejda PDF for your file workflow.', 'features': [], 'sources': []}, 'tinywow': {'name': 'TinyWow', 'title': 'PrivaTools vs TinyWow', 'description': 'Compare PrivaTools and TinyWow for your file workflow.', 'features': [], 'sources': []}, 'ihatepdf': {'name': 'ihatepdf.cv', 'title': 'PrivaTools vs ihatepdf.cv', 'description': 'Compare PrivaTools and ihatepdf.cv for your file workflow.', 'features': [], 'sources': []}, 'pdf24': {'name': 'PDF24', 'title': 'PrivaTools vs PDF24', 'description': 'Compare PrivaTools and PDF24 for your file workflow.', 'features': [], 'sources': []}, 'foxit': {'name': 'Foxit PDF', 'title': 'PrivaTools vs Foxit PDF', 'description': 'Compare PrivaTools and Foxit PDF for your file workflow.', 'features': [], 'sources': []}, 'lightpdf': {'name': 'LightPDF', 'title': 'PrivaTools vs LightPDF', 'description': 'Compare PrivaTools and LightPDF for your file workflow.', 'features': [], 'sources': []}, 'stirling-pdf': {'name': 'Stirling PDF', 'title': 'PrivaTools vs Stirling PDF', 'description': 'Compare PrivaTools and Stirling PDF for your file workflow.', 'features': [], 'sources': []}, 'dochub': {'name': 'DocHub', 'title': 'PrivaTools vs DocHub', 'description': 'Compare PrivaTools and DocHub for your file workflow.', 'features': [], 'sources': []}, 'pdfescape': {'name': 'PDFescape', 'title': 'PrivaTools vs PDFescape', 'description': 'Compare PrivaTools and PDFescape for your file workflow.', 'features': [], 'sources': []}, 'nitro-pdf': {'name': 'Nitro PDF', 'title': 'PrivaTools vs Nitro PDF', 'description': 'Compare PrivaTools and Nitro PDF for your file workflow.', 'features': [], 'sources': []}}
 
 
+def _tool_page_body(slug: str, name: str, desc: str, registry: dict, prefix: str, related_heading: str) -> str:
+    """Build the SSR body shared by /tool/<slug> and /tools/<slug> pages.
+
+    `registry` and `prefix` feed `_related_tools` (same-category candidates
+    and the href prefix); `related_heading` is the only visible-text
+    difference between the PDF and non-PDF branches.
+    """
+    parts: list[str] = []
+    parts.append(f"<h1>{name}</h1>")  # the titles plan swaps in the registry seoTitle
+    short = _tool_registry_short_description(slug) or desc
+    parts.append(f'<p class="tool-summary">{short}</p>')
+    parts.append(f'<p class="tool-intro">{desc}</p>')
+    if slug in TOOL_HOWTO:
+        parts.append(f'<section class="tool-steps"><h2>{_howto_name_for(name)}</h2><ol>')
+        for step in TOOL_HOWTO[slug]:
+            parts.append(f"<li><strong>{step['name']}</strong> {step['text']}</li>")
+        parts.append("</ol></section>")
+    if slug in TOOL_FAQ:
+        parts.append(f'<section class="tool-faq"><h2>Questions about {name}</h2>')
+        for faq in TOOL_FAQ[slug]:
+            parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
+        parts.append("</section>")
+    mentioning_posts = _tool_to_blogs().get(slug, [])
+    if mentioning_posts:
+        parts.append('<section class="tool-guides"><h2>Mentioned in our guides</h2><ul>')
+        for post in mentioning_posts:
+            parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
+        parts.append("</ul></section>")
+    related = _related_tools(slug, registry, prefix)
+    if related:
+        parts.append(f'<section class="tool-related"><h2>{related_heading}</h2><ul>')
+        for related_slug, related_name, href in related:
+            parts.append(f'<li><a href="{href}">{related_name}</a></li>')
+        parts.append("</ul></section>")
+    reviewed = _last_reviewed_for(slug)
+    parts.append(
+        f'<p class="meta-trust"><em>Last reviewed {reviewed} by the PrivaTools maintainers. '
+        f'Source code on <a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
+        f'(MIT-licensed, self-hostable).</em></p>'
+    )
+    return "\n".join(parts)
+
+
 def _build_ssr_content(path: str, title: str, description: str) -> str:
     """
     Build server-rendered HTML content that crawlers (including AI crawlers)
@@ -2021,77 +2064,13 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         slug = path[len("/tool/"):]
         if slug in _PDF_TOOLS:
             name, desc = _PDF_TOOLS[slug]
-            parts.append(f"<h1>{name}</h1>")  # the titles plan swaps in the registry seoTitle
-            short = _tool_registry_short_description(slug) or desc
-            parts.append(f'<p class="tool-summary">{short}</p>')
-            parts.append(f'<p class="tool-intro">{desc}</p>')
-            if slug in TOOL_HOWTO:
-                parts.append(f'<section class="tool-steps"><h2>How to use {name}</h2><ol>')
-                for step in TOOL_HOWTO[slug]:
-                    parts.append(f"<li><strong>{step['name']}</strong> {step['text']}</li>")
-                parts.append("</ol></section>")
-            if slug in TOOL_FAQ:
-                parts.append(f'<section class="tool-faq"><h2>Questions about {name}</h2>')
-                for faq in TOOL_FAQ[slug]:
-                    parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
-                parts.append("</section>")
-            mentioning_posts = _tool_to_blogs().get(slug, [])
-            if mentioning_posts:
-                parts.append('<section class="tool-guides"><h2>Mentioned in our guides</h2><ul>')
-                for post in mentioning_posts:
-                    parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
-                parts.append("</ul></section>")
-            related = _related_tools(slug, _PDF_TOOLS, "tool")
-            if related:
-                parts.append('<section class="tool-related"><h2>Related PDF Tools</h2><ul>')
-                for related_slug, related_name, href in related:
-                    parts.append(f'<li><a href="{href}">{related_name}</a></li>')
-                parts.append("</ul></section>")
-            reviewed = _last_reviewed_for(slug)
-            parts.append(
-                f'<p class="meta-trust"><em>Last reviewed {reviewed} by the PrivaTools maintainers. '
-                f'Source code on <a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
-                f'(MIT-licensed, self-hostable).</em></p>'
-            )
-            return "\n".join(parts)
+            return _tool_page_body(slug, name, desc, _PDF_TOOLS, "tool", "Related PDF Tools")
 
     if path.startswith("/tools/"):
         slug = path[len("/tools/"):]
         if slug in _NONPDF_TOOLS:
             name, desc = _NONPDF_TOOLS[slug]
-            parts.append(f"<h1>{name}</h1>")  # the titles plan swaps in the registry seoTitle
-            short = _tool_registry_short_description(slug) or desc
-            parts.append(f'<p class="tool-summary">{short}</p>')
-            parts.append(f'<p class="tool-intro">{desc}</p>')
-            if slug in TOOL_HOWTO:
-                parts.append(f'<section class="tool-steps"><h2>How to use {name}</h2><ol>')
-                for step in TOOL_HOWTO[slug]:
-                    parts.append(f"<li><strong>{step['name']}</strong> {step['text']}</li>")
-                parts.append("</ol></section>")
-            if slug in TOOL_FAQ:
-                parts.append(f'<section class="tool-faq"><h2>Questions about {name}</h2>')
-                for faq in TOOL_FAQ[slug]:
-                    parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
-                parts.append("</section>")
-            mentioning_posts = _tool_to_blogs().get(slug, [])
-            if mentioning_posts:
-                parts.append('<section class="tool-guides"><h2>Mentioned in our guides</h2><ul>')
-                for post in mentioning_posts:
-                    parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
-                parts.append("</ul></section>")
-            related = _related_tools(slug, _NONPDF_TOOLS, "tools")
-            if related:
-                parts.append('<section class="tool-related"><h2>Related Tools</h2><ul>')
-                for related_slug, related_name, href in related:
-                    parts.append(f'<li><a href="{href}">{related_name}</a></li>')
-                parts.append("</ul></section>")
-            reviewed = _last_reviewed_for(slug)
-            parts.append(
-                f'<p class="meta-trust"><em>Last reviewed {reviewed} by the PrivaTools maintainers. '
-                f'Source code on <a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
-                f'(MIT-licensed, self-hostable).</em></p>'
-            )
-            return "\n".join(parts)
+            return _tool_page_body(slug, name, desc, _NONPDF_TOOLS, "tools", "Related Tools")
 
     # ── Compare pages ──────────────────────────────────────────────────────
     if path.startswith("/compare/") or path == "/compare":

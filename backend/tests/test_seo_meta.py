@@ -101,6 +101,10 @@ def test_tool_jsonld_has_application_howto_faq_and_breadcrumbs():
     assert len(howto["step"]) >= 3
     assert all(step["@type"] == "HowToStep" for step in howto["step"])
 
+    html = "<html><head><title>Old</title></head><body><div id='root'></div></body></html>"
+    injected = inject_seo(html, "/tool/merge-pdf")
+    assert f"<h2>{howto['name']}</h2>" in injected
+
     faq = next(node for node in graph if node.get("@type") == "FAQPage")
     assert len(faq["mainEntity"]) >= 3
 
