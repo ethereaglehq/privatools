@@ -44,11 +44,19 @@ def test_every_tool_has_steps_and_answers():
     for slug in _registry_slugs():
         guide = json.loads((EXPORT_DIR / f"{slug}.json").read_text(encoding="utf-8"))
         assert set(guide) == {"howto", "faq"}
-        assert guide["howto"] == TOOL_HOWTO[slug] and len(guide["howto"]) >= 2
-        assert guide["faq"] == TOOL_FAQ[slug] and guide["faq"]
+
+        howto = TOOL_HOWTO.get(slug)
+        assert howto is not None, f"{slug} is a registered tool but has no TOOL_HOWTO entry"
+        faq = TOOL_FAQ.get(slug)
+        assert faq is not None, f"{slug} is a registered tool but has no TOOL_FAQ entry"
+
+        assert guide["howto"] == howto and len(guide["howto"]) >= 2
+        assert guide["faq"] == faq and guide["faq"]
         for step in guide["howto"]:
             assert set(step) == {"name", "text"} and step["name"].strip() and len(step["text"].strip()) > 20
         for entry in guide["faq"]:
             assert set(entry) == {"q", "a"} and entry["q"].strip() and len(entry["a"].strip()) > 20
         questions = [entry["q"] for entry in guide["faq"]]
         assert len(questions) == len(set(questions)), f"{slug} asks the same question twice"
+        step_names = [step["name"] for step in guide["howto"]]
+        assert len(step_names) == len(set(step_names)), f"{slug} repeats a step name"

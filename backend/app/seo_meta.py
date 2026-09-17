@@ -520,6 +520,11 @@ def _organization() -> dict:
 # blog's `relatedTools` array. Used to inject "Mentioned in our guides" links
 # on each tool page — gives the long-tail tools inbound internal links from
 # authoritative blog content, which helps Google allocate crawl budget.
+#
+# Matches the client's `postsForTool(slug, 4)` (frontend/src/data/blog.ts):
+# newest `publishedAt` first, capped at four. Sorting/capping here (once, on
+# the cached build) keeps every call site — currently just _tool_page_body —
+# from having to remember to do it.
 @lru_cache(maxsize=8)
 def _tool_to_blogs_for_mtime(_mtime_ns: int) -> dict[str, list[dict]]:
     tool_to_blogs: dict[str, list[dict]] = {}
@@ -528,7 +533,11 @@ def _tool_to_blogs_for_mtime(_mtime_ns: int) -> dict[str, list[dict]]:
             tool_to_blogs.setdefault(tool_slug, []).append({
                 "slug": slug,
                 "title": post.get("title", slug),
+                "publishedAt": post.get("publishedAt") or post.get("date") or "",
             })
+    for tool_slug, posts in tool_to_blogs.items():
+        posts.sort(key=lambda post: post["publishedAt"], reverse=True)
+        tool_to_blogs[tool_slug] = posts[:4]
     return tool_to_blogs
 
 
@@ -637,7 +646,25 @@ def _tool_category(slug: str) -> str | None:
 
 
 def _related_tools(slug: str, registry: dict, prefix: str) -> list[tuple[str, str, str]]:
-    """The three most popular tools in the same category, matching the workspace's afterword."""
+    """The three most popular tools in the same category, matching the workspace's afterword.
+
+    Mirrors `SkinApp.tsx`'s `related` list exactly: same category, popularity
+    ascending (manifest iteration order breaks ties, same as a stable JS sort
+    over `ALL_TOOLS`), excluding the tool itself, first three. Reads the same
+    build-owned manifest the client's registry is generated from, so this
+    can't drift from what the workspace's afterword actually shows. Falls
+    back to the legacy `_by_popularity` table only when that manifest
+    artifact itself is missing (dev without a build).
+    """
+    manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
+    if manifest is not None:
+        category = (manifest.get(slug) or {}).get("category")
+        candidates = [
+            (s, row) for s, row in manifest.items()
+            if s != slug and s in registry and (category is None or row.get("category") == category)
+        ]
+        candidates.sort(key=lambda item: item[1].get("popularity", 999))
+        return [(s, row.get("name") or row["title"], f"/{prefix}/{s}") for s, row in candidates[:3]]
     category = _tool_category(slug)
     candidates = [(s, name) for s, (name, _) in registry.items()
                   if s != slug and (category is None or _tool_category(s) == category)]
@@ -1945,37 +1972,46 @@ def _tool_page_body(slug: str, name: str, desc: str, registry: dict, prefix: str
     `registry` and `prefix` feed `_related_tools` (same-category candidates
     and the href prefix); `related_heading` is the only visible-text
     difference between the PDF and non-PDF branches.
+
+    Every interpolated value is hand-written editorial prose (TOOL_HOWTO,
+    TOOL_FAQ) or a tool/post name — both have contained literal `<tag>`
+    examples and a bare `&`, which would otherwise render as real (broken)
+    markup instead of visible text. `escape()` everywhere, including href
+    attribute values built from already-validated slugs: harmless, and one
+    less thing to prove safe by other means. The JSON-LD emitted elsewhere
+    for the same content is untouched by this — it's JSON, not HTML.
     """
     parts: list[str] = []
-    parts.append(f"<h1>{name}</h1>")  # the titles plan swaps in the registry seoTitle
+    parts.append(f"<h1>{escape(name)}</h1>")  # the titles plan swaps in the registry seoTitle
     short = _tool_registry_short_description(slug) or desc
-    parts.append(f'<p class="tool-summary">{short}</p>')
-    parts.append(f'<p class="tool-intro">{desc}</p>')
+    parts.append(f'<p class="tool-summary">{escape(short)}</p>')
+    parts.append(f'<p class="tool-intro">{escape(desc)}</p>')
     if slug in TOOL_HOWTO:
-        parts.append(f'<section class="tool-steps"><h2>{_howto_name_for(name)}</h2><ol>')
-        for step in TOOL_HOWTO[slug]:
-            parts.append(f"<li><strong>{step['name']}</strong> {step['text']}</li>")
+        parts.append(f'<section class="tool-steps"><h2>{escape(_howto_name_for(name))}</h2><ol>')
+        for i, step in enumerate(TOOL_HOWTO[slug]):
+            # id="step-N" matches the JSON-LD HowToStep.url anchor (#step-N) below.
+            parts.append(f'<li id="step-{i + 1}"><strong>{escape(step["name"])}</strong> {escape(step["text"])}</li>')
         parts.append("</ol></section>")
     if slug in TOOL_FAQ:
-        parts.append(f'<section class="tool-faq"><h2>Questions about {name}</h2>')
+        parts.append(f'<section class="tool-faq"><h2>Questions about {escape(name)}</h2>')
         for faq in TOOL_FAQ[slug]:
-            parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
+            parts.append(f"<h3>{escape(faq['q'])}</h3><p>{escape(faq['a'])}</p>")
         parts.append("</section>")
     mentioning_posts = _tool_to_blogs().get(slug, [])
     if mentioning_posts:
         parts.append('<section class="tool-guides"><h2>Mentioned in our guides</h2><ul>')
         for post in mentioning_posts:
-            parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
+            parts.append(f'<li><a href="/blog/{escape(post["slug"], quote=True)}">{escape(post["title"])}</a></li>')
         parts.append("</ul></section>")
     related = _related_tools(slug, registry, prefix)
     if related:
-        parts.append(f'<section class="tool-related"><h2>{related_heading}</h2><ul>')
+        parts.append(f'<section class="tool-related"><h2>{escape(related_heading)}</h2><ul>')
         for related_slug, related_name, href in related:
-            parts.append(f'<li><a href="{href}">{related_name}</a></li>')
+            parts.append(f'<li><a href="{escape(href, quote=True)}">{escape(related_name)}</a></li>')
         parts.append("</ul></section>")
     reviewed = _last_reviewed_for(slug)
     parts.append(
-        f'<p class="meta-trust"><em>Last reviewed {reviewed} by the PrivaTools maintainers. '
+        f'<p class="meta-trust"><em>Last reviewed {escape(reviewed)} by the PrivaTools maintainers. '
         f'Source code on <a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
         f'(MIT-licensed, self-hostable).</em></p>'
     )
