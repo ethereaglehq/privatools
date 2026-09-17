@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload 2+ images",
+      "text": "JPG, PNG, WebP — at least 2 files."
+    },
+    {
+      "name": "Choose direction",
+      "text": "Vertical: top-to-bottom (good for screenshots in sequence). Horizontal: side-by-side (good for before/after)."
+    },
+    {
+      "name": "Download the merged image",
+      "text": "Each input is scaled to a common dimension and concatenated."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will images be cropped?",
+      "a": "No — they're scaled to a common dimension (width for vertical, height for horizontal). Smaller images upscale; larger images downscale."
+    },
+    {
+      "q": "What if my images have different aspect ratios?",
+      "a": "They get letterboxed (transparent padding) to fit. Use Resize Crop Image first to force a common aspect ratio."
+    },
+    {
+      "q": "Difference from Make Collage?",
+      "a": "Merge concatenates in a single row or column. Collage arranges in a grid with configurable columns."
+    }
+  ]
+}

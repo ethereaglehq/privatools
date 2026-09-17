@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste JSON or XML",
+      "text": "Or upload a file. Auto-detects format from braces / tags."
+    },
+    {
+      "name": "Click Format",
+      "text": "Adds indentation, proper line breaks, sorted keys (optional). Removes extra whitespace."
+    },
+    {
+      "name": "Copy or download the result",
+      "text": "Runs entirely in your browser."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will it validate the input?",
+      "a": "Yes — invalid JSON / XML shows an error with the line and column. Common errors (trailing commas, unclosed strings, mismatched tags) are highlighted."
+    },
+    {
+      "q": "Can it convert JSON ↔ XML?",
+      "a": "This tool only formats. For conversion, paste into the CSV/JSON converter or use a dedicated converter."
+    },
+    {
+      "q": "Is the indent customizable?",
+      "a": "Yes — 2 spaces, 4 spaces, or tabs."
+    }
+  ]
+}

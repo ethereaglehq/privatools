@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video",
+      "text": "MP4, WebM, MOV, AVI, MKV — up to 500 MB."
+    },
+    {
+      "name": "Choose target format",
+      "text": "MP4 (universal), WebM (open, smaller), MOV (Apple), AVI (legacy), MKV (open container)."
+    },
+    {
+      "name": "Download the converted video",
+      "text": "FFmpeg transcodes via the appropriate codec (H.264 for MP4, VP9/Opus for WebM, etc.)."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Which format to choose?",
+      "a": "MP4: most compatible. WebM: smaller, used for web embedding. MOV: works in Apple ecosystem and Final Cut. MKV: open-source flexible container."
+    },
+    {
+      "q": "Will quality suffer?",
+      "a": "FFmpeg uses sensible default bitrates that preserve visual quality. For lossless conversion (rare), use the MKV output."
+    },
+    {
+      "q": "How long does it take?",
+      "a": "Roughly real-time on the server (a 2-minute video = ~2 minutes to convert)."
+    }
+  ]
+}

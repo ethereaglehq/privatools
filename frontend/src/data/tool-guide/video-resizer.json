@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video",
+      "text": "MP4 / MOV / MKV / WebM up to 500 MB."
+    },
+    {
+      "name": "Choose preset",
+      "text": "480p (SD), 720p (HD), 1080p (Full HD), 1440p (QHD), 2160p (4K)."
+    },
+    {
+      "name": "Download the resized video",
+      "text": "FFmpeg scales the video to the target height while preserving aspect ratio."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will upscaling improve quality?",
+      "a": "No — upscaling can't add detail. Use it to match a target resolution, not to improve quality."
+    },
+    {
+      "q": "Does this re-encode the audio?",
+      "a": "Audio is copied unchanged when possible (saves time, no quality loss)."
+    },
+    {
+      "q": "Can I crop to a different aspect ratio?",
+      "a": "Not directly — the resizer preserves aspect ratio. For aspect-ratio crops, use a video editor."
+    }
+  ]
+}

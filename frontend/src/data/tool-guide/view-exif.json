@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "Select a JPG, PNG, TIFF, WebP, HEIC, or BMP up to 500 MB."
+    },
+    {
+      "name": "Inspect the metadata",
+      "text": "The tool reads every EXIF, IPTC, and XMP field: camera make and model, lens info, ISO, exposure, GPS coordinates, capture timestamps, software versions, embedded copyright."
+    },
+    {
+      "name": "Decide what to do next",
+      "text": "If GPS coordinates are present they reveal where the photo was taken. Use Remove EXIF before publishing to strip them."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What metadata does it show?",
+      "a": "All standard EXIF tags (camera make/model, lens, ISO, exposure, focal length, timestamps), GPS sub-IFD (latitude, longitude, altitude), IPTC, and XMP-embedded fields, plus PNG tEXt chunks if present."
+    },
+    {
+      "q": "Does this strip the metadata?",
+      "a": "No — this is read-only. To strip metadata, use Remove EXIF."
+    },
+    {
+      "q": "Why does my photo have GPS coordinates?",
+      "a": "Most smartphones embed GPS coordinates in photos by default. They reveal exactly where the photo was taken. Strip them before posting publicly."
+    }
+  ]
+}

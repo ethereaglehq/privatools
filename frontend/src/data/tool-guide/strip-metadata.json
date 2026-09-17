@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload PDF(s)",
+      "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."
+    },
+    {
+      "name": "PrivaTools removes all metadata",
+      "text": "Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, all XMP fields, and any custom-defined metadata."
+    },
+    {
+      "name": "Download the clean PDF (or ZIP)",
+      "text": "Single file → single PDF; multiple files → ZIP. Visible content is unchanged."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why strip metadata?",
+      "a": "Author / producer / original-filename fields can identify who created or owns a document — a privacy concern for whistleblowers, journalists, or before public release."
+    },
+    {
+      "q": "What about embedded images' EXIF?",
+      "a": "Image-level EXIF inside PDF embedded images is also stripped. The image pixel data is unchanged."
+    },
+    {
+      "q": "Is this the same as Sanitize?",
+      "a": "No — Strip Metadata removes informational fields. Sanitize removes security-risky elements (JavaScript, auto-launch attachments)."
+    }
+  ]
+}

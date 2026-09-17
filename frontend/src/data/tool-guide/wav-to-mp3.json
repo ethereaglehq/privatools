@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a WAV file",
+      "text": "Drop a .wav file. Uncompressed audio is the ideal source for an encode."
+    },
+    {
+      "name": "PrivaTools encodes via FFmpeg",
+      "text": "Uncompressed source gives the encoder the best possible input. Expect roughly a 10:1 reduction."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Expect roughly a 10:1 reduction. Keep the WAV if it is your master — MP3 is a delivery format, not an archive one."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What bitrate should I choose?",
+      "a": "192 kbps is a solid default; 256–320 kbps is near-transparent for music. MP3 is lossy, so a higher bitrate keeps more detail at the cost of a larger file."
+    },
+    {
+      "q": "How much smaller will the MP3 be?",
+      "a": "Typically 5–11× smaller than the WAV, depending on the bitrate you pick."
+    },
+    {
+      "q": "Is the conversion private?",
+      "a": "Yes — FFmpeg runs on the PrivaTools backend and the files are deleted immediately after the response."
+    }
+  ]
+}

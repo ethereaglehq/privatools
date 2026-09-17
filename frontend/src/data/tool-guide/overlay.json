@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the base PDF",
+      "text": "The PDF that forms the background."
+    },
+    {
+      "name": "Upload the overlay PDF",
+      "text": "A PDF whose pages will be layered on top of the base."
+    },
+    {
+      "name": "Choose mode and download",
+      "text": "Overlay: foreground on top. Underlay: behind. Stamp: applied to every page repeatedly. Output: a merged PDF with the overlay rendered onto each base page."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's the difference between overlay and merge?",
+      "a": "Merge concatenates files page-by-page. Overlay composites pages on top of each other — useful for adding letterheads, watermarks-from-PDF, or repeating templates."
+    },
+    {
+      "q": "Can I overlay only some pages?",
+      "a": "By default it applies cycle-wise: if the overlay has 3 pages and the base has 10, the overlay repeats. For one-time overlay, use a base + overlay of equal length."
+    },
+    {
+      "q": "Does transparency work?",
+      "a": "Yes — PDF supports transparency and the overlay's alpha is honored. White rectangles still cover what's beneath; transparent regions show base content through."
+    }
+  ]
+}

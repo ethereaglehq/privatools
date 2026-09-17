@@ -1,0 +1,38 @@
+{
+  "howto": [
+    {
+      "name": "Upload the stamped PDF",
+      "text": "Select a PDF that carries Bates numbering applied by PrivaTools or another tool."
+    },
+    {
+      "name": "Describe the stamp",
+      "text": "Give the prefix, digit count and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone."
+    },
+    {
+      "name": "Download the clean PDF",
+      "text": "The matching stamps are removed and the rest of the page is untouched. The original on your device is never modified."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will this remove numbering added by another program?",
+      "a": "Usually, if the stamps were added as text and you can describe their shape: prefix, digit count, suffix. Numbers burned into a scanned image are part of the picture and cannot be lifted this way."
+    },
+    {
+      "q": "Why do I have to type the prefix and digits?",
+      "a": "So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. Describing the format is what keeps the removal surgical."
+    },
+    {
+      "q": "Does removing Bates numbers change the rest of the page?",
+      "a": "No. Only the matching stamp objects are removed; the remaining text, images and layout are untouched, and the file on your device is never modified."
+    },
+    {
+      "q": "Can I renumber after removing?",
+      "a": "Yes. Strip the old stamps here, then use Bates Numbering to apply a fresh sequence with whatever prefix and starting number you need."
+    },
+    {
+      "q": "Is it free and account-free?",
+      "a": "Yes. No account, no watermark, no daily cap, the same as every other tool on the site."
+    }
+  ]
+}

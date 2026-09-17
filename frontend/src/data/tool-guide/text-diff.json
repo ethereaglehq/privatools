@@ -1,0 +1,38 @@
+{
+  "howto": [
+    {
+      "name": "Enter the two texts",
+      "text": "Paste the original text on the left and the modified text on the right, or upload two text files."
+    },
+    {
+      "name": "View the diff",
+      "text": "Differences are highlighted inline: green for additions, red for deletions, and yellow for modifications."
+    },
+    {
+      "name": "Choose diff mode",
+      "text": "Switch between side-by-side and unified views. Line numbers help locate changes in large documents."
+    },
+    {
+      "name": "Copy or download the diff",
+      "text": "Copy the highlighted diff to your clipboard or download it as an HTML file for sharing."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What diff algorithm is used?",
+      "a": "The tool uses a line-by-line diff algorithm similar to Unix diff, highlighting additions, deletions, and modifications with color coding."
+    },
+    {
+      "q": "Can I compare files directly?",
+      "a": "Yes. Upload two text files instead of pasting. Supported formats include .txt, .csv, .json, .xml, .html, .css, .js, .py, and other plain-text formats."
+    },
+    {
+      "q": "Is there a file size limit for comparison?",
+      "a": "Each file can be up to 500 MB. Very large files may take a few seconds to process the diff."
+    },
+    {
+      "q": "Can I compare code files?",
+      "a": "Yes. The diff viewer works with any plain-text format. It highlights changes line by line, making it useful for comparing code, configs, or data files."
+    }
+  ]
+}

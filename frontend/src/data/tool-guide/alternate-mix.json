@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload two PDFs",
+      "text": "Select two PDFs to interleave. They don't need the same page count."
+    },
+    {
+      "name": "Choose mode",
+      "text": "Alternate: page 1A, 1B, 2A, 2B… Reverse-alternate: same, but the second PDF is reversed first (useful for double-sided scans where the back side scans bottom-to-top)."
+    },
+    {
+      "name": "Download the mixed PDF",
+      "text": "Click Mix. The output is a single PDF with pages interleaved from both inputs."
+    }
+  ],
+  "faq": [
+    {
+      "q": "When would I use this?",
+      "a": "The classic case is double-sided scanning on a single-sided scanner: scan the odd pages, flip the stack, scan the even pages in reverse, then alternate-mix them with reverse-alternate."
+    },
+    {
+      "q": "What if the PDFs have different page counts?",
+      "a": "PrivaTools alternates pages until one source is exhausted, then appends the remaining pages from the longer source at the end."
+    },
+    {
+      "q": "Does this preserve bookmarks?",
+      "a": "No. Bookmarks from the originals are dropped because they would point to incorrect pages after interleaving."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose target page size",
+      "text": "A4, Letter, Legal, Tabloid, or custom dimensions in millimeters/inches."
+    },
+    {
+      "name": "Download the resized PDF",
+      "text": "PrivaTools scales each page's MediaBox to the target. Content is preserved at relative position; aspect ratio is maintained."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will my content be cropped if I resize to a smaller page?",
+      "a": "No — content scales proportionally. If you want to crop instead, use the Crop tool."
+    },
+    {
+      "q": "Difference between Resize and Crop?",
+      "a": "Resize changes the page dimensions (scales content). Crop changes the visible region without scaling."
+    },
+    {
+      "q": "Does this affect text quality?",
+      "a": "Text is vector-based in PDFs, so it scales perfectly. Only embedded raster images can lose quality on extreme upscale."
+    }
+  ]
+}

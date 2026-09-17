@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MKV file",
+      "text": "Drop an .mkv file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "The video is re-encoded as VP9, which browsers play natively and MKV never could."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The result is VP9 WebM — open, royalty-free and suited to HTML5 video where MKV has no browser support at all."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does MKV to WebM re-encode?",
+      "a": "Often partially — WebM requires VP8/VP9 video and Vorbis/Opus audio, so any stream not already in those codecs is re-encoded. Both are Matroska-based, so the container step itself is straightforward."
+    },
+    {
+      "q": "Why convert to WebM?",
+      "a": "To embed open-format video on the web without proprietary codecs."
+    },
+    {
+      "q": "Are uploads retained?",
+      "a": "No — temporary files, deleted after the response."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Choose a direction",
+      "text": "Switch between YAML to TOML and TOML to YAML depending on the config format you need."
+    },
+    {
+      "name": "Paste config",
+      "text": "Common nested maps, strings, numbers, booleans, and arrays are parsed directly in your browser."
+    },
+    {
+      "name": "Copy converted output",
+      "text": "Use the converted config in pyproject.toml, Cargo.toml, app config, or deployment files."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Are YAML anchors and custom tags supported?",
+      "a": "No. The converter is designed for common app config: nested maps, strings, numbers, booleans, and simple arrays."
+    },
+    {
+      "q": "Will comments be preserved?",
+      "a": "No. Comments are omitted during conversion because TOML and YAML comments do not map cleanly through a simple object representation."
+    },
+    {
+      "q": "Does it upload config files?",
+      "a": "No. Conversion runs locally in your browser."
+    }
+  ]
+}

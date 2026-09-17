@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a JPG",
+      "text": "Drop a .jpg or .jpeg file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools converts via Pillow",
+      "text": "The existing pixels are rewritten into TIFF without a further lossy generation."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. TIFF is the format archives, print shops and scanning workflows ask for. It cannot restore detail the JPG already discarded — it preserves exactly what is there, without adding another lossy generation."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does converting JPG to TIFF improve quality?",
+      "a": "No. JPG is already lossy, and TIFF stores those exact pixels without further loss — but it cannot recover detail JPG discarded. Convert when a workflow (archival, print, scanning, OCR) needs a lossless/uncompressed container, not to 'upscale' a JPG."
+    },
+    {
+      "q": "Why is the TIFF so much larger than the JPG?",
+      "a": "TIFF is uncompressed or losslessly compressed, so a 2 MB JPG can become 20–40 MB. That's expected — you trade file size for a lossless, edit- and print-friendly format."
+    },
+    {
+      "q": "Is the conversion private?",
+      "a": "Yes. It runs on the PrivaTools backend with local image libraries (no third-party API); input and output files are deleted immediately after the response."
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "howto": [
+    {
+      "name": "Drop your JPG images",
+      "text": "Upload one or many .jpg / .jpeg files (PNG also works) up to 500 MB total. Photos enter isolated per-request storage only for the conversion pass."
+    },
+    {
+      "name": "Reorder if needed",
+      "text": "Drag thumbnails to set the page order. Each photo becomes one page in the output PDF."
+    },
+    {
+      "name": "Choose page size",
+      "text": "Letter, A4, or fit-to-image (where each page matches its source image dimensions exactly). EXIF orientation is honored automatically."
+    },
+    {
+      "name": "Set margins (optional)",
+      "text": "None (image edge-to-edge), small, medium, large, or custom. Useful for binding margins on printed copies."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Click Convert. All photos become a single PDF in your chosen order. EXIF GPS and camera metadata are stripped for privacy."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will my photos lose quality?",
+      "a": "Quality is preserved — JPGs are embedded as-is into the PDF (no re-encoding pass). The PDF wrapper adds about 5% overhead on top of the original JPG sizes. PNG inputs are also embedded losslessly."
+    },
+    {
+      "q": "Can I reorder the photos before conversion?",
+      "a": "Yes — drag the thumbnails to your desired order before clicking Convert. Add page breaks between groups for chapter-style organization."
+    },
+    {
+      "q": "Does this preserve EXIF metadata?",
+      "a": "GPS and camera EXIF metadata are stripped by default for privacy (so the recipient can't see your home location or device model). PDF-level metadata like title and author can be set separately with the Update Metadata tool after conversion."
+    },
+    {
+      "q": "Is it safe to upload sensitive photos?",
+      "a": "Yes. The photos are held in temporary per-request storage inside an isolated Docker container for the conversion pass only — both the input JPGs and the output PDF are unlinked the moment your download begins. Nothing is logged, no thumbnail is kept, no copy is sent to any third-party API. The conversion code is open source."
+    },
+    {
+      "q": "Can I batch convert dozens of photos at once?",
+      "a": "Yes — drop as many as you want into the upload zone. All become pages in a single PDF (drag to reorder before clicking Convert). For very large batches you can split into multiple PDFs or use the Image to PDF generic tool for finer control."
+    },
+    {
+      "q": "Can I control the page size and orientation?",
+      "a": "Yes. Choose A4, Letter, or fit-to-image (where each page matches its source image dimensions exactly). Set landscape or portrait, and pick margin presets (none, small, medium, large) or specify custom margins in millimeters or inches."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. There is no cap on the number of photos you can combine."
+    },
+    {
+      "q": "How is this different from iLovePDF or Smallpdf JPG to PDF?",
+      "a": "Free with no daily limit (iLovePDF caps free use, Smallpdf restricts to 2 tasks/day), no account required, and no watermark on the output. The conversion code is open source and self-hostable, so you can run it on your own infrastructure if you handle particularly sensitive imagery."
+    }
+  ]
+}

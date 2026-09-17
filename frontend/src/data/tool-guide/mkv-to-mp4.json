@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MKV file",
+      "text": "Drop an .mkv file. Matroska commonly holds H.264 or H.265 video."
+    },
+    {
+      "name": "PrivaTools remuxes via FFmpeg",
+      "text": "Where the MKV already holds H.264 or H.265, this is largely a container change and the video is preserved."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. MP4 is the container Safari, iOS, Windows and most TVs expect. Where the codecs already suit MP4 this is largely a container change, so quality is preserved."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does MKV to MP4 re-encode the video?",
+      "a": "When the MKV's streams are already MP4-compatible (e.g. H.264/H.265 video + AAC audio), PrivaTools remuxes the container without re-encoding — fast and lossless. Incompatible codecs are re-encoded with sensible defaults."
+    },
+    {
+      "q": "Why MP4 instead of MKV?",
+      "a": "MP4 plays natively on phones, browsers, TVs, and editors; MKV is a flexible container but far less universally supported."
+    },
+    {
+      "q": "Are videos retained after conversion?",
+      "a": "No. Uploaded videos and outputs are temporary and deleted after the response."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste your CSV or JSON",
+      "text": "Or upload a file. Auto-detects the format."
+    },
+    {
+      "name": "Click Convert",
+      "text": "CSV → JSON: each row becomes an object using the first row as keys. JSON → CSV: array of objects → rows; keys → header."
+    },
+    {
+      "name": "Copy or download the result",
+      "text": "Runs entirely in your browser. Your data never leaves your device."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How does CSV escaping work?",
+      "a": "Standard RFC 4180: commas in values must be quoted; quotes inside values are doubled (\"\"). PrivaTools handles both."
+    },
+    {
+      "q": "What about nested JSON?",
+      "a": "Nested objects are flattened to dot-notation columns (user.name, user.email) for CSV output. Reverse direction reconstructs the nesting."
+    },
+    {
+      "q": "Will my data be uploaded?",
+      "a": "No — pure-browser conversion. No data leaves your machine."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "howto": [
+    {
+      "name": "Drop your PDF",
+      "text": "Upload a PDF up to 500 MB. The editor renders each page in a scrolling canvas ready for annotation. No account required."
+    },
+    {
+      "name": "Choose an annotation tool",
+      "text": "Pick text box, highlighter, freehand pen, rectangle, circle, line, or arrow from the toolbar. Set color, opacity, and font size before drawing."
+    },
+    {
+      "name": "Add your annotations",
+      "text": "Click on the page to drop text, drag to draw shapes, or hold-and-drag for freehand strokes. Move, resize, or delete any annotation before saving."
+    },
+    {
+      "name": "Download the edited PDF",
+      "text": "Click Save. Annotations are flattened into the document so they appear identically in Adobe Reader, Preview, Chrome, and every mobile reader."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I edit the existing text in a PDF?",
+      "a": "The editor supports adding new text, shapes, highlights, and freehand drawings on top of the page. Direct editing of existing text glyphs requires re-authoring the document because PDF stores text as positioned glyphs, not as flowing paragraphs."
+    },
+    {
+      "q": "Are my annotations permanent?",
+      "a": "Yes. When you save, annotations are flattened into the PDF so they appear identically in every viewer (Adobe Reader, Preview, Chrome, mobile readers) and cannot be removed by toggling annotation visibility."
+    },
+    {
+      "q": "What annotation types are available?",
+      "a": "Text boxes, freehand pen, highlighter, rectangles, circles, lines, and arrows. You can set color, opacity, line thickness, and font size for each. Move and resize freely before saving."
+    },
+    {
+      "q": "Is it safe to edit a confidential PDF here?",
+      "a": "Yes. The PDF is held in temporary per-request storage inside an isolated Docker container only for the duration of your edit session — both input and output are unlinked the moment your download begins. No copy remains in permanent storage, logs, or backups. The editor code is open source under MIT for verification."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. There is no page-count cap; very long PDFs render page-by-page as you scroll."
+    },
+    {
+      "q": "Do I need an account or sign-up?",
+      "a": "No. No account, no email, no sign-up. The editor loads directly in your browser; the privacy guarantees come from the architecture, not from a user profile."
+    },
+    {
+      "q": "How is this different from Adobe Acrobat or PDFescape?",
+      "a": "Free with no daily limit (PDFescape caps free use at 10 MB / 100 pages, Adobe requires a paid subscription for full editing), no account required, and the entire editor is open source so you can self-host it. We don't store your file or send it to any third-party API."
+    }
+  ]
+}

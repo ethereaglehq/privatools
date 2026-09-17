@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste your JWT",
+      "text": "Copy the full token (three dot-separated base64url segments) into the input area."
+    },
+    {
+      "name": "Inspect the decoded structure",
+      "text": "Header, payload, and signature are decoded in your browser. Standard claims (iss, sub, aud, exp, iat, nbf, jti) are highlighted; expiry status is shown."
+    },
+    {
+      "name": "Copy decoded values",
+      "text": "Click Copy on any section to grab the JSON. Decoding never sends your token to a server."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is it safe to paste a real production JWT here?",
+      "a": "Yes — decoding happens entirely in your browser using JavaScript's atob(). No part of the token is sent to a server. Verify by checking DevTools → Network."
+    },
+    {
+      "q": "Can it verify the signature?",
+      "a": "Not in this tool. Verification requires the issuer's signing key (HMAC secret for HS*, public key for RS*/ES*). The decoder displays the signature for inspection but doesn't validate it."
+    },
+    {
+      "q": "What if my JWT is malformed?",
+      "a": "If the three-part dot structure is wrong, you'll see a clear error. If the base64 is malformed, the parser shows which segment failed."
+    }
+  ]
+}

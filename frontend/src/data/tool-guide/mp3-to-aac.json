@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MP3",
+      "text": "Drop an .mp3 file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another loses a little more each time."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another always loses a little more. It is worth doing for Apple devices and for streaming, not for archiving."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is AAC better than MP3?",
+      "a": "AAC generally sounds better than MP3 at the same bitrate, but transcoding an existing MP3 won't recover lost detail — it just repackages it. Use it for Apple/M4A workflows."
+    },
+    {
+      "q": "What bitrate should I pick?",
+      "a": "128–256 kbps AAC is typical; AAC is efficient, so 128–192 kbps often matches a higher-bitrate MP3."
+    },
+    {
+      "q": "Is it private?",
+      "a": "Yes — local FFmpeg conversion; files deleted immediately after the response."
+    }
+  ]
+}

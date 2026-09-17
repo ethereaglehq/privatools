@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB. Text-heavy PDFs convert best."
+    },
+    {
+      "name": "PrivaTools extracts and structures text",
+      "text": "Headings, paragraphs, lists, code blocks, and tables are identified by typographic cues (font size, weight, indentation)."
+    },
+    {
+      "name": "Download the .md file",
+      "text": "Open in any Markdown editor for editing or further conversion to HTML / EPUB / DOCX."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How accurate is the structural detection?",
+      "a": "Headings work well when source fonts are larger. Tables transfer if cells are clearly separated. Code-block detection is a heuristic — manual review recommended."
+    },
+    {
+      "q": "What about images?",
+      "a": "Images are extracted to a sibling folder and referenced by Markdown image syntax."
+    },
+    {
+      "q": "Will hyperlinks be preserved?",
+      "a": "Yes — PDF hyperlinks become Markdown links."
+    }
+  ]
+}

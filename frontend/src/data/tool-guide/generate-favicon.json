@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a square image",
+      "text": "PNG, JPG, or SVG. PrivaTools resizes to favicon dimensions automatically."
+    },
+    {
+      "name": "PrivaTools generates the favicon bundle",
+      "text": "Multiple resolutions (16×16, 32×32, 48×48, 192×192, 512×512) plus Apple Touch Icon + manifest.json + meta tags HTML snippet."
+    },
+    {
+      "name": "Download the bundle",
+      "text": "Drop into your site's public/ folder, paste the meta tags into <head>."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Do I need all those sizes?",
+      "a": "Yes — different browsers and devices use different sizes (16×16 for tabs, 192×192 for Android home screen, 512×512 for PWA install)."
+    },
+    {
+      "q": "Should I use PNG or SVG source?",
+      "a": "SVG is best — it stays sharp at every size. PNG works if you only have a raster logo. JPG loses some sharpness from compression."
+    },
+    {
+      "q": "Will my logo become circular?",
+      "a": "No — favicons render exactly as uploaded. To get a circular look, upload a circular PNG with transparency."
+    }
+  ]
+}

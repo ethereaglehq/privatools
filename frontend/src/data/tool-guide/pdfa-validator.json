@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB to check whether it conforms to PDF/A archive standards."
+    },
+    {
+      "name": "PrivaTools runs a conformance check",
+      "text": "Tests against PDF/A-1, PDF/A-2, and PDF/A-3 requirements: embedded fonts, color profiles, no JavaScript, no encryption, no external references."
+    },
+    {
+      "name": "Read the validation report",
+      "text": "Either 'compliant' with the highest PDF/A level achieved, or a list of specific violations preventing compliance."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is PDF/A and why does it matter?",
+      "a": "PDF/A is an ISO standard for long-term archival. It requires self-contained PDFs (all fonts embedded, no external scripts, no encryption) so the document will render identically in 50 years."
+    },
+    {
+      "q": "What's the difference between PDF/A-1, A-2, A-3?",
+      "a": "A-1 is the strictest (no transparency, no XFA forms). A-2 adds transparency, JPEG 2000, and PDF attachments. A-3 allows arbitrary file attachments — useful for invoice + machine-readable data bundles."
+    },
+    {
+      "q": "If it's not PDF/A, can I convert it?",
+      "a": "Yes — use the PDF to PDF/A tool which fixes the most common issues automatically (font embedding, color profile attachment)."
+    }
+  ]
+}

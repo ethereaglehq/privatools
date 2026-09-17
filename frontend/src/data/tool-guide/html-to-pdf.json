@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Enter a URL or paste HTML",
+      "text": "Type a public URL to render, or paste raw HTML/CSS directly into the editor."
+    },
+    {
+      "name": "Configure rendering options",
+      "text": "Set page size, margins, and whether to include background graphics. JavaScript rendering is supported for dynamic pages."
+    },
+    {
+      "name": "Generate the PDF",
+      "text": "Click Convert. The server uses a headless browser to render the page and produce a pixel-perfect PDF."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I convert a live website URL to PDF?",
+      "a": "Yes. Enter any public URL and the server will render the page — including CSS, images, and JavaScript — and convert it to PDF."
+    },
+    {
+      "q": "Is JavaScript rendered?",
+      "a": "Yes. A headless browser executes JavaScript before capturing the page, so dynamically loaded content appears in the PDF."
+    },
+    {
+      "q": "Are external stylesheets and images included?",
+      "a": "Yes. The renderer fetches external CSS, web fonts, and images. Only resources behind authentication may not load."
+    }
+  ]
+}

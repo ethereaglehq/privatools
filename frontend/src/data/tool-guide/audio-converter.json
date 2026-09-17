@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an audio file",
+      "text": "Select an MP3, WAV, OGG, FLAC, AAC, or M4A file up to 200 MB."
+    },
+    {
+      "name": "Choose output format and bitrate",
+      "text": "Select the target format (MP3, WAV, OGG, FLAC, AAC) and bitrate (64k to 320k). Default is MP3 at 192k."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. FFmpeg processes the audio and the converted file downloads automatically."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What audio formats are supported?",
+      "a": "Convert between MP3, WAV, OGG, FLAC, and AAC. The tool uses FFmpeg for professional-quality conversion with precise codec handling."
+    },
+    {
+      "q": "Can I choose the bitrate?",
+      "a": "Yes. Available bitrates: 64k (small file), 128k (good), 192k (high quality), 256k (very high), and 320k (maximum). Default is 192k."
+    },
+    {
+      "q": "What is the file size limit?",
+      "a": "Audio files up to 200 MB are supported. This covers most audio files including full albums in lossless FLAC format."
+    }
+  ]
+}

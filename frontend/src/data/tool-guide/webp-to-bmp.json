@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a WebP image",
+      "text": "Drop a .webp file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools converts via Pillow",
+      "text": "Uncompressed output, with transparency flattened onto white."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. BMP is uncompressed and drops transparency to a white background; it is worth using only when some older tool insists on it."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert WebP to BMP?",
+      "a": "To use a modern WebP image in older software or hardware that only reads uncompressed bitmaps. The BMP is a raw, maximally-compatible copy."
+    },
+    {
+      "q": "Is the BMP lossless?",
+      "a": "The BMP is a lossless copy of the decoded WebP pixels; if the source WebP was lossy, those pixels are already final and can't be improved."
+    },
+    {
+      "q": "Are uploads retained?",
+      "a": "No. Files are temporary and deleted right after the download response."
+    }
+  ]
+}

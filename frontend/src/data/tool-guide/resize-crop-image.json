@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "JPG, PNG, WebP up to 500 MB."
+    },
+    {
+      "name": "Set target dimensions and mode",
+      "text": "Resize: scale to fit (preserves aspect ratio with padding) or fill (crops to fill). Crop: cut to exact dimensions from the center."
+    },
+    {
+      "name": "Download the result",
+      "text": "Single processed image at the specified dimensions."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Should I resize or crop?",
+      "a": "Resize when you want to keep the entire image. Crop when you have a specific aspect ratio target (e.g. social media banner)."
+    },
+    {
+      "q": "Will upscaling lose quality?",
+      "a": "Some sharpness loss is unavoidable when upscaling. For 2x or 4x enlargement with AI smoothing, use Image Upscaler."
+    },
+    {
+      "q": "Can I pick the crop position?",
+      "a": "Currently crop is centered. Drag-to-crop with a custom anchor is on the roadmap."
+    }
+  ]
+}

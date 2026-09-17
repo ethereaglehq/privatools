@@ -1,0 +1,50 @@
+{
+  "howto": [
+    {
+      "name": "Upload the document",
+      "text": "Select the PDF you need to sign. The first page is displayed in the signing canvas."
+    },
+    {
+      "name": "Create your signature",
+      "text": "Draw your signature with a mouse or finger, type it using a handwriting font, or upload a signature image."
+    },
+    {
+      "name": "Place and resize the signature",
+      "text": "Drag the signature to the correct position on the page. Resize it to fit the signing area."
+    },
+    {
+      "name": "Download the signed PDF",
+      "text": "Click Apply. The signature is embedded into the PDF and the file is ready to share."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is this a legally binding electronic signature?",
+      "a": "PrivaTools creates a visual signature embedded in the PDF, plus an audit trail in the document metadata (signer name, timestamp). Whether it qualifies as legally binding depends on your jurisdiction — for most informal agreements, internal sign-offs, and consent forms in the US, EU, UK, India, and Australia, it is widely accepted under ESIGN and eIDAS frameworks. For court-grade qualified signatures, you need a certified eID provider."
+    },
+    {
+      "q": "Can I sign multiple pages or multiple signatures on one page?",
+      "a": "Yes. After creating your signature, you can place it on any page by navigating through the document preview. Add as many signatures as needed (e.g. initial-each-page or multi-party contracts)."
+    },
+    {
+      "q": "Is my signature stored on the server?",
+      "a": "No. Your signature exists only in your browser session — drawn on a canvas, kept in memory while you place it. The server receives the signature image only for the brief moment it embeds it into the PDF, then unlinks both input and output within seconds of your download. The signature image is never kept after the response."
+    },
+    {
+      "q": "Is it safe to sign a sensitive contract here?",
+      "a": "Yes. The PDF and signature image are held in temporary per-request storage inside an isolated Docker container for the duration of the request only; both are unlinked the moment your download begins. Nothing is logged, indexed, or sent to a third-party API. The signing pipeline is open source on GitHub and you can self-host the entire stack."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. There is no cap on the number of signatures you can place."
+    },
+    {
+      "q": "Do I need an account?",
+      "a": "No — no account, no email, no sign-up. Upload, draw, place, download. DocuSign and Adobe Sign both require accounts; we don't."
+    },
+    {
+      "q": "How is this different from DocuSign or Adobe Sign?",
+      "a": "Free with no daily limit and no account required. PrivaTools handles single-signer documents extremely well; for multi-party serial signing with email reminders and a portal-style workflow, DocuSign or Adobe Sign remain more featureful. We don't retain the file or have access to it after delivery."
+    }
+  ]
+}

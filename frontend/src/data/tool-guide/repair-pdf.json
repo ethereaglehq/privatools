@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the corrupt PDF",
+      "text": "Drop a PDF up to 500 MB that won't open or shows errors in your viewer."
+    },
+    {
+      "name": "PrivaTools rebuilds the file structure",
+      "text": "Uses pikepdf to parse the PDF tolerantly, recover damaged cross-reference tables, and rewrite the file with a clean structure."
+    },
+    {
+      "name": "Download the repaired PDF",
+      "text": "Most viewer-breaking issues (broken xref, missing trailer, corrupted streams) are fixable."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What kinds of damage can it fix?",
+      "a": "Missing or corrupt cross-reference tables, broken trailers, dangling object references, slightly-truncated streams. Cannot recover from missing object data."
+    },
+    {
+      "q": "Will the repaired PDF look identical?",
+      "a": "Yes if the damage was in metadata/structure. Visible content damage (cropped images, missing fonts) requires the original to fix."
+    },
+    {
+      "q": "Can it merge two damaged PDFs?",
+      "a": "Repair each separately first, then use Merge."
+    }
+  ]
+}

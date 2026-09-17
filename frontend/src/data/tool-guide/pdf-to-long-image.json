@@ -1,0 +1,38 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. Every page is rendered, so long documents make very tall images."
+    },
+    {
+      "name": "Pick a format",
+      "text": "PNG is lossless and best for text and line art; JPG is saved at quality 90 and produces a much smaller file for scanned or photographic pages."
+    },
+    {
+      "name": "Download the stitched image",
+      "text": "Pages are rendered at 100 DPI and joined top to bottom on a white canvas. Pages narrower than the widest one are centred, so a mixed-size document stays aligned."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why would I want one tall image instead of a PDF?",
+      "a": "Because some places will not take a PDF. Chat apps, image-only uploaders, social posts and some ticketing systems accept an image and nothing else. A single tall PNG shows the whole document without asking anyone to download a file."
+    },
+    {
+      "q": "Should I choose PNG or JPG?",
+      "a": "PNG for text, screenshots and line art, where it stays sharp and lossless. JPG for scans and photographs, where it produces a far smaller file at quality 90. A long text document saved as JPG will show fringing around the letters."
+    },
+    {
+      "q": "What resolution are the pages rendered at?",
+      "a": "100 DPI, which keeps a normal page readable while stopping a long document from becoming an unusable image. A 30-page document produces an image roughly 30,000 pixels tall."
+    },
+    {
+      "q": "What happens if my pages are different sizes?",
+      "a": "The canvas takes the width of the widest page and every narrower page is centred on it, so a document mixing portrait and landscape stays aligned instead of stepping left and right."
+    },
+    {
+      "q": "Is there a page limit?",
+      "a": "No hard limit, but very long documents produce images some software will refuse to open. If you hit that, split the PDF first and stitch each part separately."
+    }
+  ]
+}

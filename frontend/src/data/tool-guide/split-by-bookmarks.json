@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF with bookmarks",
+      "text": "Drop a PDF whose Table of Contents uses bookmarks to mark chapters/sections."
+    },
+    {
+      "name": "PrivaTools splits at every top-level bookmark",
+      "text": "Each section between consecutive bookmarks becomes its own PDF file."
+    },
+    {
+      "name": "Download the ZIP",
+      "text": "Each chapter is named after its bookmark text (sanitized for filesystem safety)."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What if the PDF has no bookmarks?",
+      "a": "The tool returns an error. Use the regular Split tool or the new Split by Text tool which doesn't need bookmarks."
+    },
+    {
+      "q": "Does it use nested sub-bookmarks?",
+      "a": "No — only top-level bookmarks define split points. Sub-sections stay within their parent chapter PDF."
+    },
+    {
+      "q": "Can I include the bookmark title as the PDF title?",
+      "a": "Each output PDF inherits its starting bookmark's title as the file name. The internal PDF Title metadata is set to match."
+    }
+  ]
+}

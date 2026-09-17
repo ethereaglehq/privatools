@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a FLAC file",
+      "text": "Drop a .flac file. FLAC is lossless, so the source is the best possible input for an encode."
+    },
+    {
+      "name": "PrivaTools encodes via FFmpeg",
+      "text": "FLAC is lossless, so the encoder is working from the best possible source. Expect roughly a 5-10x size reduction."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Expect roughly a 5–10x size reduction. This step is one-way: the detail MP3 discards cannot be recovered, so keep the FLAC if it is your master copy."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will I lose quality converting FLAC to MP3?",
+      "a": "Yes — FLAC is lossless and MP3 is lossy, so the conversion discards some audio data. At 256–320 kbps the difference is inaudible to most people, but it's a one-way trade for a smaller, universally-compatible file."
+    },
+    {
+      "q": "Why convert FLAC to MP3 at all?",
+      "a": "MP3 plays on virtually every device and is roughly 3–6× smaller than FLAC — ideal for phones, portable players, and sharing."
+    },
+    {
+      "q": "Are files retained?",
+      "a": "No. Uploads and outputs are temporary and removed right after the download."
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MP4 video",
+      "text": "Drop an MP4 file up to 200 MB — music videos, lecture recordings, podcasts, anything with audio."
+    },
+    {
+      "name": "Extract audio and download",
+      "text": "Click Convert. PrivaTools extracts the audio track and re-encodes it as MP3, perfect for offline listening on any device."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does this work for any MP4?",
+      "a": "Yes — as long as the MP4 has an audio track. Music videos, lecture recordings, podcasts, screen recordings with narration, all work."
+    },
+    {
+      "q": "What about file size?",
+      "a": "MP3 audio is dramatically smaller than the original video. A 1 GB video file typically becomes a 5–15 MB MP3."
+    },
+    {
+      "q": "Is the video kept?",
+      "a": "No — only the audio track is extracted. If you also need the video, keep the original MP4."
+    }
+  ]
+}

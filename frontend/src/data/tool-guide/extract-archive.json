@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an archive",
+      "text": "Drop a .zip, .tar, .tar.gz, .tar.bz2, or .tar.xz archive up to 500 MB."
+    },
+    {
+      "name": "PrivaTools extracts and returns each file",
+      "text": "All files inside are extracted and bundled into a folder-style download."
+    },
+    {
+      "name": "Download the extracted folder as a ZIP",
+      "text": "Or download individual files from the result preview."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What about password-protected archives?",
+      "a": "Password-protected archives are not supported yet. Extract Archive currently handles unencrypted ZIP and TAR-family archives; encrypted archive support is on the roadmap."
+    },
+    {
+      "q": "Does it support RAR / 7z?",
+      "a": "No. Extract Archive currently supports ZIP and TAR-family archives (.tar, .tar.gz, .tar.bz2, .tar.xz). RAR and 7z support is on the roadmap."
+    },
+    {
+      "q": "What if the archive contains many small files?",
+      "a": "Up to 1000 files per archive. For larger, split before zipping."
+    }
+  ]
+}

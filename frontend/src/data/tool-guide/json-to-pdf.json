@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a JSON file or paste JSON",
+      "text": "Select a .json file up to 500 MB or paste JSON directly into the editor."
+    },
+    {
+      "name": "Choose the rendering style",
+      "text": "Pick syntax-highlighted code view for developers or a table/tree view for structured data."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation and optional line numbers."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is JSON validated before conversion?",
+      "a": "Yes. The tool validates the JSON and shows a clear error message with the line number if the syntax is invalid."
+    },
+    {
+      "q": "How are nested objects displayed?",
+      "a": "Nested objects and arrays are indented with syntax highlighting. Collapsible sections are shown in the preview but expanded in the PDF."
+    },
+    {
+      "q": "Can I convert JSON arrays into tables?",
+      "a": "Yes. Arrays of objects with consistent keys are rendered as a table, with keys as column headers and each object as a row."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select the PDF you need to audit. Tagged, untagged, scanned and born-digital files are all accepted."
+    },
+    {
+      "name": "Run the audit",
+      "text": "The document is checked against PDF/UA and WCAG expectations: tag structure, document language, title metadata, and alternative text on images."
+    },
+    {
+      "name": "Read the report",
+      "text": "Each finding names the requirement it relates to, so you can fix the document at source. The report is advice, not a legal certification."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does passing this check make my PDF legally compliant?",
+      "a": "No, and no automated tool can tell you that. A checker verifies the machine-testable requirements: whether the document is tagged, declares a language, has a title, and carries alternative text on images. Whether that alt text is actually useful, or the reading order makes sense, is a human judgement. Treat a clean report as the floor, not the finish line."
+    },
+    {
+      "q": "What is the difference between PDF/UA and WCAG here?",
+      "a": "PDF/UA is the standard written specifically for PDF structure. WCAG is the general accessibility standard and applies to PDFs as documents people have to read. They overlap heavily, so the report covers both rather than making you run two tools."
+    },
+    {
+      "q": "Why does my scanned PDF fail almost everything?",
+      "a": "A scan is a picture of a page. There is no text layer, no tag tree, and nothing for a screen reader to announce. Run OCR first to add real text, then check again."
+    },
+    {
+      "q": "Is my document uploaded to be checked?",
+      "a": "It is processed in the same isolated temporary storage every server-side tool here uses, then deleted after the response. It is never kept, never inspected, and never used for training."
+    },
+    {
+      "q": "Can it fix the problems it finds?",
+      "a": "No. It reports; it does not rewrite your document. Structural accessibility has to be fixed where the file is authored, because that is the only place the intent is known."
+    }
+  ]
+}

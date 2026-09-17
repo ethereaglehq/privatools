@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a text-based or scanned PDF up to 500 MB."
+    },
+    {
+      "name": "Choose extraction mode",
+      "text": "Select plain text extraction for text-based PDFs, or enable OCR for scanned documents. Pick the OCR language if needed."
+    },
+    {
+      "name": "Download the text",
+      "text": "Click Convert. The extracted text is returned as a .txt file with page breaks preserved."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is formatting preserved in the text output?",
+      "a": "The tool extracts raw text only. Bold, italic, font sizes, and layout are not preserved — you get clean plain text."
+    },
+    {
+      "q": "Can I extract text from a specific page range?",
+      "a": "Yes. Specify page numbers or ranges to extract text from only the pages you need."
+    },
+    {
+      "q": "How does it handle multi-column layouts?",
+      "a": "The tool reads text in natural reading order. Two-column layouts are generally handled correctly, but complex magazine-style layouts may interleave columns."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste SQL",
+      "text": "Drop a compact SELECT, INSERT, UPDATE, DELETE, or JOIN-heavy query into the editor."
+    },
+    {
+      "name": "Review formatted SQL",
+      "text": "Keywords, clauses, commas, and boolean operators are line-broken into a readable layout."
+    },
+    {
+      "name": "Copy the result",
+      "text": "Use the formatted SQL in reviews, docs, migrations, dashboards, or database consoles."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is this a full SQL parser?",
+      "a": "No. It is a lightweight formatter for readable query cleanup. It does not execute, optimize, or validate SQL against a database schema."
+    },
+    {
+      "q": "Will my query be uploaded?",
+      "a": "No. Formatting happens in browser JavaScript, which is useful for production query snippets and private table names."
+    },
+    {
+      "q": "Which SQL dialects work?",
+      "a": "Common SELECT, JOIN, WHERE, GROUP BY, ORDER BY, INSERT, UPDATE, and DELETE syntax formats well across Postgres, MySQL, SQLite, and similar dialects."
+    }
+  ]
+}

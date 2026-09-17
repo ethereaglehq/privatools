@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Choose encode or decode mode",
+      "text": "Select whether you want to encode data to Base64 or decode a Base64 string back to its original form."
+    },
+    {
+      "name": "Enter input",
+      "text": "Paste text into the editor, or upload a file (image, PDF, binary — up to 500 MB). For decoding, paste the Base64 string."
+    },
+    {
+      "name": "Get the result",
+      "text": "The output appears instantly. Copy the Base64 string to your clipboard, or download the decoded file."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I encode files (not just text)?",
+      "a": "Yes. Upload any file — images, PDFs, binaries — and the tool returns the Base64-encoded string. Useful for embedding files in JSON, HTML, or CSS."
+    },
+    {
+      "q": "Is there a size limit for encoding?",
+      "a": "Files up to 500 MB can be encoded. Keep in mind that Base64 output is approximately 33% larger than the original file."
+    },
+    {
+      "q": "What character set is used?",
+      "a": "Standard Base64 (RFC 4648) using A-Z, a-z, 0-9, +, and /. URL-safe Base64 (replacing + and / with - and _) is also available."
+    }
+  ]
+}

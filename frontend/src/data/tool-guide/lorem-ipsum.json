@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Choose paragraphs, sentences, or words",
+      "text": "Specify how much placeholder text you need."
+    },
+    {
+      "name": "Click Generate",
+      "text": "Standard Lorem Ipsum (Cicero's De Finibus, scrambled) — the publishing industry standard since the 1500s."
+    },
+    {
+      "name": "Copy and use in your mockups",
+      "text": "Runs entirely in your browser."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why use Lorem Ipsum and not English?",
+      "a": "It has roughly Latin letter frequencies so designs feel real, without distracting reviewers with the actual content. English placeholder text always gets read instead of looked at."
+    },
+    {
+      "q": "Can I get other languages?",
+      "a": "Cyrillic, Greek, Arabic, and CJK placeholder texts are on the roadmap."
+    },
+    {
+      "q": "Is it copyrighted?",
+      "a": "Cicero died in 43 BC. Public domain."
+    }
+  ]
+}

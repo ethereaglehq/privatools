@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Paste your text",
+      "text": "Drop any string — a variable name, sentence, or paragraph — into the input box."
+    },
+    {
+      "name": "Copy any case format",
+      "text": "All 12 case variants (camelCase, snake_case, kebab-case, PascalCase, CONSTANT_CASE, Title Case, sentence case, dot.case, path/case, and more) appear instantly. Click Copy on the one you want."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Which case formats are supported?",
+      "a": "12: lowercase, UPPERCASE, Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, dot.case, path/case, and iNVERSE."
+    },
+    {
+      "q": "Will it handle existing camelCase or snake_case input correctly?",
+      "a": "Yes. The tool detects word boundaries from underscores, hyphens, spaces, and lowercase→uppercase transitions, so converting between any two cases works correctly."
+    },
+    {
+      "q": "Does it run in my browser?",
+      "a": "Yes — 100%. Your text never leaves the page. Useful for renaming variables, generating CSS class names, or normalizing identifiers without exposing them to a server."
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "howto": [
+    {
+      "name": "Drop your PDF",
+      "text": "Select a PDF up to 500 MB that you want to password-protect. The file enters an isolated Docker container only for the encryption pass."
+    },
+    {
+      "name": "Choose your password",
+      "text": "Enter a strong password (12+ characters, mixed case, numbers, symbols recommended). Save it in a password manager — there is no recovery."
+    },
+    {
+      "name": "Set permission restrictions",
+      "text": "Optionally restrict printing, text copying, form filling, content modification, and page extraction independently. Defaults to 'all allowed once unlocked'."
+    },
+    {
+      "name": "Download the encrypted PDF",
+      "text": "Click Protect. The output uses AES-256 encryption (bank-grade) and requires your password to open in any PDF reader."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What encryption does PrivaTools use?",
+      "a": "PDFs are encrypted with AES-256 (the same standard used by banks and governments) by default. AES-128 is available for backward compatibility with older PDF readers, though AES-256 is supported by every reader from the last decade. RC4 is explicitly NOT offered — it's been broken since the 2000s."
+    },
+    {
+      "q": "Can I allow printing but block copying text?",
+      "a": "Yes. You can set granular permissions independently: allow or deny printing (with optional 'low-resolution print only'), text copying, form filling, content modification, page extraction, and accessibility/screen-reader access."
+    },
+    {
+      "q": "What happens if I forget the password?",
+      "a": "PrivaTools does not store your password. If you lose it, there is no way to recover it — AES-256 has no backdoor. Save your password in a password manager like 1Password, Bitwarden, or your browser's built-in store before you encrypt."
+    },
+    {
+      "q": "Is it safe to upload a sensitive PDF for encryption?",
+      "a": "Yes. The PDF enters temporary per-request storage inside an isolated Docker container for the encryption pass only, and your chosen password is used only for that pass. Both the input plaintext and the password are discarded the moment the encrypted file is delivered. Nothing is logged. The encryption pipeline is open source on GitHub."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. There is no page-count limit."
+    },
+    {
+      "q": "Can I batch-protect multiple PDFs?",
+      "a": "Yes — upload multiple files and they will each be encrypted with the same password, then bundled into a ZIP. Use different passwords for different files by running the tool separately."
+    },
+    {
+      "q": "How is this different from Adobe Acrobat or Smallpdf encryption?",
+      "a": "Same AES-256 cryptography, but free with no daily limit (Smallpdf caps free use at 2 protections/day, Adobe requires a subscription) and no account required. The protection code is open source so you can verify the encryption is real and not a backdoored stub."
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a BMP",
+      "text": "Drop a Windows bitmap file (any depth: 1-bit, 8-bit, 24-bit, or 32-bit)."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The BMP is re-encoded as a compressed lossless PNG, ideal for screenshots and pixel art."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert BMP to PNG?",
+      "a": "PNG is lossless like BMP but uses compression — typically 70–90% smaller files. PNG is also the standard format for web and modern software."
+    },
+    {
+      "q": "Will my screenshots look identical?",
+      "a": "Yes — pixel-perfect identical. PNG uses lossless compression, so no pixel data changes."
+    },
+    {
+      "q": "What about indexed-color BMPs?",
+      "a": "Supported. 1-bit, 4-bit, and 8-bit palette BMPs convert to indexed-color PNGs preserving the original palette."
+    }
+  ]
+}

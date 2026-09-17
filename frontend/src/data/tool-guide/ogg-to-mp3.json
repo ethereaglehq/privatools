@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an Ogg file",
+      "text": "Drop an .ogg or .oga file."
+    },
+    {
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "One more lossy generation, in exchange for a format that plays essentially everywhere."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. MP3 plays essentially everywhere, which Ogg still does not, at the cost of one more lossy generation."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert OGG to MP3?",
+      "a": "OGG Vorbis isn't supported by some players, car stereos, and editing apps; MP3 is nearly universal. Both are lossy, so this is about compatibility, not quality."
+    },
+    {
+      "q": "Is there quality loss?",
+      "a": "Re-encoding one lossy format to another (transcoding) loses a little quality. Choose 256–320 kbps to keep it minimal."
+    },
+    {
+      "q": "Is it processed privately?",
+      "a": "Yes — local FFmpeg conversion; files deleted immediately after the response."
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a BMP",
+      "text": "Drop a Windows bitmap (.bmp) file."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The uncompressed BMP is re-encoded as a JPEG — typically 10–50× smaller for photographs."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert BMP to JPG?",
+      "a": "BMP files are uncompressed and can be 10–50× larger than the same image as JPG. Converting saves enormous space with virtually no visible quality difference for photos."
+    },
+    {
+      "q": "What about screenshots in BMP?",
+      "a": "For screenshots and pixel art, consider BMP to PNG instead — PNG is lossless and handles sharp edges better than JPG."
+    },
+    {
+      "q": "Are old Windows BMPs supported?",
+      "a": "Yes. All standard BMP variants (1-bit, 4-bit, 8-bit, 16-bit, 24-bit, 32-bit, RLE-compressed) are supported."
+    }
+  ]
+}

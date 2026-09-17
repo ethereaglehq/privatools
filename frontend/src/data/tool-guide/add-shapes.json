@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB."
+    },
+    {
+      "name": "Define shapes",
+      "text": "For each shape, specify type (rectangle, ellipse, line, polygon), page number, coordinates, color, and stroke width."
+    },
+    {
+      "name": "Apply and download",
+      "text": "Click Add Shapes. The shapes are drawn directly onto the page content; they survive copy-paste, printing, and PDF/A conversion."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Are shapes flattened into the page?",
+      "a": "Yes — shapes become part of the page's content stream, not annotations. They can't be moved or deleted afterwards without re-editing the PDF."
+    },
+    {
+      "q": "Can I draw filled or only outlined shapes?",
+      "a": "Both. Set fillColor for a filled shape; omit it and only the stroke renders. Set both for an outlined fill."
+    },
+    {
+      "q": "What about transparency?",
+      "a": "Use a color with alpha (e.g., rgba(255,0,0,0.5)) or pass an opacity value (0–1)."
+    }
+  ]
+}

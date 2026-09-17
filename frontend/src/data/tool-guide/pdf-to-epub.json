@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB. Works best on text-heavy PDFs with a clear structure."
+    },
+    {
+      "name": "PrivaTools extracts text and reflows it",
+      "text": "Headings, paragraphs, lists, and embedded images are identified and converted into EPUB chapter structure."
+    },
+    {
+      "name": "Download the EPUB",
+      "text": "Open in any e-reader (Kindle, Apple Books, calibre) for a reflowable reading experience."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How accurate is the EPUB compared to the PDF?",
+      "a": "Text and basic structure transfer well. Complex multi-column layouts, footnotes, and figure captions may need cleanup in calibre."
+    },
+    {
+      "q": "Does it preserve images?",
+      "a": "Yes — embedded images are included as EPUB resources at original resolution."
+    },
+    {
+      "q": "Will the table of contents work?",
+      "a": "If the PDF has bookmarks, they become the EPUB's TOC. Without bookmarks, the TOC is built from detected headings."
+    }
+  ]
+}

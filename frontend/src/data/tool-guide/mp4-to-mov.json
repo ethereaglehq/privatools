@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MP4",
+      "text": "Drop an .mp4 file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools remuxes via FFmpeg",
+      "text": "The video stream is preserved where the codecs allow, so quality is unchanged."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. MOV is what QuickTime, Final Cut Pro and much of the macOS video world prefer. The video stream is preserved where the codecs allow."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert MP4 to MOV?",
+      "a": "MOV is Apple's QuickTime container, preferred by Final Cut Pro, iMovie, and some macOS/iOS workflows. If the codecs are compatible, the conversion is a fast, lossless remux."
+    },
+    {
+      "q": "Is quality lost?",
+      "a": "If it remuxes (same codec), no. If re-encoding is required, defaults target compatibility with minimal visible loss."
+    },
+    {
+      "q": "Are files kept?",
+      "a": "No — temporary input/output, deleted after the download."
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drag a PDF into the upload area. pdf.js extracts the text page-by-page entirely inside your browser — the document is never uploaded to PrivaTools."
+    },
+    {
+      "name": "Add your AI key once",
+      "text": "Pick a provider — Anthropic, OpenAI, Google Gemini, OpenRouter, Groq, Mistral, or a self-hosted OpenAI-compatible endpoint — and paste your API key. It is stored encrypted on your device and sent only to that provider."
+    },
+    {
+      "name": "Ask questions in plain language",
+      "text": "Type a question — payment terms, deadlines, obligations, definitions, a section summary. The document text and your question go straight from your browser to your provider; follow-ups keep the conversation context."
+    },
+    {
+      "name": "Copy the answers you need",
+      "text": "Hover any answer to copy it. Start a new conversation on the same document at any time — nothing is stored anywhere once you close the tab."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Where does my PDF go when I chat with it?",
+      "a": "Nowhere near PrivaTools. The text is extracted by pdf.js inside your browser tab, and each question is sent, together with that text, directly from your browser to the AI provider you picked, authenticated with your own API key. Open DevTools → Network and you will see requests only to that provider."
+    },
+    {
+      "q": "Which AI providers can I use?",
+      "a": "Anthropic (Claude), OpenAI, Google Gemini, OpenRouter, Groq, Mistral, or any self-hosted OpenAI-compatible endpoint such as Ollama or vLLM. You paste your own key once; it is stored encrypted on this device and never sent to PrivaTools."
+    },
+    {
+      "q": "Why do I need my own API key?",
+      "a": "A conversational answer needs a full LLM, and proxying documents through our server would break the privacy model — we would see them. Bring-your-own-key means you pay your provider directly (typically fractions of a cent per question) and your document bypasses us entirely."
+    },
+    {
+      "q": "Does it work on scanned PDFs?",
+      "a": "Not directly — a scan has no text layer. Run OCR PDF first, download the searchable PDF, then chat with that. The tool tells you when it finds no extractable text."
+    },
+    {
+      "q": "How long a document can it handle?",
+      "a": "About 100,000 characters (roughly 50–70 pages of dense text) are sent as context per question. For longer documents the beginning is used and the assistant is told so — asking about specific sections or splitting the PDF first gives better answers."
+    },
+    {
+      "q": "Are my questions or the answers stored anywhere?",
+      "a": "PrivaTools stores nothing — the conversation lives only in your browser tab. Your AI provider handles the request under its own API terms, the same as any other API call made with your key."
+    }
+  ]
+}

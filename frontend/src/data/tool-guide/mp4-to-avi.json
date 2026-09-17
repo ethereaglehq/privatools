@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MP4",
+      "text": "Drop an .mp4 file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools rewraps via FFmpeg",
+      "text": "AVI is an older, less efficient container, so the file will usually grow rather than shrink."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. AVI is only worth choosing for genuinely old software or hardware that refuses MP4; the container is less efficient and the file will usually grow."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert MP4 to AVI?",
+      "a": "AVI is an older container some legacy editors, players, and devices still require. The conversion re-encodes into an AVI-friendly codec, so expect a larger file than the MP4."
+    },
+    {
+      "q": "Will quality drop?",
+      "a": "AVI codecs are less efficient than modern H.264/MP4, so files are larger and re-encoding causes minor loss. Use AVI only when something specifically needs it."
+    },
+    {
+      "q": "Are files kept?",
+      "a": "No — temporary input/output, removed after the download response."
+    }
+  ]
+}

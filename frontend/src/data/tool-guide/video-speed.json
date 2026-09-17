@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video",
+      "text": "Drop any MP4/MOV/WebM/MKV/AVI file."
+    },
+    {
+      "name": "Pick a speed",
+      "text": "Drag the slider from 0.25× (slow-mo) to 4× (hyperlapse). 1× is original speed."
+    },
+    {
+      "name": "Click Change speed",
+      "text": "FFmpeg's setpts filter handles the video and atempo filter handles audio pitch-correction so it doesn't sound like a chipmunk."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will fast-forward make voices sound chipmunky?",
+      "a": "No — we use FFmpeg's atempo filter which pitch-corrects audio. A 2× speedup sounds like fast speech, not a chipmunk."
+    },
+    {
+      "q": "What's the maximum slowdown / speedup?",
+      "a": "0.25× (4× slower) to 4× (4× faster). Beyond that the audio quality degrades noticeably and most viewers can't follow."
+    },
+    {
+      "q": "Does it work for slow-motion footage?",
+      "a": "Sort of — for true high-quality slow-motion you need video captured at higher FPS originally. This tool stretches the existing frames in time, so very slow speeds get a duplicated-frame look."
+    }
+  ]
+}

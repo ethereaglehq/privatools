@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose DPI",
+      "text": "Lower DPI for smaller files; GIF is limited to 256 colors so detail loss is acceptable for previews."
+    },
+    {
+      "name": "Download a ZIP of GIFs",
+      "text": "Each page becomes one GIF file. Useful for embedding PDF previews in legacy systems."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will the GIFs look good?",
+      "a": "GIF's 256-color palette quantizes the page. Text remains readable but gradients and photos show banding. Use PNG for higher quality."
+    },
+    {
+      "q": "Does this make an animated GIF?",
+      "a": "No — each page is one static GIF. To make a flipbook-style animation, use Video to GIF after converting to images and back."
+    },
+    {
+      "q": "How big are the output files?",
+      "a": "Typically 30-100 KB per page at 96 DPI."
+    }
+  ]
+}

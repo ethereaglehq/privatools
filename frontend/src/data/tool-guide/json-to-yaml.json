@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Paste JSON",
+      "text": "Drop valid JSON into the left textarea."
+    },
+    {
+      "name": "Read YAML instantly",
+      "text": "Clean YAML with proper indentation appears on the right, ready to paste into a Kubernetes, GitHub Actions, or Compose file. Click Copy to grab it. Pure-browser conversion."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is it 100% in my browser?",
+      "a": "Yes. The JSON never leaves your device — pure-browser conversion, no upload."
+    },
+    {
+      "q": "Will it format the YAML correctly?",
+      "a": "Yes — proper indentation (2 spaces), keys with special characters get quoted, lists get the bullet-point style by default. Output is ready to paste into a Kubernetes or GitHub Actions file."
+    },
+    {
+      "q": "What if the JSON is invalid?",
+      "a": "An error appears in the output area. Fix the JSON and the conversion updates live."
+    }
+  ]
+}

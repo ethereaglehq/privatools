@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. Best for two-up scans or scanned booklets."
+    },
+    {
+      "name": "Choose direction",
+      "text": "Vertical splits each page down the middle (left → right halves). Horizontal splits across the middle (top → bottom)."
+    },
+    {
+      "name": "Split and download",
+      "text": "Click Split. The result is a new PDF where each original page is replaced by its two halves in reading order."
+    }
+  ],
+  "faq": [
+    {
+      "q": "When would I use this?",
+      "a": "For two-up scans (where two pages were scanned side-by-side onto one physical page), scanned booklets, or any PDF where each page should be two pages in the output."
+    },
+    {
+      "q": "Does it work on PDFs with mixed page sizes?",
+      "a": "Yes. Each page is split independently at its own midpoint, so different page sizes work fine."
+    },
+    {
+      "q": "What's the difference between vertical and horizontal?",
+      "a": "Vertical bisects each page down the middle into left and right halves (the common case for landscape two-up scans). Horizontal bisects across the middle into top and bottom halves."
+    }
+  ]
+}

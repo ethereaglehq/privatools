@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste your text",
+      "text": "Or type directly. Counter updates as you type."
+    },
+    {
+      "name": "Read live stats",
+      "text": "Word count, character count (with/without spaces), sentence count, paragraph count, reading time at 200 wpm."
+    },
+    {
+      "name": "Optional metrics",
+      "text": "Average word length, longest word, most-frequent words."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What counts as a word?",
+      "a": "Whitespace-separated tokens. Hyphenated words ('self-host') count as one. Apostrophes ('don't') keep the word as one."
+    },
+    {
+      "q": "How is reading time calculated?",
+      "a": "Word count ÷ 200 words per minute (average adult reading speed for non-fiction). Adjust for technical content (slower) or casual reading (faster)."
+    },
+    {
+      "q": "Is my text saved?",
+      "a": "No — everything runs in your browser and persists only in this session."
+    }
+  ]
+}

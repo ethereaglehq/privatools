@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a JPG image",
+      "text": "Drag or select one or more .jpg / .jpeg files."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. PrivaTools re-encodes the JPEG as a lossless PNG, preserving every pixel and supporting transparency in re-edits."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert JPG to PNG?",
+      "a": "PNG is lossless — every pixel of the source is preserved. Use PNG when you plan to do further editing (each JPG save degrades the image) or when you need transparency in compositing."
+    },
+    {
+      "q": "Will the PNG be larger?",
+      "a": "Yes — typically 3–10× larger, because PNG is lossless while JPG is compressed. For photos, JPG is usually a better choice unless you specifically need lossless quality."
+    },
+    {
+      "q": "Does it preserve metadata?",
+      "a": "Standard EXIF data is preserved when possible. Color profiles (sRGB, Adobe RGB) are written into the PNG header."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video",
+      "text": "Select an MP4, WebM, MOV, or AVI file up to 500 MB."
+    },
+    {
+      "name": "Set GIF parameters",
+      "text": "Choose the start time, duration (max 30 seconds recommended for file size), frame rate (10–30 fps), and output width."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. FFmpeg extracts the frames and optimizes the color palette for the smallest possible GIF."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is the maximum GIF duration?",
+      "a": "There is no strict limit, but GIFs longer than 15-30 seconds can become very large. Keeping clips short produces better results."
+    },
+    {
+      "q": "Can I control the file size?",
+      "a": "Yes. Lower the frame rate (10 fps is usually enough), reduce the width, and shorten the duration to get smaller files."
+    },
+    {
+      "q": "Which video formats are supported?",
+      "a": "MP4, WebM, MOV, and AVI. The server uses FFmpeg, which supports virtually all common video codecs."
+    }
+  ]
+}

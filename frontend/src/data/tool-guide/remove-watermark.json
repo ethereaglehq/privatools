@@ -1,0 +1,38 @@
+{
+  "howto": [
+    {
+      "name": "Upload the watermarked PDF",
+      "text": "Select a PDF that carries a visible watermark."
+    },
+    {
+      "name": "Review the candidates",
+      "text": "The tool scans the page content for repeated text and image objects that behave like watermarks, and lists what it found."
+    },
+    {
+      "name": "Remove and download",
+      "text": "Confirm which candidates to strip. Only those objects are removed, so the rest of the page survives intact. A watermark burned into a scanned image is part of the picture and cannot be lifted this way — use Remove Image Watermark for that."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What kind of watermarks can this actually remove?",
+      "a": "Watermarks that exist as objects in the PDF: repeated text like DRAFT or CONFIDENTIAL, and image stamps placed on each page. Those can be identified and deleted cleanly. A watermark flattened into a scanned page is part of the image and this tool will not find it."
+    },
+    {
+      "q": "Why does it show me candidates instead of removing everything?",
+      "a": "Because the repeated object on your page might be a logo, a letterhead or a footer you want to keep. The tool finds what behaves like a watermark and lets you decide, rather than silently stripping page furniture."
+    },
+    {
+      "q": "Will the rest of the page survive?",
+      "a": "Yes. Only the objects you confirm are removed. Surrounding text, images and layout are untouched, and your original file is never modified."
+    },
+    {
+      "q": "My watermark is part of a scan. What now?",
+      "a": "Rasterised watermarks need pixel repair, not object removal. Convert the page to an image and use Remove Image Watermark, accepting that the repair is a reconstruction rather than a perfect recovery."
+    },
+    {
+      "q": "Should I remove a watermark from a document I did not create?",
+      "a": "Only where you have the right to. A watermark is often a copyright or confidentiality marker, and removing one from someone else's document can be a legal problem regardless of how easy a tool makes it."
+    }
+  ]
+}

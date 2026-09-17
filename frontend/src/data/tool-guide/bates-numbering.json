@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF (or batch)",
+      "text": "Drop a PDF up to 500 MB. Multi-PDF Bates batches are coming."
+    },
+    {
+      "name": "Configure the Bates format",
+      "text": "Set the prefix (e.g. BATES), starting number, padding digits (e.g. 0001), and position on the page (top/bottom × left/center/right)."
+    },
+    {
+      "name": "Download with stamps",
+      "text": "Click Apply. PrivaTools stamps each page with the next Bates number — e.g. BATES0001, BATES0002, etc."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's Bates numbering used for?",
+      "a": "Sequential page identification across legal discovery documents. Each page in a production gets a unique identifier so attorneys can reference exact pages."
+    },
+    {
+      "q": "Can I start the numbering at a value other than 1?",
+      "a": "Yes — set start_number to any positive integer. This is the standard workflow for continuing a numbering scheme across multiple production batches."
+    },
+    {
+      "q": "Does it survive redaction?",
+      "a": "Yes — Bates numbers are stamped directly onto the page content, so they remain after redaction (unless the redaction rectangle covers them)."
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a GIF",
+      "text": "Drop a GIF file. For animated GIFs, only the first frame is converted."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. PrivaTools extracts the first frame, flattens transparency to white, and saves as JPEG."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What about animated GIFs?",
+      "a": "Only the first frame is converted. To extract every frame as JPGs, use a dedicated GIF frame extractor — coming soon to PrivaTools."
+    },
+    {
+      "q": "Will transparency be preserved?",
+      "a": "No — JPG doesn't support transparency. Transparent pixels in the source GIF become white in the JPG."
+    },
+    {
+      "q": "Why convert GIF to JPG anyway?",
+      "a": "GIFs are limited to 256 colors and can be larger than JPGs of the same single frame. JPG is ideal when you only need a static still and want smaller file size."
+    }
+  ]
+}

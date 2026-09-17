@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Draw or type your signature",
+      "text": "Use the canvas to draw with a finger or stylus, or type your name in a handwriting font."
+    },
+    {
+      "name": "Place and apply",
+      "text": "Drag the signature to where you want it, resize as needed, click Sign. The PDF is returned with the signature stamped on the selected page."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is this a cryptographically valid signature?",
+      "a": "No — this places a visual signature image, like signing paper. For cryptographically verifiable signatures, use the Sign PDF tool with a certificate."
+    },
+    {
+      "q": "Does my signature image stay on PrivaTools?",
+      "a": "No. It's used only to render the output PDF and is deleted immediately afterwards."
+    },
+    {
+      "q": "Can I use a signature image I already have?",
+      "a": "Yes — upload a transparent PNG of your signature instead of drawing one."
+    }
+  ]
+}

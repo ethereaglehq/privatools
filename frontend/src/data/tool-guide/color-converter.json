@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Enter a color in any format",
+      "text": "HEX (#FF5733), RGB (255, 87, 51), HSL (10, 100%, 60%), or named (coral, tomato, etc.)."
+    },
+    {
+      "name": "PrivaTools shows the same color in every format",
+      "text": "Live conversion: HEX, RGB, RGBA, HSL, HSLA, HSV, CMYK, and named-color match (if any)."
+    },
+    {
+      "name": "Copy the value you need",
+      "text": "Click any value to copy. Runs entirely in your browser — no network roundtrip."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does it work with alpha (transparency)?",
+      "a": "Yes — paste #RRGGBBAA or rgba(...) and the alpha channel is preserved across all output formats."
+    },
+    {
+      "q": "Why does my CMYK look different from print?",
+      "a": "CMYK conversion uses a sRGB → CMYK approximation. For exact print color, use your printer's color profile."
+    },
+    {
+      "q": "Is the calculation done locally?",
+      "a": "Yes — pure browser JavaScript. No network requests."
+    }
+  ]
+}

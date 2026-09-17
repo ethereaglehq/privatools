@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a TIFF",
+      "text": "Select a .tif or .tiff file from a scanner or photo library."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The first page (for multi-page TIFFs) is re-encoded as a JPEG at quality 85."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert TIFF to JPG?",
+      "a": "TIFF files from scanners are often 10–50 MB each. JPG shrinks them to a few hundred KB, perfect for email and online sharing where quality at 85% is indistinguishable."
+    },
+    {
+      "q": "What about multi-page TIFFs?",
+      "a": "Only the first page is converted to JPG. To handle multi-page TIFFs, use our TIFF to PDF tool instead — it preserves all pages."
+    },
+    {
+      "q": "Will I lose quality?",
+      "a": "Some, but at our default quality of 85, the difference is essentially invisible at typical viewing sizes."
+    }
+  ]
+}

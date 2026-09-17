@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a MOV",
+      "text": "Drop a QuickTime .mov file (the default format for iPhone/Mac screen recordings)."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. FFmpeg remuxes (or re-encodes when needed) the streams into an MP4 with H.264 video — universally playable."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert MOV to MP4?",
+      "a": "MOV is Apple's QuickTime format. While Macs play it natively, Windows, Android, and most streaming platforms prefer MP4. The codecs inside are often identical (H.264), so conversion is fast and lossless."
+    },
+    {
+      "q": "Will I lose quality?",
+      "a": "Usually no — when streams are compatible, we remux the file (no re-encoding), preserving the original bytes exactly. If re-encoding is needed, we use high-quality settings."
+    },
+    {
+      "q": "Does it preserve audio?",
+      "a": "Yes. The audio track (typically AAC) is kept intact."
+    }
+  ]
+}

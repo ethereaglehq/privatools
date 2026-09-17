@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB that you serve over the web or via a CDN."
+    },
+    {
+      "name": "Linearize and download",
+      "text": "Click Optimize. qpdf reorganizes the file structure so the first page renders before the whole document downloads — perfect for inline embeds and CDN-hosted PDFs."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What does linearization actually do?",
+      "a": "It reorganizes the PDF byte layout so the first page's objects come first in the file. A byte-range-aware viewer can then start rendering the first page while the rest still downloads."
+    },
+    {
+      "q": "Does it change file size?",
+      "a": "Usually slightly smaller, sometimes slightly larger — the rearrangement adds a small overhead but qpdf also re-streams and recompresses where it can."
+    },
+    {
+      "q": "Do I need this for a PDF served from my own server?",
+      "a": "Only if you're serving large PDFs and want the inline-viewer experience to feel fast. For small (<2 MB) PDFs the difference is invisible."
+    }
+  ]
+}

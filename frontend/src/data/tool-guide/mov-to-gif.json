@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a MOV clip",
+      "text": "Drop a .mov file. Short clips work best; GIF has no audio and no real compression."
+    },
+    {
+      "name": "PrivaTools samples frames via FFmpeg",
+      "text": "Frames are sampled and mapped to a 256-colour palette. GIF has no audio and no real compression."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Frames are sampled and mapped to a 256-colour palette. Expect the GIF to be considerably larger than the video — use MP4 or WebM if you can, and GIF only where autoplay everywhere matters more than size."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How long should the clip be?",
+      "a": "Short — a few seconds. GIF encodes every frame as an image, so a long MOV becomes a very large GIF. Trim before converting."
+    },
+    {
+      "q": "Does the GIF keep audio?",
+      "a": "No — GIF has no audio track. Convert to MP4 or WebM if you need sound."
+    },
+    {
+      "q": "Why convert MOV to GIF?",
+      "a": "For short looping clips in chats, docs, and on the web where autoplaying video isn't supported."
+    }
+  ]
+}

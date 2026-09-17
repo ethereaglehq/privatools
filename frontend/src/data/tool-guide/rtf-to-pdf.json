@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an .rtf file",
+      "text": "Drop a Rich Text Format file (Word, WordPad, TextEdit, Pages all save in RTF)."
+    },
+    {
+      "name": "PrivaTools renders to PDF",
+      "text": "Bold, italic, underline, paragraph styles, lists, tables, and embedded images transfer faithfully."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Click Convert. Open in any PDF viewer."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What about RTF features like fields?",
+      "a": "Calculated fields (page numbers, dates) render as their current values. Form fields aren't converted to PDF form fields — use Form Creator for that."
+    },
+    {
+      "q": "Does it preserve fonts?",
+      "a": "Fonts referenced in the RTF are matched to server-installed fonts. Missing fonts fall back to a close visual equivalent."
+    },
+    {
+      "q": "How does this differ from DOCX-to-PDF?",
+      "a": "RTF is an older Microsoft format. DOCX is a newer ZIP-based format. Both convert similarly but DOCX preserves more layout fidelity."
+    }
+  ]
+}

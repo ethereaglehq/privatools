@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. Best results come from vector PDFs."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The tool extracts vector graphics page-by-page using PyMuPDF and packages the SVGs into a ZIP."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What kind of PDFs convert best?",
+      "a": "Vector PDFs (drawn in Illustrator, Inkscape, Figma, LaTeX, etc.) convert into editable vector SVGs. Scanned/raster PDFs become SVGs containing embedded images."
+    },
+    {
+      "q": "How many SVG files come back?",
+      "a": "One per page, packaged into a ZIP."
+    },
+    {
+      "q": "Can I edit the SVGs after?",
+      "a": "Yes. Open in any vector editor (Illustrator, Inkscape, Figma). Text and paths are editable."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MP3",
+      "text": "Drop an .mp3 file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools decodes via FFmpeg",
+      "text": "The MP3 is decoded to uncompressed PCM, which is what editors, samplers and DAWs want to work from."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The MP3 is decoded to uncompressed PCM, which is what most editors, samplers and DAWs want to work from. Files grow roughly tenfold — a 5 MB MP3 lands near 50 MB."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does MP3 to WAV improve sound quality?",
+      "a": "No. MP3 is lossy; WAV just stores that same audio uncompressed. The detail MP3 removed can't be restored — convert when a DAW, CD-authoring, or editing tool requires uncompressed PCM/WAV input."
+    },
+    {
+      "q": "Why is the WAV file so big?",
+      "a": "WAV is uncompressed PCM — roughly 10 MB per minute of stereo audio — so a 4 MB MP3 can become around 40 MB."
+    },
+    {
+      "q": "Are my audio files stored?",
+      "a": "No. Input and output are temporary and deleted after the download response is sent. Conversion uses FFmpeg server-side."
+    }
+  ]
+}

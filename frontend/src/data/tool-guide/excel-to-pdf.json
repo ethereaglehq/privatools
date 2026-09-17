@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an .xlsx file",
+      "text": "Drop an Excel workbook up to 500 MB."
+    },
+    {
+      "name": "PrivaTools converts each sheet to a PDF page",
+      "text": "Cell values, formulas (as computed), formatting, and column widths are preserved. Each worksheet becomes one or more pages depending on content size."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Click Convert. The output PDF has one section per worksheet."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will my formulas be visible?",
+      "a": "No — only computed values appear. The formulas themselves are not included (PDF has no formula concept)."
+    },
+    {
+      "q": "What about charts and images?",
+      "a": "Charts render as static images. Embedded images are preserved at their original size."
+    },
+    {
+      "q": "How does it handle very wide sheets?",
+      "a": "Wide sheets paginate across multiple PDF pages, with column headers repeated on each."
+    }
+  ]
+}

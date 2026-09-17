@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload multiple PDFs",
+      "text": "Drag up to 50 PDF files. Up to 500 MB per file."
+    },
+    {
+      "name": "Pick compression level",
+      "text": "Light (modest reduction, best quality), Recommended (balanced — default), Extreme (smallest files, some image-quality loss)."
+    },
+    {
+      "name": "Compress and download as ZIP",
+      "text": "Click Compress. Files are processed in parallel across 4 workers. Results are bundled into a ZIP with a savings summary."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How many PDFs can I upload?",
+      "a": "Up to 50 files per batch, up to 500 MB per file."
+    },
+    {
+      "q": "Are they compressed in parallel?",
+      "a": "Yes — the backend runs 4 worker processes simultaneously, so 4 files compress at once. Total time scales nearly linearly with file count divided by 4."
+    },
+    {
+      "q": "What's the difference between Light, Recommended, and Extreme?",
+      "a": "Light shrinks structure only (5–30% reduction, no visible quality loss). Recommended (default) resamples images at 150 DPI (40–70% reduction). Extreme drops to 96 DPI and lower JPEG quality (60–90% reduction)."
+    }
+  ]
+}

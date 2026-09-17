@@ -9,7 +9,7 @@ Run these commands from the repository root. Application code lives in
 | `api/` | Measure API capacity inside an isolated candidate container. |
 | `analytics/` | Inspect public Google tag configuration without executing it. |
 | `dev/` | Start the backend with the pinned local virtual environment. |
-| `seo/` | Check generated public assets against a local HTTP server. |
+| `seo/` | Check generated public assets against a local HTTP server; export per-tool guide JSON from the Python content module. |
 
 ## API starter downloads
 
@@ -51,6 +51,17 @@ The analytics check can inspect a saved public script with `--from-file PATH`;
 without that option it makes one public Google script request. It does not send
 analytics events or change settings. The SEO check requires a built frontend and
 a running loopback backend; choose a report path with `--output PATH`.
+
+## Tool guide export
+
+```sh
+.venv/bin/python scripts/seo/export-tool-guides.py
+.venv/bin/python scripts/seo/export-tool-guides.py --check
+```
+
+`export-tool-guides.py` writes `frontend/src/data/tool-guide/*.json` from
+`backend/app/tool_content.py`; run it after editing steps or FAQ, and
+`--check` in CI-style verification.
 
 Production deployment scripts and service definitions remain in `deploy/`.
 

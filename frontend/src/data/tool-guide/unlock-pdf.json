@@ -1,0 +1,50 @@
+{
+  "howto": [
+    {
+      "name": "Drop the locked PDF",
+      "text": "Select the password-protected PDF file. The encrypted PDF enters isolated per-request storage only for the decryption pass."
+    },
+    {
+      "name": "Enter the password",
+      "text": "Type the document password. PrivaTools does not store or log the password — it travels over HTTPS, is used only in memory for decryption, then discarded."
+    },
+    {
+      "name": "Click Unlock",
+      "text": "The server decrypts the PDF, removing both the open password and any permission restrictions (no-print, no-copy, no-edit)."
+    },
+    {
+      "name": "Download the unlocked PDF",
+      "text": "The resulting PDF behaves like any unencrypted file — open it in any reader without a password."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I unlock a PDF without the password?",
+      "a": "No. PrivaTools requires you to enter the correct password — it does not crack, brute-force, or bypass passwords. There are no shortcuts: AES-256 is mathematically infeasible to break without the key. If you've forgotten your password, recovery is only possible if you saved it somewhere."
+    },
+    {
+      "q": "Does unlocking remove all restrictions?",
+      "a": "Yes. Both the open password (which controls who can view the file) and the permission restrictions (no-print, no-copy, no-edit) are removed from the output. The unlocked PDF behaves like any unencrypted file."
+    },
+    {
+      "q": "Is the password transmitted securely?",
+      "a": "Yes. The password travels over HTTPS (TLS 1.2+) and is used only in memory for decryption. It is never stored on disk, never logged, and never written to any audit trail. The password is discarded immediately after decryption completes."
+    },
+    {
+      "q": "Is it safe to upload a sensitive locked PDF?",
+      "a": "Yes. The encrypted PDF enters temporary per-request storage inside an isolated Docker container for the decryption pass only, and your password is used only for that pass. Both are discarded the moment your download begins. Nothing is logged, indexed, or sent to a third-party API. The decryption pipeline is open source on GitHub for verification."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. Decryption typically takes 1-5 seconds regardless of file size."
+    },
+    {
+      "q": "Do I need an account?",
+      "a": "No — no account, no email, no sign-up. Upload, enter password, download. The privacy guarantees come from the architecture, not from a user profile."
+    },
+    {
+      "q": "How is this different from Smallpdf or iLovePDF unlock?",
+      "a": "Same correctness (only the correct password works), but free with no daily limit (iLovePDF caps free use to 2 unlocks/day), no account required, and the unlock code is open source — you can read every line on GitHub and verify the password is never persisted."
+    }
+  ]
+}

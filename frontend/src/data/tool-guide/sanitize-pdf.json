@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB containing potentially risky elements."
+    },
+    {
+      "name": "PrivaTools removes risky content",
+      "text": "Strips embedded JavaScript, executable links to external apps, embedded files marked for auto-launch, and hidden 'flash' (deprecated SWF) content."
+    },
+    {
+      "name": "Download the sanitized PDF",
+      "text": "Visible content is preserved; security-risky elements are gone."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is sanitization protecting against?",
+      "a": "Malicious PDFs that exploit reader vulnerabilities through embedded scripts or auto-launching attachments. Most modern readers are hardened against these, but defense in depth is wise."
+    },
+    {
+      "q": "Does this remove form fields?",
+      "a": "No — form fields are kept (just JavaScript actions on them are stripped). Use Flatten or Delete Annotations to remove form structure."
+    },
+    {
+      "q": "Are hyperlinks removed?",
+      "a": "Plain http/https links are kept. Links using non-web URI schemes (file:, mailto: with auto-execute, etc.) are stripped."
+    }
+  ]
+}

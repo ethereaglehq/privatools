@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video",
+      "text": "Drop an MP4/MOV/WebM/MKV/AVI file. Best with short clips — long files take exponentially longer."
+    },
+    {
+      "name": "Click Reverse",
+      "text": "Both video and audio are reversed in sync. Output is universal MP4 (H.264 + AAC) playable on every device."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why is reversing slow?",
+      "a": "Reversing requires re-encoding the whole video — FFmpeg has to read every frame, store them, then write them out in reverse order. RAM usage grows with video length."
+    },
+    {
+      "q": "Will the audio sound weird?",
+      "a": "Yes — speech becomes gibberish but music can sound interesting. The audio is reversed with the video so they stay in sync."
+    },
+    {
+      "q": "What's a good use case?",
+      "a": "Reverse-loop animations, training analysis (replay a fall or trick backwards), creative edits, debugging frame-by-frame issues."
+    }
+  ]
+}

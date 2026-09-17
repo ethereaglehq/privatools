@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload HEIC/HEIF images",
+      "text": "Select one or more .heic or .heif files from your iPhone or camera. Each file can be up to 500 MB."
+    },
+    {
+      "name": "Choose output format and quality",
+      "text": "Select JPG or PNG output. For JPG, set the quality slider (1–100). Higher values preserve detail at larger file sizes."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. EXIF orientation is applied automatically so images display correctly. Multiple files are delivered in a ZIP."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why can't I open HEIC files on my computer?",
+      "a": "HEIC is Apple's default photo format since iOS 11. Windows and many web apps do not support it natively. Converting to JPG makes the images universally compatible."
+    },
+    {
+      "q": "Is image quality lost during conversion?",
+      "a": "At quality 90-100, the difference is imperceptible. Lower quality settings reduce file size with minimal visible degradation."
+    },
+    {
+      "q": "Is EXIF data preserved?",
+      "a": "Yes. Camera data, GPS location, and orientation are preserved by default. Use the Remove EXIF tool afterward if you want to strip metadata."
+    }
+  ]
+}

@@ -1,0 +1,58 @@
+{
+  "howto": [
+    {
+      "name": "Drop your PDF",
+      "text": "Upload a PDF up to 500 MB. The file enters isolated per-request storage only for the conversion pass — no copy is kept after your download."
+    },
+    {
+      "name": "Choose DPI",
+      "text": "96 DPI for web preview/thumbnails, 150 DPI for general on-screen viewing (default), 300 DPI for printable copies, 600 DPI for archival. Higher DPI means larger files."
+    },
+    {
+      "name": "Set JPEG quality",
+      "text": "Quality 70-95 (default 85). Lower values produce smaller files with more visible compression artifacts; higher values are nearly indistinguishable from the source."
+    },
+    {
+      "name": "Pick pages (optional)",
+      "text": "Enter ranges like '1-3, 7, 12-15' to convert only specific pages, or leave blank to convert every page."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Each page becomes one JPG. Multi-page PDFs return as a ZIP; single-page PDFs return as a single JPG file."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why JPG instead of PNG?",
+      "a": "JPG is smaller for photos and scanned content (typically 5-10x smaller at quality 85). Use PDF-to-PNG if your PDF has crisp text or graphics where JPEG compression artifacts would show as ringing around letter edges."
+    },
+    {
+      "q": "What about transparency?",
+      "a": "JPG doesn't support transparency. White pages render as white; PDF transparent regions become white in JPG. For transparency, use PDF-to-PNG instead."
+    },
+    {
+      "q": "How long does it take?",
+      "a": "Roughly 50-100 ms per page at 150 DPI on the server. A 100-page PDF takes ~10 seconds end-to-end. Higher DPI (300+) increases time proportionally."
+    },
+    {
+      "q": "Is it safe to convert a confidential PDF?",
+      "a": "Yes. The PDF and the generated JPGs are held in temporary per-request storage inside an isolated Docker container for the conversion pass only — both are unlinked the moment your download begins. Nothing is logged or sent to any third-party API. The conversion uses PyMuPDF/poppler locally."
+    },
+    {
+      "q": "What DPI should I use?",
+      "a": "96 DPI for web preview/thumbnails, 150 DPI for general on-screen viewing (default), 300 DPI for printable copies, 600 DPI for archival. Higher DPI = larger files. For social-media sharing, 150 DPI is typically more than enough."
+    },
+    {
+      "q": "Can I convert just specific pages?",
+      "a": "Yes. Enter individual page numbers or ranges (e.g. 1-3, 7, 12-15). Each selected page becomes one JPG. Single-page selections return as a single JPG; multi-page selections come as a ZIP."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. There is no cap on the number of pages — every page becomes one JPG and they're bundled into a ZIP."
+    },
+    {
+      "q": "How is this different from iLovePDF PDF to JPG?",
+      "a": "Free with no daily limit (iLovePDF caps free use to 2 tasks/day), no account required, and no watermark on the output JPGs. The conversion is the same poppler-based pipeline used by Linux distributions, just exposed without a paywall."
+    }
+  ]
+}

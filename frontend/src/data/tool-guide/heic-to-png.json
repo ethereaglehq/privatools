@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a HEIC image",
+      "text": "Select a HEIC or HEIF file (e.g., from an iPhone photo export)."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The tool decodes via libheif and writes a PNG that opens in every browser and image editor."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's HEIC and why convert it?",
+      "a": "HEIC (High Efficiency Image Container) is Apple's image format from iOS 11 onward. It's space-efficient but not widely supported outside Apple's ecosystem. PNG works everywhere."
+    },
+    {
+      "q": "Is PNG better than JPG for HEIC conversion?",
+      "a": "If you need transparency or are doing further editing: yes. For sharing on the web or attaching to emails: JPG is fine and 3–5x smaller."
+    },
+    {
+      "q": "Are EXIF tags preserved?",
+      "a": "Most are stripped during conversion (since PNG and HEIC have different metadata formats). If you need to preserve EXIF, use HEIC to JPG instead and the standard EXIF block survives."
+    }
+  ]
+}

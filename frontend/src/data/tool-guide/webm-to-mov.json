@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a WebM file",
+      "text": "Drop a .webm file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "VP9 is re-encoded into a stream QuickTime and Final Cut will actually open."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert WebM to MOV?",
+      "a": "To bring web video into Apple editors (Final Cut, iMovie) that prefer QuickTime/MOV. The codecs differ, so this re-encodes to a MOV-friendly codec like H.264."
+    },
+    {
+      "q": "Any quality loss?",
+      "a": "Re-encoding causes minor loss; the defaults target visual parity with the source."
+    },
+    {
+      "q": "Are files retained?",
+      "a": "No — temporary files, deleted after the download."
+    }
+  ]
+}

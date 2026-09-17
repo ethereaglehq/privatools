@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload your video",
+      "text": "Drag-and-drop MP4, MOV, WebM, MKV, AVI, or M4V — up to 200 MB."
+    },
+    {
+      "name": "Click Mute Video",
+      "text": "PrivaTools stream-copies the video and strips the audio track. The operation is lossless and takes about a second per minute of video."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is the video quality preserved?",
+      "a": "100% — we stream-copy the video track without re-encoding. The output is bit-identical to the input minus the audio stream."
+    },
+    {
+      "q": "Will the file get smaller?",
+      "a": "Yes, by the size of the audio track. For typical MP4s that's 5-15% smaller. The video portion is unchanged."
+    },
+    {
+      "q": "Can I just mute the audio instead of removing it?",
+      "a": "This tool removes the audio track entirely. To replace with silence, use Video Converter and pick MP4 — that will re-encode and let you control audio."
+    }
+  ]
+}

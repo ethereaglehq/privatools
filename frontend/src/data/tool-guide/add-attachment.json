@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the host PDF",
+      "text": "Drop the PDF you want to embed a file inside (up to 500 MB)."
+    },
+    {
+      "name": "Add the file to attach",
+      "text": "Drop any file — image, spreadsheet, .zip, even another PDF. PrivaTools embeds it without altering the visible content."
+    },
+    {
+      "name": "Download the result",
+      "text": "Click Attach. The output PDF has your file embedded as an attachment; readers like Acrobat show it in the Attachments panel."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's the difference between an attachment and embedding?",
+      "a": "An attachment is a file stored inside the PDF that the reader can open separately. Embedding means inlining content (images, fonts) into the page itself. Use attachments when you want recipients to access the supporting file but keep the visible PDF clean."
+    },
+    {
+      "q": "Will email clients flag attached PDFs as suspicious?",
+      "a": "No, attachments inside a PDF aren't visible to email gateway scanners as separate attachments — the file is part of the PDF structure. Most spam filters don't flag them."
+    },
+    {
+      "q": "How big can the embedded file be?",
+      "a": "Up to the 500 MB total file limit. The PDF size grows by approximately the embedded file's size."
+    }
+  ]
+}

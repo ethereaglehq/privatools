@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video",
+      "text": "Drop an MP4/MOV/MKV file up to 500 MB."
+    },
+    {
+      "name": "Upload an SRT subtitle file",
+      "text": "Standard SubRip Text format with timestamps and dialogue."
+    },
+    {
+      "name": "Choose to burn-in or soft-encode and download",
+      "text": "Burn-in: subtitles are rendered into the video pixels (permanent, plays everywhere). Soft: subtitles are a separate track (toggleable in supporting players)."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Should I burn-in or use a soft subtitle track?",
+      "a": "Burn-in: best for social media (Twitter, Instagram) where players don't render subtitle tracks. Soft: best for accessibility — viewers can turn off."
+    },
+    {
+      "q": "What subtitle formats are supported?",
+      "a": "Input: SRT. Burn-in output: works in any video player. Soft track: MP4 with WebVTT or MKV with SRT — depending on output format."
+    },
+    {
+      "q": "Can I customize the font / size / color?",
+      "a": "Currently uses sensible defaults (white text with black outline, sans-serif). Custom styling is on the roadmap."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose pages-per-sheet",
+      "text": "2, 4, 6, 8, 9, or 16. Each input page is shrunk to fit; output pages are filled left-to-right, top-to-bottom."
+    },
+    {
+      "name": "Download the n-up PDF",
+      "text": "Use this to save paper when printing or to create thumbnail-style overviews."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why is this called 'N-up'?",
+      "a": "Print-industry terminology: '2-up' = 2 pages per sheet, '4-up' = 4 per sheet, etc. Saves paper and ink for review prints."
+    },
+    {
+      "q": "Are page numbers preserved?",
+      "a": "Original page numbers (rendered on the page) shrink with the page. Add new page numbers afterwards if you need them readable."
+    },
+    {
+      "q": "What aspect ratio works best?",
+      "a": "2-up and 8-up work well for landscape, 4-up and 9-up for portrait. Mismatches add whitespace around each sub-page."
+    }
+  ]
+}

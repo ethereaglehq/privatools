@@ -1,0 +1,50 @@
+{
+  "howto": [
+    {
+      "name": "Drop your PDF",
+      "text": "Select a PDF up to 500 MB. Thumbnail previews of every page load automatically so you can see what needs rotating."
+    },
+    {
+      "name": "Select pages to rotate",
+      "text": "Click individual page thumbnails to target specific pages, or 'Select all' for whole-document rotation. Mix-and-match is supported (different angles per page)."
+    },
+    {
+      "name": "Choose the rotation angle",
+      "text": "Pick 90° clockwise, 180° (upside-down), or 270° clockwise (equivalent to 90° counter-clockwise). PDF only allows 90° increments."
+    },
+    {
+      "name": "Apply and download",
+      "text": "Click Rotate. The server applies the rotation permanently (not just a viewer toggle) and returns the updated PDF — orientation sticks in every reader."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I rotate individual pages instead of the entire PDF?",
+      "a": "Yes. Click individual page thumbnails to select specific pages, then apply the rotation angle only to those pages. Mix-and-match is supported: rotate page 3 by 90°, page 7 by 180°, leave the rest untouched."
+    },
+    {
+      "q": "Does rotation affect text searchability?",
+      "a": "No. The text layer is preserved exactly. Rotation only changes the visual display orientation of each page; the underlying text glyphs, search index, and bookmark positions are kept intact."
+    },
+    {
+      "q": "What rotation angles are supported?",
+      "a": "90° clockwise, 180° (upside-down), and 270° clockwise (equivalent to 90° counter-clockwise). PDF only allows rotations in 90° increments per the spec — arbitrary angles aren't supported."
+    },
+    {
+      "q": "Is it safe to rotate a confidential PDF?",
+      "a": "Yes. The PDF is held in temporary per-request storage inside an isolated Docker container for the rotation pass only — both input and output are unlinked the moment your download begins. Nothing is logged or kept. The rotation pipeline is open source on GitHub."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. Rotation is near-instant: typically under 1 second for a 100-page PDF."
+    },
+    {
+      "q": "Does rotation preserve bookmarks, hyperlinks, and form fields?",
+      "a": "Yes. All structural metadata — bookmarks, internal hyperlinks, external hyperlinks, form fields, and annotations — is preserved through rotation. Only the display orientation of the page content changes."
+    },
+    {
+      "q": "How is this different from rotating in Adobe Acrobat?",
+      "a": "Same outcome, but free with no daily limit and no Adobe subscription. The rotation is permanent (the file is reordered, not just a viewer toggle) so the rotated PDF stays rotated in every reader including phones."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose position and starting number",
+      "text": "Position: top-left/top-center/top-right/bottom-left/bottom-center/bottom-right. Starting number: defaults to 1, but use any integer to continue a multi-document sequence."
+    },
+    {
+      "name": "Apply and download",
+      "text": "PrivaTools stamps each page with its number in the chosen position and font size."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I use Roman numerals or letters?",
+      "a": "Currently Arabic digits only. Roman / alpha numbering is on the roadmap."
+    },
+    {
+      "q": "How is this different from Bates numbering?",
+      "a": "Page numbers are simple sequential digits. Bates numbers have a prefix, configurable padding, and are used in legal contexts."
+    },
+    {
+      "q": "Can I start from a specific page?",
+      "a": "Yes — pages-to-affect lets you specify a starting page (e.g. exclude cover + TOC)."
+    }
+  ]
+}

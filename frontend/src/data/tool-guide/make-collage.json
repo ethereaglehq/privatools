@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload 2+ images",
+      "text": "Drop multiple JPG/PNG/WebP images, up to 500 MB total."
+    },
+    {
+      "name": "Set columns + spacing + background",
+      "text": "Columns: how wide the collage is. Spacing: gap between images. Background color: visible in the spacing."
+    },
+    {
+      "name": "Download the collage",
+      "text": "PrivaTools arranges the images in a grid and outputs one JPG file."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will images be resized?",
+      "a": "Each image is scaled to fit its grid cell while preserving aspect ratio. To force same aspect ratio, crop them first with Resize Crop Image."
+    },
+    {
+      "q": "Can I rearrange the images?",
+      "a": "Drag in the upload area to reorder. They fill left-to-right, top-to-bottom."
+    },
+    {
+      "q": "What's the max grid size?",
+      "a": "Tested up to 100 images. Output JPEG can be up to 30,000 pixels wide before browser limits."
+    }
+  ]
+}

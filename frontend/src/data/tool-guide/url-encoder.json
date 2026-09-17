@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste a string, URL, or JWT",
+      "text": "Auto-detects the input type."
+    },
+    {
+      "name": "Choose encode or decode",
+      "text": "URL encode: spaces → %20, etc. URL decode: %20 → spaces. JWT decode: header.payload.signature → parsed JSON."
+    },
+    {
+      "name": "Copy the result",
+      "text": "Runs entirely in your browser."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's the difference between URL encoding and base64?",
+      "a": "URL encoding only escapes characters that have special meaning in URLs. Base64 encodes any binary as ASCII (longer but binary-safe). Use Base64 for arbitrary data."
+    },
+    {
+      "q": "Why decode a JWT here?",
+      "a": "All in your browser — never paste a real production JWT into a server-side decoder. The standalone JWT Decoder tool shows expiry and claim details too."
+    },
+    {
+      "q": "Will the encoded URL be browser-safe?",
+      "a": "Yes — outputs only ASCII-safe chars (alphanumeric + - _ . ~ % escapes)."
+    }
+  ]
+}

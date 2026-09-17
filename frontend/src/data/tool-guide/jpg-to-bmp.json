@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a JPG",
+      "text": "Drop a .jpg or .jpeg file."
+    },
+    {
+      "name": "PrivaTools converts via Pillow",
+      "text": "Every pixel is written uncompressed, which is why the output dwarfs the JPG."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. BMP stores every pixel uncompressed, so the file will be many times larger than the JPG. It exists for legacy Windows software and imaging hardware that reads nothing else."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert JPG to BMP?",
+      "a": "BMP is an uncompressed bitmap that legacy Windows apps, embedded systems, and some signage/industrial tools require. JPG→BMP decodes to raw pixels (lossless from the JPG) for maximum compatibility."
+    },
+    {
+      "q": "Will the BMP be much larger?",
+      "a": "Yes — BMP stores every pixel uncompressed, so expect roughly 5–20× the JPG's size."
+    },
+    {
+      "q": "Are files kept after conversion?",
+      "a": "No. Input and output files are temporary and deleted as soon as the download is returned."
+    }
+  ]
+}

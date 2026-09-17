@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste Markdown or HTML",
+      "text": "Auto-detects direction. Markdown → HTML for publishing; HTML → Markdown for content extraction."
+    },
+    {
+      "name": "Click Convert",
+      "text": "Standard CommonMark spec for Markdown. HTML converts to GitHub-flavored Markdown."
+    },
+    {
+      "name": "Copy the result",
+      "text": "Runs entirely in your browser."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What about extensions like tables and code blocks?",
+      "a": "GitHub-flavored Markdown extensions are supported in both directions: tables, fenced code, strikethrough, task lists."
+    },
+    {
+      "q": "Will inline CSS be preserved?",
+      "a": "Conversion is opinionated — visible content keeps semantics, but custom CSS is stripped. For a faithful HTML→PDF, use the Markdown-to-PDF tool instead."
+    },
+    {
+      "q": "Is the conversion lossless?",
+      "a": "HTML → Markdown can lose nesting fidelity (deeply-nested divs flatten). Markdown → HTML is exact."
+    }
+  ]
+}

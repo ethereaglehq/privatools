@@ -1,0 +1,42 @@
+{
+  "howto": [
+    {
+      "name": "Drop a recording",
+      "text": "MP3, WAV, M4A, OGG, FLAC or AAC — meetings, voice notes, interviews, lectures. Nothing uploads in the default mode."
+    },
+    {
+      "name": "Pick where the AI runs",
+      "text": "On this device: OpenAI Whisper downloads once (~41 MB tiny / ~74 MB base) into your browser cache and transcribes locally, even offline. Or use your own OpenAI/Groq key for noticeably better accuracy — the audio goes straight from your browser to that provider."
+    },
+    {
+      "name": "Transcribe",
+      "text": "Click Transcribe. Local runs show live progress; a 10-minute recording takes a few minutes on a modern laptop with the tiny model."
+    },
+    {
+      "name": "Download text or subtitles",
+      "text": "Copy the transcript, download it as .txt, or export timestamped .srt subtitles ready for any video player."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is my recording uploaded anywhere?",
+      "a": "Not in the default mode. Whisper runs inside your browser through WebAssembly — the model file downloads once from a public CDN and caches, then the audio is decoded and transcribed entirely in your tab. Verify in DevTools → Network: no request carries your recording. If you switch to your own API key, the audio goes directly from your browser to that provider (OpenAI or Groq), never through PrivaTools."
+    },
+    {
+      "q": "How accurate is the in-browser model?",
+      "a": "Whisper tiny (~41 MB) is solid for clear speech and voice notes; base (~74 MB) is noticeably better for meetings. Both trail the full-size models behind provider APIs — for important interviews, your own OpenAI or Groq key gives near-human accuracy for fractions of a cent per minute."
+    },
+    {
+      "q": "Which languages work?",
+      "a": "Whisper is multilingual — it auto-detects the spoken language across ~100 languages, and both the local models and the provider APIs handle non-English speech."
+    },
+    {
+      "q": "Can I get subtitles for a video?",
+      "a": "Yes — the local engine returns timestamps, and the SRT export drops straight into any video player or editor. Extract the audio track first with the Extract Audio tool if you have a video file."
+    },
+    {
+      "q": "How long a recording can it handle?",
+      "a": "Locally: limited by your machine's memory and patience — hour-long recordings work but take a while on the tiny model. Provider APIs typically cap uploads around 25 MB, roughly 25 minutes of MP3; trim or split longer recordings first."
+    }
+  ]
+}

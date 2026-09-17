@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload an AVI",
+      "text": "Drop an .avi video — typical for older Windows captures."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The result is an MP4 with H.264 video and AAC audio, ready for streaming on phones, browsers, and modern TVs."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert AVI to MP4?",
+      "a": "AVI is an old Microsoft container with poor support for modern codecs and metadata. MP4 is the universal standard — every modern device, browser, and editor plays it."
+    },
+    {
+      "q": "What if my AVI uses DivX or Xvid?",
+      "a": "FFmpeg re-encodes the video to H.264 inside the MP4 container, so any source codec is handled."
+    },
+    {
+      "q": "Will the file get bigger or smaller?",
+      "a": "Usually similar or smaller. Old AVIs often used inefficient codecs; modern H.264 typically achieves the same quality at a smaller size."
+    }
+  ]
+}

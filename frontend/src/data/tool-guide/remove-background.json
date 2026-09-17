@@ -1,0 +1,42 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "Select a JPG, PNG, or WebP image up to 500 MB. Photos of people, products, and animals work best."
+    },
+    {
+      "name": "Background removal runs automatically",
+      "text": "The server uses an AI model to detect the foreground subject and remove the background. No manual tracing is needed."
+    },
+    {
+      "name": "Download the result",
+      "text": "Save the transparent PNG. You can also choose a solid-color replacement background before downloading."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What kinds of photos work best?",
+      "a": "People, animals, products, and objects with clear edges work best. The U²-Net AI model handles fine details like hair, fur, and semi-transparent edges (sunglasses, leaves, water droplets) reasonably well — much better than the chroma-key technique on a green screen."
+    },
+    {
+      "q": "Is the output a transparent PNG?",
+      "a": "Yes — the output is a 32-bit PNG with a real alpha channel. You can drop it onto any background in Figma, Canva, Photoshop, or PowerPoint and it composites cleanly. You can also pick a solid-color or image replacement background before downloading."
+    },
+    {
+      "q": "Does it work on group photos with multiple people?",
+      "a": "Yes, but quality varies. The model is trained on single-subject portraits, so isolated people in a group are detected well. Overlapping bodies, faces in the background, and partial occlusions may need touch-up in an image editor."
+    },
+    {
+      "q": "Is my photo uploaded somewhere external — like remove.bg?",
+      "a": "No. The U²-Net model runs on PrivaTools' own server inside an isolated Docker container. The photo enters temporary per-request storage, the model runs locally, the result is sent back, and both the input and output are unlinked from the temp directory immediately after the response. No third-party background-removal service is called."
+    },
+    {
+      "q": "What's the maximum image size?",
+      "a": "500 MB per file, or 100 megapixels of pixel area — whichever you hit first. For most photography that's never a limit. RAW DSLR files at full resolution work; cropped product photos are well within bounds."
+    },
+    {
+      "q": "How does this compare to remove.bg or Canva?",
+      "a": "Free with no daily quota or watermark (remove.bg adds a watermark on the free tier and caps at 1 image per session), no account required (Canva requires sign-up), and the entire pipeline is open source so you can self-host it. Quality is comparable to remove.bg's free tier."
+    }
+  ]
+}

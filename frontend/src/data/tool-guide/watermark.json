@@ -1,0 +1,54 @@
+{
+  "howto": [
+    {
+      "name": "Drop your PDF",
+      "text": "Select a PDF up to 500 MB that needs a watermark. The file enters isolated per-request storage only for the watermarking pass."
+    },
+    {
+      "name": "Pick watermark type",
+      "text": "Choose text (e.g. 'CONFIDENTIAL', 'DRAFT', 'COPY') or upload an image like a company logo with transparency. Both can be applied in separate passes."
+    },
+    {
+      "name": "Configure styling",
+      "text": "Set opacity (5-100%), font size, color, rotation angle, and position (diagonal across page, center, top header, bottom footer, or custom coordinates)."
+    },
+    {
+      "name": "Choose page range",
+      "text": "Apply to all pages by default, or specify ranges like '1-5', '7,12,15', or 'odd' / 'even' for selective stamping."
+    },
+    {
+      "name": "Apply and download",
+      "text": "Click Apply. Watermarks are flattened into the page content so they can't be toggled off in any reader."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I use an image as a watermark?",
+      "a": "Yes. Upload a PNG or JPG image (logos with transparency work best). Set opacity 5-100% so the watermark is visible but does not obscure document content. The image is scaled to your specified size and positioned per the layout option."
+    },
+    {
+      "q": "Is the watermark applied to every page?",
+      "a": "By default yes. You can also specify a page range (e.g. 'all', '1-5', '7,12,15') so only those pages receive the watermark. Useful for watermarking only the cover or only the body."
+    },
+    {
+      "q": "Can someone remove the watermark?",
+      "a": "The watermark is flattened into the page content stream, so it cannot be toggled off. Advanced PDF editors (Acrobat Pro, Foxit) could theoretically paint over it with white rectangles, but this is detectable and time-consuming. For maximum protection, use a diagonal repeating pattern across the page rather than a single corner watermark."
+    },
+    {
+      "q": "Is it safe to watermark a sensitive PDF?",
+      "a": "Yes. The PDF and watermark image are held in temporary per-request storage inside an isolated Docker container for the watermarking pass only. Both are unlinked the moment your download begins. The watermark text or image is not stored, logged, or sent to a third party."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. There is no cap on the number of watermarks you can apply (run the tool repeatedly to layer text + image + diagonal)."
+    },
+    {
+      "q": "Can I batch-watermark multiple PDFs with the same watermark?",
+      "a": "Yes — upload multiple PDFs and the same watermark configuration is applied to each, then bundled into a ZIP. Useful for stamping a 'DRAFT' watermark across a quarterly delivery."
+    },
+    {
+      "q": "How is this different from iLovePDF or Smallpdf watermarking?",
+      "a": "Free with no daily limit (Smallpdf caps free use to 2 watermarks/day) and no account required. We don't add our own watermark to the output (iLovePDF and Smallpdf both watermark the FREE-tier output as a brand stamp). And the entire pipeline is open source."
+    }
+  ]
+}

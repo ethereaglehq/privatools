@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an .odt file",
+      "text": "Drop an OpenDocument Text file (LibreOffice / OpenOffice) up to 500 MB."
+    },
+    {
+      "name": "PrivaTools renders via LibreOffice headless",
+      "text": "Fonts, styles, embedded images, tables, footnotes, and bibliography are preserved."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Click Convert. The output PDF matches the on-screen rendering closely."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What about ODT-specific features (math equations, drawings)?",
+      "a": "OpenDocument math (Formula) and drawings render correctly as the LibreOffice converter handles them natively."
+    },
+    {
+      "q": "Will fonts that aren't on the server cause problems?",
+      "a": "Missing fonts get substituted. Embedded fonts in the ODT are honored."
+    },
+    {
+      "q": "Does it handle macros?",
+      "a": "Macros are not executed — only the static document content is converted."
+    }
+  ]
+}

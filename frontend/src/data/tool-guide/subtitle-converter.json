@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an SRT / VTT / ASS subtitle file",
+      "text": "Auto-detects format from extension and content."
+    },
+    {
+      "name": "Choose target format",
+      "text": "SRT (universal). VTT (web video). ASS (advanced styling)."
+    },
+    {
+      "name": "Download the converted subtitles",
+      "text": "Runs entirely in your browser."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's the difference between SRT and VTT?",
+      "a": "SRT: simplest. VTT (WebVTT): used by HTML5 <track>, supports styling. ASS (Advanced SubStation Alpha): rich styling like karaoke colors, but less compatible."
+    },
+    {
+      "q": "Will styling carry over?",
+      "a": "SRT → VTT: yes. VTT → SRT: styling is stripped (SRT has no style support). ASS → SRT: styling lost; text and timing preserved."
+    },
+    {
+      "q": "Is my subtitle file uploaded?",
+      "a": "No — pure browser conversion."
+    }
+  ]
+}

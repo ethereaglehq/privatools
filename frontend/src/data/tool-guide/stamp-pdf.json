@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose a stamp",
+      "text": "Preset: APPROVED, CONFIDENTIAL, COPY, DRAFT, FINAL, NOT APPROVED, SAMPLE, VOID. Or custom: your own text."
+    },
+    {
+      "name": "Set opacity and position",
+      "text": "Opacity 0-1 (default 0.5). Position: top/middle/bottom × left/center/right. Click Apply."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Are stamps editable annotations or baked-in?",
+      "a": "Baked into the page content. They survive copying, printing, and PDF/A conversion. To remove, use Whiteout to cover them."
+    },
+    {
+      "q": "Can I apply a stamp to only specific pages?",
+      "a": "Yes — pages parameter accepts page ranges like '1-3' or 'all'."
+    },
+    {
+      "q": "How big is the stamp?",
+      "a": "Auto-sized to roughly 60% of page width with the chosen opacity for visibility without obscuring content."
+    }
+  ]
+}

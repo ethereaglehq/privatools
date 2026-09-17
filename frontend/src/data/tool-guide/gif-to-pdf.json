@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload GIF images",
+      "text": "Drop one or many .gif files. Animated GIFs use only the first frame."
+    },
+    {
+      "name": "Choose page size",
+      "text": "Letter or A4. Each GIF scales to fit while preserving aspect ratio."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "All GIFs are combined into one PDF, one image per page in upload order."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Do animated GIFs animate inside the PDF?",
+      "a": "No — PDF doesn't support animation. Only the first frame is used. To convert animation to PDF, use GIF to MP4 then Video to PDF for keyframes."
+    },
+    {
+      "q": "How is transparency handled?",
+      "a": "GIF transparent pixels render against a white page background. Use PNG-to-PDF if you need true alpha."
+    },
+    {
+      "q": "Can the GIF stay as a GIF inside the PDF?",
+      "a": "PDF doesn't natively support GIF — the image is re-encoded as JPEG or Flate during embedding."
+    }
+  ]
+}
