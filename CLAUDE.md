@@ -147,4 +147,4 @@ load-bearing.
   `test_tool_guide_export`), `seo_meta.py`, `sitemap.py`, CSP
   sets, `gen-llms.mjs` run, and the public count literals
   (manifest/opensearch/samples + blog copy). The count tests enforce most of
-  it; the CSP walker and FAQ export tests catch the rest.
+  it; the CSP walker and guide export tests catch the rest.
