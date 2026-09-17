@@ -10,19 +10,18 @@
  * JSON-LD for crawlers. Users never saw a word of it. This renders the same
  * source to people.
  *
- * Loaded lazily (47 KB gzipped for all 213) so it costs nothing on the home
- * page or anywhere outside a tool.
+ * Loaded lazily from the tool's own exported guide file (one small chunk per
+ * tool, fetched only for the tool being viewed) so it costs nothing on the
+ * home page or anywhere outside a tool.
  */
 import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReveal } from "@/hooks/useReveal";
-import { loadToolGuide } from "@/lib/tool-guide";
-
-interface FaqEntry { q: string; a: string; }
+import { loadToolGuide, type ToolGuideQuestion } from "@/lib/tool-guide";
 
 export function ToolFaq({ slug, toolName }: { slug: string; toolName: string }) {
-    const [entries, setEntries] = useState<FaqEntry[] | null>(null);
+    const [entries, setEntries] = useState<ToolGuideQuestion[] | null>(null);
     const [open, setOpen] = useState<number | null>(0);
     const reveal = useReveal<HTMLElement>();
 

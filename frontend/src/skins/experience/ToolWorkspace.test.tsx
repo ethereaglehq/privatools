@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ToolWorkspace } from "./ToolWorkspace";
 
 vi.mock("../daylight/consumer/ConsumerChrome", () => ({ FavoriteButton: () => null }));
-vi.mock("@/data/tool-faq.json", () => ({ default: {} }));
+vi.mock("./ToolGuide", () => ({ ToolGuide: ({ slug }: { slug: string }) => <div data-testid="guide">{slug}</div> }));
 afterEach(cleanup);
 
 describe("tool processing disclosure", () => {
@@ -19,5 +19,7 @@ describe("tool processing disclosure", () => {
     await act(async () => { render(<ToolWorkspace tool={{ slug: "compress-pdf", name: "Compress PDF", description: "A smaller file", category: "pdf" }} categoryLabel="PDF" related={[]} onFindTool={() => undefined}><div>File picker</div></ToolWorkspace>); });
     expect(screen.getByText("Temporary server processing")).toBeInTheDocument();
     expect(screen.queryByText("Browser or server · your choice")).not.toBeInTheDocument();
+    expect(screen.getByTestId("guide")).toHaveTextContent("compress-pdf");
+    expect(document.querySelector(".tw-questions")).toBeNull();
   });
 });
