@@ -17,6 +17,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReveal } from "@/hooks/useReveal";
+import { loadToolGuide } from "@/lib/tool-guide";
 
 interface FaqEntry { q: string; a: string; }
 
@@ -27,12 +28,8 @@ export function ToolFaq({ slug, toolName }: { slug: string; toolName: string }) 
 
     useEffect(() => {
         let cancelled = false;
-        import("@/data/tool-faq.json")
-            .then(m => {
-                if (cancelled) return;
-                const all = m.default as Record<string, FaqEntry[]>;
-                setEntries(all[slug] ?? null);
-            })
+        loadToolGuide(slug)
+            .then(guide => { if (!cancelled) setEntries(guide?.faq ?? null); })
             .catch(() => { /* the FAQ is a bonus; the tool still works without it */ });
         return () => { cancelled = true; };
     }, [slug]);
