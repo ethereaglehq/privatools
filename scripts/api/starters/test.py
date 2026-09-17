@@ -19,8 +19,8 @@ import time
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
-ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("api_starters_build", ROOT / "scripts/api-starters-build.py")
+ROOT = Path(__file__).resolve().parents[3]
+spec = importlib.util.spec_from_file_location("api_starters_build", ROOT / "scripts/api/starters/build.py")
 builder = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(builder)
 KEY = "synthetic-starter-test-key"

@@ -6,9 +6,9 @@ deletion workflow, an interactive Postman collection, and synthetic sample
 PDFs. All run against the existing versioned API; no new server or runtime
 service is introduced.
 
-The complete user guide is [examples/api/README.md](../examples/api/README.md).
+The complete user guide is [examples/api/README.md](../../examples/api/README.md).
 Its generated public copy is `/api-starters/README.md`. Run
-`python3 scripts/api-starters-build.py` after changes and its `--check` mode
+`python3 scripts/api/starters/build.py` after changes and its `--check` mode
 to detect stale downloads. The manifest records each payload's size and
 SHA-256, and the ZIP uses fixed timestamps for reproducible output.
 
@@ -31,9 +31,9 @@ download alone does not prove that the user's destination saved the file.
 Validation commands:
 
 ```sh
-python3 scripts/api-starters-build.py --check
-python3 scripts/api-starters-test.py
-node --test scripts/api-starters-artifacts.test.mjs
+python3 scripts/api/starters/build.py --check
+python3 scripts/api/starters/test.py
+node --test scripts/api/starters/artifacts.test.mjs
 ```
 
 The local HTTP tests exercise actual Python and Node CLI processes, including

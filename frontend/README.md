@@ -1,73 +1,57 @@
-# Welcome to your Lovable project
+# PrivaTools frontend
 
-## Project info
+React, TypeScript and Vite provide the browser application. The current Air and
+Play interfaces share the same tools, state and processing engines. See
+[DESIGN.md](DESIGN.md) for the design system and [PRODUCT.md](PRODUCT.md) for
+current product decisions.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+## Local development
 
-## How can I edit this code?
+From the repository root, install the pinned frontend dependencies with
+`npm --prefix frontend ci`, then run `npm run frontend`. This starts Vite on
+`http://127.0.0.1:5173`; API requests proxy to the local backend on port 8000.
+Configure local development authentication using `.env.example`; credentials
+and local environment files stay outside Git.
 
-There are several ways of editing your application.
+For the complete application on one origin, run `npm run setup:backend` once
+and then `npm start` from the repository root. This builds the frontend and
+starts the pinned Python backend on `http://127.0.0.1:8000`. Durable local account
+state lives in `data/local/`; temporary processing files use `temp/local/`.
 
-**Use Lovable**
+## Verification
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Run these commands from `frontend/`:
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npx tsc --noEmit -p tsconfig.app.json
+npm test
+npm run test:content
+npm run build:check
 ```
 
-**Edit a file directly in GitHub**
+The build prepares pinned browser model assets, regenerates the AI crawler
+indexes, bundles the application and injects integrity metadata. Check generated
+changes before committing. Use the npm version pinned in CI when regenerating
+`package-lock.json`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Source layout
 
-**Use GitHub Codespaces**
+| Path | Purpose |
+| --- | --- |
+| `src/skins/experience/` | Air/Play navigation, layout and appearance |
+| `src/skins/daylight/` | Shared base integration for real tool components |
+| `src/components/` | Reusable UI and tool interfaces |
+| `src/pages/` | Application pages and tool routing |
+| `src/lib/` | API, authentication, local storage, AI and processing helpers |
+| `src/hooks/` | Shared state and interaction hooks |
+| `src/data/` | Tool catalogues and content registries |
+| `src/styles/` | Shared and generated styles |
+| `src/test/` | Test setup and application tests |
+| `tests/` | Playwright browser tests |
+| `public/` | Static files, model assets and generated API starter downloads |
+| `scripts/` | Frontend generators and build checks |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Public starter downloads are generated from `../examples/api/` by
+`python3 scripts/api/starters/build.py` from the repository root. Edit their
+source files rather than the generated copies. Deployment uses the repository's
+[deployment workflow](../deploy/README.md).

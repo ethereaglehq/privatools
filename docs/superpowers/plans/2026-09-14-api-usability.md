@@ -111,5 +111,5 @@ Ownership: root; `main.py`, launcher, Dockerfile/Compose/deploy contract, README
 Implemented on `codex/api-usability-upgrade`. The changes remain undeployed and
 `API_V1_JOBS_ENABLED` defaults to false. Local checks validate behavior, not the
 Oracle host's throughput or a production image rollout. See
-`docs/deployment/api-usability-validation.md` for the final checks and remaining
+`docs/verification/api/api-usability-validation.md` for the final checks and remaining
 production validation.

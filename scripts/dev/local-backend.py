@@ -21,7 +21,7 @@ def main() -> None:
     if not 1 <= args.port <= 65535:
         parser.error("--port must be between 1 and 65535")
 
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[2]
     python = root / ".venv" / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
     if not python.is_file():
         parser.exit(1, "Backend dependencies are missing. Run npm run setup:backend first.\n")

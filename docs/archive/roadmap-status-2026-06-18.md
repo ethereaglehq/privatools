@@ -1,3 +1,5 @@
+> Historical roadmap snapshot from 18 June 2026. Completed work and production status have changed; this is not the current implementation plan.
+
 # PrivaTools Autonomous Roadmap Status
 
 Last updated: 2026-06-18

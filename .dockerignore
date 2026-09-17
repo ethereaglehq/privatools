@@ -36,3 +36,6 @@ frontend/test-results/
 **/*.db
 **/*.db-shm
 **/*.db-wal
+
+# Private recovery archives are never build inputs.
+.local-archive/

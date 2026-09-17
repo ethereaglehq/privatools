@@ -216,7 +216,7 @@ retrieval, and explicit deletion. The initial adapters are `merge`, `compress`,
 `grayscale`, and `pdf-to-text`; the catalog reports actual availability.
 One worker shares the existing web container's 4 GB / 1.8 CPU limits.
 Results expire one hour after completion; repeat downloads are supported
-until expiry or deletion. See [API integration and rollout](docs/api-usage.md).
+until expiry or deletion. See [API integration and rollout](docs/api/usage.md).
 
 Clerk accounts recover access by email; users do not need to save a recovery
 code. When Clerk is configured, native password/recovery endpoints are retired.
@@ -252,46 +252,39 @@ The **AI** button in the top bar opens one dialog for everything AI: manage the 
 
 ## 📁 Project structure
 
-```
+```text
 privatools/
-├── backend/                  # FastAPI (Python 3.10)
-│   ├── app/
-│   │   ├── main.py           # Entry point + SPA SEO middleware
-│   │   ├── seo_meta.py       # Per-route titles / meta / JSON-LD / SSR content
-│   │   ├── tool_content.py   # HowTo steps + FAQ Q&As per tool
-│   │   ├── routes/           # API handlers (one file per tool group)
-│   │   │   ├── merge.py, split.py, compress.py, ...
-│   │   │   ├── phase7_tools.py  # mute/reverse/speed video, audio trim, image palette, pixelate, rotate, flip
-│   │   │   ├── v12_tools.py     # web-optimize, split-by-text, pdf-to-html, pdf-to-rtf, view-exif
-│   │   │   ├── og_image.py      # Dynamic 1200x630 OG image generator
-│   │   │   ├── sitemap.py       # Dynamic sitemap.xml
-│   │   │   └── ...
-│   │   ├── services/         # Business logic (one file per tool)
-│   │   ├── middleware/       # Rate limiting, security headers
-│   │   └── utils/            # Temp-file cleanup, route helpers
+├── backend/                  # FastAPI application and Python tests
+│   ├── app/                  # Routes, services, auth, API jobs and SEO
 │   └── tests/
-├── frontend/                 # React + Vite + TypeScript
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── tool-ui/         # 140+ per-tool components
-│   │   │   ├── CommandPalette.tsx  # ⌘K with multi-token fuzzy scoring
-│   │   │   ├── EditorialMasthead.tsx, EditorialFooter.tsx
-│   │   │   └── ...
-│   │   ├── data/             # tools.ts (107 PDF) + non-pdf-tools.ts (114) + blog.ts (25 posts)
-│   │   ├── hooks/            # useHistory, useTheme, useUxHelpers
-│   │   ├── pages/            # Index, ToolPage, NonPdfToolPage, Pipeline, Batch, Blog, Compare, About, ...
-│   │   └── lib/              # API client, output filename helpers, error mapping
-│   ├── public/
-│   │   ├── llms.txt          # Auto-generated AI crawler index (~33 KB)
-│   │   ├── llms-full.txt     # Verbose AI crawler corpus (~75 KB)
-│   │   ├── manifest.json     # PWA
-│   │   ├── opensearch.xml
-│   │   └── sw.js             # Service worker
-│   └── scripts/gen-llms.mjs  # Regenerates llms.txt + llms-full.txt at build time
+├── frontend/                 # React, Vite and TypeScript
+│   ├── src/                  # Shared tools, pages and Air/Play interfaces
+│   ├── public/               # Public assets and generated starter downloads
+│   ├── scripts/              # Frontend build and content generators
+│   └── tests/                # Browser checks
+├── packages/                 # CLI and browser extension
+├── examples/api/             # Runnable API integration examples
+├── scripts/
+│   ├── api/                  # Capacity checks and starter generation/tests
+│   ├── analytics/            # Public analytics configuration verification
+│   ├── dev/                  # Local application launcher
+│   └── seo/                  # Public manifest verification
+├── deploy/                   # Deployment profiles and operational guides
+│   └── oracle-vm/            # Oracle deployment, backup and systemd files
+├── docs/
+│   ├── api/                  # API integration and maintainer guides
+│   ├── verification/         # Account and API verification evidence
+│   ├── seo/                  # Search visibility analysis and runbooks
+│   ├── superpowers/          # Engineering plans and specifications
+│   └── archive/              # Explicitly historical research and roadmap
 ├── Dockerfile
 ├── docker-compose.yml
-└── requirements.txt
+├── package.json              # Root development commands and CLI workspace
+└── requirements*.txt/.lock   # Pinned runtime, development and CI dependencies
 ```
+
+See the [documentation index](docs/README.md), [frontend guide](frontend/README.md)
+and [script guide](scripts/README.md) for the relevant commands and conventions.
 
 ---
 

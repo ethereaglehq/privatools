@@ -24,4 +24,4 @@ Two keys produced bursts of 1, 3, and 6 simultaneous requests with a six-second 
 
 These are synthetic fixture measurements, not a throughput guarantee or an estimate for every operation. Samples per cell are small; p95 is close to the maximum observation. Keep the existing fair limits. OCR, Office, video, and large pathological documents need their own cost/capacity evaluation before expanding background adapters or advertising higher throughput.
 
-The finite harness is `scripts/api-capacity.py`. It requires `PRIVATOOLS_CAPACITY_SANDBOX=1`, an isolated container's own database, and a loopback API; it creates and removes its own account. Never point it at production. Detailed measurements are in `api-onboarding-capacity.json`; local API and browser checks are in the neighboring JSON reports.
+The finite harness is `scripts/api/capacity.py`. It requires `PRIVATOOLS_CAPACITY_SANDBOX=1`, an isolated container's own database, and a loopback API; it creates and removes its own account. Never point it at production. Detailed measurements are in `api-onboarding-capacity.json`; local API and browser checks are in the neighboring JSON reports.

@@ -46,3 +46,7 @@ lo_input_*.pdf
 /frontend/public/models/*.wasm
 /frontend/public/models/*.mjs
 /frontend/public/models/asset-manifest.json
+
+# Private local cleanup archives and generated compiler state.
+/.local-archive/
+/frontend/*.tsbuildinfo
