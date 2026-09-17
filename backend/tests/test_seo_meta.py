@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 
 from backend.app import seo_meta
 from backend.app.seo_meta import TOOL_META, get_jsonld_for_path, get_meta_for_path, inject_seo
@@ -96,7 +97,7 @@ def test_tool_jsonld_has_application_howto_faq_and_breadcrumbs():
     assert app["creator"]["sameAs"] == ["https://github.com/ethereaglehq/privatools"]
 
     howto = next(node for node in graph if node.get("@type") == "HowTo")
-    assert howto["name"] == "How to use the Merge PDF tool on PrivaTools"
+    assert howto["name"] == "How to use Merge PDF"
     assert len(howto["step"]) >= 3
     assert all(step["@type"] == "HowToStep" for step in howto["step"])
 
@@ -181,7 +182,7 @@ def test_create_zip_faq_does_not_claim_password_encryption_support():
 def test_noun_tool_howto_names_are_readable_in_jsonld_and_ssr_html():
     graph = _graph_for("/tools/generate-barcode")
     howto = next(node for node in graph if node.get("@type") == "HowTo")
-    expected = "How to use the Barcode Generator tool on PrivaTools"
+    expected = "How to use Barcode Generator"
 
     assert howto["name"] == expected
     assert "How to Barcode Generator" not in howto["name"]
@@ -291,17 +292,11 @@ def test_compare_tool_count_claims_match_catalog_size():
         [seo_meta._PRIVATOOLS_FEATURES, seo_meta._COMPARE_DATA],
         sort_keys=True,
     )
-    non_pdf_html = inject_seo(
-        '<html><head></head><body><div id="root"></div></body></html>',
-        "/tools/image-compressor",
-    )
 
     assert seo_meta._TOTAL_TOOL_COUNT == total
     assert breadth_feature in comparison_copy
     assert f"Yes ({total} tools)" in comparison_copy
-    assert f"all {total} tools" in non_pdf_html
     assert "175+" not in comparison_copy
-    assert "all 175+ tools" not in non_pdf_html
 
 
 def test_public_tool_count_claims_match_catalog_size():
@@ -427,9 +422,9 @@ def test_tools_hub_is_known_and_renders_full_directory():
     assert 'rel="canonical" href="https://privatools.me/tools"' in out
 
 
-def test_deep_tool_content_has_no_citation_ready_boilerplate():
-    """The self-referential 'citation-ready' section was removed (filler that
-    duplicated across all 213 tools)."""
-    html = "<html><head></head><body><div id='root'></div></body></html>"
-    out = inject_seo(html, "/tool/merge-pdf")
-    assert "citation-ready" not in out
+def test_tool_body_matches_visible_blocks_and_related_tools_share_a_category():
+    body = seo_meta._build_ssr_content("/tool/merge-pdf", *seo_meta.get_meta_for_path("/tool/merge-pdf"))
+    assert "compare-cta" not in body and "tool-depth" not in body and "TL;DR" not in body
+    related = re.findall(r'<li><a href="/tool/([a-z0-9-]+)">', body.split('class="tool-related"', 1)[1].split("</ul>", 1)[0])
+    assert 1 <= len(related) <= 3 and "merge-pdf" not in related
+    assert body.index('class="tool-steps"') < body.index('class="tool-faq"') < body.index("Last reviewed")

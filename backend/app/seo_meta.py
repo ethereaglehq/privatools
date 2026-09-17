@@ -624,6 +624,26 @@ def _by_popularity(items):
     return sorted(items, key=lambda kv: _POPULARITY.get(kv[0], 999))
 
 
+def _tool_registry_short_description(slug: str) -> str | None:
+    data = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
+    row = (data or {}).get(slug) or {}
+    return row.get("description") or None
+
+
+def _tool_category(slug: str) -> str | None:
+    data = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
+    row = (data or {}).get(slug) or {}
+    return row.get("category") or None
+
+
+def _related_tools(slug: str, registry: dict, prefix: str) -> list[tuple[str, str, str]]:
+    """The three most popular tools in the same category, matching the workspace's afterword."""
+    category = _tool_category(slug)
+    candidates = [(s, name) for s, (name, _) in registry.items()
+                  if s != slug and (category is None or _tool_category(s) == category)]
+    return [(s, name, f"/{prefix}/{s}") for s, name in _by_popularity(candidates)[:3]]
+
+
 _NONPDF_DOCUMENT_DATA_TOOLS = {"csv-json", "markdown-html"}
 _NONPDF_PHASE7_IMAGE_TOOLS = {"image-palette", "pixelate-image", "rotate-image", "flip-image"}
 _NONPDF_PHASE7_VIDEO_AUDIO_TOOLS = {"mute-video", "reverse-video", "video-speed", "audio-trim"}
@@ -661,259 +681,6 @@ def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
     if 280 <= rank <= 299:
         return "Developer tools"
     return "File tools"
-
-
-# ---------------------------------------------------------------------------
-# TL;DR generator — produces a single-sentence, voice-friendly answer for
-# the "what does this tool do?" question. AEO/voice-search gold: this is
-# the line ChatGPT, Perplexity, Google AI Overviews, and Alexa will read
-# back when a user asks "how do I {action} a PDF online?".
-# ---------------------------------------------------------------------------
-_TLDR_OVERRIDES: dict[str, str] = {
-    "merge-pdf":        "Drop two or more PDFs, drag to reorder, click Merge — you get one combined PDF in seconds, no sign-up, no watermarks.",
-    "split-pdf":        "Upload a PDF, type the page range you want (e.g. 1-3, 5, 7-end), and download the extracted pages as a new PDF.",
-    "compress-pdf":     "Upload a PDF, pick a compression level (Light / Recommended / Extreme), and download the smaller version — typically 50-75% smaller.",
-    "unlock-pdf":       "Upload a password-protected PDF, type the password, and download the unlocked version that opens without prompting.",
-    "protect-pdf":      "Upload a PDF, set a password (with optional permissions for print/copy/edit), and download the encrypted file.",
-    "pdf-to-word":      "Upload a PDF and download an editable .docx with the layout and most formatting preserved — no Acrobat required.",
-    "pdf-to-jpg":       "Upload a PDF and download each page as a JPEG image in a ZIP, at the resolution you choose.",
-    "word-to-pdf":      "Upload a .docx and download it as a PDF that looks the same on every device.",
-    "jpg-to-pdf":       "Upload one or more JPG/JPEG images and download a single PDF, choosing A4, Letter, or fit-to-image page size.",
-    "image-to-pdf":     "Upload images (JPG/PNG/HEIC/WebP/TIFF/BMP/GIF/SVG) and combine them into a single PDF with one click.",
-    "ocr-pdf":          "Upload a scanned PDF and download a searchable, copy-pasteable PDF — or extract the text directly as .txt/JSON.",
-    "rotate-pdf":       "Upload a PDF, choose 90/180/270° (per page or all), and download the rotated copy.",
-    "watermark":        "Upload a PDF, type your watermark text (or upload an image), choose position and opacity, and download the watermarked file.",
-    "redact-pdf":       "Upload a PDF, draw black-out rectangles over sensitive areas, and download the redacted file with content burnt in.",
-    "edit-pdf":         "Upload a PDF and click anywhere on the page to add text, highlights, white-out boxes, or rectangles — then download the edited version.",
-    "sign-pdf":         "Upload a PDF, draw or type your signature, place it on any page, and download the signed PDF.",
-    "html-to-pdf":      "Paste a URL or HTML snippet and download a paginated PDF rendering of the page.",
-    "image-compressor": "Upload JPG/PNG/WebP/BMP, pick a quality from 1-100, and download a smaller version — typically 40-70% lighter.",
-    "image-converter":  "Upload an image and choose a target format (JPG/PNG/WebP/AVIF/TIFF/BMP/GIF) to convert it in your browser.",
-    "remove-background":"Upload an image and download a version with the background removed as a transparent PNG — uses U²-Net AI, runs server-side.",
-    "compress-video":   "Upload a video and pick a CRF quality level — output is smaller MP4 (H.264) that plays everywhere.",
-    "mp4-to-mp3":       "Upload an MP4 video and download just the audio track as an MP3 file.",
-    "video-to-gif":     "Upload a short MP4/MOV/WebM and download an animated GIF, choosing FPS and width.",
-    "heic-to-jpg":      "Upload an iPhone HEIC photo and download a universally-compatible JPEG — no Apple software required.",
-    "qr-code":          "Type any URL or text and download a QR code as PNG or PDF — no upload needed.",
-    "yaml-to-json":     "Paste YAML and copy the equivalent JSON instantly — runs entirely in your browser, your config never uploads.",
-    "json-to-yaml":     "Paste JSON and copy the equivalent YAML instantly — pure browser, perfect for Kubernetes / Compose / GitHub Actions.",
-    "case-converter":   "Paste any text and copy the result in 12 different cases (camelCase, snake_case, kebab-case, CONSTANT_CASE, etc.) — 100% in your browser.",
-    "password-generator":"Pick a length and character classes, click Generate, and copy a cryptographically-secure password — never leaves your browser.",
-    "base64":           "Encode text or files to Base64, or decode Base64 back to the original — runs locally, no upload.",
-    "jwt-decoder":      "Paste a JWT and see its header, payload, and signature decoded as readable JSON — claims (exp, iat, sub) highlighted. Stays in your browser.",
-    "regex-tester":     "Paste a regex and a test string and see every match highlighted live, with captured groups. Supports all standard JS flags. Browser-only.",
-    "url-encoder":      "Encode or decode URLs (percent-encoding) instantly in your browser — perfect for query parameters and form data.",
-    "color-converter":  "Pick or type a color and copy it instantly in HEX, RGB, RGBA, HSL, or HSLA. Includes a visual preview.",
-
-    # ── PDF: more high-traffic tools ───────────────────────────────────
-    "delete-pages":     "Upload a PDF, type the page numbers to remove (e.g. 2, 5-7), and download the trimmed copy.",
-    "extract-pages":    "Upload a PDF, type which pages to keep (e.g. 1-3, 5), and download just those pages as a new PDF.",
-    "organize-pages":   "Upload a PDF and drag thumbnails to reorder, rotate, or delete pages visually — download the rearranged copy.",
-    "split-by-bookmarks":"Upload a PDF with bookmarks and download a ZIP with one PDF per chapter — perfect for breaking textbooks or manuals apart.",
-    "split-by-size":    "Upload a PDF, set a max file size in MB (e.g. 10 MB for email), and download a ZIP of split chunks that all fit the limit.",
-    "split-in-half":    "Upload a PDF (typically a two-up scan or booklet) and download a copy with every page cut down the middle.",
-    "remove-blank-pages":"Upload a PDF and download a copy with blank pages auto-detected and removed — ideal for cleaning up duplex scans.",
-    "reverse-pdf":      "Upload a PDF and download the same content with page order reversed (last page first).",
-    "booklet-pdf":      "Upload a multi-page PDF and download a booklet-imposed copy ready for saddle-stitch printing (2-up, page-order corrected).",
-    "page-numbers":     "Upload a PDF, pick position (bottom-center, etc.) and starting number, and download a copy with page numbers stamped in.",
-    "header-footer":    "Upload a PDF, type header and/or footer text, and download a copy with that text added to every page.",
-    "bates-numbering":  "Upload a PDF (or batch), set a prefix and digit count, and download a copy with sequential Bates numbers stamped on every page — the legal-discovery standard.",
-    "redact-pdf":       "Upload a PDF, draw black-out rectangles over the areas to hide, and download the redacted file — content is burnt in, not just overlaid.",
-    "smart-redact":     "Upload a PDF and let AI find and redact emails, phone numbers, SSNs, names, etc. — pattern detection always runs in your browser, and name detection runs locally via BERT-NER or, optionally, through your own AI key.",
-    "strip-metadata":   "Upload a PDF and download a metadata-clean copy — title, author, keywords, software, timestamps, and XMP packets all wiped.",
-    "metadata":         "Upload a PDF and edit title, author, subject, and keywords — download the updated copy.",
-    "fill-form":        "Upload a fillable PDF form, set values for each field, and download the completed copy. No Acrobat required.",
-    "ocr-pdf":          "Upload a scanned PDF and download a searchable, copy-pasteable PDF — or extract the text as .txt/JSON.",
-    "pdfa-validator":   "Upload a PDF and find out whether it conforms to PDF/A archival standards — failure reasons listed.",
-    "verify-signature": "Upload a PDF and see if it carries digital signatures plus signer names — covers detection, not full cryptographic verification.",
-    "sanitize-pdf":     "Upload a PDF and download a sanitized copy with JavaScript, embedded files, forms, and annotations removed — defends against malicious PDFs.",
-    "set-permissions":  "Upload a PDF, set an owner password and choose permissions (print, copy, modify) — download the locked copy.",
-    "delete-annotations":"Upload a PDF and download a copy with all comments, highlights, and annotations stripped.",
-    "auto-crop":        "Upload a scanned PDF and download a copy with whitespace margins auto-detected and cropped — content bounding boxes computed per page.",
-    "crop-pdf":         "Upload a PDF, set top/bottom/left/right margins in points, and download the cropped copy.",
-    "resize-pdf":       "Upload a PDF and resize all pages to A4, Letter, or custom dimensions — download the resized copy.",
-    "deskew-pdf":       "Upload a tilted scan and download a deskewed copy — angle detected automatically and corrected.",
-    "flatten-pdf":      "Upload a PDF with form fields or annotations and download a flattened copy where everything is baked into page content.",
-    "repair-pdf":       "Upload a damaged or corrupt PDF and download a repaired copy — qpdf rebuilds the xref tables and structures.",
-    "web-optimize-pdf": "Upload a PDF and download a linearized copy that streams in the browser (the first page renders before the rest finishes downloading).",
-    "grayscale-pdf":    "Upload a color PDF and download a grayscale copy — every page rasterized to neutral grays.",
-    "batch-compress-pdf":"Drop up to 50 PDFs and download a ZIP where each is individually compressed — same Light/Recommended/Extreme presets as Compress PDF.",
-    "invert-colors":    "Upload a PDF and download a copy with colors inverted (light↔dark) — handy for night reading or printing dark slides.",
-    "transparent-background":"Upload a PDF and download a copy where the white background is replaced with transparency — useful for overlay on slides.",
-    "add-attachment":   "Upload a PDF, attach any file (image, spreadsheet, zip, even another PDF), and download a PDF with that file embedded as an attachment.",
-    "add-hyperlinks":   "Upload a PDF, draw link rectangles over text/images, set URLs, and download a copy with clickable hyperlinks added.",
-    "add-shapes":       "Upload a PDF, define rectangles, ellipses, lines, or polygons by page + coords, and download a copy with the shapes drawn in.",
-    "annotate-pdf":     "Upload a PDF and add highlights, sticky notes, text boxes, and shapes — download a copy with standard PDF annotations.",
-    "stamp-pdf":        "Upload a PDF and stamp every page with a text label like 'DRAFT' or 'CONFIDENTIAL' — download the stamped copy.",
-    "whiteout-pdf":     "Upload a PDF and white-out rectangular regions — content beneath is hidden under solid white fills.",
-    "form-creator":     "Upload a PDF and define form fields (text/checkbox/radio/dropdown) by page+coords — download a fillable PDF.",
-    "esign-pdf":        "Upload a PDF and add e-signature fields for one or more signers — download a copy ready for circulation.",
-    "highlight-pdf":    "Upload a PDF, type a search term, and download a copy with every matching occurrence highlighted in yellow.",
-    # ── PDF: from-pdf high-traffic ─────────────────────────────────────
-    "pdf-to-excel":     "Upload a PDF and download an .xlsx with detected tables — works best with text-PDFs (not scans).",
-    "pdf-to-pptx":      "Upload a PDF and download a .pptx where each page becomes a slide — great for converting reports into presentations.",
-    "pdf-to-text":      "Upload a PDF and instantly get the extracted text on-screen plus a per-page breakdown — copy anywhere or download as .txt.",
-    "pdf-to-image":     "Upload a PDF and download a ZIP where every page is a separate image (JPG/PNG/TIFF/BMP/GIF/SVG) at your chosen DPI.",
-    "pdf-to-html":      "Upload a PDF and download a paginated HTML file you can open in any browser — perfect for embedding in webpages.",
-    "pdf-to-rtf":       "Upload a PDF and download an RTF file you can open in Word/LibreOffice without conversion artefacts.",
-    "pdf-to-epub":      "Upload a PDF (especially text-PDFs of books) and download an EPUB you can read on Kindle, Kobo, or any e-reader.",
-    "pdf-to-markdown":  "Upload a PDF and download a Markdown (.md) extraction — preserves headings, lists, and table structure.",
-    "extract-tables":   "Upload a PDF with tables and download a CSV of the detected rows and columns.",
-    "extract-images":   "Upload a PDF and download a ZIP of every embedded image — at the original resolution and format.",
-    "pdf-to-pdfa":      "Upload a PDF and download a PDF/A-compliant copy ready for long-term archiving (fonts embedded, metadata normalized, encryption removed).",
-    "pdf-page-counter": "Drop up to 100 PDFs and get a per-file + total page count — instant, reads only metadata not content.",
-    "compare-pdf":      "Upload two PDFs and download a side-by-side visual diff with differences highlighted — or get a text-only diff report.",
-    "nup":              "Upload a PDF and download an n-up version that fits 2/4/6/8 logical pages onto one physical page — saves paper when printing.",
-    "overlay":          "Upload a background PDF and a foreground PDF — download a copy with foreground stamped over every background page.",
-    "alternate-mix":    "Upload two PDFs and download a copy that interleaves their pages (1A, 1B, 2A, 2B…) — useful for un-imposing two-sided scans.",
-    "summarize-pdf":    "Upload a PDF, click Summarize, and read the summary right on the page — DistilBART runs entirely in your browser by default, no upload. Optionally bring your own AI key for a stronger model.",
-    "chat-with-pdf":    "Drop a PDF, add your own AI key once, and ask questions in plain language — the text is extracted in your browser and each question goes straight to your provider, never through our servers.",
-    # ── To PDF: high-volume converters ─────────────────────────────────
-    "excel-to-pdf":     "Upload an .xlsx and download a PDF copy with the same formatting — works for multi-sheet workbooks.",
-    "pptx-to-pdf-convert":"Upload a .pptx and download a one-slide-per-page PDF — perfect for handouts.",
-    "office-to-pdf":    "Upload any Office file (doc/docx/xls/xlsx/ppt/pptx) and download a PDF — LibreOffice handles the conversion server-side.",
-    "txt-to-pdf":       "Upload a plain text file and download a formatted PDF — paginated with monospaced font.",
-    "markdown-to-pdf":  "Upload a .md (or .json/.yaml/.toml) file and download a rendered PDF — headings, lists, tables, and code blocks all styled.",
-    "csv-to-pdf":       "Upload a .csv and download a PDF table — rows are split across pages automatically.",
-    "epub-to-pdf":      "Upload an EPUB e-book and download a paginated PDF — preserves headings and chapter breaks.",
-    "rtf-to-pdf":       "Upload a Rich Text Format file and download a PDF copy with bold/italic/lists/tables intact.",
-    "json-to-pdf":      "Upload a .json file and download a syntax-highlighted PDF rendering — great for documenting API responses.",
-    "xml-to-pdf":       "Upload a .xml file and download a colored, indented PDF view — readable for non-developers.",
-    "odt-to-pdf":       "Upload an OpenDocument Text (.odt) file and download a PDF — LibreOffice powers the conversion.",
-    # ── Non-PDF: high-volume ───────────────────────────────────────────
-    "remove-exif":      "Upload an image and download a copy with EXIF metadata (GPS, camera model, timestamps) stripped — protects your privacy when sharing photos.",
-    "view-exif":        "Upload an image and read its EXIF metadata — GPS coordinates, camera make/model, lens, ISO, shutter speed, software, timestamps.",
-    "resize-crop-image":"Upload an image and resize or crop it to exact pixel dimensions — supports preserve-aspect or stretch.",
-    "image-watermark":  "Upload an image, choose text or another image as the watermark, set position + opacity, and download the watermarked file.",
-    "image-upscaler":   "Upload an image and upscale 2× or 4× — uses high-quality Lanczos resampling (no AI, but very fast).",
-    "image-ocr":        "Upload an image with text and copy the extracted text — Tesseract OCR runs server-side and supports 100+ languages.",
-    "make-collage":     "Upload 2+ images and download a single collage PDF/PNG — pick columns, spacing, and background color.",
-    "merge-images":     "Upload 2+ images and download a single merged image — horizontal or vertical stitching.",
-    "generate-favicon": "Upload a logo image and download a multi-resolution .ico (16/32/48/64/128/192/512 px) ready for web use.",
-    "generate-barcode": "Type any data string, pick a barcode type (Code128, EAN-13, UPC, QR, etc.), and download as PNG.",
-    "qr-reader":        "Upload an image of a QR code and read the encoded data — runs server-side via zbar, supports rotated/skewed codes.",
-    "trim-media":       "Upload a video or audio file, set HH:MM:SS start and end, and download just that segment — re-encodes for frame accuracy.",
-    "compress-video":   "Upload a video and pick a CRF quality level — output is smaller H.264 MP4 that plays everywhere.",
-    "video-converter":  "Upload a video and pick a target container (MP4/MOV/WebM/MKV/AVI) — FFmpeg handles the conversion server-side.",
-    "video-resizer":    "Upload a video and pick a target width (height auto-scales to preserve aspect ratio) — H.264 MP4 output.",
-    "video-thumbnail":  "Upload a video and pick a timestamp — download a single JPG screenshot from that moment.",
-    "video-to-pdf":     "Upload a video and download a PDF where each page is a frame sampled at your chosen interval — great for highlight reels.",
-    "video-to-gif":     "Upload a short video (MP4/MOV/WebM) and download an animated GIF — pick FPS and width.",
-    "audio-converter":  "Upload an audio file and pick a target format (MP3/WAV/OGG/FLAC/AAC) + bitrate — FFmpeg converts server-side.",
-    "transcribe-audio": "Drop a recording and click Transcribe — Whisper runs in your browser by default (downloads once, then offline), or use your own OpenAI/Groq key for higher accuracy. Download the transcript as text or SRT subtitles.",
-    "video-merge":      "Upload 2+ videos and download a single merged video — concatenates in upload order.",
-    "audio-merge":      "Upload 2+ audio files and download a single merged track — concatenates in upload order.",
-    "extract-audio":    "Upload a video file and download just the audio track — pick MP3, WAV, AAC, or FLAC.",
-    "add-subtitles":    "Upload a video plus an .srt subtitle file and download a copy with subtitles burned into the picture.",
-    "subtitle-converter":"Paste or upload an SRT/VTT/ASS subtitle file and convert it to any of the other formats — pure-browser.",
-    "remove-background":"Upload an image of a person, product, or object and download a transparent-background PNG — U²-Net AI runs server-side.",
-    "extract-archive":  "Upload a ZIP or TAR-family archive and download a ZIP of the extracted files.",
-    "create-zip":       "Drop any files (any format) and download them packed into a single ZIP archive.",
-    "url-to-pdf":       "Type any URL and download a paginated PDF rendering of the page — server-side headless Chrome.",
-    # ── Browser-only utilities ─────────────────────────────────────────
-    "json-xml-formatter":"Paste JSON or XML and instantly see it pretty-printed with syntax highlighting — runs in your browser.",
-    "text-diff":        "Paste two pieces of text and see a line-by-line diff with additions in green and deletions in red — pure browser.",
-    "hash-generator":   "Paste text or upload a file and copy MD5, SHA-1, SHA-256, and SHA-512 hashes — all computed locally in your browser.",
-    "csv-json":         "Paste CSV or JSON and instantly see the other format — round-trippable, runs in your browser.",
-    "markdown-html":    "Paste Markdown and copy the rendered HTML — supports tables, code blocks, and standard CommonMark syntax.",
-    "uuid-generator":   "Click Generate and copy a v4 or v7 UUID — bulk-generate up to 500 at a time, pure browser.",
-    "lorem-ipsum":      "Pick paragraphs/words/sentences and copy placeholder Lorem Ipsum text instantly — never need to look it up again.",
-    "word-counter":     "Paste any text and see live word, character, sentence, paragraph, and reading-time counts — pure browser.",
-    # ── Phase 7 — competitor-gap tools (v1.5.0) ────────────────────────
-    "mute-video":       "Upload a video and download the same video without its audio track — instant, lossless, no re-encoding.",
-    "reverse-video":    "Upload a video and download a copy that plays backwards — both video and audio reversed in sync.",
-    "video-speed":      "Upload a video, drag the slider from 0.25× (slow-mo) to 4× (hyperlapse), and download the result — audio pitch-corrected so it doesn't sound chipmunky.",
-    "audio-trim":       "Upload an audio file, type start and end timestamps (HH:MM:SS), and download just that segment — lossless stream-copy.",
-    "image-palette":    "Upload an image and copy the dominant color HEX/rgb values with coverage percentages — useful for extracting brand colors from a logo.",
-    "pixelate-image":   "Upload an image, pick mosaic pixelation or Gaussian blur, set strength, and download a censored copy for privacy-safe sharing.",
-    "rotate-image":     "Upload an image, pick 90°, 180°, 270°, or type a custom angle, and download the rotated version — transparency preserved for PNG and WEBP.",
-    "flip-image":       "Upload an image and download a horizontally or vertically mirrored copy — fixes selfie-mirroring and lets you build perfect reflections.",
-    "bookmarks": "Adds a clickable bookmark outline to a PDF so readers can jump between sections; you can create, rename, reorder, and nest entries to build a table of contents.",
-    "png-to-pdf": "Wraps one or more PNG images into a single PDF, keeping transparency, and lets you reorder pages before exporting.",
-    "heic-to-pdf": "Bundles iPhone HEIC/HEIF photos into one PDF document with no Apple device needed; great for sharing camera shots as a portable file.",
-    "webp-to-pdf": "Packages modern WebP images into a portable PDF, preserving their transparency and quality in a format anyone can open.",
-    "tiff-to-pdf": "Combines multi-page TIFF scans into one PDF, ideal for turning archived scanned documents into a single shareable file.",
-    "bmp-to-pdf": "Turns legacy Windows BMP bitmaps into a portable PDF with custom page sizing, so old uncompressed images become easy to share.",
-    "gif-to-pdf": "Merges GIF images into a single PDF, using just the first frame of any animated GIFs since PDF pages are static.",
-    "svg-to-pdf": "Renders scalable vector SVGs into a print-ready PDF, keeping lines crisp at any size since vectors don't pixelate.",
-    "pdf-to-png": "Renders each PDF page as a lossless PNG at up to 300 DPI, with optional transparency; pages become editable raster images.",
-    "pdf-to-tiff": "Renders PDF pages into multi-page TIFF, the format favored by archival, fax, and document-management systems.",
-    "pdf-to-bmp": "Renders PDF pages as uncompressed Windows BMP bitmaps, handy for legacy tools that only accept BMP input.",
-    "pdf-to-gif": "Turns PDF pages into GIF images, useful for inline previews, social posts, or lightweight thumbnails.",
-    "pdf-to-svg": "Traces PDF pages into scalable SVG vectors that stay sharp at any zoom, ideal for embedding in web pages.",
-    "split-by-text": "Splits a PDF wherever a chosen keyword or phrase appears, with optional case-sensitivity; built for batch-separating statements, contracts, or invoices.",
-    "svg-to-png": "Rasterizes vector SVGs into high-resolution PNGs with custom width, height, and DPI, so icons drop cleanly into slides and docs.",
-    "gif-to-mp4": "Re-encodes an animated GIF as an MP4 video, often cutting file size up to 90% while keeping the motion smooth.",
-    "heic-to-png": "Converts Apple's HEIC iPhone photos to lossless PNG that every browser and editor can open, with transparency support.",
-    "webp-to-jpg": "Converts Google's WebP images to universally-supported JPEG; note JPEG is lossy and drops any transparency to a solid background.",
-    "webp-to-png": "Converts WebP images to lossless PNG, keeping transparency intact and maximizing editor and browser compatibility.",
-    "timestamp-converter": "Translates between Unix epoch timestamps (seconds or milliseconds) and human-readable dates, showing local time and UTC side by side, all in your browser.",
-    "jpg-to-png": "Re-saves a JPEG as lossless PNG; it can't recover detail already lost to JPEG compression, but prevents further loss and supports transparency on later edits.",
-    "png-to-jpg": "Compresses a lossless PNG into a smaller JPEG for faster pages and lighter email attachments, trading some quality and dropping transparency.",
-    "jpg-to-webp": "Re-encodes JPEG photos as WebP, typically 25-35% smaller at similar visual quality, for faster-loading web pages.",
-    "png-to-webp": "Converts lossless PNGs to WebP for dramatically smaller files while keeping transparency, ideal for web assets and icons.",
-    "tiff-to-jpg": "Shrinks high-resolution TIFF scans and pro photos into compact JPEGs you can easily email, post, or upload, at the cost of some detail.",
-    "tiff-to-png": "Converts single- or multi-page TIFFs to web-friendly PNG losslessly, preserving alpha and color depth.",
-    "bmp-to-jpg": "Compresses bulky Windows BMP bitmaps (often 10-50x larger than JPEG) into compact JPEGs, with negligible quality loss on most photos.",
-    "bmp-to-png": "Converts uncompressed BMP bitmaps into compressed lossless PNGs, shrinking file size with no quality loss; great for screenshots, icons, and pixel art.",
-    "gif-to-jpg": "Grabs the first frame of a GIF and saves it as a smaller JPEG, handy for sharing a static still where GIFs aren't supported.",
-    "gif-to-png": "Converts a single-frame GIF to lossless PNG with full transparency, giving you a cleaner, higher-fidelity still image.",
-    "m4a-to-mp3": "Re-encodes Apple M4A audio like iTunes purchases and voice memos into universally-playable MP3 at your chosen bitrate via FFmpeg.",
-    "mov-to-mp4": "Repackages Apple QuickTime MOV into widely-compatible H.264 MP4, copying compatible audio without re-encoding so it's fast and lossless where possible.",
-    "avi-to-mp4": "Modernizes old AVI videos into H.264 MP4 for smooth streaming-friendly playback on phones, browsers, and current TVs.",
-    "webm-to-mp4": "Transcodes Google's VP8/VP9 WebM into H.264 MP4 for compatibility with iOS, older Android, and most editing software.",
-    "mp4-to-webm": "Re-encodes MP4 into VP9 WebM for smaller files and royalty-free open-web streaming; expect a slower encode for the size savings.",
-    "jpg-to-tiff": "Wraps JPEG photos in TIFF for archival, print, scanning, and document-management workflows; it won't restore quality already lost to JPEG.",
-    "png-to-tiff": "Exports PNG graphics to TIFF losslessly, keeping full image quality for archive and prepress workflows.",
-    "webp-to-tiff": "Converts modern WebP images into TIFF files so they work in editors and legacy systems that don't read WebP.",
-    "jpg-to-bmp": "Expands JPEG photos into uncompressed Windows BMP bitmaps for older software and devices that require BMP; file size grows substantially.",
-    "png-to-bmp": "Exports PNG graphics as uncompressed Windows BMP for legacy apps, embedded systems, and signage tools; the BMP will be much larger.",
-    "webp-to-bmp": "Converts modern WebP images into uncompressed BMP bitmaps for older Windows applications that only accept that format.",
-    "mp3-to-wav": "Decodes compressed MP3 into uncompressed WAV for editing, transcription, and podcast tools that need WAV; it won't add back detail MP3 discarded.",
-    "wav-to-mp3": "Compresses bulky uncompressed WAV recordings into small, widely-compatible MP3 files with FFmpeg, trading some fidelity for size.",
-    "flac-to-mp3": "Converts lossless FLAC music into compressed MP3 so it plays on phones, browsers, and car stereos; expect a small quality trade for portability.",
-    "ogg-to-mp3": "Re-encodes OGG/Vorbis audio into universal MP3 for easy sharing and playback; both are lossy, so quality stays roughly comparable.",
-    "aac-to-mp3": "Converts AAC tracks from phones, screen recorders, and video exports into standard MP3 audio for broad compatibility.",
-    "mp3-to-ogg": "Re-encodes MP3 into OGG/Vorbis for open-web projects, games, and Linux-friendly workflows; it's lossy-to-lossy, so don't expect quality gains.",
-    "mp3-to-flac": "Wraps decoded MP3 audio in a lossless FLAC container for workflows that require FLAC; the FLAC can't restore quality MP3 already lost.",
-    "mp3-to-aac": "Converts MP3 into AAC for Apple workflows, mobile apps, podcasts, and video-editing timelines; both are lossy so audio stays similar.",
-    "wav-to-flac": "Compresses uncompressed WAV recordings into lossless FLAC, shrinking file size while preserving every bit of the original audio.",
-    "wav-to-ogg": "Encodes uncompressed WAV into compact OGG/Vorbis for games and web apps, trading some fidelity for much smaller files.",
-    "mkv-to-mp4": "Repackages Matroska MKV into MP4 for phones, browsers, social platforms, and editors; fast and lossless when the codecs already match.",
-    "mp4-to-mov": "Rewraps MP4 into QuickTime MOV for Apple workflows like Final Cut and Keynote; a quick container swap when codecs are compatible.",
-    "mov-to-webm": "Re-encodes Apple QuickTime MOV into web-native WebM with VP9 video and Opus audio, producing smaller browser-friendly files.",
-    "mkv-to-webm": "Transcodes Matroska MKV into browser-friendly WebM for web pages and open-media workflows; a full re-encode, not just a remux.",
-    "mp4-to-avi": "Exports modern MP4 clips into the older AVI container for legacy Windows apps, media players, and aging devices.",
-    "avi-to-webm": "Converts older Windows AVI clips into smaller open-web WebM files suited to browsers and embeds.",
-    "webm-to-mov": "Re-encodes WebM into QuickTime MOV so the video drops cleanly into Apple and QuickTime-centric editing workflows.",
-    "mov-to-mkv": "Moves Apple QuickTime MOV into the open Matroska MKV container for archiving; a fast, lossless remux when codecs are kept.",
-    "webm-to-gif": "Turns a WebM clip into a looping GIF for chat, documentation, and quick previews; expect larger files and fewer colors than the video.",
-    "mov-to-gif": "Converts iPhone, macOS, and QuickTime MOV clips into looping GIFs; great for short snippets, though GIFs are bulkier and lower-color than video.",
-    "cron-parser": "Explains a standard 5-field cron expression in plain language and previews the next run times in your browser's timezone.",
-    "sql-formatter": "Pretty-prints SQL queries like SELECT, INSERT, JOIN, and GROUP BY entirely in your browser, with nothing sent to a server.",
-    "graphql-formatter": "Cleans up and indents compact GraphQL queries, mutations, fragments, and selection sets locally, without uploading your schema or API text.",
-    "yaml-toml-converter": "Converts config between YAML and TOML in either direction, locally in your browser, for app settings, package metadata, and deployment files.",
-    "gitignore-generator": "Builds a .gitignore by combining bundled templates for Node, Python, Vite, Docker, Terraform, Go, Rust, macOS, and Windows.",
-    "semver-bumper": "Calculates the next patch, minor, major, or prerelease value from a semantic version string like 1.2.3-beta.1.",
-    "env-validator": "Scans .env files in your browser for syntax errors, duplicate keys, empty values, unquoted spaces, and suspiciously short secrets.",
-    "json-to-csv-schema": "Flattens nested JSON into CSV with inferred column types and coverage stats, then downloads the result locally in your browser.",
-}
-
-
-def _tldr_for(slug: str, name: str) -> str:
-    """Use the current visible summary when a tool manifest is available."""
-    manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
-    if manifest is not None and slug in manifest:
-        return manifest[slug].get("description") or manifest[slug].get("longDescription") or name
-    if slug in _TLDR_OVERRIDES:
-        return _TLDR_OVERRIDES[slug]
-    # Fall back to a generic-but-helpful template.
-    nice = name.replace(" Online Free", "").replace(" — PrivaTools", "")
-    return (
-        f"Upload your file, click {nice.split()[0] if nice else 'Run'}, "
-        f"and download the result — free, browser-based, no sign-up, no watermarks. "
-        f"Files are processed and discarded immediately."
-    )
 
 
 # ---------------------------------------------------------------------------
@@ -1296,7 +1063,7 @@ def _tool_title(name: str) -> str:
 def _howto_name_for(name: str) -> str:
     """Build a readable HowTo title for action-style and noun-style tools."""
     normalized = re.sub(r"\s+", " ", name).strip()
-    return f"How to use the {normalized} tool on PrivaTools"
+    return f"How to use {normalized}"
 
 
 def _tool_desc(desc: str) -> str:
@@ -1341,175 +1108,6 @@ for _slug, (_name, _desc) in _tool_registries()[1].items():
         "url_path": f"/tools/{_slug}",
         "category": "non-pdf",
     }
-
-
-_TRUST_VARIANTS: tuple[str, ...] = (
-    "{name} is free to use without an account. Check its processing notice before starting: "
-    "browser tools keep input on this device, server tools upload it for temporary processing, "
-    "and optional AI provider connections send the disclosed input directly to your chosen provider. "
-    "Server capacity limits and API quotas apply where indicated.",
-    "{name} is part of the open-source PrivaTools suite. You can review the implementation or "
-    "self-host it. Temporary server files are removed after the response completes; a periodic "
-    "cleanup also handles leftover files. Browser-local work and downloaded results remain under "
-    "your control. Read the privacy and security pages for the limits of this model.",
-    "You can use {name} as a guest. Signing in is optional for account settings and developer API "
-    "keys; it does not turn local browser storage into cloud backup. Keep an original copy of "
-    "important files, review outputs before sharing, and choose the processing option that suits "
-    "your document's sensitivity.",
-)
-
-
-def _trust_paragraph(slug: str, name: str, total: int) -> str:
-    """Pick a deterministic trust paragraph for the given tool slug.
-
-    Uses a stable hash so the same tool always renders the same variant, but
-    different tools get different paragraphs — eliminating the identical
-    boilerplate that previously appeared on every tool page.
-    """
-    # Plain non-cryptographic hash: sum of byte values. Deterministic across
-    # Python invocations (unlike hash(), which is salted by default since 3.3).
-    idx = sum(slug.encode("utf-8")) % len(_TRUST_VARIANTS)
-    return _TRUST_VARIANTS[idx].format(name=name, total=total)
-
-
-# Category-specific use-case pools. The old _deep_tool_content used one generic
-# 4-item list (two lines byte-identical across every tool); these pools let an
-# image converter, an audio converter, and a dev tool draw from different
-# real-world scenarios, and a slug-hash rotation varies which ones appear.
-_USE_CASE_POOLS: dict[str, tuple[str, ...]] = {
-    "pdf": (
-        "Prepare a PDF for email, e-filing, or a client handoff without buying a desktop suite.",
-        "Slot {name} into a larger document workflow — clean the file, produce the output, then chain the next PrivaTools step.",
-        "Process a confidential contract, statement, or medical record without uploading it to an ad-supported cloud service.",
-        "Fix a PDF on a locked-down work or library computer where you can't install Acrobat.",
-        "Self-host {name} so sensitive documents never leave your own infrastructure.",
-    ),
-    "image": (
-        "Get an image into the exact format a CMS, marketplace, or print shop demands.",
-        "Batch-convert a folder of photos or graphics in one pass instead of one-by-one in an editor.",
-        "Hand a web-ready or print-ready asset to a designer or developer without opening Photoshop.",
-        "Convert images on a phone or shared computer with nothing to install.",
-        "Self-host {name} when the images are product shots, IDs, or other material you'd rather not upload.",
-    ),
-    "audio": (
-        "Make a recording playable on a device or app that rejects its current format.",
-        "Shrink or expand audio for a podcast, voice memo, or music library without a full DAW.",
-        "Prep an audio file for editing, transcription, or upload to a platform with format rules.",
-        "Convert audio on a managed computer where installing FFmpeg or Audacity isn't allowed.",
-        "Self-host {name} so unreleased tracks or private recordings stay on your own server.",
-    ),
-    "video": (
-        "Make a clip play on a phone, browser, TV, or editor that won't open its current container.",
-        "Re-encode footage for faster web embedding or smaller uploads.",
-        "Prep video for a social platform, LMS, or CMS with strict format requirements.",
-        "Convert a video on a work laptop where you can't install Handbrake or VLC.",
-        "Self-host {name} when the footage is internal, unreleased, or sensitive.",
-    ),
-    "dev": (
-        "Format, validate, or transform config and data without pasting it into an untrusted online tool.",
-        "Keep secrets, tokens, and schemas on your machine — many of these tools never upload at all.",
-        "Drop {name} into a build, review, or debugging step instead of installing yet another CLI.",
-        "Use it on a locked-down machine where you can't add new developer tooling.",
-        "Self-host the MIT-licensed code so internal config and data never touch a third party.",
-    ),
-    "file": (
-        "Handle a file for email, forms, archives, or publishing without installing a paid desktop app.",
-        "Use {name} as one step in a larger workflow, then continue with related PrivaTools utilities.",
-        "Work from a locked-down school, office, or shared computer where browser access beats installing software.",
-        "Process material you'd rather not upload to an ad-supported service — many tools run entirely in your browser.",
-        "Self-host the same MIT-licensed codebase when the file contains legal, medical, financial, or internal data.",
-    ),
-}
-
-_AUDIO_HINTS = ("mp3", "wav", "flac", "ogg", "aac", "m4a", "audio")
-_VIDEO_HINTS = ("mp4", "mov", "mkv", "webm", "avi", "video", "gif")
-_IMAGE_HINTS = ("jpg", "jpeg", "png", "webp", "tiff", "bmp", "heic", "svg", "image", "exif", "favicon", "collage", "upscal", "background", "palette", "pixelate")
-_DEV_HINTS = ("json", "yaml", "toml", "sql", "graphql", "jwt", "regex", "base64", "hash", "cron", "semver", "env", "gitignore", "csv", "markdown", "url-encoder", "uuid", "timestamp", "case-converter", "lorem", "color", "text-diff", "word-counter")
-
-
-def _use_case_category(slug: str, tool_kind: str) -> str:
-    if tool_kind == "pdf":
-        return "pdf"
-    if any(h in slug for h in _AUDIO_HINTS):
-        return "audio"
-    if any(h in slug for h in _VIDEO_HINTS):
-        return "video"
-    if any(h in slug for h in _IMAGE_HINTS):
-        return "image"
-    if any(h in slug for h in _DEV_HINTS):
-        return "dev"
-    return "file"
-
-
-def _use_cases_for(slug: str, name: str, subject: str, tool_kind: str) -> list[str]:
-    pool = _USE_CASE_POOLS[_use_case_category(slug, tool_kind)]
-    offset = sum(slug.encode("utf-8")) % len(pool)
-    rotated = pool[offset:] + pool[:offset]
-    return [item.format(name=name, subject=subject.lower()) for item in rotated[:4]]
-
-
-def _deep_tool_content(slug: str, name: str, desc: str, tool_kind: str, total: int) -> str:
-    """Long-form SSR guidance for tool pages.
-
-    The React app replaces this body after hydration, but crawlers and AI
-    engines read it directly. Keep it specific enough to be useful while
-    avoiding hand-maintaining hundreds of nearly identical tool pages.
-    """
-    subject = "PDF" if tool_kind == "pdf" else "file"
-    route = f"/tool/{slug}" if tool_kind == "pdf" else f"/tools/{slug}"
-    comparable = (
-        "iLovePDF, Smallpdf, Adobe Acrobat, PDF24, and Sejda"
-        if tool_kind == "pdf"
-        else "cloud converters, ad-heavy utility sites, and desktop apps"
-    )
-    output_tip = (
-        "Keep an untouched original, run one operation at a time when quality matters, and use Pipeline when you want repeatable multi-step output."
-        if tool_kind == "pdf"
-        else "Keep the original asset, choose the smallest output that still matches your target app, and test the result before deleting source media."
-    )
-    privacy_mode = (
-        "PDF operations that need server-side libraries run inside the PrivaTools container and return a fresh download; browser-only PDF helpers stay on-device."
-        if tool_kind == "pdf"
-        else "Many non-PDF utilities run entirely in your browser; conversion or media operations that need backend libraries use the same isolated container model."
-    )
-    use_cases = _use_cases_for(slug, name, subject, tool_kind)
-    use_case_html = "".join(f"<li>{item}</li>" for item in use_cases)
-    return (
-        '<section class="tool-depth">'
-        f"<h2>What {name} is best for</h2>"
-        f"<p>{desc} Use it when you need a quick, private, no-account way to handle a {subject.lower()} in the browser, "
-        f"or when you want an auditable open-source alternative to {comparable}. The page at <code>{route}</code> is designed "
-        "for one clear job: upload or provide the input, choose only the options that matter, and download the result without "
-        "creating an account or passing through a sales funnel.</p>"
-        f"<ul>{use_case_html}</ul>"
-        f"<h2>Privacy model for {name}</h2>"
-        f"<p>{privacy_mode} Temporary input and output files are not used for analytics, model training, advertising profiles, "
-        "or product telemetry. Optional analytics measures public page visits and selected tool actions; file bytes, extracted text, filenames, "
-        "passwords, signatures, and generated results are outside that analytics path. If your organization needs stricter "
-        f"controls, you can self-host all {total} PrivaTools utilities and keep processing on your own infrastructure.</p>"
-        "<h2>Quality checklist</h2>"
-        f"<p>Before running {name}, confirm that the source file opens correctly and that you have permission to process it. "
-        f"{output_tip} For sensitive material, review the downloaded result before sharing it. For large files, give the browser "
-        "time to finish the download and avoid refreshing the page mid-run. If a password, damaged upload, unsupported codec, "
-        "or malformed document blocks processing, PrivaTools returns a plain-language error so you can pick the next recovery "
-        "step instead of guessing.</p>"
-        "<h2>Operational details</h2>"
-        f"<p>{name} is intentionally narrow: it does one {subject.lower()} task and hands the result back as a normal download. "
-        "That makes the output easy to inspect, rename, archive, attach to email, or feed into another tool. If you need a repeatable "
-        "workflow, save the page, bookmark a Pipeline recipe, or self-host the API so the same steps can run from internal scripts. "
-        "The interface avoids accounts and cloud folders on purpose: the safest default for private files is to process only the "
-        "current request, return the result, and leave long-term storage under your control.</p>"
-        f"<h2>Using {name} on any device</h2>"
-        f"<p>{name} runs in supported modern browsers on desktop and mobile — there is nothing to install, no "
-        "extension to add, and no desktop app to keep updated. Because the interface is a single page, you can bookmark it, send "
-        "the link to a colleague, or open it on a phone while reviewing the tool’s device and memory requirements. There are no watermarks "
-        "stamped onto your output, no sign-in wall before the download, and no paid tier that unlocks the &ldquo;real&rdquo; "
-        f"version later — the {name} you see is the complete tool. For teams that would rather keep everything in-house, the same "
-        "implementation ships in the MIT-licensed, self-hostable build. The environment determines available codecs, fonts, and "
-        "models; optional model downloads, AI providers, and URL tools can require network access. Review those dependencies "
-        "before relying on an offline or restricted deployment.</p>"
-        "</section>"
-    )
 
 
 TOOL_LAST_REVIEWED_DEFAULT = "2026-05-01"
@@ -2423,59 +2021,37 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         slug = path[len("/tool/"):]
         if slug in _PDF_TOOLS:
             name, desc = _PDF_TOOLS[slug]
-            parts.append(f"<h1>{name} Online Free — PrivaTools</h1>")
-            # TL;DR — voice-friendly 1-2 sentence answer for AEO/voice-search.
-            tldr = _tldr_for(slug, name)
-            parts.append(f'<p class="tool-tldr"><strong>TL;DR:</strong> {tldr}</p>')
+            parts.append(f"<h1>{name}</h1>")  # the titles plan swaps in the registry seoTitle
+            short = _tool_registry_short_description(slug) or desc
+            parts.append(f'<p class="tool-summary">{short}</p>')
             parts.append(f'<p class="tool-intro">{desc}</p>')
-            parts.append(
-                f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
-            )
-            parts.append(_deep_tool_content(slug, name, desc, "pdf", len(_PDF_TOOLS) + len(_NONPDF_TOOLS)))
-            # HowTo section
             if slug in TOOL_HOWTO:
-                parts.append(f"<h2>{_howto_name_for(name)}</h2><ol>")
+                parts.append(f'<section class="tool-steps"><h2>How to use {name}</h2><ol>')
                 for step in TOOL_HOWTO[slug]:
-                    parts.append(f"<li><strong>{step['name']}</strong> — {step['text']}</li>")
-                parts.append("</ol>")
-            # FAQ section
+                    parts.append(f"<li><strong>{step['name']}</strong> {step['text']}</li>")
+                parts.append("</ol></section>")
             if slug in TOOL_FAQ:
-                parts.append(f'<h2 class="tool-faq">Frequently Asked Questions</h2>')
+                parts.append(f'<section class="tool-faq"><h2>Questions about {name}</h2>')
                 for faq in TOOL_FAQ[slug]:
                     parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
-            # Trust signals: per-tool last-reviewed date (not date.today()) +
-            # author + open-source link. Date matches the JSON-LD `lastReviewed`.
+                parts.append("</section>")
+            mentioning_posts = _tool_to_blogs().get(slug, [])
+            if mentioning_posts:
+                parts.append('<section class="tool-guides"><h2>Mentioned in our guides</h2><ul>')
+                for post in mentioning_posts:
+                    parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
+                parts.append("</ul></section>")
+            related = _related_tools(slug, _PDF_TOOLS, "tool")
+            if related:
+                parts.append('<section class="tool-related"><h2>Related PDF Tools</h2><ul>')
+                for related_slug, related_name, href in related:
+                    parts.append(f'<li><a href="{href}">{related_name}</a></li>')
+                parts.append("</ul></section>")
             reviewed = _last_reviewed_for(slug)
             parts.append(
                 f'<p class="meta-trust"><em>Last reviewed {reviewed} by the PrivaTools maintainers. '
-                f'Source code on '
-                f'<a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
+                f'Source code on <a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
                 f'(MIT-licensed, self-hostable).</em></p>'
-            )
-            # Related tools for internal linking — most-popular first
-            category_tools = [(s, n) for s, (n, _) in _by_popularity(_PDF_TOOLS.items()) if s != slug][:8]
-            if category_tools:
-                parts.append("<h2>Related PDF Tools</h2><ul>")
-                for s, n in category_tools:
-                    parts.append(f'<li><a href="/tool/{s}">{n}</a></li>')
-                parts.append("</ul>")
-            # Mentioned in our guides — backlinks from this tool to blog posts
-            # that reference it. Builds bidirectional internal-link graph that
-            # helps Google route crawl budget to long-tail tool pages.
-            mentioning_posts = _tool_to_blogs().get(slug, [])
-            if mentioning_posts:
-                parts.append("<h2>Mentioned in our guides</h2><ul>")
-                for post in mentioning_posts:
-                    parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
-                parts.append("</ul>")
-            # Generic link to the comparison hub — gives every tool page an
-            # outbound link to the compare cluster.
-            parts.append(
-                '<p class="compare-cta">See how PrivaTools compares to '
-                '<a href="/compare/ilovepdf">iLovePDF</a>, '
-                '<a href="/compare/smallpdf">Smallpdf</a>, '
-                '<a href="/compare/adobe-acrobat">Adobe Acrobat</a>, and '
-                '<a href="/compare">other free PDF tools</a>.</p>'
             )
             return "\n".join(parts)
 
@@ -2483,55 +2059,37 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         slug = path[len("/tools/"):]
         if slug in _NONPDF_TOOLS:
             name, desc = _NONPDF_TOOLS[slug]
-            parts.append(f"<h1>{name} Online Free — PrivaTools</h1>")
-            # TL;DR — voice-friendly 1-2 sentence answer for AEO/voice-search.
-            tldr = _tldr_for(slug, name)
-            parts.append(f'<p class="tool-tldr"><strong>TL;DR:</strong> {tldr}</p>')
+            parts.append(f"<h1>{name}</h1>")  # the titles plan swaps in the registry seoTitle
+            short = _tool_registry_short_description(slug) or desc
+            parts.append(f'<p class="tool-summary">{short}</p>')
             parts.append(f'<p class="tool-intro">{desc}</p>')
-            parts.append(
-                f'<p>{_trust_paragraph(slug, name, len(_PDF_TOOLS) + len(_NONPDF_TOOLS))}</p>'
-            )
-            parts.append(_deep_tool_content(slug, name, desc, "non-pdf", len(_PDF_TOOLS) + len(_NONPDF_TOOLS)))
-            # HowTo section
             if slug in TOOL_HOWTO:
-                parts.append(f"<h2>{_howto_name_for(name)}</h2><ol>")
+                parts.append(f'<section class="tool-steps"><h2>How to use {name}</h2><ol>')
                 for step in TOOL_HOWTO[slug]:
-                    parts.append(f"<li><strong>{step['name']}</strong> — {step['text']}</li>")
-                parts.append("</ol>")
-            # FAQ section
+                    parts.append(f"<li><strong>{step['name']}</strong> {step['text']}</li>")
+                parts.append("</ol></section>")
             if slug in TOOL_FAQ:
-                parts.append(f'<h2 class="tool-faq">Frequently Asked Questions</h2>')
+                parts.append(f'<section class="tool-faq"><h2>Questions about {name}</h2>')
                 for faq in TOOL_FAQ[slug]:
                     parts.append(f"<h3>{faq['q']}</h3><p>{faq['a']}</p>")
-            # Trust signals — per-tool last-reviewed date matches JSON-LD.
+                parts.append("</section>")
+            mentioning_posts = _tool_to_blogs().get(slug, [])
+            if mentioning_posts:
+                parts.append('<section class="tool-guides"><h2>Mentioned in our guides</h2><ul>')
+                for post in mentioning_posts:
+                    parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
+                parts.append("</ul></section>")
+            related = _related_tools(slug, _NONPDF_TOOLS, "tools")
+            if related:
+                parts.append('<section class="tool-related"><h2>Related Tools</h2><ul>')
+                for related_slug, related_name, href in related:
+                    parts.append(f'<li><a href="{href}">{related_name}</a></li>')
+                parts.append("</ul></section>")
             reviewed = _last_reviewed_for(slug)
             parts.append(
                 f'<p class="meta-trust"><em>Last reviewed {reviewed} by the PrivaTools maintainers. '
-                f'Source code on '
-                f'<a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
+                f'Source code on <a href="https://github.com/ethereaglehq/privatools" rel="author">GitHub</a> '
                 f'(MIT-licensed, self-hostable).</em></p>'
-            )
-            related = [(s, n) for s, (n, _) in _by_popularity(_NONPDF_TOOLS.items()) if s != slug][:8]
-            if related:
-                parts.append("<h2>Related Tools</h2><ul>")
-                for s, n in related:
-                    parts.append(f'<li><a href="/tools/{s}">{n}</a></li>')
-                parts.append("</ul>")
-            # Mentioned in our guides — same reverse-map backlink as /tool/ branch.
-            mentioning_posts = _tool_to_blogs().get(slug, [])
-            if mentioning_posts:
-                parts.append("<h2>Mentioned in our guides</h2><ul>")
-                for post in mentioning_posts:
-                    parts.append(f'<li><a href="/blog/{post["slug"]}">{post["title"]}</a></li>')
-                parts.append("</ul>")
-            # Cross-category teaser — every non-PDF tool gets at least one outbound
-            # link into the PDF tool cluster (and vice versa via /tool/ branch above).
-            parts.append(
-                '<p class="cross-cta">Working with PDFs too? Try our '
-                '<a href="/tool/merge-pdf">Merge PDF</a>, '
-                '<a href="/tool/compress-pdf">Compress PDF</a>, '
-                '<a href="/tool/pdf-to-word">PDF to Word</a>, or '
-                f'<a href="/">all {_TOTAL_TOOL_COUNT} tools</a>.</p>'
             )
             return "\n".join(parts)
 
