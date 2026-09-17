@@ -10,6 +10,7 @@ import { LabNote, ToolCopyButton } from "./SpecialistTools";
 import { useMemo, useState, useCallback} from "react";
 import { GitCompare, Plus, Minus, ArrowRightLeft, RotateCcw, Columns2, Rows3, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type DiffMode = "unified" | "split";
@@ -42,7 +43,7 @@ export function TextDiffUI() {
     const [diff, setDiff] = useState<DiffLine[] | null>(null);
 
     const [error,setError] = useState<string | null>(null);
-    const compare = () => { setError(null); try { setDiff(computeDiff(textA,textB)); } catch(e) { setDiff(null); setError(e instanceof Error ? e.message : "Could not compare these texts."); } };
+    const compare = () => { setError(null); try { setDiff(computeDiff(textA,textB)); emitToolRun({ outcome: "success" }); } catch(e) { setDiff(null); setError(e instanceof Error ? e.message : "Could not compare these texts."); emitToolRun({ outcome: "error" }); } };
     const clear = () => { setTextA(""); setTextB(""); setDiff(null); };
     const swap = () => { setTextA(textB); setTextB(textA); setDiff(null); };
     const loadSample = () => { setTextA(SAMPLE_A); setTextB(SAMPLE_B); setDiff(null); };

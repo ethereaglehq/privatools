@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 import "./pdf/pdf-workspace.css";
 import { useEditHistory } from "@/hooks/useEditHistory";
@@ -441,10 +442,12 @@ export function EditPdfUI() {
             }, { timeoutMs: 300_000 });
             setResultBlob(await res.blob());
             setState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Could not apply edits";
             setError(friendlyError(msg, "Couldn't edit that PDF."));
             setState("editing");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, edits]);
 

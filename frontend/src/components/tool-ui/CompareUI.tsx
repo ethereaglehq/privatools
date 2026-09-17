@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Download, GitCompare } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { FileIntake, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 
@@ -61,10 +62,12 @@ export function CompareUI() {
                 setTextResult(json); setResultBlob(null);
             }
             setState("done");
+            emitToolRun({ outcome: "success", files: 2 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't compare those PDFs."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 2 });
         }
     }, [file1, file2, mode, highlight]);
 

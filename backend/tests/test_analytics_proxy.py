@@ -167,20 +167,18 @@ def test_blank_measurement_id_uses_existing_public_default(monkeypatch):
     assert analytics._analytics_config() == (analytics._DEFAULT_MEASUREMENT_ID, "test-secret")
 
 
-def test_regional_policy_requires_explicit_flags_and_preserves_no_store(client, monkeypatch):
+def test_policy_is_default_on_whenever_the_browser_tag_is_enabled(client, monkeypatch):
     monkeypatch.delenv("GA_BROWSER_TAG_ENABLED", raising=False)
+    monkeypatch.setenv("GA_DEFAULT_ON_COUNTRIES", "")
     monkeypatch.delenv("GA_TRUSTED_COUNTRY_HEADER", raising=False)
-    monkeypatch.setenv("GA_DEFAULT_ON_COUNTRIES", "US,IN")
     for headers in ({}, {"CF-IPCountry": "US"}, {"X-PrivaTools-Country": "US"}, {"X-Forwarded-For": "1.1.1.1"}):
         response = client.get("/api/analytics/policy", headers=headers)
         assert response.json() == {"mode": "opt_in"}
         assert "no-store" in response.headers["cache-control"]
     monkeypatch.setenv("GA_BROWSER_TAG_ENABLED", "true")
-    assert client.get("/api/analytics/policy", headers={"X-PrivaTools-Country": "US"}).json() == {"mode": "opt_in"}
-    monkeypatch.setenv("GA_TRUSTED_COUNTRY_HEADER", "true")
-    assert client.get("/api/analytics/policy", headers={"CF-IPCountry": "US"}).json() == {"mode": "opt_in"}
-    assert client.get("/api/analytics/policy", headers={"X-PrivaTools-Country": "US"}).json() == {"mode": "default_on"}
-    for country in ("GB", "DE", "XX", "T1", "us", "USA", "US,IN", ""):
-        assert client.get("/api/analytics/policy", headers={"X-PrivaTools-Country": country}).json() == {"mode": "opt_in"}
-    monkeypatch.setenv("GA_DEFAULT_ON_COUNTRIES", "")
-    assert client.get("/api/analytics/policy", headers={"X-PrivaTools-Country": "US"}).json() == {"mode": "opt_in"}
+    # Every visitor is default-on: no country list, no trusted header, no
+    # exceptions for unknown or unclassified regions.
+    for headers in ({}, {"CF-IPCountry": "DE"}, {"X-PrivaTools-Country": "XX"}, {"X-PrivaTools-Country": "T1"}, {"X-Forwarded-For": "1.1.1.1"}):
+        response = client.get("/api/analytics/policy", headers=headers)
+        assert response.json() == {"mode": "default_on"}
+        assert "no-store" in response.headers["cache-control"]

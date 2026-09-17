@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState, useMemo } from "react";
 import { Download, Loader2, CheckCircle2, AlertCircle, FormInput, RotateCcw, Search, Sparkles } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, uploadFileGetJson, downloadBlob } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 
@@ -81,6 +82,7 @@ export function FillFormUI() {
             setResultBlob(blob);
             setState("done");
             downloadBlob(blob, `${file.name.replace(/\.pdf$/i, "")}_filled.pdf`);
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: any) {
             const raw: string = e?.message || "";
             const lower = raw.toLowerCase();
@@ -88,6 +90,7 @@ export function FillFormUI() {
             if (lower.includes("network") || lower.includes("fetch")) msg = "Network hiccup — check your connection and retry";
             else if (lower.includes("encrypted") || lower.includes("password")) msg = "PDF is password-protected — unlock it before filling";
             setError(msg); setState("editing");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, values]);
 

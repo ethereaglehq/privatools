@@ -27,6 +27,7 @@ import { getToolEndpoint, getFilenameFromContentDisposition, guessExtensionFromC
 import { setBatchActive, clearBatchActive } from "@/lib/persistence";
 import { chooseDownloadFilename, formatErrorForClipboard, postFormData } from "@/lib/api";
 import { buildBatchForm } from "@/lib/batch-request";
+import { emitToolRun, runOutcome } from "@/lib/toolRun";
 
 const BATCH_TOOL_SLUGS = new Set([
     // PDF — split / page ops
@@ -247,7 +248,7 @@ export default function BatchPage() {
         originalFile: File,
         signal: AbortSignal,
         updater: (mutate: (prev: BatchFile[]) => BatchFile[]) => void,
-    ): Promise<void> => {
+    ): Promise<"done" | "error" | "aborted"> => {
         const startedAt = performance.now();
 
         // Snapshot the file at the time of call — race-free because
@@ -301,6 +302,7 @@ export default function BatchPage() {
                 };
                 return next;
             });
+            return "done";
         } catch (e: unknown) {
             if (signal.aborted) {
                 updater(prev => {
@@ -310,7 +312,7 @@ export default function BatchPage() {
                     }
                     return next;
                 });
-                return;
+                return "aborted";
             }
             const msg = e instanceof Error ? e.message : "Failed";
             const report = formatErrorForClipboard(
@@ -322,6 +324,7 @@ export default function BatchPage() {
                 next[targetIdx] = { ...next[targetIdx], status: "error", error: msg, errorReport: report };
                 return next;
             });
+            return "error";
         }
     }, [selectedTool.endpoint, selectedTool.name, selectedTool.slug, buildFallbackFilename, highlightQuery, subtitleTarget]);
 
@@ -350,6 +353,9 @@ export default function BatchPage() {
         });
 
         const updater = (mutate: (prev: BatchFile[]) => BatchFile[]) => setFiles(mutate);
+        // Tally terminal results as they return so the usage signal never reads React state.
+        const tally = { done: 0, failed: 0 };
+        const record = (result: "done" | "error" | "aborted") => { if (result === "done") tally.done++; else if (result === "error") tally.failed++; };
 
         if (parallel) {
             // Bounded parallel — 3 at a time is generous without overloading the API.
@@ -361,7 +367,7 @@ export default function BatchPage() {
                     while (queue.length > 0 && !controller.signal.aborted) {
                         const item = queue.shift();
                         if (!item) break;
-                        await processOne(item.i, item.f.file, controller.signal, updater);
+                        record(await processOne(item.i, item.f.file, controller.signal, updater));
                     }
                 })());
             }
@@ -369,7 +375,7 @@ export default function BatchPage() {
         } else {
             for (const { i } of targets) {
                 if (controller.signal.aborted) break;
-                await processOne(i, files[i].file, controller.signal, updater);
+                record(await processOne(i, files[i].file, controller.signal, updater));
             }
         }
 
@@ -378,6 +384,8 @@ export default function BatchPage() {
         // Run completed (or aborted) — clear the in-progress marker so the
         // resume banner doesn't appear on the next visit.
         clearBatchActive();
+        const outcome = runOutcome(tally.done, tally.failed);
+        if (outcome) emitToolRun({ slug: selectedTool.slug, mode: "batch", outcome, files: tally.done + tally.failed });
 
         // Record history. Read fresh state via the setter to avoid stale closure.
         setFiles(curr => {

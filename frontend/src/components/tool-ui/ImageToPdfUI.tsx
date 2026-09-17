@@ -10,6 +10,7 @@ import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/
 import { loadSampleJpg } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { FileIntake, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
 
@@ -100,10 +101,12 @@ export function ImageToPdfUI({
             await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), outName, { page_size: pageSize });
             setState("done");
             emitToolSuccess("Image to PDF");
+            emitToolRun({ outcome: "success", files: files.length });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Conversion failed";
             setError(friendlyError(msg, "Couldn't pack those images into a PDF."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: files.length });
         }
     }, [files, pageSize]);
 

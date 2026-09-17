@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Loader2, AlertCircle, Plus, Trash2, CheckCircle2, RotateCcw, FormInput } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 
@@ -119,10 +120,12 @@ export function FormCreatorUI() {
             await processAndDownload("/form-creator", file, buildOutputFilename(file.name, "form", "pdf"),
                 { form_fields: JSON.stringify(payload) });
             setStatus("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Could not build the form";
             setError(friendlyError(msg, "Couldn't build that form."));
             setStatus("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [file, fields]);

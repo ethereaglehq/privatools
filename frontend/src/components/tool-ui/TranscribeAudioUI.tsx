@@ -16,6 +16,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, Ban, CheckCircle2, Copy, Download, FileAudio, Loader2, Mic, RotateCcw, Check } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { consumeFileHandoff } from "@/lib/file-handoff";
 import { useByok } from "@/hooks/useByok";
@@ -115,6 +116,7 @@ export function TranscribeAudioUI() {
                 if (!out.trim()) throw new Error("The provider returned no transcript. Try a clearer recording or another model.");
                 setText(out);
                 setPhase("done");
+                emitToolRun({ outcome: "success", files: 1 });
                 return;
             }
             // Validate and decode before downloading a model.
@@ -143,6 +145,7 @@ export function TranscribeAudioUI() {
             setSegments(segs);
             setText(transcript);
             setPhase("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             if (cancelRef.current || current !== runId.current) return;
             const msg = e instanceof ByokError ? e.userMessage
@@ -150,6 +153,7 @@ export function TranscribeAudioUI() {
                 : e instanceof Error ? e.message : "Transcription failed";
             setError(friendlyError(msg, "Couldn't transcribe that recording."));
             setPhase("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, engine, whisper, byokModel, byok.provider, byokProviderOk]);
 

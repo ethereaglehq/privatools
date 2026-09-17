@@ -25,6 +25,7 @@ import { useCallback, useRef, useState } from "react";
 import { uploadFile, downloadBlob, buildOutputFilename, type UploadOptions } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { friendlyError } from "@/lib/utils";
+import { emitToolRun, runOutcome } from "@/lib/toolRun";
 
 export type FileStatus = "queued" | "running" | "done" | "failed";
 
@@ -217,6 +218,13 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         const workers: Promise<void>[] = [];
         for (let i = 0; i < Math.min(concurrency, ids.length); i++) workers.push(worker());
         await Promise.all(workers);
+
+        // One usage signal per run, counting only the files this run touched.
+        const touched = entriesRef.current.filter(e => ids.includes(e.id));
+        const done = touched.filter(e => e.status === "done").length;
+        const failed = touched.filter(e => e.status === "failed").length;
+        const outcome = runOutcome(done, failed);
+        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed });
 
         inFlight.current = false;
     }, [mutate]);

@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Loader2, AlertCircle, CheckCircle2, XCircle, ShieldCheck, ShieldAlert, RotateCcw, Search, HelpCircle } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 
 interface PdfaResult {
@@ -48,10 +49,12 @@ export function PdfaValidatorUI() {
             const data = await res.json();
             setResult(data);
             setStatus("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't validate that PDF."));
             setStatus("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file]);
 

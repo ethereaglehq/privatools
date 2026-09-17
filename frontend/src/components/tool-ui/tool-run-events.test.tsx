@@ -1,0 +1,62 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { GenericUI } from "./GenericUI";
+import { SimpleConvertUI } from "./SimpleConvertUI";
+import { uploadFileWithProgress } from "@/lib/api";
+import { consumeFileHandoffs } from "@/lib/file-handoff";
+
+vi.mock("@/lib/api", async original => ({ ...await original<typeof import("@/lib/api")>(), uploadFileWithProgress: vi.fn(), downloadBlob: vi.fn() }));
+vi.mock("@/lib/file-handoff", () => ({ consumeFileHandoffs: vi.fn(async () => []) }));
+
+const RUN_EVENT = "privatools:tool-run";
+type Detail = Record<string, unknown>;
+function listen(): Detail[] {
+    const seen: Detail[] = [];
+    window.addEventListener(RUN_EVENT, event => seen.push((event as CustomEvent<Detail>).detail));
+    return seen;
+}
+function pdf(name: string) { return new File(["%PDF synthetic"], name, { type: "application/pdf" }); }
+function ok() { return { blob: async () => new Blob(["out"], { type: "application/pdf" }), headers: new Headers() } as Response; }
+
+beforeEach(() => {
+    vi.clearAllMocks(); vi.mocked(consumeFileHandoffs).mockResolvedValue([]);
+    URL.createObjectURL = vi.fn(() => "blob:synthetic"); URL.revokeObjectURL = vi.fn();
+});
+afterEach(() => { cleanup(); });
+
+describe("GenericUI usage events", () => {
+    it("emits one successful single run with the file count after processing", async () => {
+        const seen = listen();
+        vi.mocked(uploadFileWithProgress).mockResolvedValue(ok());
+        const { container } = render(<GenericUI slug="rotate-pdf" toolName="Rotate PDF" actionLabel="Rotate now" outputLabel="rotated.pdf" accepts=".pdf" />);
+        fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [pdf("secret-a.pdf"), pdf("secret-b.pdf")] } });
+        fireEvent.click(screen.getByRole("button", { name: /^Rotate now/ }));
+        await waitFor(() => expect(uploadFileWithProgress).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(seen).toHaveLength(1));
+        expect(seen).toEqual([{ mode: "single", outcome: "success", files: 2 }]);
+        expect(JSON.stringify(seen)).not.toContain("secret");
+    });
+    it("reports a failed single-file run as an error without the message", async () => {
+        const seen = listen();
+        vi.mocked(uploadFileWithProgress).mockRejectedValue(new Error("boom secret"));
+        const { container } = render(<GenericUI slug="rotate-pdf" toolName="Rotate PDF" actionLabel="Rotate now" outputLabel="rotated.pdf" accepts=".pdf" />);
+        fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [pdf("secret.pdf")] } });
+        fireEvent.click(screen.getByRole("button", { name: /^Rotate now/ }));
+        await waitFor(() => expect(seen).toHaveLength(1));
+        expect(seen).toEqual([{ mode: "single", outcome: "error", files: 1 }]);
+        expect(JSON.stringify(seen)).not.toContain("secret");
+    });
+});
+
+describe("SimpleConvertUI usage events", () => {
+    it("emits a partial run when one of two conversions fails", async () => {
+        const seen = listen();
+        vi.mocked(uploadFileWithProgress).mockResolvedValueOnce(ok()).mockRejectedValueOnce(new Error("boom secret"));
+        const { container } = render(<SimpleConvertUI slug="bmp-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".bmp" description="Convert BMP images to PDF" />);
+        fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [new File(["x"], "secret-a.bmp", { type: "image/bmp" }), new File(["x"], "secret-b.bmp", { type: "image/bmp" })] } });
+        fireEvent.click(screen.getByRole("button", { name: /Convert to PDF/ }));
+        await waitFor(() => expect(seen).toHaveLength(1));
+        expect(seen).toEqual([{ mode: "single", outcome: "partial", files: 2 }]);
+        expect(JSON.stringify(seen)).not.toContain("secret");
+    });
+});

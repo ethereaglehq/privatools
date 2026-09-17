@@ -2,6 +2,7 @@ import { type HashResult, hashBytes } from "./hash-bytes";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Hash, Loader2 } from "lucide-react";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { LabPair, LabWorkspace, ToolCopyButton } from "./SpecialistTools";
 
@@ -25,8 +26,8 @@ export function HashGeneratorUI() {
         try {
             const bytes = mode === "file" ? await file!.arrayBuffer() : new TextEncoder().encode(input).buffer;
             const next = await hashBytes(bytes);
-            if (generation.current === current) setResults(next);
-        } catch { if (generation.current === current) setError("Couldn't calculate the hashes. Try a smaller file or a browser with Web Crypto support."); }
+            if (generation.current === current) { setResults(next); emitToolRun({ outcome: "success" }); }
+        } catch { if (generation.current === current) { setError("Couldn't calculate the hashes. Try a smaller file or a browser with Web Crypto support."); emitToolRun({ outcome: "error" }); } }
         finally { if (generation.current === current) setComputing(false); }
     };
     return <LabWorkspace kind="hash" note="SHA hashes are calculated by Web Crypto on this device. Files and text stay in your browser.">

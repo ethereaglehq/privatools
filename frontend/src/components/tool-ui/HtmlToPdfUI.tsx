@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Globe, Code2, Download, Loader2, CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mode = "url" | "html";
@@ -50,10 +51,12 @@ export function HtmlToPdfUI() {
             setResultBlob(blob);
             setState("done");
             downloadBlob(blob, getOutputName());
+            emitToolRun({ outcome: "success" });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Conversion failed";
             setError(friendlyError(msg, "Couldn't render that HTML to PDF."));
             setState("idle");
+            emitToolRun({ outcome: "error" });
         }
     }, [canProcess, mode, url, html, getOutputName]);
 

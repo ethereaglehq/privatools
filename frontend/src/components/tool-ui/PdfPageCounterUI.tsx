@@ -7,6 +7,7 @@ import { FileText, Upload, Loader2, AlertCircle, RotateCcw, X } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFiles, formatFileSize } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 
 interface FileItem { id: string; name: string; size: string; file: File }
 interface CountResult { filename: string; pages: number }
@@ -49,10 +50,12 @@ export function PdfPageCounterUI() {
             setResults(data.files || []);
             setTotal(data.total_pages ?? 0);
             setState("done");
+            emitToolRun({ outcome: "success", files: items.length });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed to read PDFs";
             setError(friendlyError(msg, "Couldn't count pages in those PDFs."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: items.length });
         }
     }, [items]);
 

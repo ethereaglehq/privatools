@@ -9,7 +9,7 @@ import urllib.parse
 import urllib.request
 from typing import Any
 
-from fastapi import APIRouter, BackgroundTasks, Response, Request
+from fastapi import APIRouter, BackgroundTasks, Response
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -155,18 +155,12 @@ async def analytics_pageview(
 
 
 @router.get("/analytics/policy")
-async def analytics_policy(request: Request) -> JSONResponse:
-    """A deployment-reviewed regional default, never a browser location guess.
+async def analytics_policy() -> JSONResponse:
+    """Whether the browser tag runs by default.
 
-    Enable the header trust flag only behind the documented ingress boundary.
-    nginx overwrites X-PrivaTools-Country; raw CF-IPCountry/XFF are ignored.
+    Current bundles are default-on and never ask. Older cached bundles still
+    request this before enabling, so it answers default-on whenever the tag is
+    enabled at all, for every visitor and region alike.
     """
-    trusted = os.environ.get("GA_TRUSTED_COUNTRY_HEADER", "").strip().lower() == "true"
     enabled = os.environ.get("GA_BROWSER_TAG_ENABLED", "").strip().lower() == "true"
-    country = request.headers.get("x-privatools-country", "") if trusted else ""
-    permitted = {value.strip() for value in os.environ.get("GA_DEFAULT_ON_COUNTRIES", "").split(",")
-                 if re.fullmatch(r"[A-Z]{2}", value.strip()) and value.strip() not in {"XX", "T1"}}
-    default_on = enabled and trusted and bool(re.fullmatch(r"[A-Z]{2}", country)) and country not in {"XX", "T1"} and country in permitted
-    return JSONResponse({"mode": "default_on" if default_on else "opt_in"}, headers={
-        "Cache-Control": "private, no-store", "Vary": "X-PrivaTools-Country",
-    })
+    return JSONResponse({"mode": "default_on" if enabled else "opt_in"}, headers={"Cache-Control": "private, no-store"})

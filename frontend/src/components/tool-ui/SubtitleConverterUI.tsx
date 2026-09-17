@@ -14,6 +14,7 @@ import { Upload, AlertCircle, Download, ShieldCheck, Sparkles, CheckCircle2, Rot
 import { cn } from "@/lib/utils";
 import { downloadBlob } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
+import { emitToolRun, runOutcome } from "@/lib/toolRun";
 import type { FileEntry } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
@@ -117,6 +118,7 @@ export function SubtitleConverterUI() {
             .filter(e => retryOnly ? e.status === "failed" : (e.status === "queued" || e.status === "failed"))
             .map(e => e.id);
         setEntries(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: "queued", error: undefined } : e));
+        let done = 0, failed = 0;
         for (const id of ids) {
             const en = entries.find(e => e.id === id);
             if (!en) continue;
@@ -131,11 +133,15 @@ export function SubtitleConverterUI() {
                     ? { ...e, status: "done", blob, outName: `${baseName}.${target}` }
                     : e,
                 ));
+                done++;
             } catch (err) {
                 const msg = err instanceof Error ? err.message : String(err);
                 setEntries(prev => prev.map(e => e.id === id ? { ...e, status: "failed", error: msg } : e));
+                failed++;
             }
         }
+        const outcome = runOutcome(done, failed);
+        if (outcome) emitToolRun({ outcome, files: done + failed });
         setPhase("done");
     }, [entries, texts, target]);
 
