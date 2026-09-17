@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Braces, CheckCircle2, CircleAlert, Copy, Check, Download, Clipboard, Laptop, Loader2 } from "lucide-react";
 import { downloadBlob } from "@/lib/api";
 import { loadSampleJsonText } from "@/lib/sample-files";
+import { emitToolRun } from "@/lib/toolRun";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import "./JsonXmlFormatterUI.css";
@@ -204,15 +205,17 @@ export function JsonXmlFormatterUI() {
                 setIssue(null);
             } else {
                 const transformed = transformXml(input, action, indentText);
-                if (transformed.issue) { setIssue(transformed.issue); setResult(null); return; }
+                if (transformed.issue) { setIssue(transformed.issue); setResult(null); emitToolRun({ outcome: "error" }); return; }
                 setResult({ text: transformed.text!, action, mode });
                 setIssue(null);
             }
             emitToolSuccess("JSON / XML formatter");
+            emitToolRun({ outcome: "success" });
         } catch (error) {
             const message = error instanceof Error ? error.message : "We couldn't read this input.";
             setIssue(mode === "json" ? locateJsonError(input, message) : { message });
             setResult(null);
+            emitToolRun({ outcome: "error" });
         }
     };
 

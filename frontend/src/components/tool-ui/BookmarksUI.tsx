@@ -7,6 +7,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, Bookmark, Plus, Trash2, RotateCcw, Code2, ListTree } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mark = { title: string; page: number };
@@ -76,10 +77,12 @@ export function BookmarksUI() {
             const payload = mode === "json" ? json : JSON.stringify(marks);
             await processAndDownload("/bookmarks", file.raw, buildOutputFilename(file.name, "bookmarked", "pdf"), { bookmarks: payload });
             setState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't add bookmarks."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, canProcess, mode, json, marks]);
 

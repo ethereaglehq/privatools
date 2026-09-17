@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { uploadFileGetJson } from '@/lib/api';
 import { friendlyError } from '@/lib/utils';
+import { emitToolRun } from '@/lib/toolRun';
 import { TrimMediaUI } from './TrimMediaUI';
 import { MediaSingleTask } from './media/MediaTasks';
 import { ImageEditCanvas } from './media/MediaCanvases';
@@ -14,7 +15,7 @@ export function RotateImageUI(){const[degrees,setDegrees]=useState(90);return <M
 export function FlipImageUI(){const[direction,setDirection]=useState<'horizontal'|'vertical'>('horizontal');return <MediaSingleTask title="See the other side." endpoint="/flip-image" accepts={IMAGE_ACCEPTS} outputExt={file=>/\.(jpe?g|png|webp)$/i.test(file.name)?file.name.split(".").pop()!:"png"} suffix={`flipped-${direction[0]}`} params={{direction}} options={<MediaField label="Mirror direction"><MediaChoices label="Flip direction" value={direction} onChange={setDirection} options={[{value:'horizontal',label:'Left to right',detail:'Horizontal mirror'},{value:'vertical',label:'Top to bottom',detail:'Vertical mirror'}]}/></MediaField>} preview={file=><ImageEditCanvas file={file} edit={{kind:'flip',direction}}/>}/>;}
 type PaletteEntry={hex:string;rgb:[number,number,number];percentage:number};
 export function ImagePaletteUI(){const[file,setFile]=useState<File|null>(null);const[colors,setColors]=useState(6);const[palette,setPalette]=useState<PaletteEntry[]|null>(null);const[busy,setBusy]=useState(false);const[error,setError]=useState('');const[copied,setCopied]=useState('');
- const run=async()=>{if(!file||busy)return;setBusy(true);setError('');try{const data=await uploadFileGetJson<{palette:PaletteEntry[]}>('/image-palette',file,{colors});setPalette(data.palette);}catch(e){setError(friendlyError(e instanceof Error?e.message:'Failed','Could not extract those colours.'));}finally{setBusy(false);}};
+ const run=async()=>{if(!file||busy)return;setBusy(true);setError('');try{const data=await uploadFileGetJson<{palette:PaletteEntry[]}>('/image-palette',file,{colors});setPalette(data.palette);emitToolRun({outcome:'success',files:1});}catch(e){setError(friendlyError(e instanceof Error?e.message:'Failed','Could not extract those colours.'));emitToolRun({outcome:'error',files:1});}finally{setBusy(false);}};
  const copy=async(hex:string)=>{try{await navigator.clipboard.writeText(hex);setCopied(hex);setTimeout(()=>setCopied(''),1500);}catch{setError('Clipboard access is unavailable. Select and copy the colour value below.');}};
  return <MediaLayout title="A palette hiding in plain sight." busy={busy} settings={<><MediaRange label="Number of colours" value={colors} min={2} max={24} onChange={setColors}/><MediaRun label={palette?'Extract a new palette':'Find the colours'} busy={busy} canRun={!!file} onRun={run} error={error}/>{palette&&<button className="ms-secondary" onClick={()=>copy(palette.map(item=>item.hex).join(', '))}><Copy size={14}/>Copy all colours</button>}</>}>
  {file?<><MediaPreview file={file} name={file.name} caption="The source of your palette"/><MediaUpload compact accepts={IMAGE_ACCEPTS} title="Choose another image" disabled={busy} onFiles={files=>{setFile(files[0]);setPalette(null);setError('');}}/></>:<MediaUpload accepts={IMAGE_ACCEPTS} disabled={busy} title="Bring a picture you love." onFiles={files=>setFile(files[0])}/>}

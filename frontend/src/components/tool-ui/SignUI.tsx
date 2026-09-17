@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Loader2, CheckCircle2, AlertCircle, PenTool, Upload, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
@@ -132,10 +133,12 @@ export function SignUI() {
             const blob = await res.blob();
             downloadBlob(blob, `${file.name.replace(/\.pdf$/i, "")}_signed.pdf`);
             setState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Could not sign PDF";
             setError(friendlyError(msg, "Couldn't sign that PDF."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, page, x, y, width, height, sigFile, sigData]);
 

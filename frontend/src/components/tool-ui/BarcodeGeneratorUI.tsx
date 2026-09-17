@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Download, Loader2, AlertCircle, Hash, QrCode, RotateCcw, Sparkles } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const BARCODE_TYPES = [
@@ -76,10 +77,12 @@ export function BarcodeGeneratorUI() {
             if (previewUrl) URL.revokeObjectURL(previewUrl);
             setPreviewUrl(URL.createObjectURL(blob));
             setStatus("done");
+            emitToolRun({ outcome: "success" });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Generation failed";
             setError(friendlyError(msg, "Couldn't generate that barcode."));
             setStatus("idle");
+            emitToolRun({ outcome: "error" });
         }
     }, [barcodeType, data, previewUrl, status]);
 

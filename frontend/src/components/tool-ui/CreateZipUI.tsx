@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Archive, Download, File, Loader2, Plus, X } from "lucide-react";
 import { formatFileSize, downloadBlob, postFormData, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { friendlyError } from "@/lib/utils";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
@@ -31,7 +32,8 @@ export function CreateZipUI() {
             const response = await postFormData("/create-zip", () => { const form = new FormData(); files.forEach(item => form.append("files", item.file)); form.append("compression", String(config.compression)); return form; }, {timeoutMs: 300_000});
             const blob = await response.blob();
             if (generation.current === current) setResult({blob, count: files.length, originalBytes: totalBytes});
-        } catch (e) { if (generation.current === current) setError(friendlyError(e instanceof Error ? e.message : "", "Couldn't create that archive.")); }
+            emitToolRun({outcome: "success", files: files.length});
+        } catch (e) { if (generation.current === current) setError(friendlyError(e instanceof Error ? e.message : "", "Couldn't create that archive.")); emitToolRun({outcome: "error", files: files.length}); }
         finally { if (generation.current === current) { active.current = false; setBusy(false); } }
     }, [files, config.compression, totalBytes]);
     useEffect(() => { const listener = (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); void process(); } }; window.addEventListener("keydown", listener); return () => window.removeEventListener("keydown", listener); }, [process]);

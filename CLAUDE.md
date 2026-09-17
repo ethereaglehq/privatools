@@ -100,6 +100,20 @@ onnxruntime reports an unreadable model as a bare `system error number 13`,
 naming neither the file nor the permission, so the `chown` of `/app/cache` is
 load-bearing.
 
+## Analytics (changed 2026-09-17)
+
+- Google Analytics is **default-on for every visitor**; the Privacy page
+  switch is the only opt-out. No consent prompt, no regional policy, and DNT
+  or GPC are not read. `deploy/analytics.md` is the runbook.
+- **Every tool surface that processes files must call `emitToolRun`** from
+  `lib/toolRun.ts` at its success and failure points, unless it runs through
+  `GenericUI`, `SimpleConvertUI`, `useMultiFileProcessor` or `useMediaJob`,
+  which report centrally. `src/test/tool-run-coverage.test.ts` walks
+  `components/tool-ui` and fails on any file that talks to the backend without
+  it. The beacon derives the slug from the route and drops unknown slugs.
+- React Router navigations reach the beacon through `notifyNavigation()` in
+  the app root; pushState fires no popstate, so page views were once lost.
+
 ## AI stack (added 2026-09-01)
 
 - **Two AI paths, one dialog.** On-device models (transformers.js → browser

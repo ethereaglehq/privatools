@@ -1,13 +1,17 @@
 /**
- * Consent-controlled Google tag. The tag owns browser sessions, first visits
- * and measured engagement; we send only canonical page views and existing
- * successful-tool signals. The old Measurement Protocol sender is not used.
+ * Default-on Google tag with manual, sanitized events. The tag owns browser
+ * sessions, first visits and measured engagement; we send canonical page
+ * views, the existing successful-tool signal and one `tool_run` per tool use.
+ * The saved opt-out on the Privacy page is the only visitor switch.
  *
  * Enable the server switch only after checking the approved automatic-event
  * settings and disabling automatic user-provided data. Scroll, outbound clicks
  * and video measurement are retained. See deploy/analytics.md.
  */
-import { ANALYTICS_CONSENT_KEY, ANALYTICS_OPT_OUT_KEY, GOOGLE_ANALYTICS_ID, googleAnalyticsAvailable, readAnalyticsPrivacyPreference, setAnalyticsRegionalDefault } from "./analyticsPrivacy";
+import { ANALYTICS_OPT_OUT_KEY, GOOGLE_ANALYTICS_ID, googleAnalyticsAvailable, readAnalyticsPrivacyPreference } from "./analyticsPrivacy";
+import { TOOL_RUN_EVENT, type ToolRunDetail } from "./toolRun";
+import { toolBySlug } from "@/data/tools";
+import { nonPdfToolBySlug } from "@/data/non-pdf-tools";
 
 type Gtag = (...args: unknown[]) => void;
 type AnalyticsWindow = Window & { dataLayer?: unknown[]; gtag?: Gtag; ptSetAnalyticsDisabled?: (disabled: boolean) => void };
@@ -15,10 +19,14 @@ const SCRIPT_ID = "privatools-google-analytics";
 const TOOL_SUCCESS_EVENT = "privatools:tool-success";
 const PUBLIC_BASE = "https://privatools.me";
 const PUBLIC_PAGES = new Set(["/", "/tools", "/pipeline", "/batch", "/ai", "/api", "/trust", "/security", "/status", "/support", "/about", "/privacy", "/terms", "/blog", "/compare"]);
+const RUN_MODES = new Set(["single", "batch", "pipeline"]);
+const RUN_OUTCOMES = new Set(["success", "partial", "error"]);
+const MAX_FILE_COUNT = 10_000;
 let active = false;
 let configured = false;
 let lastPath = "";
 let enabled = false;
+let navHandler: (() => void) | undefined;
 
 function pathNow(): string {
     const hash = location.hash.replace(/^#/, "");
@@ -48,6 +56,10 @@ function safeReferrer(): string {
 }
 function pageParameters(): Record<string, unknown> {
     return { page_location: `${PUBLIC_BASE}${pathNow()}`, page_title: safeTitle(), page_referrer: lastPath ? `${PUBLIC_BASE}${lastPath}` : safeReferrer() };
+}
+/** Only registered tools are reportable; the registry category names the group. */
+function toolCategory(slug: string): string | undefined {
+    return toolBySlug[slug]?.category ?? nonPdfToolBySlug[slug]?.category;
 }
 function bootTag(): Gtag | undefined {
     if (!allowed()) { disable(); return; }
@@ -92,6 +104,10 @@ export function sendPageview(): void {
     tag("event", "page_view", { ...params, send_to: GOOGLE_ANALYTICS_ID });
     lastPath = path;
 }
+/** React Router navigates with pushState, which fires no popstate; the app calls this on each location change. */
+export function notifyNavigation(): void {
+    navHandler?.();
+}
 export function startPageviewTracking(): () => void {
     if (typeof window === "undefined" || active) return () => {};
     active = true;
@@ -114,7 +130,7 @@ export function startPageviewTracking(): () => void {
         clearTimeout(timer); timer = setTimeout(sync, 0);
     };
     const onStorage = (event: StorageEvent) => {
-        if (event.key === null || event.key === ANALYTICS_OPT_OUT_KEY || event.key === ANALYTICS_CONSENT_KEY) sync();
+        if (event.key === null || event.key === ANALYTICS_OPT_OUT_KEY) sync();
     };
     const onToolSuccess = () => {
         if (!allowed() || !/^\/tools?\//.test(pathNow())) return;
@@ -122,32 +138,43 @@ export function startPageviewTracking(): () => void {
         // Never pass CustomEvent.detail (which could contain a label or filename).
         win.gtag?.("event", "tool_success", { page_location: `${PUBLIC_BASE}${pathNow()}`, page_title: safeTitle(), send_to: GOOGLE_ANALYTICS_ID });
     };
+    const onToolRun = (event: Event) => {
+        if (!allowed()) return;
+        // Only the shape of the run is read from the detail. Anything else a
+        // caller attaches (names, text, errors) is ignored by construction.
+        const detail = ((event as CustomEvent<Partial<ToolRunDetail>>).detail ?? {}) as Partial<ToolRunDetail>;
+        const path = pathNow();
+        const slug = typeof detail.slug === "string" ? detail.slug : /^\/tools?\/([a-z0-9-]+)$/.exec(path)?.[1];
+        const mode = detail.mode ?? "single";
+        const outcome = detail.outcome;
+        if (!slug || !/^[a-z0-9-]{1,64}$/.test(slug) || !RUN_MODES.has(mode) || typeof outcome !== "string" || !RUN_OUTCOMES.has(outcome)) return;
+        if (detail.files !== undefined && !(Number.isInteger(detail.files) && (detail.files as number) >= 0)) return;
+        const category = toolCategory(slug);
+        if (!category) return;
+        const tag = bootTag();
+        if (!tag) return;
+        const params: Record<string, unknown> = { tool_slug: slug, tool_category: category, run_mode: mode, outcome };
+        if (detail.files !== undefined) params.file_count = Math.min(detail.files as number, MAX_FILE_COUNT);
+        tag("event", "tool_run", { ...params, page_location: `${PUBLIC_BASE}${path}`, page_title: safeTitle(), send_to: GOOGLE_ANALYTICS_ID });
+    };
     win.ptSetAnalyticsDisabled = sync;
+    navHandler = onNav;
     sync();
-    const policyAbort = new AbortController();
-    let policyTimer: ReturnType<typeof setTimeout> | undefined;
-    // Same-origin endpoint, independent of the optional processing API host.
-    // No tag while an unknown region is pending. Failure keeps opt-in mode.
-    if (import.meta.env.PROD && googleAnalyticsAvailable() && isPublicAnalyticsPath(pathNow())) {
-        policyTimer = setTimeout(() => policyAbort.abort(), 3000);
-        void fetch("/api/analytics/policy", { credentials: "omit", cache: "no-store", signal: policyAbort.signal })
-            .then(response => response.ok ? response.json() : null)
-            .then(policy => { if (!policyAbort.signal.aborted) { setAnalyticsRegionalDefault(policy?.mode === "default_on"); sync(); } })
-            .catch(() => {})
-            .finally(() => clearTimeout(policyTimer));
-    }
     window.addEventListener("storage", onStorage);
     window.addEventListener("popstate", onNav);
     window.addEventListener("hashchange", onNav);
     window.addEventListener("pageshow", sync);
     window.addEventListener(TOOL_SUCCESS_EVENT, onToolSuccess);
+    window.addEventListener(TOOL_RUN_EVENT, onToolRun);
     return () => {
-        active = false; clearTimeout(timer); clearTimeout(policyTimer); policyAbort.abort(); disable();
+        active = false; clearTimeout(timer); disable();
+        if (navHandler === onNav) navHandler = undefined;
         window.removeEventListener("storage", onStorage);
         window.removeEventListener("popstate", onNav);
         window.removeEventListener("hashchange", onNav);
         window.removeEventListener("pageshow", sync);
         window.removeEventListener(TOOL_SUCCESS_EVENT, onToolSuccess);
+        window.removeEventListener(TOOL_RUN_EVENT, onToolRun);
         if (win.ptSetAnalyticsDisabled === sync) win.ptSetAnalyticsDisabled = previousPrivacyHandler;
     };
 }

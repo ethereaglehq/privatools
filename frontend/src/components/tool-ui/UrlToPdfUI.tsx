@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Globe, Download, Loader2, AlertCircle, ExternalLink, RotateCcw } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
 import { downloadBlob, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 export function UrlToPdfUI() {
     const [url, setUrl] = useState("");
     const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
@@ -31,10 +32,12 @@ export function UrlToPdfUI() {
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");
+            emitToolRun({ outcome: "success" });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Conversion failed";
             setError(friendlyError(msg, "Couldn't fetch that URL as a PDF."));
             setStatus("idle");
+            emitToolRun({ outcome: "error" });
         }
     }, [url, status]);
 

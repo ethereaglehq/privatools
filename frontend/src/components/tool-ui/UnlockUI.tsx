@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Loader2, CheckCircle2, X, FileText, AlertCircle, Eye, EyeOff, LockOpen, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { processFilesAndDownload, formatFileSize, buildOutputFilename, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { usePdfPasswordTrial } from "@/hooks/usePdfPasswordTrial";
 import { VaultTrialBanner } from "@/components/VaultTrialBanner";
 import { SavePasswordPrompt } from "@/components/SavePasswordPrompt";
@@ -60,10 +61,12 @@ export function UnlockUI() {
             const outName = buildOutputFilename(files[0]?.raw.name, "unlocked", outExt);
             await processFilesAndDownload("/unlock", files.map(f => f.raw), outName, { password });
             setState("done");
+            emitToolRun({ outcome: "success", files: files.length });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Unlock failed";
             setError(friendlyError(msg, "Couldn't unlock that PDF. The password may be wrong."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: files.length });
         }
     }, [files, password]);
 

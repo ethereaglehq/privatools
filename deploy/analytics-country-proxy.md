@@ -1,5 +1,7 @@
 # Regional analytics country boundary
 
+> **Historical since 17 September 2026.** Analytics is now default-on for every visitor and the application no longer reads `X-PrivaTools-Country`; `/api/analytics/policy` answers from `GA_BROWSER_TAG_ENABLED` alone. The nginx configuration still computes the header, so this document stays as the record of that boundary. Nothing below affects collection.
+
 This is a staged configuration change. It has not been deployed, and it does not choose countries where analytics may run without opt-in. The deployment's reviewed country policy remains separate from the network signal.
 
 ## Contract

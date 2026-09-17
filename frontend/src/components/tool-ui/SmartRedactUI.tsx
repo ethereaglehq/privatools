@@ -34,6 +34,7 @@ import { ByokError } from "@/lib/byok/errors";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, ShieldAlert, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const MODEL_ID = "Xenova/bert-base-NER";
@@ -346,10 +347,12 @@ export function SmartRedactUI() {
             downloadBlob(blob, `${baseName}_redacted.pdf`);
             setHits(hitHeader ? parseInt(hitHeader, 10) : null);
             setStage("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (err) {
             if (current !== runId.current) return;
             setError(err instanceof Error ? err.message : "Redaction failed");
             setStage("review");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, selected, detections, color]);
 

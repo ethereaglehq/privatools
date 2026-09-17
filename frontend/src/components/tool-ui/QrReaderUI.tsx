@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { Loader2, AlertCircle, QrCode, Copy, Check, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFileGetJson } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 
 interface QrResult { data: string; type: string; rect: { left: number; top: number; width: number; height: number } }
 
@@ -47,10 +48,12 @@ export function QrReaderUI() {
             setCodes(res.codes);
             if (res.codes.length === 0) setError("No QR codes or barcodes found in this image.");
             setState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed to read QR code";
             setError(friendlyError(msg, "Couldn't decode any codes from this image."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, state]);
 

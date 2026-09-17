@@ -15,6 +15,7 @@ import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { emitToolRun } from "@/lib/toolRun";
 import { ResultHandoff } from "./ResultHandoff";
 import { mergePageSelection, mergeOutputFilename, moveMergeFile, toggleMergePage, mergeSourceMap, compactMergePages, saveMergeWorkflow, type MergeSourceMap } from "./merge-model";
 import { openMergePreview, type MergePreviewDocument } from "./merge-preview";
@@ -241,10 +242,12 @@ export function MergeUI() {
             setResult({ blob, ...snapshot });
             setPhase("done");
             setNotice("Your merged PDF is ready to download.");
+            emitToolRun({ outcome: "success", files: files.length });
         } catch (cause) {
             if (controller.signal.aborted || activeRequest.current !== controller || !alive.current) return;
             setError(friendlyError(cause instanceof Error ? cause.message : "", "Could not merge these PDFs. Try again."));
             setPhase("idle");
+            emitToolRun({ outcome: "error", files: files.length });
         } finally {
             if (activeRequest.current === controller) activeRequest.current = null;
         }

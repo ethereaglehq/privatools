@@ -31,20 +31,21 @@ const SECTIONS: Section[] = [
   { id: "contact",             title: "10. Contact" },
 ];
 
-/** Preserve the same browser consent preference used by the analytics runtime. */
+/** Reads and writes the same saved opt-out the analytics runtime honors. */
 function AnalyticsOptOutPanel() {
   const [preference, setPreference] = useState<AnalyticsPrivacyPreference>(() => readAnalyticsPrivacyPreference());
 
   useEffect(() => {
     const refresh = () => setPreference(readAnalyticsPrivacyPreference());
     window.addEventListener("storage", refresh);
-    window.addEventListener("privatools:analytics-policy", refresh);
-    return () => { window.removeEventListener("storage", refresh); window.removeEventListener("privatools:analytics-policy", refresh); };
+    return () => window.removeEventListener("storage", refresh);
   }, []);
 
   const toggleOptOut = () => {
     setPreference(setAnalyticsOptOut(!preference.effectiveDisabled));
   };
+
+  const on = !preference.effectiveDisabled;
 
   return (
     <aside className="not-prose my-5 rounded-xl border border-border bg-card overflow-hidden">
@@ -55,31 +56,24 @@ function AnalyticsOptOutPanel() {
               Analytics control
             </span>
             <span className="font-medium rounded-full border border-border bg-paper-2/60 px-2 py-0.5 text-[11px] text-muted-foreground">
-              {preference.effectiveDisabled || !googleAnalyticsAvailable() ? "Analytics off" : "Analytics allowed"}
+              {on ? "Analytics on" : "Analytics off"}
             </span>
           </div>
           <p className="mt-2 text-[13px] leading-relaxed text-muted-foreground">
-            {preference.browserPrivacySignal
-              ? "Your browser’s privacy signal keeps analytics off, even if you previously allowed it."
-              : !googleAnalyticsAvailable()
-                ? "Analytics is currently unavailable. You can save your choice for when it becomes available."
-                : !preference.effectiveDisabled
-                  ? preference.consented
-                    ? "You have allowed Google Analytics in this browser. You can withdraw that choice here at any time."
-                    : "Analytics is enabled by the reviewed policy for your region. You can turn it off here at any time."
-                  : "Google Analytics stays off unless you allow it. All tools work either way."}
-
+            {on
+              ? "Google Analytics is on in this browser. Turn it off here at any time; every tool works either way."
+              : "Google Analytics is off in this browser. Turn it back on if you would like to help us see which tools people use."}
+            {!googleAnalyticsAvailable() && " This deployment is not sending analytics right now; your choice is saved for when it does."}
           </p>
         </div>
         <button
           type="button"
           role="switch"
-          aria-checked={!preference.effectiveDisabled}
-          disabled={preference.browserPrivacySignal}
+          aria-checked={on}
           onClick={toggleOptOut}
           className={cn(
             "group inline-flex h-9 shrink-0 items-center gap-2 rounded-full border px-2.5 transition-colors",
-            !preference.effectiveDisabled
+            on
               ? "border-accent/45 bg-accent/[0.08] text-accent"
               : "border-border bg-paper-2/60 text-muted-foreground hover:text-foreground"
           )}
@@ -88,13 +82,13 @@ function AnalyticsOptOutPanel() {
             aria-hidden="true"
             className={cn(
               "relative h-5 w-9 rounded-full border transition-colors",
-              !preference.effectiveDisabled ? "border-accent/60 bg-accent/20" : "border-border bg-background"
+              on ? "border-accent/60 bg-accent/20" : "border-border bg-background"
             )}
           >
             <span
               className={cn(
                 "absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-current transition-transform",
-                !preference.effectiveDisabled ? "translate-x-[18px]" : "translate-x-1"
+                on ? "translate-x-[18px]" : "translate-x-1"
               )}
             />
           </span>
@@ -115,7 +109,7 @@ export default function PrivacyPage() {
       <aside className="rounded-2xl border border-accent/30 bg-accent/[0.05] p-5 sm:p-6">
         <div className="flex items-center gap-2 mb-3"><Shield size={15} className="text-accent"/><span className="text-[11px] text-accent font-semibold">The short version</span></div>
         <p><strong>Choose where your task runs.</strong> Browser tools process on your device. Server tools upload your file for temporary processing. AI provider tools send the content needed for your request to the provider you choose.</p>
-        <p><strong>Accounts and analytics are separate choices.</strong> Interactive file tools do not require an account. Optional accounts use Clerk for identity and sign-in. Optional analytics measures public-site usage, including scrolling, outbound links and supported video engagement. It uses identifiers and cookies, so it is not anonymous.</p>
+        <p><strong>Accounts and analytics are separate choices.</strong> Interactive file tools do not require an account. Optional accounts use Clerk for identity and sign-in. Analytics is on by default and measures public-site usage, including which tools run, scrolling, outbound links and supported video engagement; you can turn it off below. It uses identifiers and cookies, so it is not anonymous.</p>
       </aside>
     </section>
     <div className="blog-prose prose-headings:scroll-mt-20">
@@ -137,7 +131,7 @@ export default function PrivacyPage() {
       <p>Preferences, recent-tool history, saved recipes, Vault items and provider settings can be stored in this browser. The PWA caches application resources and supported model resources for reuse. Browser storage can be cleared or evicted; signing in does not turn these items into a cloud backup, and installation does not make server tools available offline.</p>
 
       <h2 id="what-we-dont-collect">3. Analytics Data Boundaries</h2>
-      <p><strong>These exclusions describe analytics.</strong> Specifically, they cover the page and tool-success events constructed by PrivaTools. They do not mean the service receives no personal data: an account requires identity information, a server task receives the selected file, and a support message contains what you send.</p>
+      <p><strong>These exclusions describe analytics.</strong> Specifically, they cover the page, tool-run and tool-success events constructed by PrivaTools. They do not mean the service receives no personal data: an account requires identity information, a server task receives the selected file, and a support message contains what you send.</p>
       <ul>
         <li>PrivaTools’ manual analytics events do not include account identity, email addresses, passwords or API keys.</li>
         <li>Those manual events do not include uploaded file contents, filenames, document text, prompts or tool output.</li>
@@ -160,14 +154,14 @@ export default function PrivacyPage() {
 
       <h2 id="third-party">6. Third-Party Services</h2>
       <h3>Google Analytics and your choice</h3>
-      <p>When available and permitted by your choice or a reviewed regional policy, Google Analytics measures public page visits, sessions, engagement time and selected successful tool actions. Google receives browser and cookie identifiers, device/browser information and network connection information, including your IP address.</p>
+      <p>When available and not turned off, Google Analytics measures public page visits, sessions, engagement time and each tool you run: which tool, whether it ran on its own page, in a batch or in a pipeline, how many files it handled and whether it succeeded. It never receives file names, file contents, text you enter or account identity. Google receives browser and cookie identifiers, device/browser information and network connection information, including your IP address.</p>
       <ul>
         <li><strong>Enabled automatic events:</strong> Scroll depth, outbound-link clicks and supported embedded-video engagement. Outbound events can include the destination URL and domain, including destination query parameters, link identifiers and CSS classes. Video events can include the provider, video title and URL, duration, current position and playback progress. See <a href="https://support.google.com/analytics/answer/9216061?hl=en" target="_blank" rel="noopener noreferrer">Google’s event and parameter documentation</a>.</li>
-        <li><strong>Disabled automatic events:</strong> Form interactions, file downloads, site search and browser-history page views. PrivaTools sends its own canonical public-page events without queries or fragments and selected tool-success events without file or input details.</li>
+        <li><strong>Disabled automatic events:</strong> Form interactions, file downloads, site search and browser-history page views. PrivaTools sends its own canonical public-page events without URL queries or fragments, one tool-run event per tool use and the existing tool-success events, all without file or input details.</li>
         <li><strong>User-provided data:</strong> The Google tag configuration permits this capability, but automatic detection and snippet-based collection are disabled. PrivaTools does not supply identity data through a <code>user_data</code> parameter.</li>
         <li><strong>Advertising settings:</strong> Advertising storage, advertising user data, personalized advertising and Google Signals are disabled in the site’s tag configuration.</li>
       </ul>
-      <p>Analytics requires opt-in unless a verified regional policy permits an opt-out default. An unknown region uses opt-in. Do Not Track and Global Privacy Control override an allowance. The control below saves your choice in this browser; withdrawing it stops further analytics collection through this site. Clearing site data resets the saved choice. Development previews do not send analytics. See <a href="https://business.safety.google/privacy/" target="_blank" rel="noopener noreferrer">Google’s information about data use</a>.</p>
+      <p>Analytics is on by default for every visitor. The control below turns it off in this browser and stops further collection through this site; turning it back on resumes it. Clearing site data resets the saved choice. Development previews do not send analytics. See <a href="https://business.safety.google/privacy/" target="_blank" rel="noopener noreferrer">Google’s information about data use</a>.</p>
       <AnalyticsOptOutPanel/>
       <h3>Identity, AI and delivery services</h3>
       <ul>

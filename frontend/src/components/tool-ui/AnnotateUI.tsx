@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Loader2, AlertCircle, Plus, Trash2, CheckCircle2, Highlighter, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 
@@ -79,10 +80,12 @@ export function AnnotateUI() {
             setResultBlob(blob);
             setStatus("done");
             downloadBlob(blob, file.name.replace(/\.pdf$/i, "_annotated.pdf"));
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Could not apply annotations";
             setError(friendlyError(msg, "Couldn't annotate that PDF."));
             setStatus("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, annotations]);
 

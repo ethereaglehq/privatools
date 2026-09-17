@@ -28,6 +28,7 @@ import {
     BookmarkPlus, Bookmark, Square, RefreshCw, Share2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { emitToolRun } from "@/lib/toolRun";
 import { navigateTo } from "@/lib/navigation";
 import { tools } from "@/data/tools";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
@@ -453,6 +454,7 @@ export default function PipelinePage() {
                 const out = await resp.blob();
                 if (!controller.signal.aborted) {
                     setStepStatuses(Object.fromEntries(steps.map((_, i) => [i, "done" as const])));
+                    for (const step of steps) emitToolRun({ slug: step.tool.slug, mode: "pipeline", outcome: "success", files: 1 });
                     const url = URL.createObjectURL(out);
                     setResultBlob(out);
                     setResultUrl(url);
@@ -495,12 +497,14 @@ export default function PipelinePage() {
                 currentBlob = await resp.blob();
                 intermediateBlobsRef.current[i] = currentBlob;
                 setStepStatuses(prev => ({ ...prev, [i]: "done" }));
+                emitToolRun({ slug: steps[i].tool.slug, mode: "pipeline", outcome: "success", files: 1 });
             } catch (e: unknown) {
                 if (controller.signal.aborted) {
                     // User-initiated cancel — quiet exit.
                     setStepStatuses(prev => ({ ...prev, [i]: "queued" }));
                     break;
                 }
+                emitToolRun({ slug: steps[i].tool.slug, mode: "pipeline", outcome: "error", files: 1 });
                 const msg = e instanceof Error ? e.message : "Pipeline failed";
                 setError(`Step ${i + 1} (${steps[i].tool.name}) failed: ${msg}`);
                 setErrorReport(formatErrorForClipboard(e, `Pipeline step ${i + 1}: ${steps[i].tool.name} (${steps[i].tool.slug})`));

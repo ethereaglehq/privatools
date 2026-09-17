@@ -75,11 +75,9 @@ services:
       - GA4_MEASUREMENT_ID=${GA4_MEASUREMENT_ID:-}
       - GA4_API_SECRET=${GA4_API_SECRET:-}
       # Browser tag: enable only after the public Google configuration is verified.
-      # Regional defaults also require the trusted nginx boundary and a reviewed
-      # positive country allowlist. See deploy/analytics.md.
+      # Once on, collection is default-on for every visitor with the Privacy
+      # page opt-out as the only switch. See deploy/analytics.md.
       - GA_BROWSER_TAG_ENABLED=${GA_BROWSER_TAG_ENABLED:-false}
-      - GA_TRUSTED_COUNTRY_HEADER=${GA_TRUSTED_COUNTRY_HEADER:-false}
-      - GA_DEFAULT_ON_COUNTRIES=${GA_DEFAULT_ON_COUNTRIES:-}
     restart: unless-stopped
     stop_grace_period: 45s
     # Bound container stdout/stderr on disk. The default json-file driver is

@@ -12,6 +12,7 @@ import { Loader2, CheckCircle2, AlertCircle, EyeOff, Plus, Trash2, RotateCcw } f
 import { EXEMPTION_CODE_SETS } from "@/data/redaction-codes";
 import { cn, friendlyError } from "@/lib/utils";
 import { processAndDownload, buildOutputFilename } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
@@ -93,10 +94,12 @@ export function RedactUI() {
                 catch { /* the log is a bonus; the redacted file is the deliverable */ }
             }
             setState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Could not redact PDF";
             setError(friendlyError(msg, "Couldn't redact that PDF."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, boxes, color]);
 

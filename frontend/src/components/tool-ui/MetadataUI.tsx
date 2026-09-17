@@ -8,6 +8,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader2, CheckCircle2, AlertCircle, FileSearch, Pencil, RotateCcw, ArrowRight, Download } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFileGetJson } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
@@ -48,10 +49,12 @@ export function MetadataUI() {
             setTitle(data.title || ""); setAuthor(data.author || "");
             setSubject(data.subject || ""); setKeywords(data.keywords || "");
             setReadState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't read the PDF metadata."));
             setReadState("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [proc.entries]);
 

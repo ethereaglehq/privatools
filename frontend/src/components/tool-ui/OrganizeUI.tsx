@@ -8,6 +8,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, Loader2, CheckCircle2, X, FileText, AlertCircle, ChevronLeft, ChevronRight, Download, Undo2 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 
 export function OrganizeUI() {
     const [file, setFile] = useState<{ name: string; size: string; raw: File } | null>(null);
@@ -98,10 +99,12 @@ export function OrganizeUI() {
             const blob = await res.blob();
             downloadBlob(blob, file ? `${file.name.replace(/\.pdf$/i, "")}_organized.pdf` : "organized.pdf");
             setState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't apply this page order."));
             setState("editing");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, pageOrder]);
 

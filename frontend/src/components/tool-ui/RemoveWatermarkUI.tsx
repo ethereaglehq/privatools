@@ -19,6 +19,7 @@ import { cn, friendlyError } from "@/lib/utils";
 import {
     MAX_FILE_SIZE_LABEL, buildOutputFilename, downloadBlob, formatFileSize, postFormData,
 } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 interface Candidate {
@@ -112,10 +113,12 @@ export function RemoveWatermarkUI() {
             }, { timeoutMs: 300_000 });
             downloadBlob(await resp.blob(), buildOutputFilename(file.name, "no_watermark", "pdf"));
             setPhase("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Removal failed";
             setError(friendlyError(msg, "Couldn't remove that watermark."));
             setPhase("review");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     };
 
