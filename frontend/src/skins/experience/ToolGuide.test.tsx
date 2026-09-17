@@ -23,4 +23,14 @@ describe("ToolGuide", () => {
     await act(async () => {});
     expect(container).toBeEmptyDOMElement();
   });
+  it("marks the steps list as an accessible list with stable per-step ids", async () => {
+    await act(async () => { render(<ToolGuide slug="merge-pdf" name="Merge PDF" />); });
+    const steps = document.querySelector("ol");
+    // The steps <ol> has its list styling removed by CSS, which strips the
+    // implicit "list" role in some browsers/AT — role="list" restores it.
+    expect(steps).toHaveAttribute("role", "list");
+    const items = steps!.querySelectorAll("li");
+    expect(items[0]).toHaveAttribute("id", "step-1");
+    expect(items[1]).toHaveAttribute("id", "step-2");
+  });
 });

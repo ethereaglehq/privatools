@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { loadToolGuide, type ToolGuide as ToolGuideData } from "@/lib/tool-guide";
+import type { ToolGuide as ToolGuideData } from "@/lib/tool-guide";
 
 type GuideLink = { slug: string; title: string };
 
@@ -11,14 +11,18 @@ export function ToolGuide({ slug, name }: { slug: string; name: string }) {
     useEffect(() => {
         let active = true;
         setGuide(null); setLinks([]);
-        loadToolGuide(slug).then(data => { if (active) setGuide(data); });
+        // Dynamic: lib/tool-guide.ts globs all 221 tools' JSON (~24 KB) so it
+        // can lazy-load any one of them — that map must never sit in the
+        // entry chunk, so it's imported here instead of at module scope.
+        import("@/lib/tool-guide").then(({ loadToolGuide }) => loadToolGuide(slug)).then(data => { if (active) setGuide(data); }).catch(() => {});
         // The blog module is large; it becomes its own chunk and loads once.
+        // Related reading is optional — if the chunk fails to load, the guide still renders without it.
         import("@/data/blog").then(({ postsForTool }) => { if (active) setLinks(postsForTool(slug, 4).map(post => ({ slug: post.slug, title: post.title }))); }).catch(() => {});
         return () => { active = false; };
     }, [slug]);
     if (!guide || (guide.howto.length === 0 && guide.faq.length === 0)) return null;
     return <div className="tw-guide" id="guide">
-        {guide.howto.length > 0 && <section className="tw-guide-steps"><p className="tw-kicker">Step by step</p><h2>How to use {name}</h2><ol>{guide.howto.map(step => <li key={step.name}><strong>{step.name}</strong><span>{step.text}</span></li>)}</ol></section>}
+        {guide.howto.length > 0 && <section className="tw-guide-steps"><p className="tw-kicker">Step by step</p><h2>How to use {name}</h2><ol role="list">{guide.howto.map((step, index) => <li key={step.name} id={`step-${index + 1}`}><strong>{step.name}</strong><span>{step.text}</span></li>)}</ol></section>}
         {guide.faq.length > 0 && <section className="tw-guide-questions"><p className="tw-kicker">Good to know</p><h2>Questions about {name}</h2>{guide.faq.map(item => <section key={item.q}><h3>{item.q}</h3><p>{item.a}</p></section>)}</section>}
         {links.length > 0 && <section className="tw-guide-links"><p className="tw-kicker">Read more</p><h2>Mentioned in our guides</h2><ul>{links.map(link => <li key={link.slug}><a href={`/blog/${link.slug}`}>{link.title} <ArrowUpRight size={15} /></a></li>)}</ul></section>}
     </div>;

@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useReveal } from "@/hooks/useReveal";
-import { loadToolGuide, type ToolGuideQuestion } from "@/lib/tool-guide";
+import type { ToolGuideQuestion } from "@/lib/tool-guide";
 
 export function ToolFaq({ slug, toolName }: { slug: string; toolName: string }) {
     const [entries, setEntries] = useState<ToolGuideQuestion[] | null>(null);
@@ -27,7 +27,11 @@ export function ToolFaq({ slug, toolName }: { slug: string; toolName: string }) 
 
     useEffect(() => {
         let cancelled = false;
-        loadToolGuide(slug)
+        // Dynamic: lib/tool-guide.ts globs all 221 tools' JSON (~24 KB) so it
+        // can lazy-load any one of them — that map must never sit in the
+        // entry chunk, so it's imported here instead of at module scope.
+        import("@/lib/tool-guide")
+            .then(({ loadToolGuide }) => loadToolGuide(slug))
             .then(guide => { if (!cancelled) setEntries(guide?.faq ?? null); })
             .catch(() => { /* the FAQ is a bonus; the tool still works without it */ });
         return () => { cancelled = true; };
