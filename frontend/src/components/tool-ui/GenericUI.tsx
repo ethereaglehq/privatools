@@ -29,6 +29,7 @@ import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-e
 import { getFileSizeWarning, estimateTime } from "@/hooks/useUxHelpers";
 import { useElapsed } from "@/hooks/useElapsed";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { emitToolRun, runOutcome } from "@/lib/toolRun";
 import { ResultHandoff } from "./ResultHandoff";
 import { ConversionPath, FileIntake, LocalFilePreview, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
@@ -180,6 +181,7 @@ export function GenericUI({
         setLastError(null);
         const endpoint = apiEndpoint || getToolEndpoint(slug);
         let firstFailure: unknown = null;
+        let done = 0, failed = 0;
         for (let i = 0; i < run.length; i++) {
             if (stopRef.current) break;
             const item = run[i];
@@ -201,6 +203,7 @@ export function GenericUI({
                     getFilenameFromContentDisposition(res.headers.get("Content-Disposition")),
                 );
                 setItem(item.id, { status: "done", blob, outName });
+                done++;
                 if (single) downloadBlob(blob, outName);
             } catch (e: unknown) {
                 if (isAbortError(e)) {
@@ -210,6 +213,7 @@ export function GenericUI({
                 }
                 const msg = e instanceof Error ? e.message : "Processing failed";
                 setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Processing failed") });
+                failed++;
                 if (!firstFailure) firstFailure = e;
             } finally {
                 if (abortRef.current === controller) abortRef.current = null;
@@ -218,6 +222,8 @@ export function GenericUI({
         setProgress(undefined);
         setProgressLabel("Processing...");
         setCurrentName("");
+        const outcome = runOutcome(done, failed);
+        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed });
         if (stopRef.current) {
             setState("idle");
             return;

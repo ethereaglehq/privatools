@@ -1,12 +1,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import PrivacyPage from "./PrivacyPage";
-import { readAnalyticsPrivacyPreference, setAnalyticsOptOut, setAnalyticsRegionalDefault } from "@/lib/analyticsPrivacy";
+import { readAnalyticsPrivacyPreference, setAnalyticsOptOut } from "@/lib/analyticsPrivacy";
 
 beforeEach(() => {
   localStorage.clear();
-  setAnalyticsRegionalDefault(false);
-  setAnalyticsOptOut(true);
+  setAnalyticsOptOut(false);
   Object.defineProperty(navigator, "doNotTrack", { configurable: true, value: undefined });
   Object.defineProperty(navigator, "globalPrivacyControl", { configurable: true, value: false });
   vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
@@ -14,7 +13,7 @@ beforeEach(() => {
 afterEach(() => {
   cleanup(); vi.restoreAllMocks();
   Object.defineProperty(navigator, "globalPrivacyControl", { configurable: true, value: false });
-  setAnalyticsRegionalDefault(false); setAnalyticsOptOut(true); localStorage.clear();
+  setAnalyticsOptOut(false); localStorage.clear();
 });
 
 describe("Privacy disclosures match the hosted runtime", () => {
@@ -39,26 +38,34 @@ describe("Privacy disclosures match the hosted runtime", () => {
     expect(screen.getByText(/Form interactions, file downloads, site search and browser-history page views/)).toBeInTheDocument();
     expect(screen.getByText(/automatic detection and snippet-based collection are disabled/)).toBeInTheDocument();
     expect(container).toHaveTextContent("without URL queries or fragments");
+    expect(container).toHaveTextContent("Analytics is on by default");
+    expect(container).toHaveTextContent("tool you run");
+    expect(container).not.toHaveTextContent("Do Not Track");
+    expect(container).not.toHaveTextContent("regional policy");
     expect(screen.getByRole("link", { name: "Google’s event and parameter documentation" })).toHaveAttribute("href", "https://support.google.com/analytics/answer/9216061?hl=en");
   });
 
-  it("lets a guest allow and withdraw analytics without changing the regional policy", () => {
+  it("shows analytics on by default and lets a visitor turn it off and back on", () => {
     render(<PrivacyPage/>);
     const control = screen.getByRole("switch", { name: "Allow Google Analytics" });
+    expect(control).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText(/Google Analytics is on in this browser/)).toBeInTheDocument();
+    fireEvent.click(control);
     expect(control).toHaveAttribute("aria-checked", "false");
+    expect(readAnalyticsPrivacyPreference()).toEqual({ localOptOut: true, effectiveDisabled: true });
+    expect(screen.getByText(/Google Analytics is off in this browser/)).toBeInTheDocument();
     fireEvent.click(control);
     expect(control).toHaveAttribute("aria-checked", "true");
-    expect(readAnalyticsPrivacyPreference()).toMatchObject({ consented: true, regionalDefault: false, effectiveDisabled: false });
-    fireEvent.click(control);
-    expect(readAnalyticsPrivacyPreference()).toMatchObject({ consented: false, localOptOut: true, effectiveDisabled: true });
+    expect(readAnalyticsPrivacyPreference()).toEqual({ localOptOut: false, effectiveDisabled: false });
   });
 
-  it("keeps the browser privacy signal authoritative", () => {
-    setAnalyticsOptOut(false);
+  it("does not let a browser privacy signal override the default or lock the switch", () => {
     Object.defineProperty(navigator, "globalPrivacyControl", { configurable: true, value: true });
+    Object.defineProperty(navigator, "doNotTrack", { configurable: true, value: "1" });
     render(<PrivacyPage/>);
-    expect(screen.getByRole("switch", { name: "Allow Google Analytics" })).toBeDisabled();
-    expect(screen.getByRole("switch", { name: "Allow Google Analytics" })).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByText(/Your browser’s privacy signal keeps analytics off/)).toBeInTheDocument();
+    const control = screen.getByRole("switch", { name: "Allow Google Analytics" });
+    expect(control).toBeEnabled();
+    expect(control).toHaveAttribute("aria-checked", "true");
+    expect(screen.queryByText(/privacy signal/)).not.toBeInTheDocument();
   });
 });

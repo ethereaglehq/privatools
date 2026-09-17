@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { getFilenameFromContentDisposition, getToolEndpoint } from "@/lib/tool-endpoints";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { emitToolRun, runOutcome } from "@/lib/toolRun";
 import { ConversionPath, FileIntake, StudioFile, StudioLayout, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 import { fileFormatLabel } from "../../skins/experience/file-format-label";
 
@@ -107,6 +108,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         setStatus("processing"); setError(null); setProgress(undefined);
         const endpoint = getToolEndpoint(slug);
         let firstFailure: unknown = null;
+        let done = 0, failed = 0;
         for (let n = 0; n < run.length; n++) {
             if (stopRef.current) break;
             const item = run[n];
@@ -127,17 +129,21 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
                     getFilenameFromContentDisposition(res.headers.get("Content-Disposition")),
                 );
                 setItem(item.id, { status: "done", blob, outName });
+                done++;
                 if (single) downloadBlob(blob, outName);
             } catch (e: unknown) {
                 if (isAbortError(e)) { setItem(item.id, { status: "queued" }); stopRef.current = true; break; }
                 const msg = e instanceof Error ? e.message : "Failed";
                 setItem(item.id, { status: "error", errMsg: friendlyError(msg, "Couldn't convert that file.") });
+                failed++;
                 if (!firstFailure) firstFailure = e;
             } finally {
                 if (abortRef.current === controller) abortRef.current = null;
             }
         }
         setProgress(undefined);
+        const outcome = runOutcome(done, failed);
+        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed });
         if (stopRef.current) { setStatus("idle"); return; }
         if (firstFailure && single) {
             const msg = firstFailure instanceof Error ? firstFailure.message : "Failed";

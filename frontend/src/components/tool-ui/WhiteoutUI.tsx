@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, Loader2, AlertCircle, Plus, Trash2, Eraser, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 
@@ -64,10 +65,12 @@ export function WhiteoutUI() {
             setResultBlob(blob);
             setStatus("done");
             downloadBlob(blob, file.name.replace(/\.pdf$/i, "_whiteout.pdf"));
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Could not apply white-out";
             setError(friendlyError(msg, "Couldn't apply whiteout."));
             setStatus("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, regions]);
 

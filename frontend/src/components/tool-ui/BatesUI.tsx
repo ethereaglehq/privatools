@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { cn, friendlyError } from "@/lib/utils";
 import { MAX_FILE_SIZE_LABEL, uploadFiles, downloadBlob } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { useMultiFileProcessor } from "@/hooks/useMultiFileProcessor";
 import { MultiFileQueue } from "./MultiFileQueue";
@@ -109,10 +110,12 @@ export function BatesUI() {
                 }
                 downloadBlob(await res.blob(), "bates_numbered.zip");
                 setPhase("done");
+                emitToolRun({ outcome: "success", files: files.length });
             } catch (e: unknown) {
                 const msg = e instanceof Error ? e.message : "Failed";
                 setBatchError(friendlyError(msg, "Couldn't number that set."));
                 setPhase("idle");
+                emitToolRun({ outcome: "error", files: files.length });
             }
             return;
         }

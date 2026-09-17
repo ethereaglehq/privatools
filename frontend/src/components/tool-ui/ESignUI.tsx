@@ -6,6 +6,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { Download, Loader2, AlertCircle, PenTool, Type, Image as ImageIcon, CheckCircle2, RotateCcw, Star } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
 import { loadSignature, saveSignature, forgetSignature } from "@/lib/signatureStore";
@@ -237,6 +238,7 @@ export function ESignUI() {
             setResultBlob(blob);
             setStatus("done");
             downloadBlob(blob, file.name.replace(/\.pdf$/i, "_signed.pdf"));
+            emitToolRun({ outcome: "success", files: 1 });
             // Note: persistence is handled by the auto-save effect — no
             // need to write here. Submit-time write would be a stale
             // duplicate of what the user already has.
@@ -244,6 +246,7 @@ export function ESignUI() {
             const msg = e instanceof Error ? e.message : "Signing failed";
             setError(friendlyError(msg, "Couldn't apply that signature."));
             setStatus("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, getSignatureData, pageNumber, posX, posY, sigWidth, sigHeight]);
 

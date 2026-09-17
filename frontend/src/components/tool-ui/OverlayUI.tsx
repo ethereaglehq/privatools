@@ -6,6 +6,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { Upload, Download, Loader2, AlertCircle, FileText, X, Layers, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const MODES = [
@@ -50,10 +51,12 @@ export function OverlayUI() {
             setResultBlob(blob);
             downloadBlob(blob, outputName);
             setState("done");
+            emitToolRun({ outcome: "success", files: 2 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Overlay failed";
             setError(friendlyError(msg, "Couldn't overlay those PDFs."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 2 });
         }
     }, [file1, file2, mode, outputName]);
 

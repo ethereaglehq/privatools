@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Download, Paperclip } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileIntake, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 
 export function AttachmentUI() {
@@ -29,10 +30,12 @@ export function AttachmentUI() {
             setResultBlob(blob);
             setStatus("done");
             downloadBlob(blob, pdfFile.name.replace(/\.pdf$/i, "_with_attachment.pdf"));
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Attachment failed";
             setError(friendlyError(msg, "Couldn't attach that file to the PDF."));
             setStatus("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [pdfFile, attachFile]);
 

@@ -7,6 +7,7 @@ import { useRef, useState, useEffect, useCallback } from "react";
 import { Upload, Shuffle, Loader2, AlertCircle, FileText, X, CheckCircle2, Download, RotateCcw } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, buildOutputFilename, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type MixMode = "alternate" | "reverse-alternate";
@@ -53,10 +54,12 @@ export function AlternateMixUI() {
             setResultBlob(blob);
             downloadBlob(blob, outputName);
             setState("done");
+            emitToolRun({ outcome: "success", files: 2 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Alternate mix failed";
             setError(friendlyError(msg, "Couldn't alternate-mix those PDFs."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 2 });
         }
     }, [file1, file2, mode, outputName]);
 

@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { chunkForTranslation } from "@/lib/translate/chunk";
 import {
@@ -166,6 +167,7 @@ export function TranslatePdfUI() {
             if (withText.length === 0) {
                 setError("No selectable text found — run the PDF through OCR first.");
                 setPhase("idle");
+                emitToolRun({ outcome: "error", files: 1 });
                 return;
             }
 
@@ -196,6 +198,7 @@ export function TranslatePdfUI() {
                     setChunkProgress({ done: i + 1, total: withText.length });
                 }
                 setPhase("done");
+                emitToolRun({ outcome: "success", files: 1 });
                 return;
             }
 
@@ -227,11 +230,13 @@ export function TranslatePdfUI() {
                 setPages([...out]);
             }
             setPhase("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             if (cancelRef.current || current !== runId.current) return;
             const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "Translation failed";
             setError(friendlyError(msg, "Couldn't translate that PDF."));
             setPhase("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, source, target, engine, byok.ready, byok.provider, byokModel, byokTarget]);
 

@@ -8,6 +8,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, Download, Loader2, CheckCircle2, X, FileText, AlertCircle, ScissorsLineDashed, RotateCcw } from "lucide-react";
 import { cn, friendlyError, isValidPageRange, pageRangeError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 type Mode = "pages" | "individual" | "every_n";
@@ -61,10 +62,12 @@ export function SplitUI() {
             const ext = blob.type.includes("zip") ? "zip" : "pdf";
             downloadBlob(blob, buildOutputFilename(file.name, "split", ext));
             setState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Split failed";
             setError(friendlyError(msg, "Couldn't split this PDF."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, canProcess, mode, pages, n]);
 

@@ -8,6 +8,7 @@ import { friendlyError } from "@/lib/utils";
 import { uploadFilesWithProgress, downloadBlob, chooseDownloadFilename, isAbortError, formatFileSize, buildOutputFilename } from "@/lib/api";
 import { getFilenameFromContentDisposition } from "@/lib/tool-endpoints";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileIntake, LocalFilePreview, StudioLayout, StudioFile, StudioProgress, StudioResult } from "@/skins/experience/ToolStudio";
 
 interface Item { id: string; name: string; size: string; file: File }
@@ -115,11 +116,13 @@ export function MultiFileUI({
             setResult({ blob, name });
             downloadBlob(blob, name);
             setState("done");
+            emitToolRun({ outcome: "success", files: files.length });
         } catch (e: unknown) {
             if (isAbortError(e)) { setState("idle"); return; }
             const msg = e instanceof Error ? e.message : "Processing failed";
             setError(friendlyError(msg, "Couldn't process those files."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: files.length });
         } finally { request.current = null; }
     }, [files, minFiles, fileLabel, outputFilename, actionVerb, endpoint, params]);
 

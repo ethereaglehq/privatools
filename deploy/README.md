@@ -38,8 +38,7 @@
 | Auth | Matching production public key at build/runtime, enabled providers, real HTTPS login, passkey and recovery tests | Configuration instructions prepared; production end-to-end behavior is not verified. |
 | Google OAuth | Production configuration and real hosted provider sign-in | Verified on September 14: hosted Google login completed and the production Clerk user shows a verified, linked Google identity. The callback still uses the older deployed website; new release key/account/API integration remains pending. |
 | Clerk deletion | Signed `user.deleted` webhook delivery removes local API access | Handler/tests exist; live delivery and production secret configuration remain unverified. |
-| Analytics | Reviewed remote tag settings, correct authorized account, intercepted fresh-browser validation | Root reports site-search/form/download/history automation and automatic user-data detection disabled. Scroll/outbound/video remain enabled by user choice. Browser collection stays off pending verification. |
-| Regional analytics | Installed proxy trust boundary and explicit reviewed positive country list | Default trust false/list empty. Unknown regions require opt-in. |
+| Analytics | Reviewed remote tag settings, correct authorized account, intercepted fresh-browser validation | Root reports site-search/form/download/history automation and automatic user-data detection disabled. Scroll/outbound/video remain enabled by user choice. Browser collection is enabled in production and default-on for every visitor since 17 September 2026; the Privacy page switch is the only opt-out. |
 | Edge discovery | Served robots, sitemap, redirects and cache rules match reviewed intent | Previous public robots included Cloudflare-managed directives. Local files cannot change that dashboard policy. |
 | Backup / rollback | Consistent DB backup and restore rehearsal; old image/config retained | Backup script exists; no live backup/restore or off-host copy verified in this task. |
 
@@ -60,8 +59,6 @@ Use [the Oracle Compose template](oracle-vm/.env.example) for `/home/ubuntu/priv
 | `PUBLIC_API_BASE_URL` | Runtime | Preserve current approved value. Empty means same-origin; split origin requires its DNS/TLS/CORS checks. |
 | `GA4_MEASUREMENT_ID` | Runtime | Preserve the existing public measurement ID; no new property/ID was created. |
 | `GA_BROWSER_TAG_ENABLED` | Runtime | `false` until the user-selected Google measurement settings and automatic user-data detection safeguards are verified. Follow the current analytics runbook; do not disable the three explicitly retained features. |
-| `GA_TRUSTED_COUNTRY_HEADER` | Runtime | `false` until the exact installed nginx boundary is tested. |
-| `GA_DEFAULT_ON_COUNTRIES` | Runtime | Empty until the operator provides an explicit reviewed positive list. No legal geography is inferred. |
 | `PRIVATOOLS_IMAGE`, `GIT_SHA` | Release invocation | Verified immutable digest and matching full source SHA. Runtime `PRIVATOOLS_BUILD_SHA` is derived by Compose. |
 
 The backend verifies Clerk with public JWKS and does not need `CLERK_SECRET_KEY`. The legacy GA Measurement Protocol compatibility endpoint may still read `GA4_API_SECRET` for cached older clients; it is not needed to enable the new browser tag and must never appear in frontend variables. See [Clerk setup](clerk-production.md) and [analytics switches and verification](analytics.md).
@@ -113,7 +110,7 @@ Confirm the returned `build_sha` equals the recorded old SHA. The automatic scri
 
 The backup script uses SQLite `VACUUM INTO` for a consistent snapshot and verifies the `users` table. Rehearse restoring a copied snapshot into an **isolated** empty data volume, run SQLite integrity checks, and check account/API-key behavior with synthetic data before trusting it. A same-VM backup is not disaster recovery. A production restore requires a maintenance window, stopped writers, a current emergency backup, correct appuser ownership, and intentional preservation/removal of matching WAL/SHM files; do not copy a live WAL-mode database with plain `cp`.
 
-For nginx failure, restore the recorded old config, validate with `nginx -t`, then reload. If regional analytics trust cannot be verified, set `GA_TRUSTED_COUNTRY_HEADER=false` and leave the country list empty. If the browser tag configuration is uncertain, keep `GA_BROWSER_TAG_ENABLED=false`. Do not change DNS merely to roll back the app; the [API split runbook](api-subdomain-split.md) explains the upload-cap implications of reverting that separate setting.
+For nginx failure, restore the recorded old config, validate with `nginx -t`, then reload. If the browser tag configuration is uncertain, keep `GA_BROWSER_TAG_ENABLED=false`. Do not change DNS merely to roll back the app; the [API split runbook](api-subdomain-split.md) explains the upload-cap implications of reverting that separate setting.
 
 ## Local evidence and remaining work
 

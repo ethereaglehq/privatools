@@ -19,6 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, Download, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatFileSize, downloadBlob } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
@@ -210,6 +211,7 @@ export function SummarizePdfUI() {
                 if (cancelledRef.current || current !== runId.current) return;
                 setSummary(out);
                 setStage("done");
+                emitToolRun({ outcome: "success", files: 1 });
                 return;
             }
 
@@ -251,6 +253,7 @@ export function SummarizePdfUI() {
             if (!final.trim()) throw new Error("The model returned no summary. Try a longer text document or another model.");
             setSummary(final.trim());
             setStage("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (err) {
             if (current !== runId.current || cancelledRef.current) return;
             // A ByokError already carries wording aimed at the user and, by
@@ -263,6 +266,7 @@ export function SummarizePdfUI() {
             if (!(err instanceof ByokError)) console.error(err);
             setError(msg);
             setStage("error");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, length, engine, model, byok.ready, byok.provider]);
 

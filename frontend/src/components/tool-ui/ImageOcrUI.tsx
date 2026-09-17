@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { ScanText, Trash2, Copy, Download, Loader2, AlertCircle, Check, Languages, Ban } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFileGetJson, uploadFile, downloadBlob, buildOutputFilename } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
@@ -151,6 +152,7 @@ export function ImageOcrUI() {
                 if (cancelRef.current) return;
                 setResult(data);
                 setStatus("done");
+                emitToolRun({ outcome: "success", files: 1 });
                 return;
             }
 
@@ -208,11 +210,13 @@ export function ImageOcrUI() {
             if (cancelRef.current) return;
             setResult({ text, language: engine === "local" ? lang : "auto", characters: text.length });
             setStatus("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             if (cancelRef.current) return;
             const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "OCR failed";
             setError(friendlyError(msg, "OCR failed"));
             setStatus("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         } finally {
             setStage(null);
             abortRef.current = null;

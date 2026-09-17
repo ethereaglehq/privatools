@@ -19,6 +19,7 @@ import {
     formatErrorForClipboard, postFormData,
 } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
+import { emitToolRun, runOutcome } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { PdfWatermarkPreview } from "./pdf/PdfWatermarkPreview";
 import { AssetPicker } from "@/components/AssetPicker";
@@ -151,6 +152,7 @@ export function WatermarkUI() {
         const concurrency = 3;
         let cursor = 0;
         const targetIds = [...ids];
+        let done = 0, failed = 0;
 
         // Latest snapshot lookup — state is async so we use a local map.
         const fileMap = new Map(files.map(f => [f.id, f.file]));
@@ -165,10 +167,12 @@ export function WatermarkUI() {
                 try {
                     const blob = await runOne(f);
                     setFiles(prev => prev.map(x => x.id === id ? { ...x, status: "done", blob } : x));
+                    done++;
                 } catch (e: unknown) {
                     const raw = e instanceof Error ? e.message : "Watermark failed";
                     setFiles(prev => prev.map(x => x.id === id ? { ...x, status: "failed", error: friendlyError(raw, "Watermark failed") } : x));
                     setErrorObj(e);
+                    failed++;
                 }
             }
         };
@@ -176,6 +180,8 @@ export function WatermarkUI() {
         const workers: Promise<void>[] = [];
         for (let i = 0; i < Math.min(concurrency, targetIds.length); i++) workers.push(worker());
         await Promise.all(workers);
+        const outcome = runOutcome(done, failed);
+        if (outcome) emitToolRun({ outcome, files: done + failed });
         setState("done");
     }, [files, runOne]);
 

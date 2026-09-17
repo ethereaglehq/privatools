@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFileGetJson } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 
 type Status = "pass" | "fail" | "warn" | "manual";
@@ -103,10 +104,12 @@ export function AccessibilityCheckUI() {
             // Open straight onto the problems — a clean run shows everything.
             setFilter(data.summary.failed > 0 ? "fail" : "all");
             setStatus("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't check that PDF."));
             setStatus("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file]);
 

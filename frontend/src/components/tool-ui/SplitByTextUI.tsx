@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Scissors, CheckCircle2, RotateCcw, Download } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 const SPLIT_BY_TEXT_DEFAULTS: { caseSensitive: boolean } = {
@@ -46,10 +47,12 @@ export function SplitByTextUI() {
             const baseName = file.name.replace(/\.pdf$/i, "");
             downloadBlob(blob, `${baseName}_split.zip`);
             setState("done");
+            emitToolRun({ outcome: "success", files: 1 });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Split failed";
             setError(friendlyError(msg, "Couldn't split this PDF."));
             setState("idle");
+            emitToolRun({ outcome: "error", files: 1 });
         }
     }, [file, search, caseSensitive]);
 

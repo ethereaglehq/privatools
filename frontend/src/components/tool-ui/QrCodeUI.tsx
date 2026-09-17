@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Download, ImagePlus, Loader2, QrCode, X } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
 import { downloadBlob, formatFileSize, postFormData } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { ProcessingBar } from "./FileUploadZone";
 import { LabWorkspace } from "./SpecialistTools";
@@ -18,8 +19,8 @@ export function QrCodeUI() {
         active.current = true; const current = ++generation.current; setBusy(true); setError(null); setResult(null);
         try {
             const response = await postFormData("/qr-code", () => { const form = new FormData(); form.append("data", data); form.append("size", String(config.size)); form.append("format", config.format); form.append("fg_color", config.fgColor); form.append("bg_color", config.bgColor); if (logo) form.append("logo", logo); return form; });
-            const blob = await response.blob(); if (current === generation.current) setResult({blob, format:config.format, size:config.size, data});
-        } catch (e) { if (current === generation.current) setError(friendlyError(e instanceof Error ? e.message : "", "Couldn't generate that QR code.")); }
+            const blob = await response.blob(); if (current === generation.current) { setResult({blob, format:config.format, size:config.size, data}); emitToolRun({ outcome: "success" }); }
+        } catch (e) { if (current === generation.current) { setError(friendlyError(e instanceof Error ? e.message : "", "Couldn't generate that QR code.")); emitToolRun({ outcome: "error" }); } }
         finally { if (current === generation.current) { active.current = false; setBusy(false); } }
     }, [data, config.size, config.format, config.fgColor, config.bgColor, logo]);
     useEffect(() => { const listener = (e:KeyboardEvent) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); void process(); } }; window.addEventListener("keydown",listener); return () => window.removeEventListener("keydown",listener); }, [process]);

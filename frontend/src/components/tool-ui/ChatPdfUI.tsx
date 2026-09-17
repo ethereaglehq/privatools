@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, Loader2, MessageSquareText, RotateCcw, Send, User, FileText } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import { formatFileSize } from "@/lib/api";
+import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 import { AiTaskWorkspace } from "./AiTaskWorkspace";
 import { ToolCopyButton } from "./SpecialistTools";
@@ -135,11 +136,13 @@ export function ChatPdfUI() {
                 signal: controller.signal,
             });
             if (currentDocument === documentId.current) setMessages(m => [...m, { role: "assistant", content: answer }]);
+            emitToolRun({ outcome: "success" });
         } catch (e: unknown) {
             if (currentDocument !== documentId.current) return;
             if ((e as DOMException)?.name === "AbortError") { setMessages(history); setInput(question); return; }
             const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "The request failed.";
             setError(friendlyError(msg, "The request failed."));
+            emitToolRun({ outcome: "error" });
             // Put the question back so it isn't lost.
             setMessages(history);
             setInput(question);
