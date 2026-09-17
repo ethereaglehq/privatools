@@ -22,7 +22,7 @@ unchanged while the proxy is enabled deliberately.
 > **api-subdomain split**: the SPA's `/api` traffic moves to a grey-clouded
 > `api.privatools.me` (direct to the VM, uncapped, off Cloudflare), while the
 > apex/`www` are proxied for static. The code is shipped and flag-gated on
-> `PUBLIC_API_BASE_URL`. Follow **[deploy/api-subdomain-split.md](../deploy/api-subdomain-split.md)**
+> `PUBLIC_API_BASE_URL`. Follow **[deploy/api-subdomain-split.md](../../deploy/api-subdomain-split.md)**
 > for the exact ordered activation (add grey `api` record → cert → nginx vhost →
 > flip the backend flag → orange-cloud apex/`www`).
 

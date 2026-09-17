@@ -88,7 +88,7 @@ def main():
         parser.error("Run only inside an isolated candidate with PRIVATOOLS_CAPACITY_SANDBOX=1")
     if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"} or parsed.username or parsed.password or parsed.query or parsed.fragment or parsed.path.rstrip("/") != "/api/v1":
         parser.error("base-url must be a loopback /api/v1 endpoint without credentials or query")
-    for root in (Path.cwd(), Path(__file__).resolve().parents[1], Path("/app")):
+    for root in (Path.cwd(), Path(__file__).resolve().parents[2], Path("/app")):
         if (root / "backend/app/store.py").is_file():
             sys.path.insert(0, str(root))
             break

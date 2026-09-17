@@ -199,10 +199,10 @@ generator creates the samples, integrations, manifest with SHA-256 checksums,
 and ZIP under `frontend/public/api-starters/`.
 
 ```sh
-python3 scripts/api-starters-build.py
-python3 scripts/api-starters-build.py --check
-python3 scripts/api-starters-test.py
-node --test scripts/api-starters-artifacts.test.mjs
+python3 scripts/api/starters/build.py
+python3 scripts/api/starters/build.py --check
+python3 scripts/api/starters/test.py
+node --test scripts/api/starters/artifacts.test.mjs
 ```
 
 Tests use a local mock API and synthetic files; they do not use customer keys

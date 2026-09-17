@@ -1872,7 +1872,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     ],
                     # sameAs anchors the ORG entity itself. The GitHub repo is
                     # the strongest current node; add a Wikidata Q-number here
-                    # once minted (see docs/GEO-RUNBOOK.md) for full KG linkage.
+                    # once minted (see docs/seo/geo-runbook.md) for full KG linkage.
                     "sameAs": [
                         "https://github.com/ethereaglehq/privatools",
                         "https://x.com/ethereaglehq",

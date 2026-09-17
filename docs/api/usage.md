@@ -103,7 +103,7 @@ The displayed usage change compares two observations and may include other
 requests using the same key; it is not an isolated invoice for the sample.
 
 Download the complete [starter bundle](https://privatools.me/api-starters/privatools-api-starters.zip)
-or see [the starter guide](api-starters.md) for Python, JavaScript, n8n, and
+or see [the starter guide](starters.md) for Python, JavaScript, n8n, and
 Postman. Starter clients demonstrate idempotent job submission and recovery
 after a failed connection or failed local save.
 

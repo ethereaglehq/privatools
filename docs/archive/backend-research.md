@@ -1,4 +1,4 @@
-I'll write the report directly. This is a synthesis task — the deliverable is the markdown report itself, returned as my final response.
+> Historical research snapshot. Findings and deployment details describe an earlier release; verify current code and operational guides before using them.
 
 # PrivaTools Backend — Principal-Engineer Research Report
 
@@ -88,7 +88,7 @@ Severities below are the **adversarially-confirmed** verdicts (which downgraded 
 |---|---|---|---|
 | S1 | **No `cosign verify` at deploy.** Image trust rests on an unauthenticated OCI `revision` label, not the signature CI produces. "Signed" is conflated with "verified." | **High** | `auto-deploy.sh:142-154`; `grep -rn cosign` → only the signing step + comments. |
 | S2 | **Released image never vulnerability-scanned.** The one artifact that gets the signature is the one never CVE-checked; existing Trivy scans are `scan-type: fs` on the repo, not the built image. | **High** | `release.yml:37-49`; `security.yml:99-132`. |
-| S3 | **Cloudflare real-IP not restored in nginx.** On an orange-clouded apex, both the nginx `limit_req` zone and slowapi's rightmost-XFF key collapse to the CF edge IP. | **Med** | `nginx-privatools.conf:23`; `rate_limit.py:37-42`; no `set_real_ip_from` anywhere. **Currently latent** — apex not yet orange-clouded (`ROADMAP_STATUS.md:90`); SPA's expensive traffic flows through the grey api host which sees the true client IP. Wire the fix *before* orange-clouding. |
+| S3 | **Cloudflare real-IP not restored in nginx.** On an orange-clouded apex, both the nginx `limit_req` zone and slowapi's rightmost-XFF key collapse to the CF edge IP. | **Med** | `nginx-privatools.conf:23`; `rate_limit.py:37-42`; no `set_real_ip_from` anywhere. **Currently latent** — apex not yet orange-clouded (`docs/archive/roadmap-status-2026-06-18.md:90`); SPA's expensive traffic flows through the grey api host which sees the true client IP. Wire the fix *before* orange-clouding. |
 | S4 | **SVG→PNG fitz fallback bypasses the cairosvg SSRF/LFI guard.** The cairosvg path uses `block_external_refs`; the `fitz.open(filetype='svg')` fallback has no equivalent. Dormant today (cairo installed) but a libcairo regression silently switches to the unguarded backend. | **Med** | `svg_to_png_service.py:35-50`. Durable fix: sanitize SVG XML on ingress for *all* SVG consumers. |
 | S5 | **Public OpenAPI/Swagger in prod** (`docs_url='/api-docs'`, `/openapi.json` unauthenticated) publishes the full attack surface to scrapers/fuzzers. | Low | `main.py:398-400`. Set `docs_url=None, openapi_url=None` when `_is_prod`. |
 | S6 | **Route-level handlers leak `str(exc)` to clients** (`detail=f"Processing failed: {exc}"`) across ~40 routes, exposing temp paths and library internals — and *pre-empting* the global handler that deliberately returns generic 500s. | Med | `merge.py:142`, `developer.py:204`, +~35. |

@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-SCRIPT = Path(__file__).resolve().parents[2] / 'scripts/check-public-google-tag.py'
+SCRIPT = Path(__file__).resolve().parents[2] / 'scripts/analytics/check-public-google-tag.py'
 spec = importlib.util.spec_from_file_location('public_google_tag_check', SCRIPT)
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)

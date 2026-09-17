@@ -6,9 +6,9 @@ import { fileURLToPath } from 'node:url';
 import { resolve } from 'node:path';
 import { test } from 'node:test';
 import vm from 'node:vm';
-import { Client, StarterError, retryDelay } from '../examples/api/privatools.mjs';
+import { Client, StarterError, retryDelay } from '../../../examples/api/privatools.mjs';
 
-const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
+const root = resolve(fileURLToPath(new URL('../../..', import.meta.url)));
 const publicDir = resolve(root, 'frontend/public/api-starters');
 const readJson = async (name) => JSON.parse(await readFile(resolve(publicDir, name), 'utf8'));
 const base = 'https://api.privatools.me/api/v1';
@@ -113,7 +113,7 @@ test('download manifest hashes match and build is deterministic', async () => {
     assert.equal(createHash('sha256').update(bytes).digest('hex'), file.sha256);
     assert.equal(file.url, `/api-starters/${file.name}`);
   }
-  const check = spawnSync(process.env.PYTHON || 'python3', [resolve(root, 'scripts/api-starters-build.py'), '--check'], { encoding: 'utf8' });
+  const check = spawnSync(process.env.PYTHON || 'python3', [resolve(root, 'scripts/api/starters/build.py'), '--check'], { encoding: 'utf8' });
   assert.equal(check.status, 0, check.stderr + check.stdout);
 });
 

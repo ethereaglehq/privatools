@@ -28,6 +28,6 @@
 
 ## Interfaces and ownership
 
-Backend owns `backend/**` and backend tests. Playground owns `ApiPage.tsx`, dedicated playground modules/CSS/tests. Starters own `examples/api/**`, `frontend/public/api-starters/**`, `scripts/api-starters*`, and `docs/api-starters.md`. Root owns account client/component, account integration, benchmark, this plan, and release evidence.
+Backend owns `backend/**` and backend tests. Playground owns `ApiPage.tsx`, dedicated playground modules/CSS/tests. Starters own `examples/api/**`, `frontend/public/api-starters/**`, `scripts/api/starters/**`, and `docs/api/starters.md`. Root owns account client/component, account integration, benchmark, this plan, and release evidence.
 
 The dashboard consumes GET `/api/account/api-activity?key_id=...`: `keys[{key_id,label,revoked,units:{used,limit,remaining},bytes:{used,limit}}]`, `resets_at`, `days[{date,requests,succeeded,failed,avg_duration_ms}]`, and `recent[{request_id,key_id,operation,method,status_code,error_code,duration_ms,created_at}]`. Queries and aborted responses are scoped to the active account. Public download URLs begin `/api-starters/` and match the generated manifest.

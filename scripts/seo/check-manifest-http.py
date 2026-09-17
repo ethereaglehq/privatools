@@ -19,7 +19,7 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 import xml.etree.ElementTree as ET
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 PUBLIC = ROOT / 'frontend/public'
 DIST = ROOT / 'frontend/dist'
 CANONICAL = 'https://privatools.me'
@@ -63,7 +63,7 @@ class Document(HTMLParser):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--base', default='http://127.0.0.1:8000')
-    parser.add_argument('--output', type=Path, default=ROOT / 'docs/backend-integration/seo-manifest-http-checks.json')
+    parser.add_argument('--output', type=Path, default=ROOT / 'temp/verification/seo/manifest-http-checks.json')
     args = parser.parse_args()
     origin = urlsplit(args.base)
     if origin.hostname not in {'127.0.0.1', 'localhost', '::1'}:

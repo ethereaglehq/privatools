@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 import zipfile
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[3]
 SOURCE = ROOT / "examples/api"
 PUBLIC = ROOT / "frontend/public/api-starters"
 BASE = "https://api.privatools.me/api/v1"
