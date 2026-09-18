@@ -119,6 +119,45 @@ def test_tool_manifest_drives_routes_and_descriptions_without_stale_tables(manif
     assert '/tool/split-pdf' not in sitemap._build_sitemap_xml().decode()
 
 
+MERGE_ROW = {'slug': 'merge-pdf', 'name': 'Merge PDF', 'description': 'Combine PDFs',
+             'longDescription': 'Combine PDFs in the order you choose.', 'path': '/tool/merge-pdf'}
+COMPRESSOR_ROW = {'slug': 'image-compressor', 'name': 'Image Compressor', 'description': 'Shrink images',
+                  'longDescription': 'Shrink JPG, PNG and WebP files.', 'path': '/tools/image-compressor'}
+
+
+def tool_manifest(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text if isinstance(text, str) else json.dumps(text), encoding='utf-8')
+    return path
+
+
+def test_fallback_tables_read_the_committed_manifest_before_the_build(tmp_path):
+    public = tool_manifest(tmp_path / 'public' / 'tool-content.json', [MERGE_ROW])
+    dist = tool_manifest(tmp_path / 'dist' / 'tool-content.json', [MERGE_ROW, COMPRESSOR_ROW])
+    assert seo._fallback_tool_tables(public, dist) == ({'merge-pdf': ('Merge PDF', 'Combine PDFs in the order you choose.')}, {})
+
+
+@pytest.mark.parametrize('public_text', [None, '{', [{**MERGE_ROW, 'path': '/elsewhere/merge-pdf'}]],
+                         ids=['absent', 'not-json', 'invalid-route'])
+def test_fallback_tables_fall_through_to_the_build_manifest(tmp_path, public_text):
+    """The image ships the build but not frontend/public, so there the build
+    manifest is the only copy of the registries to fall back to."""
+    public = tmp_path / 'public' / 'tool-content.json'
+    if public_text is not None:
+        tool_manifest(public, public_text)
+    dist = tool_manifest(tmp_path / 'dist' / 'tool-content.json', [MERGE_ROW, COMPRESSOR_ROW])
+    assert seo._fallback_tool_tables(public, dist) == (
+        {'merge-pdf': ('Merge PDF', 'Combine PDFs in the order you choose.')},
+        {'image-compressor': ('Image Compressor', 'Shrink JPG, PNG and WebP files.')},
+    )
+
+
+def test_fallback_tables_refuse_to_start_without_any_tool_manifest(tmp_path):
+    """Empty tables would advertise zero tools and 404 every tool page."""
+    with pytest.raises(RuntimeError, match='npm run gen:llms'):
+        seo._fallback_tool_tables(tmp_path / 'public' / 'tool-content.json', tmp_path / 'dist' / 'tool-content.json')
+
+
 def test_sitemap_dates_do_not_change_with_request_day_and_private_pages_are_absent(manifests):
     manifests('blog', [article()])
     assert sitemap._build_sitemap_xml('2026-09-14') == sitemap._build_sitemap_xml('2030-01-01')

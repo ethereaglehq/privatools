@@ -460,18 +460,22 @@ def _comparisons() -> dict[str, dict]:
     return data if data is not None else _COMPARE_DATA
 
 
-def _tool_registries() -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str]]]:
-    data = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
-    if data is None:
-        return _PDF_TOOLS, _NONPDF_TOOLS
+def _tool_tables(data: dict[str, dict]) -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str]]] | None:
+    """Split tool manifest rows by route into PDF and non-PDF tables, or None if a route is invalid."""
     pdf, nonpdf = {}, {}
     for slug, row in data.items():
         prefix = (row.get("path") or "").rsplit("/", 1)[0]
         if prefix not in ("/tool", "/tools"):
             logging.getLogger(__name__).warning("Tool manifest has an invalid path for %s", slug)
-            return _PDF_TOOLS, _NONPDF_TOOLS
+            return None
         (pdf if prefix == "/tool" else nonpdf)[slug] = (row.get("name") or row["title"], row.get("longDescription") or row.get("description") or "")
     return pdf, nonpdf
+
+
+def _tool_registries() -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str]]]:
+    data = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
+    tables = _tool_tables(data) if data is not None else None
+    return tables or (_PDF_TOOLS, _NONPDF_TOOLS)
 
 
 _SEO_FIELDS = ("seoTitle", "metaDescription", "lastReviewed")
@@ -723,260 +727,36 @@ def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
 
 
 # ---------------------------------------------------------------------------
-# PDF tool meta  (slug → (name, long_description))
+# Fallback tool tables  (slug → (name, long_description))
+#
+# `_tool_registries()` serves these when the build manifest cannot be loaded,
+# as in a checkout without a frontend build. They hold no text of their own:
+# gen-llms.mjs writes the registries (frontend/src/data/{tools,non-pdf-tools}.ts)
+# to frontend/public/tool-content.json, which is committed, and that file is
+# read here. The hand-written copy it replaces had drifted on most tools and
+# still carried claims the registries had corrected. The image ships the build
+# but not frontend/public, so there the build manifest is read instead.
 # ---------------------------------------------------------------------------
-_PDF_TOOLS: dict[str, tuple[str, str]] = {
-    "merge-pdf": ("Merge PDF", "Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. Up to 500 MB per file, no sign-up, no watermarks. Your files are processed securely and never stored."),
-    "split-pdf": ("Split PDF", "Split PDF online for free — divide a PDF into separate files by page range. Extract specific pages or split every page into individual PDFs. No installation, no registration required. Privacy-first: files are never stored on our servers."),
-    "split-by-bookmarks": ("Split by Bookmarks", "Split PDF by bookmarks or chapters automatically. Detect table of contents entries and create separate PDFs for each section. Ideal for splitting textbooks, manuals, and reports. Free, private, no sign-up."),
-    "split-by-size": ("Split by Size", "Split large PDFs into smaller files by maximum file size. Perfect for email attachments with size limits. Set your target size (e.g., 10 MB) and automatically split into compliant chunks. Free online tool, no registration."),
-    "organize-pages": ("Organize Pages", "Rearrange PDF pages online — drag and drop page thumbnails to reorder, delete, rotate, or duplicate pages visually. Free PDF page organizer with no watermarks. Preview every page before saving."),
-    "delete-pages": ("Delete Pages", "Remove pages from PDF online for free. Select specific pages or ranges to permanently delete. Preview thumbnails and choose exactly which pages to remove. No sign-up, no watermarks, files never stored."),
-    "extract-pages": ("Extract Pages", "Extract pages from PDF online — save specific pages as a new PDF file. Select individual pages or ranges to pull out while keeping the original document intact. Free, fast, and private."),
-    "remove-blank-pages": ("Remove Blank Pages", "Remove blank pages from PDF online for free. Automatically scan and delete entirely blank or near-blank pages from scanned documents. Clean up your PDFs by removing empty fillers and scan artifacts."),
-    "reverse-pdf": ("Reverse PDF", "Reverse the page order of a PDF online for free. Flip the entire document so the last page becomes first. Useful for fixing duplex scan order or creating back-to-front presentations."),
-    "booklet-pdf": ("PDF Booklet", "Rearrange PDF pages for booklet printing online for free. Automatically reorder pages so that when printed and folded, they create a correctly ordered booklet. No software needed."),
-    "batch-compress-pdf": ("Batch Compress PDF", "Batch compress multiple PDFs online for free — upload up to 50 files and compress them all in parallel. Choose light, balanced, or extreme compression. Download results as a single ZIP file. No sign-up, 500 MB per file."),
-    "pdf-page-counter": ("PDF Page Counter", "Count pages in multiple PDFs online for free — upload up to 100 files and instantly see page counts for each file plus the total. Perfect for print estimates, document audits, and project planning."),
-    # NOTE: image-upscaler and audio-converter live in _NONPDF_TOOLS only.
-    # They were previously duplicated here, which caused /tool/audio-converter
-    # to resolve to a non-existent page and bled their entries into the
-    # PDF-only ItemList on the homepage. See seo_meta canonical category map.
-    "edit-pdf": ("Edit PDF", "Edit PDF online for free — modify text, images, and content directly inside your PDF. Add new text blocks, replace images, and make changes without converting to Word first. Full-featured PDF editor with no watermarks."),
-    "sign-pdf": ("Sign PDF", "Add signature to PDF online for free. Draw, type, or upload your signature image and place it anywhere on the document. Create legally-binding electronic signatures without printing. No account required."),
-    "watermark": ("Watermark PDF", "Add watermark to PDF online for free. Apply text or image watermarks to every page with full control over opacity, position, rotation, and font size. Protect your documents from unauthorized use. No sign-up needed."),
-    "remove-watermark": ("Remove Watermark", "Remove watermark from PDF online for free. Detects visible watermarks — diagonal stamps, CONFIDENTIAL and DRAFT marks, repeated logos — shows you exactly what it found, and removes only what you confirm. Lossless where the PDF allows it: the rest of the page is left untouched. No sign-up, no watermarks added, files never stored."),
-    "header-footer": ("PDF Header & Footer", "Add headers and footers to PDF online. Insert custom text, dates, page numbers, or company information in the header and footer of your PDF pages. Free tool with flexible formatting options."),
-    "page-numbers": ("Add Page Numbers to PDF", "Add page numbers to PDF online for free. Choose from multiple formats, set starting page and number, position, font, and optional prefix. No watermarks, no sign-up."),
-    "bates-numbering": ("Bates Numbering PDF", "Add Bates numbering to PDF for legal document indexing. Apply sequential Bates stamps with custom prefix, suffix, and start number. Essential for legal discovery and court filings. Free online tool."),
-    "bookmarks": ("PDF Bookmarks", "Add bookmarks to PDF online — create, rename, reorder, and nest bookmarks for easier navigation in large documents. Build a clickable table of contents for your PDF. Free, no software installation."),
-    "stamp-pdf": ("PDF Stamp", "Add stamps to PDF online for free — apply CONFIDENTIAL, DRAFT, APPROVED, COPY, VOID, or custom text stamps to any page. Adjustable opacity, position, and size. No sign-up, no watermarks."),
-    "esign-pdf": ("E-Sign PDF", "E-sign PDF online for free — draw your signature with mouse or finger, then place it on any page. The simplest way to electronically sign documents without printing. No account needed."),
-    "annotate-pdf": ("Annotate PDF", "Annotate PDF online for free — add highlights, underlines, strikethrough, and sticky notes with customizable colors. Perfect for reviewing documents, studying, and collaborative feedback. No software needed."),
-    "add-shapes": ("Add Shapes to PDF", "Add shapes to PDF online — draw rectangles, circles, lines, and arrows with custom colors, fill, and stroke width. Perfect for technical drawings, callouts, and visual annotations. Free tool."),
-    "add-attachment": ("Add Attachment to PDF", "Embed files inside a PDF online — attach images, documents, spreadsheets, or any file as an embedded attachment that recipients can extract. Perfect for sending supplementary materials."),
-    "add-hyperlinks": ("Add Hyperlinks to PDF", "Add clickable hyperlinks to PDF online for free. Draw link areas over text or images and attach URLs. Create interactive PDFs with internal and external navigation links."),
-    "transparent-background": ("PDF Transparent Background", "Convert near-white PDF backgrounds to transparency online for free. Perfect for layering PDF content over colored backgrounds or presentations."),
-    "compress-pdf": ("Compress PDF", "Compress PDF online for free — reduce PDF file size by up to 90% without losing quality. Choose from light, balanced, or extreme compression levels. Preview estimated savings before downloading. No file limits, no sign-up."),
-    "flatten-pdf": ("Flatten PDF", "Flatten PDF online — permanently merge interactive form fields, annotations, and layers into static page content. Essential for submitting filled forms, preventing further edits. Free tool."),
-    "deskew-pdf": ("Deskew PDF", "Deskew scanned PDF pages online for free. Automatically detect and correct the tilt angle of scanned documents so text appears perfectly straight and readable. Ideal for fixing wonky scans."),
-    "repair-pdf": ("Repair PDF", "Repair corrupted PDF files online for free. Fix damaged, broken, or unreadable PDFs that won't open in standard PDF readers. Recover content from corrupted documents."),
-    "resize-pdf": ("Resize PDF", "Resize PDF pages online — change page dimensions to A4, Letter, Legal, or custom sizes. Scale content to fit new page sizes while maintaining aspect ratio. Free PDF page resizer with no watermarks."),
-    "rotate-pdf": ("Rotate PDF", "Rotate PDF pages online for free — rotate individual pages or all pages by 90°, 180°, or 270°. Fix sideways or upside-down scanned documents instantly. Preview each page before saving."),
-    "grayscale-pdf": ("Grayscale PDF", "Convert PDF to grayscale online for free — turn color PDFs into black and white. Save ink when printing, reduce file size, or prepare documents for monochrome printing."),
-    "crop-pdf": ("Crop PDF", "Crop PDF online for free — trim margins, remove white space, or change the visible area of PDF pages. Draw a crop box to remove unwanted borders. Perfect for removing headers, footers, or excess whitespace."),
-    "auto-crop": ("Auto-Crop PDF (Remove Margins)", "Auto-crop PDF online for free — automatically detect the content bounding box on every page and trim the surrounding whitespace. Ideal for reading PDFs on e-readers, tablets, or phones where screen space is limited. Also called Remove Margins. Free tool, no sign-up."),
-    "invert-colors": ("Invert PDF Colors", "Invert PDF colors online for a dark mode reading experience. Convert white-background PDFs to dark-background versions to reduce eye strain when reading in the dark."),
-    "protect-pdf": ("Protect PDF with Password", "Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set open passwords, permission passwords, and control printing, copying, and editing access."),
-    "unlock-pdf": ("Unlock PDF", "Remove password from PDF online for free. Unlock password-protected PDFs you own by entering the correct password. Remove restrictions on printing, copying, and editing."),
-    "redact-pdf": ("Redact PDF", "Redact PDF online for free — permanently black out sensitive information including names, addresses, SSNs, and confidential text. WARNING: Redaction is irreversible."),
-    "strip-metadata": ("Strip PDF Metadata", "Remove metadata from PDF online — strip author name, creation date, GPS coordinates, software info, and all hidden metadata for maximum privacy before sharing documents."),
-    "delete-annotations": ("Delete PDF Annotations", "Remove all annotations from PDF online — delete highlights, comments, sticky notes, drawings, and markup from your documents. Clean up reviewed PDFs before final distribution."),
-    "metadata": ("PDF Metadata Editor", "View and edit PDF metadata online for free — read and modify Title, Author, Subject, Keywords, Creator, and Producer fields. See exactly what information is embedded in your PDF."),
-    "set-permissions": ("PDF Permissions", "Set PDF permissions online — control who can print, copy, edit, or annotate your PDF documents. Apply granular access controls with owner password protection."),
-    "translate-pdf": ("Translate PDF", "Translate a PDF online for free \u2014 the whole translation runs in your browser, so your document is never uploaded anywhere. English to and from 24 languages including Spanish, French, German, Chinese, Japanese, Arabic and Hindi. No account, no API key, no watermarks."),
-    "bates-remove": ("Remove Bates Numbering", "Remove Bates numbering from a PDF online for free \u2014 strip legal production stamps from the page margins. Uses redaction, so the numbers are removed from the file rather than covered over. Supply the prefix or suffix for an exact match. No sign-up, no watermarks, files never stored."),
-    "accessibility-check": ("PDF Accessibility Checker", "Check PDF accessibility online for free \u2014 audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels and reading order, with a plain-English fix for every issue. Read-only \u2014 your file is never modified. No sign-up, no watermarks."),
-    "pdfa-validator": ("PDF/A Validator", "Validate PDF/A compliance online for free. Run basic PDF/A indicator checks to verify your document meets long-term archiving standards. Free tool, no software needed."),
-    "verify-signature": ("Verify PDF Digital Signature", "Inspect digital signature fields in a PDF online for free. Verify signature validity, view signer information, and check certificate details."),
-    "sanitize-pdf": ("Sanitize PDF", "Aggressively sanitize PDF documents online — remove hidden data, JavaScript, embedded files, and metadata layers for maximum security before sharing or publishing."),
-    "html-to-pdf": ("HTML to PDF", "Convert HTML to PDF online for free. Paste a URL or upload an HTML file and render it as a pixel-perfect, print-ready PDF document. Preserves CSS styles, images, and layout."),
-    "image-to-pdf": ("Image to PDF", "Convert images to PDF online for free — combine JPG, PNG, TIFF, WebP, or BMP images into a single PDF document. Set page size, orientation, margins, and image quality."),
-    "office-to-pdf": ("Office to PDF", "Convert Word, Excel, and PowerPoint to PDF online for free. Upload any Microsoft Office document (.docx, .xlsx, .pptx) and get a perfectly formatted PDF."),
-    "markdown-to-pdf": ("Markdown to PDF", "Convert Markdown to PDF online for free. Upload .md, .json, .yaml, or .toml files and render them as beautifully formatted, structured PDF documents."),
-    "csv-to-pdf": ("CSV to PDF", "Convert CSV to PDF online for free — upload a CSV spreadsheet and generate a cleanly formatted PDF with tables, invoices, or report layouts."),
-    "word-to-pdf": ("Word to PDF", "Convert Word to PDF online for free — upload .docx documents and convert them to high-quality PDFs preserving headings, bold, italic text, images, and paragraph formatting."),
-    "excel-to-pdf": ("Excel to PDF", "Convert Excel to PDF online for free — upload .xlsx spreadsheets and convert all sheets into a formatted PDF with headers, grid lines, and automatic column sizing."),
-    "pptx-to-pdf-convert": ("PowerPoint to PDF", "Convert PowerPoint to PDF online for free — upload .pptx presentations and get a high-quality PDF preserving slide dimensions, text, headings, and formatting."),
-    "txt-to-pdf": ("Text to PDF", "Convert text to PDF online for free — upload .txt files and get a cleanly formatted PDF with monospace font, word wrap, and proper pagination."),
-    "json-to-pdf": ("JSON to PDF", "Convert JSON to PDF online for free — upload JSON data and render it as a styled, formatted PDF document. Great for API responses and configuration files."),
-    "xml-to-pdf": ("XML to PDF", "Convert XML to PDF online for free — upload XML data and generate a formatted PDF document with proper structure and syntax highlighting."),
-    "epub-to-pdf": ("EPUB to PDF", "Convert EPUB to PDF online for free — transform e-books from EPUB format into printable, shareable PDF documents. Preserves chapters, headings, and images."),
-    "rtf-to-pdf": ("RTF to PDF", "Convert RTF to PDF online for free — upload Rich Text Format files and convert them to high-quality PDF preserving bold, italic, fonts, and paragraph formatting."),
-    "pdf-to-excel": ("PDF to Excel", "Convert PDF to Excel online for free — extract tables and data from PDF documents into editable XLSX spreadsheets. Great for invoices, financial reports, and tabular data."),
-    "pdf-to-image": ("PDF to Image", "Convert PDF to images online for free — render each page as a high-resolution JPG or PNG image. Choose DPI (up to 300), color mode, and output format."),
-    "pdf-to-long-image": ("PDF to Long Image", "Stitch a whole PDF into one long image online for free — every page is rendered and stacked vertically into a single tall PNG or JPG, ready to share or scroll. Unlike PDF-to-Image (one file per page), you get the entire document as one picture. Files are processed privately and deleted on response."),
-    "pdf-to-pptx": ("PDF to PowerPoint", "Convert PDF to PowerPoint online for free — create a PPTX presentation where each page becomes a slide. Great for presenting PDF content in meetings."),
-    "pdf-to-text": ("PDF to Text", "Extract text from PDF online for free — pull all readable text content from your PDF into a clean plain-text document. Works with both text-based and searchable PDFs."),
-    "pdf-to-word": ("PDF to Word", "Convert PDF to Word online for free — extract text, paragraphs, and images into an editable DOCX document. No PrivaTools watermarks. Server upload and capacity limits apply."),
-    "pdf-to-epub": ("PDF to EPUB", "Convert PDF to EPUB online for free — transform PDF documents into reflowable e-book format compatible with Kindle, Kobo, Apple Books, and all modern e-reader devices."),
-    "pdf-to-markdown": ("PDF to Markdown", "Convert PDF to Markdown online for free — extract content with automatic heading detection, bold text preservation, and clean formatting. Perfect for documentation and wikis."),
-    "extract-tables": ("PDF Table Extractor", "Extract tables from PDF to CSV online for free. Automatically detect and extract tabular data from invoices, reports, and financial statements into clean, editable CSV format."),
-    "alternate-mix": ("Alternate Mix PDF", "Alternate mix PDF pages online — interleave pages from two or more PDFs for duplex scanning workflows. Combine front-side and back-side scans into the correct page order."),
-    "compare-pdf": ("Compare PDF", "Compare two PDFs online for free — upload two versions of a document and get a visual diff highlighting every text change, addition, and deletion. Essential for contract review."),
-    "extract-images": ("Extract Images from PDF", "Extract images from PDF online for free — detect and download all embedded images from your PDF as individual PNG or JPEG files."),
-    "fill-form": ("Fill PDF Form", "Fill PDF forms online for free — open interactive PDF forms, fill in all text fields, checkboxes, and dropdowns, then save the completed document. No Adobe Acrobat needed."),
-    "nup": ("N-Up PDF", "Print multiple PDF pages per sheet online — arrange 2, 4, 6, or 9 pages onto a single sheet for booklet-style printing. Save paper and create handouts."),
-    "ocr-pdf": ("OCR PDF", "OCR PDF online for free — convert scanned documents into searchable, selectable text using Tesseract OCR. Supports 100+ languages. Output as searchable PDF or plain text."),
-    "overlay": ("Overlay PDF", "Overlay PDF pages online — layer one PDF document on top of another. Perfect for adding letterhead, branded backgrounds, or watermark stamps to existing PDFs."),
-    "qr-code": ("QR Code PDF", "Add QR code to PDF online for free — generate a QR code from any URL or text and stamp it onto your PDF pages at a chosen position and size."),
-    "pdf-to-pdfa": ("PDF to PDF/A", "Convert PDF to PDF/A online for free — create ISO-standardized archival documents for long-term digital preservation. Essential for legal compliance and government records."),
-    "form-creator": ("PDF Form Creator", "Create PDF forms online — add text fields, checkboxes, radio buttons, and dropdown menus to any PDF. Build fillable forms without Adobe Acrobat."),
-    "whiteout-pdf": ("PDF White-Out / Eraser", "White-out content in PDF online — place white rectangles over text, images, or any content to permanently hide it. Free digital erasure tool."),
-    # ── Image → PDF variants ──────────────────────────────────────────────
-    "jpg-to-pdf":  ("JPG to PDF",  "Convert JPG to PDF online for free — combine one or more JPG/JPEG photos into a single PDF document with custom page size and orientation. No sign-up, no watermarks."),
-    "png-to-pdf":  ("PNG to PDF",  "Convert PNG to PDF online for free — turn PNG screenshots and graphics into a single PDF with full transparency support. Drag, drop, reorder. No watermarks."),
-    "heic-to-pdf": ("HEIC to PDF", "Convert HEIC to PDF online for free — turn iPhone HEIC/HEIF photos into a single PDF document, no Apple device required. Bulk-convert multiple HEIC images."),
-    "webp-to-pdf": ("WebP to PDF", "Convert WebP to PDF online for free — turn modern WebP images into a portable PDF document. Preserves transparency and quality. No sign-up."),
-    "tiff-to-pdf": ("TIFF to PDF", "Convert TIFF to PDF online for free — combine multi-page TIFF/TIF scans into a single searchable PDF. Perfect for archived scanned documents."),
-    "bmp-to-pdf":  ("BMP to PDF",  "Convert BMP to PDF online for free — turn legacy Windows BMP bitmap images into a portable PDF document with custom page sizing. No sign-up."),
-    "gif-to-pdf":  ("GIF to PDF",  "Convert GIF to PDF online for free — combine GIF images into a single PDF (uses the first frame of animated GIFs). Drag, drop, and merge in one step."),
-    "svg-to-pdf":  ("SVG to PDF",  "Convert SVG to PDF online for free — render scalable vector graphics into a print-ready PDF preserving sharp lines at any scale. No watermarks."),
-    "odt-to-pdf":  ("ODT to PDF",  "Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice, OpenOffice) into universally-compatible PDFs. Preserves headings and styles."),
-    # ── PDF → image variants ──────────────────────────────────────────────
-    "pdf-to-jpg":  ("PDF to JPG",  "Convert PDF to JPG online for free — render every page of a PDF as a high-quality JPG image. Choose DPI from 72 to 300. No sign-up, no watermarks."),
-    "pdf-to-png":  ("PDF to PNG",  "Convert PDF to PNG online for free — render every page of a PDF as a lossless PNG image with optional transparency. Choose DPI up to 300."),
-    "pdf-to-tiff": ("PDF to TIFF", "Convert PDF to TIFF online for free — render PDF pages into multi-page TIFF format ideal for archival, fax, and document management systems."),
-    "pdf-to-bmp":  ("PDF to BMP",  "Convert PDF to BMP online for free — render PDF pages into legacy BMP bitmap files. Useful for tools that only accept Windows bitmap input."),
-    "pdf-to-gif":  ("PDF to GIF",  "Convert PDF to GIF online for free — render PDF pages as GIF images for inline previews, social posts, or thumbnails."),
-    "pdf-to-svg":  ("PDF to SVG",  "Convert PDF to SVG online for free — render PDF pages as scalable SVG vectors that stay sharp at any zoom level. Perfect for web embedding."),
-    # ── Advanced & AI tools ───────────────────────────────────────────────
-    "split-in-half":  ("Split PDF in Half",   "Split PDF pages in half online for free — split each page horizontally or vertically. Perfect for two-up scans, magazine spreads, and side-by-side layouts."),
-    "highlight-pdf":  ("Highlight PDF",       "Highlight every match of a word or phrase in PDF online for free. Auto-find and yellow-highlight all occurrences across the whole document. Free, fast, private."),
-    "summarize-pdf":  ("Summarize PDF (AI)",  "Summarize PDF online for free using local AI — distilbart runs entirely in your browser via WebAssembly, so the document is not uploaded anywhere. Optionally use your own OpenAI, Anthropic or Gemini key for a stronger model; the text then goes straight from your browser to that provider and still never through our servers."),
-    "chat-with-pdf":  ("Chat with PDF (AI)",  "Chat with a PDF online free — ask questions and get answers grounded in the document. Text extraction happens in your browser and questions go directly to the AI provider you choose with your own API key (Anthropic, OpenAI, Gemini, Groq, Mistral, OpenRouter, or self-hosted). The PDF never touches our servers."),
-    "smart-redact":   ("Smart Redact PDF (AI)", "Auto-redact PII from PDF online for free. Emails, phone numbers, SSNs and card numbers are always found in your browser by pattern matching. Names and addresses are found by a local BERT-NER model, or optionally by your own AI key — and anything the pattern pass already found is masked before any text is sent. You review every suggestion before the backend permanently applies the approved redactions."),
-    # v1.2.0 additions
-    "pdf-to-html":     ("PDF to HTML",        "Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web."),
-    "pdf-to-rtf":      ("PDF to RTF",         "Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text."),
-    "split-by-text":   ("Split by Text",      "Split PDF by text or keyword online for free — divide a document at every page that contains a search phrase. Perfect for batch-split statements, contracts, invoices, or any PDF with section headings. Case-sensitive optional."),
-    "web-optimize-pdf": ("Web Optimize PDF",  "Optimize PDFs for the web online for free — linearizes the file so the first page renders before the whole document has downloaded. Essential for PDFs served over a CDN or embedded inline. Powered by qpdf."),
-}
+_SOURCE_TOOL_JSON = _Path(__file__).parent.parent.parent / "frontend" / "public" / "tool-content.json"
 
-# ---------------------------------------------------------------------------
-# Non-PDF tool meta  (slug → (name, long_description))
-# ---------------------------------------------------------------------------
-_NONPDF_TOOLS: dict[str, tuple[str, str]] = {
-    "image-compressor": ("Image Compressor", "Compress images online for free — reduce JPEG, PNG, and WebP file sizes by up to 80% without visible quality loss. Select files, compare sizes, and download the result. Review the processing notice for browser or server handling."),
-    "image-converter": ("Image Format Converter", "Convert images online for free — change between WebP, PNG, JPG, TIFF, BMP and HEIC formats. Review the processing notice; some conversions use the server."),
-    "remove-exif": ("Remove EXIF Data", "Remove EXIF data from photos online for free — strip GPS location, camera model, timestamps, and all metadata before sharing images online. Protect your privacy with one click."),
-    "resize-crop-image": ("Resize & Crop Image", "Resize and crop images online for free — set exact dimensions, aspect ratios, or pixel sizes. Bulk resize multiple images for social media, thumbnails, profile pictures, and websites."),
-    "video-to-gif": ("Video to GIF Converter", "Convert video to GIF online for free — upload MP4, MOV, or WebM files, select the clip range, and export a looping animated GIF. Adjust FPS and resolution. No watermarks."),
-    "image-ocr": ("Image OCR", "Extract text from images online for free using OCR. Upload photos of documents, screenshots, receipts, or handwritten notes. Supports 40+ languages via Tesseract. Private and instant."),
-    "extract-audio": ("Extract Audio from Video", "Extract audio from video online for free — pull the audio track from any MP4, MOV, WebM, or AVI file and save as MP3, WAV, or OGG. No quality loss."),
-    "trim-media": ("Cut / Trim Video & Audio", "Cut and trim video or audio online for free — use a visual timeline to set in/out points and export the trimmed clip at full quality without re-encoding."),
-    "compress-video": ("Compress Video", "Compress video online for free — reduce video file size for email, messaging, and uploads. Choose quality presets from High Quality to WhatsApp-ready. Supports MP4, MOV, WebM."),
-    "json-xml-formatter": ("JSON / XML Formatter", "Format JSON and XML online for free — paste, prettify, validate, and highlight syntax errors instantly. 100% offline processing. Sensitive data never leaves your browser."),
-    "text-diff": ("Text Diff / Comparator", "Compare text online for free — paste two versions of text or code and get a line-by-line diff with additions in green and deletions in red. Perfect for code review."),
-    "base64": ("Base64 Encoder / Decoder", "Encode and decode Base64 online for free — convert text, files, or binary data to and from Base64 format instantly. Works entirely in your browser, no data sent anywhere."),
-    "hash-generator": ("Hash Generator", "Generate cryptographic hashes online for free — compute MD5, SHA-1, SHA-256, SHA-512, and more from text or files. Verify file integrity instantly. 100% private."),
-    "extract-archive": ("Extract Archive", "Extract ZIP and TAR archives online for free — upload .zip, .tar, .tar.gz, .tar.bz2, or .tar.xz files and extract all contents in an isolated container. Up to 500 MB per file, no sign-up."),
-    "create-zip": ("Create ZIP Archive", "Create ZIP archives online for free — select multiple files and compress them into a downloadable ZIP file. Fast, private, and up to 500 MB per file."),
-    "csv-json": ("CSV to JSON Converter", "Convert CSV to JSON online for free — upload a CSV spreadsheet and get a properly formatted JSON array. Also supports JSON to CSV. Perfect for data transformation."),
-    "markdown-html": ("Markdown to HTML Converter", "Convert Markdown to HTML online for free — paste Markdown text and get clean, rendered HTML. Preview the output instantly. Also supports HTML to Markdown."),
-    "heic-to-jpg": ("HEIC to JPG Converter", "Convert HEIC to JPG online for free — transform iPhone HEIC/HEIF photos into universally compatible JPG format. Bulk convert multiple photos at once. No upload required."),
-    "remove-background": ("Remove Image Background", "Remove background from images online for free — automatically detect and delete the background from photos to create transparent PNGs. Perfect for product photos, portraits, and logos."),
-    "svg-to-png": ("SVG to PNG Converter", "Convert SVG to PNG online for free — render vector graphics as high-resolution PNG images. Set custom width, height, and DPI. Perfect for using SVG icons in presentations."),
-    "image-watermark": ("Add Watermark to Image", "Add text or image watermarks to photos online for free — protect your images with customizable watermarks. Control opacity, position, and size. Batch watermark multiple images at once."),
-    "remove-image-watermark": ("Remove Image Watermark", "Remove a watermark from an image online for free. Drag a box over the watermark and it is reconstructed from the surrounding pixels — no account, nothing sent to third parties. Works best over gradients and texture; a very large selection is refused because too little of the image would remain to rebuild from."),
-    "generate-favicon": ("Favicon Generator", "Generate favicons online for free — upload any image and get ICO, PNG, and SVG favicon files for your website in all standard sizes (16x16, 32x32, 48x48, 192x192)."),
-    "make-collage": ("Photo Collage Maker", "Create photo collages online for free — arrange multiple images into grid layouts, contact sheets, or custom collages. Download as a high-resolution image file."),
-    "generate-barcode": ("Barcode Generator", "Generate barcodes online for free — create Code 128, QR Code, EAN-13, UPC, and other barcode formats. Download as high-resolution PNG. Perfect for product labels and inventory."),
-    "url-to-pdf": ("URL to PDF Converter", "Convert any web page URL to PDF online for free — enter a URL and get a rendered, print-ready PDF of the full page with styles and images preserved."),
-    "qr-reader": ("QR Code Reader", "Read and decode QR codes online for free — upload an image containing a QR code and extract the encoded text, URL, or data instantly. No app or camera required."),
-    "merge-images": ("Merge Images", "Merge multiple images online for free — combine JPG, PNG, and WebP files side by side or stacked vertically into a single image. Set spacing, alignment, and background color."),
-    # ── Round-N video/audio additions ─────────────────────────────────────
-    "video-to-pdf":     ("Video to PDF",         "Convert video to PDF online for free — extract frames from MP4/MOV/WebM at chosen intervals and save them as PDF pages. Perfect for slide capture and reference docs."),
-    "video-converter":  ("Video Converter",      "Convert video formats online for free — change between MP4, WebM, MOV, AVI, and MKV with adjustable quality. Powered by FFmpeg, no sign-up required."),
-    "video-resizer":    ("Video Resizer",        "Resize video resolution online for free — change video dimensions to 720p, 1080p, square, vertical, or custom sizes while preserving quality. Free FFmpeg-powered tool."),
-    "video-thumbnail":  ("Video Thumbnail",      "Generate video thumbnails online for free — extract poster frames from MP4/MOV/WebM at any timestamp. Save as JPG or PNG. Perfect for video previews."),
-    "video-merge":      ("Video Merge",          "Merge video files online for free — concatenate multiple MP4/MOV/WebM clips into a single video without re-encoding when possible. Free, no sign-up, no watermarks."),
-    "gif-to-mp4":       ("GIF to MP4",           "Convert GIF to MP4 online for free — turn animated GIFs into smaller, higher-quality MP4 video files. Reduce file size by up to 90% while preserving smoothness."),
-    "add-subtitles":    ("Burn Subtitles into Video", "Add subtitles to video online for free — burn .srt or .vtt subtitle files directly into MP4/MOV videos. Permanent overlays viewable on any player."),
-    "audio-merge":      ("Audio Merge",          "Merge audio files online for free — concatenate MP3, WAV, OGG, FLAC, or AAC tracks into a single seamless audio file. Free FFmpeg-powered tool."),
-    # ── Round-O utilities (mostly browser-only) ───────────────────────────
-    "subtitle-converter": ("Subtitle Converter", "Convert subtitle files online for free — translate between SRT, VTT, and ASS formats entirely in your browser. Fix timecodes and re-encoding instantly."),
-    "password-generator": ("Password Generator", "Generate strong passwords online for free — cryptographically-secure random passwords with custom length, symbols, digits, and exclusion rules. Runs 100% in your browser."),
-    "uuid-generator":     ("UUID Generator",     "Generate UUIDs online for free — create v4 (random) UUIDs in bulk with copy-to-clipboard. Browser-only, nothing leaves your device. Perfect for API keys and IDs."),
-    "lorem-ipsum":        ("Lorem Ipsum Generator", "Generate Lorem Ipsum placeholder text online for free — by paragraphs, sentences, or words with adjustable length. Browser-only, no sign-up."),
-    "word-counter":       ("Word Counter",       "Count words, characters, sentences, paragraphs, and reading time online for free — live updates as you type. Browser-only, perfect for essays and articles."),
-    "color-converter":    ("Color Converter",    "Convert colors online for free — translate between HEX, RGB, RGBA, HSL, and HSLA formats with a live picker and preview. 100% in your browser."),
-    "url-encoder":        ("URL Encoder / Decoder", "Encode or decode URLs online for free — percent-encode strings for use in query parameters, or decode %20/%26/etc back to readable text. Runs entirely in your browser. For JWT decoding, use the dedicated JWT Decoder."),
-    # v1.1.0 / v1.2.0 additions
-    "audio-converter":    ("Audio Converter",    "Convert audio files online for free — change between MP3, WAV, OGG, FLAC, and AAC formats. Choose your preferred bitrate (64k to 320k). Powered by FFmpeg for professional-quality conversion. Files up to 200 MB supported."),
-    "transcribe-audio":   ("Transcribe Audio (AI)", "Transcribe audio to text online free — OpenAI Whisper runs entirely in your browser via WebAssembly, so meetings and voice notes are never uploaded. Optionally use your own OpenAI or Groq key for higher accuracy; the audio then goes straight from your browser to that provider. Timestamps, plain text, and SRT subtitles included."),
-    "image-upscaler":     ("Image Upscaler",     "Upscale images online for free — enlarge photos by 2x or 4x using high-quality Lanczos resampling. Supports JPG, PNG, and WebP. Perfect for improving resolution of small images, thumbnails, or screenshots."),
-    "heic-to-png":        ("HEIC to PNG",        "Convert HEIC to PNG online for free — change Apple's High Efficiency Image format (the default for iPhone photos) to PNG, which every browser and editor can open. Free, private, no sign-up."),
-    "webp-to-jpg":        ("WebP to JPG",        "Convert WebP to JPG online for free — change Google's WebP image format to the universally-compatible JPEG. Drag-and-drop multiple files, no sign-up, no watermarks. Files are processed and discarded immediately."),
-    "webp-to-png":        ("WebP to PNG",        "Convert WebP to PNG online for free — change Google's WebP format to lossless PNG, preserving transparency. Free, private, no watermarks."),
-    "view-exif":          ("View EXIF Data",     "View EXIF data online for free — see every piece of metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, lens info, ISO, exposure, timestamps, software, and more. Counterpart to Remove EXIF."),
-    "jwt-decoder":        ("JWT Decoder",        "Decode a JWT online for free — paste any JSON Web Token and instantly see its header, payload, and signature decoded as readable JSON. Highlights expiry, algorithm, and standard claims. All decoding happens in your browser; tokens never leave."),
-    "regex-tester":       ("Regex Tester",       "Test regular expressions online for free — paste a regex and a test string to see every match highlighted in real time, along with captured groups. Supports flags (g, i, m, s, u, y). Works entirely in your browser."),
-    "timestamp-converter": ("Timestamp Converter", "Convert between Unix timestamps and human-readable dates online for free — paste an epoch (seconds or milliseconds) or an ISO 8601 string and see all formats side-by-side, in your local time and UTC. Pure-browser, never logs your data."),
-    # v1.4.0 — image converter aliases (route to /image-converter)
-    "jpg-to-png":         ("JPG to PNG",         "Convert JPG to PNG online for free — change JPEG photos to lossless PNG, preserving every detail and supporting transparency on re-edits. Drag-and-drop multiple files, processed and discarded server-side."),
-    "png-to-jpg":         ("PNG to JPG",         "Convert PNG to JPG online for free — turn lossless PNGs into compact JPEGs for faster pages and smaller email attachments. Batch upload, no watermarks, no sign-up."),
-    "jpg-to-webp":        ("JPG to WebP",        "Convert JPG to WebP online for free — shrink JPEG photos by 25-35% with Google's modern WebP codec while keeping visual quality. Perfect for faster page loads."),
-    "png-to-webp":        ("PNG to WebP",        "Convert PNG to WebP online for free — convert lossless PNGs to WebP for dramatically smaller files while keeping transparency. Ideal for web assets and icons."),
-    "tiff-to-jpg":        ("TIFF to JPG",        "Convert TIFF to JPG online for free — turn high-resolution TIFFs (the scan and pro-photo standard) into compact JPEGs you can email, post, or upload anywhere."),
-    "tiff-to-png":        ("TIFF to PNG",        "Convert TIFF to PNG online for free — convert multi-page or single-page TIFFs to web-friendly PNG while preserving alpha and color depth."),
-    "bmp-to-jpg":         ("BMP to JPG",         "Convert BMP to JPG online for free — shrink Windows bitmap files (often 10-50× larger than JPEG) into compact JPEGs without quality loss for most photos."),
-    "bmp-to-png":         ("BMP to PNG",         "Convert BMP to PNG online for free — turn uncompressed Windows BMPs into compressed lossless PNGs, ideal for screenshots, icons, and pixel art."),
-    "gif-to-jpg":         ("GIF to JPG",         "Convert GIF to JPG online for free — extract the first frame of a GIF and save it as a smaller JPEG. Great for sharing static stills on platforms that don't support GIF."),
-    "gif-to-png":         ("GIF to PNG",         "Convert GIF to PNG online for free — convert single-frame GIFs to lossless PNG with full transparency support. Drag-and-drop, batch-friendly."),
-    # v1.4.0 — audio/video converter aliases
-    "m4a-to-mp3":         ("M4A to MP3",         "Convert M4A to MP3 online for free — turn Apple's M4A audio (iTunes purchases, voice memos) into universally-supported MP3 at your chosen bitrate. Powered by FFmpeg."),
-    "mp4-to-mp3":         ("MP4 to MP3",         "Convert MP4 to MP3 online for free — extract the audio track from any MP4 video and save it as an MP3 file. Perfect for music videos, podcasts, and recorded lectures."),
-    "mov-to-mp4":         ("MOV to MP4",         "Convert MOV to MP4 online for free — change Apple QuickTime MOV files to the universally-compatible MP4 (H.264). Works on every platform without re-encoding the audio if compatible."),
-    "avi-to-mp4":         ("AVI to MP4",         "Convert AVI to MP4 online for free — modernize old AVI videos to H.264 MP4 for streaming-friendly playback on phones, browsers, and modern TVs."),
-    "webm-to-mp4":        ("WebM to MP4",        "Convert WebM to MP4 online for free — turn Google's WebM (VP8/VP9) into H.264 MP4 for compatibility with iOS, older Android, and editing software."),
-    "mp4-to-webm":        ("MP4 to WebM",        "Convert MP4 to WebM online for free — re-encode MP4 video as WebM (VP9) for smaller files and royalty-free open-web streaming."),
-    # v1.4.0 — browser-only developer converters
-    "yaml-to-json":       ("YAML to JSON",       "Convert YAML to JSON online for free — paste any YAML and instantly see the equivalent JSON, validated and pretty-printed. Runs 100% in your browser, never uploads."),
-    "json-to-yaml":       ("JSON to YAML",       "Convert JSON to YAML online for free — paste any JSON and see clean YAML with proper indentation, ready to drop into a Kubernetes, GitHub Actions, or Docker Compose file. Pure-browser."),
-    "case-converter":     ("Case Converter",     "Convert text case online for free — instantly transform any string between camelCase, snake_case, kebab-case, PascalCase, CONSTANT_CASE, Title Case, sentence case, and more. Browser-only, never uploads."),
-    # v1.5.0 / phase 7 — competitor-gap tools
-    "mute-video":         ("Mute Video",         "Mute a video online for free — strip the audio track from MP4, MOV, WebM, MKV, AVI files. Stream-copies the video so it's lossless and instant. No re-encoding, no quality loss."),
-    "reverse-video":      ("Reverse Video",      "Reverse a video online for free — play any MP4, MOV, WebM, MKV, or AVI backwards (audio reversed in sync too). Output is universal MP4 with H.264 video and AAC audio."),
-    "video-speed":        ("Video Speed Changer","Speed up or slow down videos online for free — 0.25× to 4×, audio pitch-corrected so it doesn't sound chipmunk-y. Powered by FFmpeg's setpts and atempo filters."),
-    "audio-trim":         ("Audio Trimmer",      "Trim or cut audio files online for free — MP3, WAV, AAC, FLAC, OGG, M4A. Specify start and end timestamps (HH:MM:SS) and download just the chosen segment. Lossless stream-copy."),
-    "image-palette":      ("Image Color Palette","Extract dominant color palette from images online for free — upload any image and get HEX codes, rgb() values, and percentage coverage for the top colors. Perfect for designers extracting brand colors or building UI themes."),
-    "pixelate-image":     ("Pixelate / Blur Image","Pixelate or blur images online for free — obscure sensitive content (faces, license plates, addresses) before sharing. Choose mosaic-style pixelation or smooth Gaussian blur with adjustable strength."),
-    "rotate-image":       ("Rotate Image",        "Rotate images online for free — JPG, PNG, WEBP, HEIC, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or any custom angle. Canvas auto-expands so nothing is cropped. Transparency preserved for PNG and WEBP."),
-    "flip-image":         ("Flip Image",          "Flip or mirror images online for free — horizontally or vertically. Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Fix selfie mirroring or prep design assets in seconds."),
-}
 
-_FORMAT_ALIAS_TOOLS: dict[str, tuple[str, str]] = {
-    "jpg-to-tiff":  ("JPG to TIFF",  "Convert JPG to TIFF online for free - turn JPEG photos into TIFF files for archival, print, scanning, and document-management workflows."),
-    "png-to-tiff":  ("PNG to TIFF",  "Convert PNG to TIFF online for free - preserve lossless image quality while exporting graphics to TIFF for archive or prepress workflows."),
-    "webp-to-tiff": ("WebP to TIFF", "Convert WebP to TIFF online for free - change modern web images into TIFF files for editors and legacy systems."),
-    "jpg-to-bmp":   ("JPG to BMP",   "Convert JPG to BMP online for free - create legacy Windows bitmap files from JPEG photos for older software and devices."),
-    "png-to-bmp":   ("PNG to BMP",   "Convert PNG to BMP online for free - export PNG graphics as Windows bitmap files for legacy apps, embedded systems, and signage tools."),
-    "webp-to-bmp":  ("WebP to BMP",  "Convert WebP to BMP online for free - turn modern WebP images into BMP files for older Windows applications."),
-    "mp3-to-wav":   ("MP3 to WAV",   "Convert MP3 to WAV online for free - decode compressed audio into WAV for editing, transcription, podcast production, and apps that require WAV input."),
-    "wav-to-mp3":   ("WAV to MP3",   "Convert WAV to MP3 online for free - shrink uncompressed recordings into widely-compatible MP3 files with FFmpeg."),
-    "flac-to-mp3":  ("FLAC to MP3",  "Convert FLAC to MP3 online for free - make lossless FLAC music or recordings playable on phones, browsers, and car stereos."),
-    "ogg-to-mp3":   ("OGG to MP3",   "Convert OGG to MP3 online for free - turn OGG/Vorbis audio into universal MP3 files for sharing and playback."),
-    "aac-to-mp3":   ("AAC to MP3",   "Convert AAC to MP3 online for free - change AAC tracks from phones, screen recorders, and video exports into standard MP3 audio."),
-    "mp3-to-ogg":   ("MP3 to OGG",   "Convert MP3 to OGG online for free - re-encode MP3 audio as OGG/Vorbis for open-web projects, games, and Linux-friendly workflows."),
-    "mp3-to-flac":  ("MP3 to FLAC",  "Convert MP3 to FLAC online for free - place decoded MP3 audio in a FLAC file for workflows that require FLAC input."),
-    "mp3-to-aac":   ("MP3 to AAC",   "Convert MP3 to AAC online for free - make AAC audio for Apple workflows, mobile apps, podcasts, and video-editing timelines."),
-    "wav-to-flac":  ("WAV to FLAC",  "Convert WAV to FLAC online for free - compress uncompressed recordings into lossless FLAC files while preserving quality."),
-    "wav-to-ogg":   ("WAV to OGG",   "Convert WAV to OGG online for free - make compact OGG/Vorbis audio from WAV recordings for games and web apps."),
-    "mkv-to-mp4":   ("MKV to MP4",   "Convert MKV to MP4 online for free - turn Matroska video files into MP4 for phones, browsers, social platforms, and editors."),
-    "mp4-to-mov":   ("MP4 to MOV",   "Convert MP4 to MOV online for free - create QuickTime MOV files for Apple workflows, Final Cut, Keynote, and macOS media pipelines."),
-    "mov-to-webm":  ("MOV to WebM",  "Convert MOV to WebM online for free - make Apple QuickTime videos smaller and web-native with VP9 video and Opus audio."),
-    "mkv-to-webm":  ("MKV to WebM",  "Convert MKV to WebM online for free - re-encode Matroska videos as browser-friendly WebM files for web pages and open media workflows."),
-    "mp4-to-avi":   ("MP4 to AVI",   "Convert MP4 to AVI online for free - export modern MP4 clips into AVI for old Windows apps, media players, and legacy devices."),
-    "avi-to-webm":  ("AVI to WebM",  "Convert AVI to WebM online for free - turn older Windows AVI clips into smaller open-web WebM files for browsers and embeds."),
-    "webm-to-mov":  ("WebM to MOV",  "Convert WebM to MOV online for free - make WebM videos easier to use in Apple and QuickTime-centric editing workflows."),
-    "mov-to-mkv":   ("MOV to MKV",   "Convert MOV to MKV online for free - move Apple QuickTime videos into the open Matroska container for archiving."),
-    "webm-to-gif":  ("WebM to GIF",  "Convert WebM to GIF online for free - upload a WebM clip and export a looping GIF for chat, documentation, and quick previews."),
-    "mov-to-gif":   ("MOV to GIF",   "Convert MOV to GIF online for free - turn iPhone, macOS, and QuickTime MOV clips into looping GIFs."),
-}
-_NONPDF_TOOLS.update(_FORMAT_ALIAS_TOOLS)
+def _fallback_tool_tables(*paths: _Path) -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str]]]:
+    """The tables of the first readable tool manifest in `paths`.
 
-_DEV_MICRO_TOOLS: dict[str, tuple[str, str]] = {
-    "cron-parser":         ("Cron Parser",          "Parse cron expressions online for free - explain a standard 5-field cron schedule and preview upcoming run times in your browser timezone."),
-    "sql-formatter":       ("SQL Formatter",        "Format SQL online for free - pretty-print SELECT, INSERT, UPDATE, DELETE, JOIN, WHERE, GROUP BY, and ORDER BY queries entirely in your browser."),
-    "graphql-formatter":   ("GraphQL Formatter",    "Format GraphQL online for free - clean up compact queries, mutations, fragments, arguments, and selection sets without uploading schema or API text."),
-    "yaml-toml-converter": ("YAML to TOML",         "Convert YAML to TOML or TOML to YAML online for free - transform common app config, package metadata, and deployment settings locally in your browser."),
-    "gitignore-generator": (".gitignore Generator", "Generate a .gitignore online for free - combine bundled templates for Node, Python, Vite, Docker, Terraform, Go, Rust, macOS, and Windows."),
-    "semver-bumper":       ("SemVer Bumper",        "Bump semantic versions online for free - calculate patch, minor, major, and prerelease values from SemVer strings like 1.2.3-beta.1."),
-    "env-validator":       (".env Validator",       "Validate .env files online for free - catch syntax mistakes, duplicate keys, empty values, unquoted spaces, and risky-looking short secrets in your browser."),
-    "json-to-csv-schema":  ("JSON to CSV Schema",   "Convert JSON to CSV with schema inference online for free - flatten nested objects, infer column types, inspect coverage, and download CSV locally."),
-}
-_NONPDF_TOOLS.update(_DEV_MICRO_TOOLS)
+    With none, the site would claim zero tools and 404 every tool page, so
+    refuse to start instead."""
+    for path in paths:
+        data = _load_manifest(str(path), _mtime(path))
+        tables = _tool_tables(data) if data is not None else None
+        if tables is not None:
+            return tables
+    raise RuntimeError(
+        f"No readable tool manifest at {' or '.join(map(str, paths))}. "
+        "Run `npm run gen:llms` in frontend/ to write it from the registries."
+    )
+
+
+_PDF_TOOLS, _NONPDF_TOOLS = _fallback_tool_tables(_SOURCE_TOOL_JSON, _TOOL_JSON)
 
 
 _TOOL_ALIASES: dict[str, list[str]] = {
