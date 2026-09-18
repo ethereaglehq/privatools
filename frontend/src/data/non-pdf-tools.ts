@@ -43,7 +43,7 @@ export interface NonPdfTool {
   synonyms?: string;
   accepts: string;
   outputLabel: string;
-  /** ISO date of the last content review; drives the sitemap lastmod and the visible review line. */
+  /** ISO date of the last content review; drives the sitemap lastmod and the visible review line. Move it only when this tool's own copy changes; never bulk-bump. */
   lastReviewed: string;
 }
 
