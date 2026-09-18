@@ -69,9 +69,14 @@ updates:
       # the type-check with 16 errors. Moving to it touches every tool that
       # renders or reads PDFs in the browser and needs those tools checked in a
       # real browser, so a dedicated task does it; delete this entry when it
-      # starts. Minor and patch releases of 5.x still arrive.
+      # starts. 5.x minors are held too. Every release from 5.6.83 to before
+      # 6.2.108 is affected by GHSA-hq66-cqwq-w95j (CVE-2026-16633, high:
+      # script in a malicious PDF runs when pdf.js scripting is on), and 5.6
+      # and 5.7 are the only newer 5.x lines. 5.7 also removes isEvalSupported,
+      # so #253 failed the type-check. 5.5.207 stays until that task moves
+      # straight to 6.2.108 or later.
       - dependency-name: "pdfjs-dist"
-        update-types: ["version-update:semver-major"]
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   # The root requirements*.in files, compiled by `uv pip compile` into the
   # hashed requirements*.txt locks that the image and CI install. The pip

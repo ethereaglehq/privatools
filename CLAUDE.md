@@ -337,7 +337,9 @@ CSP-walker and guide-export tests catch most misses.
     Tailwind 4 (#231).
   - **pdf.js 6** (`pdfjs-dist`): it removes APIs the PDF tools call, such as
     `PDFDocumentProxy.destroy`, and every tool that renders or reads PDFs in
-    the browser needs a browser check (#236).
+    the browser needs a browser check (#236). 5.x minors are held too: 5.6.83
+    up to 6.2.108 carry GHSA-hq66-cqwq-w95j, so stay on 5.5.207 and go
+    straight to 6.2.108 or later.
   - **The `python` base image** ignores minor and major updates: moving Python
     is a migration, because the locks are compiled for 3.12. Without the rule
     Dependabot targeted only the newest tag and proposed no digest refresh at
