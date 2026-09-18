@@ -764,3 +764,47 @@ def test_tool_guide_text_and_names_are_html_escaped_in_ssr_body():
     # _howto_name_for() feeds both the JSON-LD HowTo.name and this visible
     # <h2> — they must stay readable-text-identical modulo HTML escaping.
     assert f"<h2>{escape(seo_meta._howto_name_for(name))}</h2>" in pdf_body
+
+
+def _app_features(path: str) -> str:
+    app = next(node for node in _graph_for(path) if node.get("@type") == "SoftwareApplication")
+    return " | ".join(app["featureList"])
+
+
+def test_feature_list_says_browser_tools_never_upload():
+    # text-diff is clientOnly in the registry and has no AI provider option.
+    features = _app_features("/tools/text-diff")
+    assert "never uploaded" in features
+    assert "Server processing" not in features
+    assert "provider" not in features
+
+
+def test_feature_list_says_server_tools_remove_files_after_the_response():
+    features = _app_features("/tool/merge-pdf")
+    assert "Server processing in temporary storage, removed after the response" in features
+    assert "never uploaded" not in features
+
+
+def test_feature_list_names_the_ai_provider_option_only_where_it_exists():
+    # summarize-pdf runs in the browser and can optionally use the visitor's own AI key.
+    features = _app_features("/tool/summarize-pdf")
+    assert "never uploaded" in features
+    assert "only to the AI provider you choose" in features
+
+
+def test_no_tool_page_claims_immediate_deletion():
+    for meta in TOOL_META.values():
+        features = _app_features(meta["url_path"])
+        assert "deleted immediately" not in features, meta["url_path"]
+        assert "isolated container" not in features, meta["url_path"]
+
+
+def test_llms_facts_describe_the_analytics_actually_in_use():
+    # Analytics has been default-on Google Analytics with tool-run events since
+    # v2.5.0; the facts crawlers read must not call it first-party telemetry.
+    root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    for name in ("llms.txt", "llms-full.txt"):
+        with open(os.path.join(root, "frontend", "public", name), encoding="utf-8") as handle:
+            text = handle.read()
+        assert "Google Analytics" in text, name
+        assert "first-party pageview telemetry" not in text, name
