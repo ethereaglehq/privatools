@@ -10,6 +10,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import time
 
 import pytest
 
@@ -29,7 +30,9 @@ with (root / 'commands.jsonl').open('a') as f:
 new, old = 'a' * 40, 'b' * 40
 digest = 'ghcr.io/ethereaglehq/privatools@sha256:' + 'c' * 64
 old_image = 'sha256:' + 'd' * 64
-if name == 'git':
+if name == 'id':
+    print(0 if mode == 'root' else 1000)
+elif name == 'git':
     if args[0] == 'rev-parse': print(old if args[-1] == 'HEAD' else new)
     elif args[0] == 'tag': print('' if mode == 'no_tag' else 'v9.9.9')
 elif name == 'docker':
@@ -58,13 +61,15 @@ elif name == 'rollout':
 
 def run_deploy(tmp_path, mode='', with_cosign=True, deploy_mode=None):
     fake_bin = tmp_path / 'bin'
-    fake_bin.mkdir()
-    for name in ['git', 'docker', 'curl', 'flock', 'sleep', 'rollout'] + (['cosign'] if with_cosign else []):
-        script = fake_bin / name
-        script.write_text(f'#!{sys.executable}\n' + FAKE)
-        script.chmod(0o755)
-    for name in ['date', 'head', 'sed', 'tr', 'seq', 'rm']:
-        (fake_bin / name).symlink_to(shutil.which(name))
+    (tmp_path / 'commands.jsonl').unlink(missing_ok=True)
+    if not fake_bin.exists():
+        fake_bin.mkdir()
+        for name in ['git', 'docker', 'curl', 'flock', 'sleep', 'rollout', 'id'] + (['cosign'] if with_cosign else []):
+            script = fake_bin / name
+            script.write_text(f'#!{sys.executable}\n' + FAKE)
+            script.chmod(0o755)
+        for name in ['date', 'head', 'sed', 'tr', 'seq', 'rm', 'stat']:
+            (fake_bin / name).symlink_to(shutil.which(name))
     env = {**os.environ, 'PATH': str(fake_bin), 'FAKE_ROOT': str(tmp_path), 'FAKE_MODE': mode,
            'REPO_DIR': str(tmp_path), 'LOCK_FILE': str(tmp_path / 'lock'), 'ROLLOUT': str(fake_bin / 'rollout'),
            'DEPLOY_PING_URL': '', 'DEPLOY_IMAGE_REPO_FALLBACK': ''}
@@ -138,13 +143,60 @@ def test_rejected_release_is_marked_failed_without_touching_the_running_one(tmp_
     assert not (tmp_path / '.privatools-auto-deploy.sha').exists()
 
 
-@pytest.mark.parametrize('mode,message', [('refused', 'retrying next cycle'), ('degraded', 'DEGRADED')])
-def test_refused_or_degraded_rollout_is_retried_not_marked_failed(tmp_path, mode, message):
-    result, _ = run_deploy(tmp_path, mode)
+def test_degraded_rollout_is_retried_not_marked_failed(tmp_path):
+    result, _ = run_deploy(tmp_path, 'degraded')
     assert result.returncode == 1
-    assert message in result.stdout
+    assert 'DEGRADED' in result.stdout
     assert not (tmp_path / '.privatools-auto-deploy.failed').exists()
     assert not (tmp_path / '.privatools-auto-deploy.sha').exists()
+
+
+def test_host_failure_backs_off_and_retries_instead_of_blaming_the_release(tmp_path):
+    # Exit 2: nginx, Docker, memory or a job that would not finish, not the
+    # release. It must not be marked failed until a newer tag, nor retried
+    # every minute (each attempt boots a container on a shared VM).
+    result, calls = run_deploy(tmp_path, 'refused')
+    assert result.returncode == 1 and 'host problem' in result.stdout
+    assert (tmp_path / '.privatools-auto-deploy.retry').read_text().strip() == NEW
+    assert not (tmp_path / '.privatools-auto-deploy.failed').exists()
+
+    again, calls = run_deploy(tmp_path, 'refused')
+    assert again.returncode == 0 and 'backing off' in again.stdout
+    assert not rollouts(calls)
+
+    past = time.time() - 3600
+    os.utime(tmp_path / '.privatools-auto-deploy.retry', (past, past))
+    third, calls = run_deploy(tmp_path)
+    assert third.returncode == 0, third.stdout + third.stderr
+    assert len(rollouts(calls)) == 1
+    assert not (tmp_path / '.privatools-auto-deploy.retry').exists()
+
+
+def test_manual_deploy_refuses_root_and_runs_the_rollout_as_the_deploy_user(tmp_path):
+    fake_bin = tmp_path / 'bin'
+    fake_bin.mkdir()
+    (fake_bin / 'id').write_text('#!/bin/sh\necho 0\n')
+    (fake_bin / 'id').chmod(0o755)
+    env = {**os.environ, 'PATH': f"{fake_bin}{os.pathsep}{os.environ['PATH']}", 'REPO_DIR': str(tmp_path / 'repo'),
+           'DEPLOY_LOG': str(tmp_path / 'deploy.log'), 'LOCK_FILE': str(tmp_path / 'lock')}
+    result = subprocess.run(['/bin/bash', str(ROOT / 'deploy/oracle-vm/deploy.sh')], env=env,
+                            capture_output=True, text=True, timeout=30)
+    assert result.returncode == 1
+    assert 'as root' in result.stdout + result.stderr
+    assert not (tmp_path / 'lock').exists()
+    script = (ROOT / 'deploy/oracle-vm/deploy.sh').read_text()
+    assert 'runuser -u "$DEPLOY_USER" -g "$DEPLOY_USER" -G docker --' in script
+    assert 'sudo env PRIVATOOLS_DEPLOY_LOCK_HELD' not in script
+
+
+def test_refuses_to_run_as_root(tmp_path):
+    # Root cannot open the timer's lock in sticky /tmp (fs.protected_regular)
+    # or, before it exists, would create one the timer can no longer open.
+    result, calls = run_deploy(tmp_path, 'root')
+    assert result.returncode == 1
+    assert 'as root' in result.stdout
+    assert [c['name'] for c in calls] == ['id']
+    assert not (tmp_path / 'lock').exists()
 
 
 def test_release_calls_real_typecheck_and_has_no_nonblocking_test_jobs():

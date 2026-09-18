@@ -7,13 +7,17 @@
 # rollback tool: it pulls main and rebuilds. Roll back with
 # `privatools-rollout --rollback` (deploy/README.md).
 #
+# Run it as ubuntu (not with sudo): it uses sudo itself for Docker, and runs
+# the rollout as ubuntu with the docker group, like the timer does.
+#
 # Guarantees:
 #   1. `set -euo pipefail` — a failed pull or build stops before anything
 #      running is touched.
 #   2. Zero downtime — privatools-rollout starts the build beside the running
-#      release and moves traffic only after /readyz reports the new commit and
-#      real pages serve. A build that fails those checks is removed and the
-#      running release keeps serving; there is nothing to roll back.
+#      release and moves traffic only after /readyz reports the new commit,
+#      real pages serve and its job supervisor holds the queue. A build that
+#      fails those checks is removed and the running release keeps serving;
+#      there is nothing to roll back.
 #   3. One deploy at a time — it holds the auto-deploy timer's lock.
 #   4. A log line either way in ~/deploy.log.
 #
@@ -25,14 +29,22 @@
 
 set -euo pipefail
 
-REPO_DIR=/home/ubuntu/privatools
-DEPLOY_LOG=/home/ubuntu/deploy.log
-LOCK_FILE=/tmp/privatools-auto-deploy.lock
-ROLLOUT=/usr/local/bin/privatools-rollout
+REPO_DIR="${REPO_DIR:-/home/ubuntu/privatools}"
+DEPLOY_LOG="${DEPLOY_LOG:-/home/ubuntu/deploy.log}"
+LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
+ROLLOUT="${ROLLOUT:-/usr/local/bin/privatools-rollout}"
+DEPLOY_USER="${DEPLOY_USER:-ubuntu}"
 
 log() {
     echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ'): $*" | tee -a "$DEPLOY_LOG"
 }
+
+# Root cannot open the timer's lock in sticky /tmp (fs.protected_regular), and
+# a root run before the lock exists would create one the timer cannot open.
+if [[ "$(id -u)" == 0 ]]; then
+    echo "refusing to run as root: run ~/deploy.sh as ${DEPLOY_USER}" >&2
+    exit 1
+fi
 
 trap 'log "Deploy FAILED at line $LINENO (exit $?)"' ERR
 
@@ -52,15 +64,18 @@ target_sha="$(git rev-parse HEAD)"
 sudo env GIT_SHA="$target_sha" docker compose build privatools
 image_id="$(sudo docker image inspect --format '{{.Id}}' privatools-privatools:latest)"
 
-# 3. Replace the running release without downtime. No image prune: the
-#    replaced image stays available for `privatools-rollout --rollback`.
+# 3. Replace the running release without downtime, as the deploy user with the
+#    docker group (this shell holds the lock). No image prune: the replaced
+#    image stays available for `privatools-rollout --rollback`.
 status=0
-sudo env PRIVATOOLS_DEPLOY_LOCK_HELD=1 REPO_DIR="$REPO_DIR" \
+sudo runuser -u "$DEPLOY_USER" -g "$DEPLOY_USER" -G docker -- \
+    env PRIVATOOLS_DEPLOY_LOCK_HELD=1 REPO_DIR="$REPO_DIR" LOCK_FILE="$LOCK_FILE" \
     "$ROLLOUT" "$image_id" "$target_sha" || status=$?
 case "$status" in
     0) log "Deploy complete (${target_sha:0:12} serves from the canonical container)" ;;
-    1) log "Deploy REJECTED: ${target_sha:0:12} failed its readiness or page checks; the previous release kept serving" ;;
+    1) log "Deploy REJECTED: ${target_sha:0:12} failed its readiness, page or job checks; the previous release kept serving" ;;
+    2) log "Deploy NOT DONE: a host problem or an unmet precondition (see above); the previous release serves" ;;
     3) log "Deploy DEGRADED: ${target_sha:0:12} serves from the interim container; rerun to finish" ;;
-    *) log "Deploy FAILED: rollout exit ${status}; see its output above" ;;
+    *) log "Deploy FAILED: rollout exit ${status}; check nginx and the containers now" ;;
 esac
 exit "$status"

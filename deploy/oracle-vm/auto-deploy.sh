@@ -29,6 +29,12 @@ STATE_FILE="${STATE_FILE:-${REPO_DIR}/.privatools-auto-deploy.sha}"
 # replaced the running one. We refuse to retry it every cycle (thrash);
 # cleared on the next success.
 FAILED_FILE="${FAILED_FILE:-${REPO_DIR}/.privatools-auto-deploy.failed}"
+# A target sha whose last attempt hit a host problem (rollout exit 2: nginx,
+# Docker, memory, a job that would not finish). Not the release's fault, so it
+# is retried, but only after DEPLOY_RETRY_BACKOFF seconds: each attempt boots
+# a container on a shared VM.
+RETRY_FILE="${RETRY_FILE:-${REPO_DIR}/.privatools-auto-deploy.retry}"
+DEPLOY_RETRY_BACKOFF="${DEPLOY_RETRY_BACKOFF:-600}"
 
 # Deploy gate. Without one, *any* commit reaching ${BRANCH} ships to prod
 # within ~60s with no human approval. Modes:
@@ -109,6 +115,14 @@ on_error() {
 }
 trap 'on_error "$?" "$LINENO"' ERR
 
+# Run as the deploy user only. Root cannot open the lock the timer owns in
+# sticky /tmp (fs.protected_regular=2 on Ubuntu), and a root run before the
+# lock exists would create one the timer can no longer open.
+if [[ "$(id -u)" == 0 ]]; then
+    log "refusing to run as root: start privatools-auto-deploy.service, or run as ubuntu"
+    exit 1
+fi
+
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
     log "another deploy is already running; skipping"
@@ -183,6 +197,13 @@ if [[ "$current_sha" == "$target_sha" && -f "$FAILED_FILE" \
       && "$(tr -d '[:space:]' < "$FAILED_FILE")" == "$target_sha" ]] \
     && curl --fail --silent --max-time 5 "$HEALTH_URL" >/dev/null 2>&1; then
     log "target ${target_sha:0:12} previously failed its readiness or page checks; the previous release keeps serving (push a newer tag to retry)"
+    exit 0
+fi
+
+# The last attempt at this target hit a host problem: retry it, but not yet.
+if [[ -f "$RETRY_FILE" && "$(tr -d '[:space:]' < "$RETRY_FILE")" == "$target_sha" ]] \
+    && (( $(date +%s) - $(stat -c %Y "$RETRY_FILE") < DEPLOY_RETRY_BACKOFF )); then
+    log "the last attempt at ${target_sha:0:12} hit a host problem; backing off for up to ${DEPLOY_RETRY_BACKOFF}s before retrying"
     exit 0
 fi
 
@@ -290,7 +311,7 @@ PRIVATOOLS_DEPLOY_LOCK_HELD=1 REPO_DIR="$REPO_DIR" LOCK_FILE="$LOCK_FILE" \
 case "$rollout_status" in
     0)
         printf '%s\n' "$target_sha" > "$STATE_FILE"
-        rm -f "$FAILED_FILE"
+        rm -f "$FAILED_FILE" "$RETRY_FILE"
         log "deploy complete; ${target_sha:0:12} serves from the canonical container"
         ping_deploy ok
         # IndexNow: tell Bing-fed indexes (Copilot, DuckDuckGo, Yandex) the
@@ -300,13 +321,16 @@ case "$rollout_status" in
         exit 0
         ;;
     1)
-        # The release never took traffic from the running one. Do not retry it
-        # every cycle; a newer tag supersedes it.
+        # The release itself was at fault (not ready, broken pages, or a job
+        # supervisor that cannot hold the queue) and never replaced the
+        # running one. Do not retry it every cycle; a newer tag supersedes it.
         printf '%s\n' "$target_sha" > "$FAILED_FILE"
-        log "REJECTED: ${target_sha:0:12} failed its readiness or page checks; the previous release kept serving. Marked failed (push a newer tag to retry)."
+        log "REJECTED: ${target_sha:0:12} failed its readiness, page or job checks; the previous release kept serving. Marked failed (push a newer tag to retry)."
         ;;
     2)
-        log "rollout refused before starting anything (see above); retrying next cycle"
+        # A host problem, not the release: retry after a backoff.
+        printf '%s\n' "$target_sha" > "$RETRY_FILE"
+        log "the rollout hit a host problem or refused to start (see above); the previous release serves; retrying after ${DEPLOY_RETRY_BACKOFF}s"
         ;;
     3)
         log "DEGRADED: ${target_sha:0:12} serves from the interim container; the next cycles retry the canonical container"
