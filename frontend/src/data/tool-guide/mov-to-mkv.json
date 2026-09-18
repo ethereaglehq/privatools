@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Run the conversion. Matroska can hold multiple audio and subtitle tracks, though this conversion keeps one video and one audio track."
+      "text": "Run the conversion. Matroska can hold multiple audio and subtitle tracks, though this conversion keeps just one audio track."
     }
   ],
   "faq": [

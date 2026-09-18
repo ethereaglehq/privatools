@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Does MKV to MP4 re-encode the video?",
-      "a": "Yes. Every file is re-encoded to H.264 video (CRF 23) and AAC audio, even when the MKV's streams would already fit in an MP4, so it is not a lossless container swap. Only one audio track is kept, and subtitle tracks are dropped."
+      "a": "Yes. Every file is re-encoded to H.264 video (CRF 23) and AAC audio, even when the MKV's streams would already fit in an MP4, so it is not a lossless container swap. Only one audio track is kept."
     },
     {
       "q": "Why MP4 instead of MKV?",

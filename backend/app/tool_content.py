@@ -218,7 +218,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "trim-media": [
         {"name": "Upload an audio or video file", "text": "Select an MP4, MP3, WAV, WebM, or other media file up to 200 MB."},
         {"name": "Set the trim range", "text": "Play or scrub the preview, then set the start and end with the sliders or the playhead buttons, or type timestamps in HH:MM:SS form (e.g. 00:00:30 to 00:02:15)."},
-        {"name": "Trim and download", "text": "Run the trim. Audio is cut without re-encoding (FLAC is rewritten losslessly); video is re-encoded so the cut starts on the exact frame you chose."},
+        {"name": "Trim and download", "text": "Run the trim. Audio files are cut without re-encoding (FLAC is rewritten losslessly); video is re-encoded, sound included, so the cut starts on the exact frame you chose."},
     ],
 
     # ── Developer tools ───────────────────────────────────────────────
@@ -1071,7 +1071,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "mov-to-mkv": [
         {"name": 'Upload a MOV file', "text": 'Drop a .mov file from QuickTime, an iPhone or a camera.'},
         {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The video is re-encoded as H.264 (CRF 23) and the audio as AAC, then stored in Matroska.'},
-        {"name": 'Convert and download', "text": 'Run the conversion. Matroska can hold multiple audio and subtitle tracks, though this conversion keeps one video and one audio track.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Matroska can hold multiple audio and subtitle tracks, though this conversion keeps just one audio track.'},
     ],
     "mov-to-webm": [
         {"name": 'Upload a MOV file', "text": 'Drop a .mov file up to 500 MB.'},
@@ -1422,7 +1422,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "trim-media": [
         {"q": "Can I trim audio files too?", "a": "Yes. The tool supports both audio (MP3, WAV, OGG, FLAC) and video (MP4, WebM, MOV, AVI) files."},
         {"q": "Is the trimmed file re-encoded?", "a": "Audio is not: MP3, WAV, AAC, OGG and M4A are cut without re-encoding, and FLAC is rewritten losslessly. Video always is — H.264 for MP4, MOV and MKV, VP9 for WebM, MPEG-4 for AVI — so the file keeps its format but not its exact original encoding."},
-        {"q": "How precise is the trimming?", "a": "Video cuts are frame-accurate, because the video is re-encoded. Audio is copied, so an audio cut lands on the nearest compressed-audio frame, within a few hundredths of a second."},
+        {"q": "How precise is the trimming?", "a": "Video cuts are frame-accurate, because the video is re-encoded. An audio file is copied, so its cut lands on the nearest compressed-audio frame, within a few hundredths of a second."},
     ],
     "base64": [
         {"q": "Can I encode files (not just text)?", "a": "No. This tool encodes and decodes text only; there is no file upload, and Base64 that holds binary data such as an image cannot be decoded to text here."},
@@ -2492,7 +2492,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
     ],
     # ── Video ──────────────────────────────────────────────────────────
     "mkv-to-mp4": [
-        {"q": "Does MKV to MP4 re-encode the video?", "a": "Yes. Every file is re-encoded to H.264 video (CRF 23) and AAC audio, even when the MKV's streams would already fit in an MP4, so it is not a lossless container swap. Only one audio track is kept, and subtitle tracks are dropped."},
+        {"q": "Does MKV to MP4 re-encode the video?", "a": "Yes. Every file is re-encoded to H.264 video (CRF 23) and AAC audio, even when the MKV's streams would already fit in an MP4, so it is not a lossless container swap. Only one audio track is kept."},
         {"q": "Why MP4 instead of MKV?", "a": "MP4 plays natively on phones, browsers, TVs, and editors; MKV is a flexible container but far less universally supported."},
         {"q": "Are videos retained after conversion?", "a": "No. Uploaded videos and outputs are temporary and deleted after the response."},
     ],

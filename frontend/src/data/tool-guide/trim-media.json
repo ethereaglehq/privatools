@@ -10,7 +10,7 @@
     },
     {
       "name": "Trim and download",
-      "text": "Run the trim. Audio is cut without re-encoding (FLAC is rewritten losslessly); video is re-encoded so the cut starts on the exact frame you chose."
+      "text": "Run the trim. Audio files are cut without re-encoding (FLAC is rewritten losslessly); video is re-encoded, sound included, so the cut starts on the exact frame you chose."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "How precise is the trimming?",
-      "a": "Video cuts are frame-accurate, because the video is re-encoded. Audio is copied, so an audio cut lands on the nearest compressed-audio frame, within a few hundredths of a second."
+      "a": "Video cuts are frame-accurate, because the video is re-encoded. An audio file is copied, so its cut lands on the nearest compressed-audio frame, within a few hundredths of a second."
     }
   ]
 }

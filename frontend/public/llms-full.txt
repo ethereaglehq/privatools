@@ -947,7 +947,7 @@ URL: https://privatools.me/tools/trim-media
 
 Trim the start and end of video or audio files
 
-Cut and trim video or audio online for free — use a visual timeline to set in/out points and export the trimmed clip. Audio is cut without re-encoding; video is re-encoded so the cut is frame-accurate. Supports MP4, MP3, WAV, and more.
+Cut and trim video or audio online for free — use a visual timeline to set in/out points and export the trimmed clip. Audio files are cut without re-encoding; video is re-encoded so the cut is frame-accurate. Supports MP4, MP3, WAV, and more.
 
 ### Compress Video
 
