@@ -1,5 +1,7 @@
 # Tool page SEO: visible guide, search titles, sitemap signals
 
+> **Status, 18 September 2026:** implemented and shipped in v2.6.0: sections 1, 2 and 4 by #170, sections 1 and 3 by #171, sections 1 and 5 by #172. v2.6.1 replaced two section 1 decisions: the Python fallback tables are read from the committed `frontend/public/tool-content.json` instead of being kept by hand (#179), and guide links come from the generated `frontend/src/data/tool-blog-links.json` instead of a dynamic `blog.ts` import (#173). The section 4 word floor shipped as 150 words, not 250 (#170), and the CI check against bulk review-date moves followed in v2.6.1 (#175). The non-goals remain open.
+
 Design, 17 September 2026. Approved in conversation; implementation follows
 the plan in `docs/superpowers/plans/`.
 

@@ -1,5 +1,7 @@
 # Visible tool guide Implementation Plan
 
+> **Status, 18 September 2026:** implemented in v2.6.0 by #170; the checkboxes were never ticked. Task 4's word floor shipped as 150 words, not 250, and in v2.6.1 #173 replaced Task 3's dynamic `@/data/blog` import for guide links with the generated `frontend/src/data/tool-blog-links.json`.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Visitors see the steps, FAQ and guide links on every tool page, loaded from per-tool files exported from the Python content module, and the crawler body is trimmed to the same blocks.

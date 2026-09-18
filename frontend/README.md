@@ -24,24 +24,29 @@ Run these commands from `frontend/`:
 
 ```sh
 npx tsc --noEmit -p tsconfig.app.json
+npm run lint -- --max-warnings 0
 npm test
 npm run test:content
 npm run build:check
 ```
 
 Before opening a pull request, also run `npm run check:review-dates`, which
-compares each tool's `lastReviewed` with `origin/main` and is a required check
-on every PR. Run `git fetch origin` first; see `scripts/README.md`.
+compares each tool's `lastReviewed` with `origin/main`. Run `git fetch origin`
+first; see [scripts/README.md](../scripts/README.md#tool-review-dates). On a
+pull request CI runs it against the PR's base branch, as a step of the required
+"Frontend tests (vitest)" check.
 
 The build prepares pinned browser model assets, regenerates the AI crawler
 indexes, bundles the application and injects integrity metadata. Check generated
-changes before committing. Use the npm version pinned in CI when regenerating
-`package-lock.json`.
+changes before committing. CI pins Node 26, not an npm version: regenerate
+`package-lock.json` with the npm that a current CI run reports, not an older
+local npm, which can prune platform-specific entries and break `npm ci`.
 
 `npm run gen:llms` regenerates just the committed content files: the crawler
-indexes, sitemap, feed and content JSON in `public/`. CI runs it and fails when
-the result differs from what is committed, so run it after changing `src/data/`
-and commit the output with the change.
+indexes, sitemap, feed and content JSON in `public/`, and
+`src/data/tool-blog-links.json`. CI runs it and fails when the result differs
+from what is committed, so run it after changing `src/data/` and commit the
+output with the change.
 
 ## Source layout
 

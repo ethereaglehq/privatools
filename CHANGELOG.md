@@ -1,24 +1,401 @@
 # Changelog
 
-All notable changes to PrivaTools will be documented in this file.
+All notable changes to PrivaTools are documented in this file, newest first.
+Dates are the tag dates. Release notes for recent tags are also on the
+[GitHub Releases](https://github.com/ethereaglehq/privatools/releases) page.
+Tool totals in older entries describe that release; the live catalogue is at
+[privatools.me/tools](https://privatools.me/tools).
 
-## [Unreleased] — Security, reliability & trust hardening
+## [Unreleased]
+
+## [2.6.1] — 2026-09-18 — Accurate tool copy, lighter pages, stricter CI
+
+### Content
+
+- Tool guides for 92 tools stop claiming more than the product does: storage wording matches the privacy policy (temporary per-request storage, response cleanup plus a background sweep), and unverifiable competitor pricing, invented timings and roadmap promises are removed. (#176)
+- The guides of the 50 most popular tools (by registry `popularity` rank) are rewritten from their real UI and backend routes. (#176)
+- False fragments in registry descriptions, search titles and meta descriptions are corrected on 21 tools: for example, Sign PDF places an image rather than a certificate signature, Video to GIF has no clip-range control, and PNG to JPG usually turns transparent areas black, not white. Two backend tests guard against retention and browser-only overclaims. (#176)
+
+### Performance
+
+- Blog data loads only on blog routes, about 41 KB gzip less on every other page. Tool pages read their guide links from the generated `frontend/src/data/tool-blog-links.json`, and the bundle check fails if blog data reaches the entry chunk, a preloaded chunk or anything they import statically. (#173)
+
+### Backend
+
+- The server-rendered homepage and `/tools` lists follow the registry's popularity order, as the client does, and JSON-LD subcategories come from each tool's registry category. (#174)
+- The fallback tool names and descriptions come from the generated tool manifest (the committed `frontend/public/tool-content.json`, or the build's copy in the image) instead of a hand-kept copy that had drifted on most tools. A checkout without a build reads the committed manifest, and the app refuses to start when no manifest is readable. (#179, #181)
+- The HEIF opener is registered once at startup. Hardening only: HEIC decoding was not broken in production. (#177)
+
+### CI
+
+- A pull request fails when a tool's copy changes without moving its `lastReviewed`, or when more than 25 dates move without `[bulk-review]`. (#175)
+- The frontend job fails when committed `npm run gen:llms` output is stale. (#178)
+- The image job boots the built image through `docker-compose.yml` and checks `/readyz` (including the build SHA), a 404 for an unknown tool, that the app user can read the tool manifest, the homepage tool count, two tool pages and the sitemap. Releases gate on it. (#180)
+
+## [2.6.0] — 2026-09-18 — Visible tool guides, search titles, sitemap signals
+
+### SEO and content
+
+- Every tool page shows a guide under the tool: "How to use" steps, every FAQ answer written out, and "Mentioned in our guides" links when a guide mentions the tool. Steps and FAQ stay authored in `backend/app/tool_content.py` and export to `frontend/src/data/tool-guide/<slug>.json` through `scripts/seo/export-tool-guides.py`, replacing `tool-faq.json`. (#170)
+- The server-rendered tool body carries only what visitors see (summary, intro, steps, full FAQ, guide links, three related tools, last-reviewed line), chosen as the client chooses them; the TL;DR, trust paragraph, templated depth sections, eight-item related list and CTA copy are removed, and guide text is HTML-escaped. (#170)
+- Every tool has a hand-written `seoTitle` (40–60 characters, no brand suffix) and `metaDescription` (120–160 characters). Server and client take the tab title, H1, social titles and description from them; `tool-registry.test.ts` enforces the rules. (#171)
+- Every sitemap URL has a `<priority>`: home 1.0, `/tools` 0.9, tools listed in `sitemap-priority.json` 0.8, other tools 0.6, blog and compare 0.5, other pages 0.4. (#172)
+- Each tool's `lastReviewed` date drives its sitemap `lastmod`, the visible "Last reviewed" line and JSON-LD `dateModified`; unused constants are removed from `routes/sitemap.py`. (#172)
+
+### Frontend
+
+- Long tool headings fit on phones. (#171)
+
+## [2.5.0] — 2026-09-17 — Default-on analytics and tool usage events; docs and scripts reorganized
+
+### Analytics
+
+- Google Analytics collects for every visitor by default; the switch on the Privacy page is the only opt-out. The consent record, regional policy and Do Not Track / Global Privacy Control checks are removed. `GET /api/analytics/policy` answers `default_on` whenever `GA_BROWSER_TAG_ENABLED=true`, so browsers holding the earlier opt-in bundle switch on; `GA_TRUSTED_COUNTRY_HEADER` and `GA_DEFAULT_ON_COUNTRIES` are removed. (#169)
+- Every React Router navigation sends a page view. (#169)
+- A new `tool_run` event per tool use carries `tool_slug`, `tool_category`, `run_mode`, `outcome` and `file_count`, never file names, sizes or contents. A test fails when a tool UI calls the backend without reporting. (#169)
+
+### Docs
+
+- Documentation and scripts moved into topic folders with `docs/README.md` and `scripts/README.md` indexes (for example, `scripts/local-backend.py` is now `scripts/dev/local-backend.py`); README, CLAUDE.md, PRODUCT.md and the frontend README describe Air and Play. (#167)
+
+## [2.4.1] — 2026-09-14 — Account settings and security controls
+
+- Account settings open from the header and footer, with persistent navigation between Settings & security and API keys & usage, and improved layouts across Air/Play, light/dark and mobile. (release, #166)
+- Passwordless accounts can set a password inline; password, username and passkey changes go through Clerk's identity re-verification when Clerk requires it. (release, #166)
+- Clearer active and revoked API key states; request activity sits above starter tips on mobile. (release)
+- Account deletion verifies the identity before backend cleanup and warns when cleanup cannot be confirmed. (release, #166)
+
+## [2.4.0] — 2026-09-14 — API playground, integration starters and account activity
+
+- Run a sample PDF merge, compression or text extraction from the API page and inspect the status, request ID, result and allowance change. (release, #165)
+- Downloadable Python and JavaScript clients, n8n workflows and a Postman collection. Clients support background jobs, bounded retries, recovery after connection loss and deletion after a successful local save. (release, #165)
+- API key settings show the current allowance, seven days of request totals and recent request metadata, excluding document contents, filenames, credentials and query strings. (release, #165)
+- Processing limits and one-hour result retention are unchanged. (release)
+
+## [2.3.1] — 2026-09-14 — Debian OS advisories patched; image scan enforced
+
+- Debian runtime packages are upgraded to clear nine high-severity advisories; the Docker build fails below the reviewed security floor. (#164)
+- A release is signed and published only after a clean ARM64 image scan with no fixable HIGH/CRITICAL findings. (#164)
+- The image scan targets the published ARM64 image. (#163)
+
+## [2.3.0] — 2026-09-14 — Free API discovery, shared limits and durable PDF jobs
+
+- A searchable reference for 147 API operations, a v1-only OpenAPI schema, current costs and limits, and request templates. (#162)
+- Request admission and quota reservations are shared across web workers in SQLite, quotas count actual request-body bytes, validation refunds still apply, and retry and error information is consistent. (#162)
+- Optional key-scoped background jobs for merge, compress, grayscale and PDF text extraction: idempotent retries share one charge, results can be downloaded repeatedly for one hour or deleted, and one job supervisor runs beside the two web workers within the existing 4 GB / 1.8 CPU limits. Jobs are disabled by default. (#162)
+
+## [2.2.1] — 2026-09-14 — Clean URL navigation
+
+- App navigation uses clean paths; legacy `#/…` bookmarks convert in place without extra history entries. (#161)
+- Opening the Dev API page directly at `/api` works (nginx configuration). (#160)
+
+## [2.2.0] — 2026-09-14 — Air and Play, Clerk, browser AI and analytics
+
+### Product
+
+- The Air and Play experiences cover the tool workspace, account pages, guides and comparisons, with persistent light/dark controls and improved mobile navigation. (#159)
+- Clerk accounts with username, passkey and Google sign-in; file tools stay available to guests. (#159)
+- Verified browser background removal and offline assets, specialist tool interfaces, explicit model progress, PWA improvements, updated branding and crawlable content manifests. (#159)
+- Consent-aware Google browser analytics, opt-in by default; a deployment could enable default-on for a reviewed list of countries. Default-on for everyone from 2.5.0. (#159)
+- The release pipeline verifies signed immutable images and keeps a rollback path. (#159)
 
 ### Security
-- **SSRF closed on the URL→PDF tools.** url-to-pdf and html-to-pdf now SSRF-validate every WeasyPrint sub-resource and re-validate HTTP redirects, so an attacker-supplied page can no longer pull cloud-metadata or internal hosts into a rendered PDF.
+
+- WeasyPrint 69.0 → 70.0 (a security release); HTML and URL rendering keep SSRF validation through a fetcher that never hands HTTP, redirect or file URLs to WeasyPrint's default. (027e92b)
+- Vulnerable frontend build and test dependencies updated (vitest 4, sharp 0.35.4). (a48a453)
+- Static files are served only from an inventory of files found in the build, so a request path never becomes a filesystem path; clean installs are reproducible. (c7f4997)
+- Blog articles render through React from an allowlist of tags instead of raw HTML, and file previews accept only same-origin `blob:` URLs. (cdbe060)
+
+## [2.1.8] — 2026-09-06 — Bounce rate measures sessions
+
+- The beacon sends GA4's `session_engaged` flag (after ten seconds or a second page view), so bounce rate is no longer pinned at 100%. (#158)
+
+## [2.1.7] — 2026-09-06 — First release under ethereaglehq
+
+- The account rename is followed through 83 references in 26 files; this is the first release built, signed and deployed under the new GHCR namespace and cosign identity. (tag, #157)
+
+## [2.1.6] — 2026-09-06 — Rename-safe deploy, correct X handle, automatic releases
+
+- Deploy accepts the old and new GitHub owner for the image namespace and the cosign identity; verification stays fail-closed. (#156)
+- Organization structured data and `rel=me` links point at the live X handle. (#155)
+- Every tag publishes a GitHub Release once its image is built, scanned and signed. (#154)
+
+## [2.1.5] — 2026-09-06 — Analytics measures real time on page
+
+- Foreground time is accumulated and sent as GA4 `user_engagement` on `visibilitychange`/`pagehide`; the server's engagement floor drops from 100 ms to 1 ms; event names are an allowlist; navigation page views no longer carry the previous page's title. (#153, release)
+- A synthetic production probe runs every 30 minutes (homepage, `/readyz` dependencies, a real merge round trip, per-path CSP) and opens or comments on one tracking issue on failure. (release, 2463788, 484b8dd)
+
+## [2.1.4] — 2026-09-02 — GA4 events carry a session
+
+- Beacon events carry a GA4 session id and real time-on-view; the backend replaces an invalid id with a fresh one instead of dropping the event. (001e8ba)
+
+## [2.1.3] — 2026-09-02 — X profile linked
+
+- The X account is linked from the footer, About and Organization `sameAs`; the footer gains a Source link. (a385d72)
+- Dependabot alerts cleared: browserslist 4.28.8 and postcss-selector-parser 6.1.4, both build-time only. Unused shell components removed. (3442d8a, 61e7d10)
+
+## [2.1.2] — 2026-09-02 — Releases gated on tests
+
+- `release.yml` calls `test.yml`: no green suite, no image. (73fa653)
+- Social sign-in stays GitHub only; Google and Apple are also disabled in the Clerk dashboard. (tag, 73fa653)
+
+## [2.1.1] — 2026-09-02 — Conversion How-Tos meet the three-step guard
+
+- The 26 conversion How-Tos added in 2.1.0 get the third step the catalog test requires. (ef09c08)
+
+## [2.1.0] — 2026-09-02 — How-To and FAQ for every tool
+
+- Tools that had no How-To steps (32) or no FAQ (6) get hand-written copy; the FAQ export is regenerated from Python. (47aab55)
+
+## [2.0.14] — 2026-09-02 — Legacy 404 URLs redirect
+
+- Six URLs Google still held as 404s now return 301: four `/tool/` vs `/tools/` mix-ups, `/tool/e-sign-pdf` → `/tool/esign-pdf` and `/batchprocess` → `/batch`. (27300e8)
+
+## [2.0.13] — 2026-09-02 — OG cards noindexed; page views sent
+
+- `/api/og-image` responses carry `X-Robots-Tag: noindex`. (e1e6af1)
+- The browser sends one page view per view (none were sent before), honouring Do Not Track, GPC and the local opt-out; compose passes `GA4_MEASUREMENT_ID` and `GA4_API_SECRET` to the container. (e1e6af1)
+
+## [2.0.12] — 2026-09-01 — Spent OAuth verification fix
+
+- A spent OAuth verification, such as one left in a bookmarked return URL, no longer sends the visitor to Clerk's hosted Account Portal. (bd90586)
+
+## [2.0.11] — 2026-09-01 — Finished OAuth stays on site
+
+- A completed GitHub sign-up no longer bounces to Clerk's hosted portal: the callback runs only while the flow is unfinished, and an "already signed in" reply is ignored. (3f269cc)
+
+## [2.0.10] — 2026-09-01 — Exact OAuth return detection
+
+- The OAuth return is recognised by a marker the sign-in adds rather than inferred from Clerk's state, and the callback waits until Clerk has fully loaded. (c314368)
+
+## [2.0.9] — 2026-09-01 — OAuth sign-in completes
+
+- Returning from GitHub completes sign-in, and a signed-in visitor is no longer shown the login form when account state was read before Clerk was ready. (1735d9b)
+
+## [2.0.8] — 2026-09-01 — Sign-in from every page; arm64-only release images
+
+- Account links go to the `/account` path, whose CSP allows Clerk, so sign-in works from every page; stale `#/account` links are rewritten. (47482da)
+- Release images build natively on arm64 with a layer cache; the amd64 image is no longer published. (1a4a650)
+
+## [2.0.7] — 2026-09-01 — Blocked clerk-js explained
+
+- When a browser extension blocks clerk-js, the account page says so, disables the sign-in controls and notes that every tool works without an account. (4af1b6a)
+
+## [2.0.6] — 2026-09-01 — New logo; models fetched on arrival
+
+- New logo mark and icons, including a real maskable icon; a tool that needs an on-device model fetches it on arrival unless the browser asks to save data; a global button reset no longer strips styled controls. (4d0ca21)
+
+## [2.0.5] — 2026-09-01 — GitHub button, guarded Clerk calls, AI hub on phones
+
+- GitHub brand button; account actions taken before Clerk loads fail with a clear message; the AI hub fits phones; model download progress no longer shows 99% before the weights start. (df0499f)
+
+## [2.0.4] — 2026-09-01 — Account page is just the sign-in card
+
+- `/account` shows only the sign-in card; social buttons appear only for providers configured in Clerk (GitHub); model download progress no longer runs backwards. (d680d5f)
+
+## [2.0.3] — 2026-09-01 — Light by default; Clerk password recovery
+
+- Light is the default theme for first-time visitors; password recovery under Clerk works through a two-step email code instead of throwing; OTP code inputs; restyled home and auth card. (8168cd5)
+
+## [2.0.2] — 2026-09-01 — On-device models unblocked
+
+- On-device model weights load in production (`connect-src` now names the Hugging Face CDN the weights redirect to); the auth card gains social sign-in buttons and a password strength meter. (f189b15)
+
+## [2.0.1] — 2026-09-01 — Clerk live
+
+- Clerk accounts go live; the sign-in page shows the free-tier limits, a copyable curl example and links to the API reference, security page and catalogue. (tag, f02fa3e)
+
+## [2.0.0] — 2026-09-01 — Daylight is the product
+
+### Breaking
+
+- Daylight replaces the UI. The Signature, Aurora, Carbon and Structured skins, the design-import toolchain and the skin dock are removed. (#150)
+
+### Added
+
+- Chat with PDF: the PDF's text is extracted in the browser and questions go to the visitor's own AI provider. (#150)
+- Transcribe Audio: Whisper runs in the browser, or the visitor's own OpenAI, Groq or self-hosted key is used; transcripts download as text or SRT. (#150)
+- Remove Background gains an on-device engine (BRIA RMBG-1.4). OCR PDF and Image OCR gain an in-browser Tesseract engine and a bring-your-own-key vision engine, and Translate PDF gains a bring-your-own-key engine. (#150)
+- An AI hub in the top bar manages bring-your-own-key settings and on-device models. (#150)
+- Multi-file queues: tools on the shared runners take up to 25 files, and 36 more tools process several files at once, with per-file status, retry and a ZIP download. (#150)
+- The PDF editor gains pen and arrow tools and an edits panel. (#150)
+- A true-black midnight theme, vault import with sample entries, a PWA install prompt, and a blog grown to 31 posts. (#150)
+
+### Changed
+
+- Daylight renders the real tool components, accounts, vault and path routing; counts come from the registry. (#150)
+
+### Fixed
+
+- Multi-file runs through `useMultiFileProcessor` processed zero files. (#150)
+- PDFs with up to 1024 bytes before the `%PDF-` header, which ISO 32000 allows, are no longer rejected as invalid. (#150)
+
+## [1.11.1] — 2026-08-27 — Tool URLs in Aurora and Carbon
+
+- Fixed: every tool URL rendered the homepage in Aurora and Carbon. (#149)
+- Clerk production configuration is plumbed through the build and compose, so activation needs only keys; see `deploy/clerk-production.md`. (#133)
+
+## [1.11.0] — 2026-08-23 — Sign in with Google, GitHub or Apple
+
+- OAuth sign-in through Clerk, shown only where Clerk is configured; the sign-in page is rebuilt as one centred column. (#132)
+- The count guard matches the shape of a count rather than one phrasing. (#132)
+- In Carbon and Structured, the theme control repaints immediately instead of after a reload. (#131)
+- Production still ran with Clerk unconfigured. (tag)
+
+## [1.10.0] — 2026-08-23 — Clerk (opt-in), UI corrections, BYOK in Smart Redact
+
+- Accounts can use Clerk behind a key check: without a publishable key nothing changes and the SDK is not downloaded. Sessions are verified with JWKS, and a signed `user.deleted` webhook removes API keys. (#126, #130)
+- Smart Redact supports bring-your-own-key, with the document fenced and provider egress allowed on that page. (#129)
+- In the ported designs: a reachable light/dark control on mobile, counts from the registry, the wrong `privatools.io` domain fixed in twelve places, and demo toggles and design-review routes removed. (#127)
+- Fixed: `/account`, `/account/keys`, `/my-stuff/vault`, `/status` and `/support` returned HTTP 404. (#125)
+- Dependencies: setup-qemu-action v4.2.0 and @radix-ui/react-slot 1.3.3; Clerk session verification adds pyjwt 2.13.0 and cryptography 50.0.0. (#124, #128, #126)
+
+## [1.9.0] — 2026-08-23 — Frontend revamp, accounts, read-only container
+
+- The default Signature design is rebuilt: new typefaces and palette, a two-tier header in place of the tool-tree sidebar, a footer tool index, and tool FAQs visible on tool pages. (#122)
+- Three ported skins (Aurora, Carbon, Structured); Signature stays the default. (#122)
+- Accounts with scrypt hashing on a thread pool, per-account lockout and recovery codes as the only way back in. (#122)
+- Versioned `/api/v1` behind user-issued keys with a daily free quota; Bearer tokens accepted; requests rejected in validation are refunded. (#122)
+- Bring-your-own-key AI foundation, used by Summarize PDF; the CSP allows provider egress on that page only, and document text is fenced with a random per-call id. (#117, #118, #122)
+- New: PDF accessibility checker (PDF/UA and WCAG 2.2), on-device Translate PDF, continuous multi-file Bates numbering and Bates removal, redaction exemption codes with a withholding log, compression profiles and target size. (#120)
+- Fixed: grayscale rasterised every PDF; merge and extract-pages destroyed accessibility structure; Flate images never compressed. (#120)
+- The container runs on a read-only root filesystem; `/app/data` is created in the image so the first signup works; accounts backup added. (#122, #123)
+- The installed deploy unit no longer overrides the deploy gate and rollback check with `/api/health`, so both use `/readyz`. (#122)
+- react-router 6 → 7 and esbuild ≥ 0.28.1, clearing all Dependabot alerts. (#121)
+
+## [1.8.1] — 2026-08-21 — Two tool pages returned 404
+
+- `/tool/remove-watermark` and `/tools/remove-image-watermark` were missing from the backend tool tables and returned 404; a parity test now holds the registries together. (9df4033)
+
+## [1.8.0] — 2026-08-21 — Untrusted-input parsers, Python 3.12
+
+- Security: Pillow 12.3.0 (15 advisories), pypdf 6.16.1 (2), rembg 2.0.81 (2); pip-audit runs without ignore flags. (d234336, bf62928)
+- Python 3.10 → 3.12; fastapi 0.141.1, uvicorn 0.52.3, pymupdf 1.28.2, mistune 3.3.4; high and critical npm advisories cleared; CodeQL at zero; the password generator's RNG no longer has modulo bias. (bf62928, 9918f4d, decfa00, 623a381)
+- opencv-python-headless and numpy are declared directly, with a contract test for directly imported modules. (bf62928)
+- PR CI builds the image; base images are pinned by digest and tracked by Dependabot; release write permissions are scoped to the job. (#116, 438fc39, 4acc082)
+- Frontend build base node 26-slim; Dependabot bumps of CI actions and Radix packages. (#100, #102, #107, #109, #110, #113–#115)
+
+## [1.7.0] — 2026-08-21 — Local-first personalization, watermark removal, pipeline round-trip
+
+- Device-local encrypted password vault, named Bates counters, an asset library, remembered settings on 57 tools and `/my-stuff` to see and erase it all; no accounts. (6163307)
+- Visible watermark removal for PDFs and images. (6163307)
+- The pipeline runs the whole chain in one request, with 17 chainable steps instead of 2. (6163307)
+- Fixed: search-engine verification files were corrupted by the runtime config injector, which broke Google Search Console verification. (3cf12e4)
+- Dependabot bumps of CI actions (first release on docker/build-push-action v7 and setup-buildx-action v4) and Radix packages. (#16, #19, #55–#61)
+
+## [1.6.13] — 2026-08-21 — Compress PDF and Bates Numbering no longer crash on upload
+
+- A missing TooltipProvider crashed both tools as soon as a file was queued; broken since 1.6.0, which removed the root provider to trim the first-paint path. (1d14cb0)
+
+## [1.6.12] — 2026-06-29 — Deploy rollback and request-timeout leaks
+
+- Auto-deploy restores the previous image when the health gate fails and records the failed target. (#96)
+- `run_bounded` gets its own bounded thread pool, and LibreOffice/qpdf subprocesses are killed on cancellation. (#98)
+- A `process_pdf_upload` lifecycle helper, first used by grayscale. (#97)
+
+## [1.6.11] — 2026-06-29 — Hashed lockfiles and deploy reliability
+
+- Runtime dependencies install from fully hashed lockfiles with `--require-hashes` in the image and CI. (#94)
+- The Docker healthcheck and the deploy script's default gate use `/readyz`; the recurring stuck image pull is fixed. (#95)
+- Remaining PDF routes in `new_tools` stream uploads to disk. (#93)
+
+## [1.6.10] — 2026-06-29 — Streaming uploads, readiness and observability
+
+- Uploads stream to disk with first-chunk validation (office-to-pdf, video/audio/subtitle routes). (#88–#90)
+- `/readyz` checks free disk and returns `build_sha`. (#87)
+- Uvicorn logs join the JSON stream; in-flight gauge; janitor RSS heartbeat. (#86)
+- The 14 floating native parsers are pinned to exact versions. (#91)
+- nginx: per-IP connection limit on `/api/`, and a documented Cloudflare real-IP block. (#92)
+
+## [1.6.9] — 2026-06-29 — Security response surface
+
+- Production disables `/api-docs` and `/openapi.json`; 5xx `HTTPException` details are replaced with a generic message; CSV injection guard in table extraction. (#82)
+- Native thread pools pinned to one thread; the URL-fetch connection cache is thread-local. (#83)
+- office-to-pdf removes its intermediate copy on every path. (#84)
+- Releases scan the built image before signing (report-only at this point). (#85)
+
+## [1.6.8] — 2026-06-29 — Bounded heavy work
+
+- `run_bounded` caps concurrent heavy work with one process-wide semaphore (`MAX_CONCURRENT_HEAVY`). (#81)
+- Rate limits on the remaining media routes; batch compress off the event loop; a page cap on OCR. (#79)
+- Auto-deploy verifies the cosign signature (fail-closed) and retries a failed pull. (#80)
+
+## [1.6.7] — 2026-06-29 — Deep-research P0 fixes
+
+- Fixed a cross-user leak: concurrent merges shared one output path. (#75)
+- A crafted PDF can no longer exhaust memory through page rendering (about 100 MP cap on every render). (#77)
+- Rate limits on the eight heaviest PDF and image routes. (#78)
+- `TMPDIR=/app/temp` and Docker log rotation. (#76)
+- Tests for API-key auth, error-status mapping and the SSRF DNS branch. (#74)
+
+## [1.6.6] — 2026-06-29 — Security-property tests
+
+- Tests prove redaction removes text, protect encrypts, unlock decrypts, metadata stripping clears fields and archive extraction rejects zip-slip. (#72)
+- office-to-pdf file copies run off the event loop. (#73)
+
+## [1.6.5] — 2026-06-29 — Backend correctness and SSRF hardening
+
+- URL fetches with no Content-Type no longer bypass the allowlist. (#71)
+- Correct media types for video and audio outputs; audio-trim rejects start ≥ end; embed-qr-in-pdf validates the page. (#71)
+
+## [1.6.4] — 2026-06-29 — Backend audit fixes
+
+- Fixed: split-by-size silently dropped pages; SVG conversions could read local files or internal URLs; image OCR had no timeout; video-merge turned 400/413 into 500; a compare leak. (#69)
+- More CPU-bound handlers run off the event loop. (#70)
+
+## [1.6.3] — 2026-06-29 — Flag-gated api.privatools.me split
+
+- `PUBLIC_API_BASE_URL` moves the SPA's API traffic to a DNS-only host so the apex can sit behind Cloudflare without capping 500 MB uploads; off by default. (#68)
+
+## [1.6.2] — 2026-06-29 — GEO citability; release deploys wait for the signed image
+
+- Knowledge-graph topics and a citable homepage facts block; a GEO runbook for the account-gated steps. (#66)
+- A release deploy waits for the signed image instead of racing a local build. (#67)
+
+## [1.6.1] — 2026-06-29 — Deploy the signed image
+
+- Auto-deploy pulls the signed GHCR image built per tag instead of rebuilding on the VM, with deploy-failure alerting. (#65)
+
+## [1.6.0] — 2026-06-29 — Security and reliability hardening, CI test gate, deploy gate, PDF to Long Image
+
+### Security
+
+- url-to-pdf and html-to-pdf validate every WeasyPrint sub-resource and re-validate redirects. (#46)
+- Rate limiting keys on the rightmost `X-Forwarded-For` entry (the one nginx appends) and covers the expensive routes that had no limit; archive extraction is capped by the real decompressed size; image, media and archive uploads are size-checked while being read. (#46)
+- Nonce-based `script-src` CSP, build-time SRI, HSTS/COOP/COEP/CORP headers, `security.txt`, `SECURITY.md` and a `/security` page; self-hosted fonts; analytics through a first-party proxy with Do Not Track, GPC and local opt-out. (#1, #30)
 
 ### Reliability
-- **Heavy work runs off the event loop.** ~100 route handlers (PDF/image/video processing plus ffmpeg/tesseract subprocesses) now offload to a threadpool, so one large job no longer freezes a worker for every other request.
-- Closed pikepdf/Pillow resource leaks; an empty-PDF booklet now returns a friendly 400.
 
-### Infrastructure & supply chain
-- Runtime container hardened: loopback-only bind, `cap_drop: ALL`, `no-new-privileges`, real memory/CPU/PID caps, and `--proxy-headers` for correct client IPs behind nginx.
-- All GitHub Actions pinned to commit SHAs (OpenSSF Scorecard).
-- Auto-deploy gained an opt-in release-tag gate so an unreviewed push to `main` no longer ships to prod automatically.
-- Removed the dead `backend/requirements.txt` mirror; `.env.example` domains and upload limit aligned with the live `privatools.me` / 500 MB config.
+- 96 route-to-service calls moved off the event loop into the thread pool; pikepdf/Pillow leaks closed; an empty-PDF booklet returns 400. (#46)
+- Fixed: right after 1.5.2 deployed, `TrustedHostMiddleware` rejected every request; allowed hosts now fall back to the hostnames in `ALLOWED_ORIGINS`, and `/readyz` no longer fails when Ghostscript is absent. (512b336)
 
-### Note on tool count
-- Current total is **213** tools (PDF + image + video/audio + dev + archive). The "179"/"total now 179" figures in the historical entries below predate the Phase-2 tool slices and are kept for historical accuracy.
+### New
+
+- PDF to Long Image. (#52)
+- Edit PDF rebuilt: select, move and resize edits, undo/redo, line, circle and image tools, keyboard shortcuts and page thumbnails. (dccc92e)
+- Eight browser-only developer tools and 26 conversion alias pages. (#1)
+- Developer pipeline API (templates, validation, a `compress-pdf → strip-metadata` runner), shareable `/pipeline?p=` recipes, optional `X-API-Key` gating, a local `privatools` CLI and a Manifest V3 extension skeleton. (#1)
+
+### Performance and SEO
+
+- Brotli for HTML and assets, fewer preloads, a prehydration brand shell and a faster mobile first paint. (#22–#28)
+- Server-rendered content restored (routes had served an empty shell since 18 June); no self-canonical on 404s; a `/tools` hub; per-tool sitemap dates; MIT `LICENSE` file added. (#45, #50, #51)
+- Top-50 tool pages carry at least 800 words of server-rendered content, enforced by a test; "Last reviewed" badges; tool-count claims aligned. (#1, #53, #29)
+
+### CI and deploy
+
+- Backend and frontend tests run on every pull request. (#48)
+- A security workflow (npm and pip audits, CodeQL, OpenSSF Scorecard, Trivy), a tag-triggered release workflow that pushes cosign-signed images to GHCR, and Dependabot. (#1)
+- GitHub Actions pinned to commit SHAs; the security workflow repaired and its write scopes narrowed. (#46, #31, #32)
+- A systemd timer on the Oracle VM checks for a new deploy target every minute, rebuilds, and waits for `/api/health` to report the new build SHA; the nginx config redirects `www` to the apex. (505d473, 83c092a, 5ef8779, 19aa2ec)
+- Auto-deploy gains a release-tag gate. (#47)
+- Container: loopback-only bind, `cap_drop: ALL`, `no-new-privileges`, 4 GB memory, 1.8 CPUs, 512 PIDs. (#46, #63, #64)
+- The `backend/requirements.txt` mirror is removed; `.env.example` domains and upload limit are aligned. (#46, #47)
+
+### UI
+
+- Persistent mobile bottom navigation and 44 px touch targets. (#1)
+- Privacy copy corrected: server tools use isolated temporary per-request storage rather than memory only, and the Smart Redact and Summarize PDF banners no longer overstate what stays local. (70e0821, 3965d6b, #46)
 
 ## [1.5.2] — 2026-05-20 — Workshop UI overhaul + production hardening
 

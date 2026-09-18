@@ -48,8 +48,9 @@ also passes matching build arguments when building locally.
 `VITE_CLERK_SOCIAL_PROVIDERS` controls which verified providers appear. The release
 workflow reads repository variable `CLERK_SOCIAL_PROVIDERS`, defaulting to
 `google,github` now that production Google configuration and hosted sign-in are
-verified. Explicit repository-variable or Compose/build overrides still take
-precedence; inspect an existing `github`-only override before releasing. Username and passkey feature flags are also build arguments; match
+verified. No `CLERK_SOCIAL_PROVIDERS` repository variable was set on 18 September
+2026, so release images show Google and GitHub. A repository variable, or a
+Compose/build override for a locally built image, still takes precedence. Username and passkey feature flags are also build arguments; match
 them to the instance settings before deploying a different Clerk application.
 
 Do not deploy a localhost build containing the development key. A frontend build
@@ -85,10 +86,10 @@ Provider configuration and an actual hosted production Google sign-in are
 verified. The flow started at `https://accounts.privatools.me/sign-in`, completed
 the Google chooser/consent and returned to the currently deployed account page.
 Clerk production user details confirmed the Google identity is verified and
-linked. The callback destination is still the older website: the new Air/Play
-release is not deployed, and its production key/account/API integration must
-still be checked. No new release variables or secrets were changed in this
-defaults update.
+linked. That check ran on the website that preceded Air/Play. Air/Play has
+been the deployed website since v2.2.0 (14 September 2026), so the flow now
+returns to its account page; no later Google sign-in check is recorded here.
+No new release variables or secrets were changed in this defaults update.
 Keep provider verification evidence privately; do not commit account records or OAuth credentials.
 See [Clerk's Google setup guide](https://clerk.com/docs/guides/configure/auth-strategies/social-connections/google).
 
