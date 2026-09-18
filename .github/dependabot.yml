@@ -37,3 +37,14 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # Moving to another Python is a migration, not a base-image refresh: the
+      # locks are compiled for the image's Python and CI tests on the same one.
+      # Without this rule Dependabot only ever targets the newest
+      # python:X.Y-slim tag. #104 proposed 3.14-slim and was closed, so every
+      # weekly run from 2026-09-03 logged "Pull request #104 already exists for
+      # python with latest version 3.14-slim" and proposed nothing, not even a
+      # new 3.12-slim digest. Ignoring minor and major updates keeps the
+      # current tag as the target, so its digest refreshes get proposed.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
