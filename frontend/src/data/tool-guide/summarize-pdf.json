@@ -10,7 +10,7 @@
     },
     {
       "name": "Pick a summary length",
-      "text": "Choose Short, Medium or Long. The setting controls how much is written for each chunk of the document, so a long PDF still produces a longer summary than a short one."
+      "text": "Choose Short, Medium or Long (Medium is the default). On this device the setting controls how much is written for each chunk of the document, so a long PDF still produces a longer summary than a short one; with your own API key it sets the length of the whole summary."
     },
     {
       "name": "Run the summary",
@@ -44,7 +44,7 @@
     },
     {
       "q": "Is there a file size or page limit?",
-      "a": "Nothing is uploaded, so the server's 500 MB cap does not apply; the practical limit is your browser's memory and your patience. Very long PDFs are slow on the on-device engine because every chunk is summarized in turn."
+      "a": "The PDF is not uploaded, so the server's 500 MB cap does not apply; the practical limit is your browser's memory and your patience. Very long PDFs are slow on the on-device engine because every chunk is summarized in turn."
     },
     {
       "q": "Why does my scanned PDF produce no summary?",

@@ -14,7 +14,7 @@
     },
     {
       "name": "Save the result",
-      "text": "Download the translation as a .txt file, which stays on your device. 'Save as PDF' is optional and sends the translated text, not your original PDF, to the PrivaTools server to be typeset."
+      "text": "Download the translation as a .txt file, which stays on your device. 'Save as PDF' is optional and sends the translated text, not your original PDF, to the PrivaTools server to be typeset in a basic Latin font; letters outside Western European alphabets, such as Cyrillic, Chinese, Arabic or Hindi, come out as boxes, so keep the .txt for those languages."
     }
   ],
   "faq": [
@@ -32,7 +32,7 @@
     },
     {
       "q": "Does it keep the original layout?",
-      "a": "No. Text is translated, not typeset: the result is plain text per page, and 'Save as PDF' produces a simple text PDF, not a copy of the original design."
+      "a": "No. Text is translated, not typeset: the result is plain text per page, and 'Save as PDF' produces a simple text PDF in a basic Latin font, not a copy of the original design. That font has no letters for scripts such as Cyrillic, Chinese, Arabic or Hindi, or for letters such as ř and ł, which print as boxes, so use the .txt download for those languages."
     },
     {
       "q": "Which languages are supported?",

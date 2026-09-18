@@ -6,29 +6,29 @@
     },
     {
       "name": "Select the document language",
-      "text": "Choose the primary language (or multiple languages) so the OCR engine uses the correct dictionary for accuracy."
+      "text": "Pick the document's main language from the list so Tesseract uses the right language data. The server engine has 17 language packs; languages marked as not installed can be read with the In this browser engine instead."
     },
     {
       "name": "Run OCR and download",
-      "text": "Click Process. Tesseract extracts text and creates an invisible text layer, making the PDF fully searchable and copyable."
+      "text": "Choose an output (Show text, Download .txt or Searchable PDF) and click Run OCR. For a searchable PDF, Tesseract adds an invisible text layer to each page image so the PDF can be searched and copied."
     }
   ],
   "faq": [
     {
       "q": "What languages does the OCR support?",
-      "a": "PrivaTools ships Tesseract's full language pack: 100+ languages including English, Spanish, French, German, Italian, Portuguese, Chinese (Simplified and Traditional), Japanese, Korean, Arabic, Hindi, Russian, Hebrew, Thai, and Vietnamese. Pick the language explicitly for best accuracy; auto-detect works but adds a few seconds."
+      "a": "The server engine has 17 language packs: English, French, German, Spanish, Italian, Portuguese, Dutch, Russian, Polish, Turkish, Japanese, Korean, Chinese (Simplified and Traditional), Arabic, Hindi and Vietnamese. The list offers 45 languages; the rest, such as Hebrew, Thai and Ukrainian, are marked as not installed on the server but work with the In this browser engine, which downloads that language's data once and returns text only. There is no auto-detect, so pick the document's language."
     },
     {
       "q": "Will OCR change how my scanned PDF looks?",
-      "a": "No — the visual page stays pixel-identical to the input. OCR adds an invisible text layer behind the scan so the PDF becomes searchable and copy-pasteable, but the human-readable appearance is unchanged."
+      "a": "It can. The server engine renders each page to an image at the DPI you pick (200 by default), has Tesseract rebuild the page from that image with an invisible text layer, and joins the pages into a new PDF. The pages are therefore new images rather than your original scan data, digital text and drawings become part of the image, and links, bookmarks, form fields and comments are not carried over. Choose Precise (300 DPI) if fine detail matters."
     },
     {
       "q": "How accurate is the OCR?",
-      "a": "Clean 300 DPI scans typically reach 95–99% accuracy on Latin scripts. Lower resolutions or skewed pages drop to 85–95%. For best results, run Deskew PDF before OCR if pages are tilted, and crank up the scanner DPI if you control the scan."
+      "a": "It depends on the scan. Clean, straight pages of printed text read well, while blurry, skewed or low-contrast pages produce more mistakes, so check important passages against the page. For best results, run Deskew PDF before OCR if pages are tilted, choose Precise (300 DPI) for small or faint print, and scan at a higher resolution if you control the scan."
     },
     {
       "q": "Can I get the extracted text as a separate file?",
-      "a": "Yes. The default output is a searchable PDF, but you can also download just the extracted text as .txt (per page or combined) or as structured JSON with per-page text and bounding boxes."
+      "a": "Yes. Show text, the default output, displays the recognised text on the page ready to copy; Download .txt saves it as one text file with a marker before each page; Searchable PDF returns the PDF with its text layer. The in-browser and own-key engines give text only, which you can copy or download as .txt."
     },
     {
       "q": "Where is my document processed?",

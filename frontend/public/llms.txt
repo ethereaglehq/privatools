@@ -83,15 +83,15 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [PDF to PowerPoint](https://privatools.me/tool/pdf-to-pptx): Convert each PDF page into a PowerPoint slide image
 - [PDF to Text](https://privatools.me/tool/pdf-to-text): Extract all text from a PDF file
 - [PDF to Word](https://privatools.me/tool/pdf-to-word): Convert PDF content to an editable Word draft
-- [Alternate Mix](https://privatools.me/tool/alternate-mix): Mix pages of two or more PDFs alternately
+- [Alternate Mix](https://privatools.me/tool/alternate-mix): Mix pages of two PDFs alternately
 - [Compare PDF](https://privatools.me/tool/compare-pdf): Visually compare two PDF documents
-- [Extract Images](https://privatools.me/tool/extract-images): Extract all embedded images from the PDF
+- [Extract Images](https://privatools.me/tool/extract-images): Extract the embedded images from a PDF
 - [Fill Form](https://privatools.me/tool/fill-form): Fill out interactive PDF forms and save them
 - [N-Up PDF](https://privatools.me/tool/nup): Print multiple pages per sheet
 - [OCR PDF](https://privatools.me/tool/ocr-pdf): Extract text or create a searchable PDF using OCR
 - [Overlay PDF](https://privatools.me/tool/overlay): Overlay one PDF onto another (e.g., letterhead)
-- [QR Code Generator](https://privatools.me/tool/qr-code): Generate QR codes — download as PNG or stamp into a PDF
-- [PDF to PDF/A](https://privatools.me/tool/pdf-to-pdfa): Convert to PDF/A format for long-term archiving
+- [QR Code Generator](https://privatools.me/tool/qr-code): Generate QR codes — download as PNG or PDF
+- [PDF to PDF/A](https://privatools.me/tool/pdf-to-pdfa): Save a cleaned copy labelled PDF/A-2b for archiving
 - [Remove Blank Pages](https://privatools.me/tool/remove-blank-pages): Scan and delete entirely blank or near-blank pages
 - [Auto-Crop PDF (Remove Margins)](https://privatools.me/tool/auto-crop): Auto-detect content and trim margins from every page
 - [PDF to EPUB](https://privatools.me/tool/pdf-to-epub): Convert a PDF into the EPUB format for e-readers
@@ -119,7 +119,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [EPUB to PDF](https://privatools.me/tool/epub-to-pdf): Convert e-books from EPUB to PDF format
 - [RTF to PDF](https://privatools.me/tool/rtf-to-pdf): Convert Rich Text Format files to PDF
 - [Add Hyperlinks](https://privatools.me/tool/add-hyperlinks): Make the web addresses in a PDF clickable
-- [Form Creator](https://privatools.me/tool/form-creator): Add text fields, checkboxes, radios, and dropdowns to PDFs
+- [Form Creator](https://privatools.me/tool/form-creator): Add text fields, checkboxes, dropdowns, and lists to PDFs
 - [Transparent Background](https://privatools.me/tool/transparent-background): Convert near-white PDF backgrounds to transparency
 - [Invert Colors](https://privatools.me/tool/invert-colors): Invert PDF colors for a dark mode reading experience
 - [Translate PDF](https://privatools.me/tool/translate-pdf): Translate a PDF without uploading it

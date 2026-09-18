@@ -73,8 +73,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "ocr-pdf": [
         {"name": "Upload a scanned PDF or image-based PDF", "text": "Select a PDF containing scanned pages. Files up to 500 MB are supported."},
-        {"name": "Select the document language", "text": "Choose the primary language (or multiple languages) so the OCR engine uses the correct dictionary for accuracy."},
-        {"name": "Run OCR and download", "text": "Click Process. Tesseract extracts text and creates an invisible text layer, making the PDF fully searchable and copyable."},
+        {"name": "Select the document language", "text": "Pick the document's main language from the list so Tesseract uses the right language data. The server engine has 17 language packs; languages marked as not installed can be read with the In this browser engine instead."},
+        {"name": "Run OCR and download", "text": "Choose an output (Show text, Download .txt or Searchable PDF) and click Run OCR. For a searchable PDF, Tesseract adds an invisible text layer to each page image so the PDF can be searched and copied."},
     ],
     "redact-pdf": [
         {"name": "Upload the PDF", "text": "Select the document containing sensitive information you need to permanently remove."},
@@ -93,10 +93,10 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Save and download", "text": "Click Save. The bookmarks are written into the PDF as its outline for easy navigation in any reader; a page number past the end points to the last page."},
     ],
     "form-creator": [
-        {"name": "Upload a PDF or start blank", "text": "Upload an existing PDF to add form fields on top, or start with a blank page."},
-        {"name": "Add form fields", "text": "Drag text inputs, checkboxes, dropdowns, radio buttons, or signature fields onto the page. Set field names and validation rules."},
-        {"name": "Configure form properties", "text": "Set tab order, default values, and required-field flags. Preview the form to test interactivity."},
-        {"name": "Export the fillable PDF", "text": "Click Save. The PDF contains standard AcroForm fields that work in any PDF reader."},
+        {"name": "Upload a PDF", "text": "Upload the PDF you want to add form fields to. The fields are placed on top of its existing pages, and its bookmarks, links and comments are kept."},
+        {"name": "Add form fields", "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. Give each field a name and choose its type: text, checkbox, dropdown, list or signature."},
+        {"name": "Configure form properties", "text": "Set default values, mark fields as required, allow several lines in a text field, pre-tick checkboxes, and type the options for dropdowns and lists, separated by commas."},
+        {"name": "Export the fillable PDF", "text": "Click Generate fillable PDF. The download contains standard AcroForm fields, the interactive form format PDF readers use; test it in the reader your recipients use."},
     ],
     "extract-tables": [
         {"name": "Upload the PDF", "text": "Select a PDF that contains one or more tables you need to extract as structured data."},
@@ -105,9 +105,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the extracted data", "text": "For one PDF, the CSV downloads automatically, named after your PDF. For several PDFs, download each CSV or all of them as one ZIP."},
     ],
     "pdf-to-pdfa": [
-        {"name": "Upload the PDF", "text": "Select a standard PDF you want to convert into the PDF/A archival format."},
-        {"name": "Choose the conformance level", "text": "Select PDF/A-1b (basic), PDF/A-2b (supports transparency and JPEG2000), or PDF/A-3b (allows embedded files)."},
-        {"name": "Convert and download", "text": "Click Convert. The tool embeds fonts, converts color spaces to sRGB, and validates compliance before returning the PDF/A file."},
+        {"name": "Upload the PDF", "text": "Select the PDF you want to prepare for archiving. You can queue up to 25 files; each one is processed separately."},
+        {"name": "Convert", "text": "Click Convert to PDF/A. There is no conformance level to choose: every file is marked PDF/A-2b."},
+        {"name": "Download and check", "text": "Download the result. The tool re-saves the file and adds PDF/A-2b identification metadata, but it does not embed fonts, convert colours or validate compliance, so check it with a dedicated PDF/A validator if an archive requires strict PDF/A."},
     ],
 
     # ── PDF conversion ────────────────────────────────────────────────
@@ -267,7 +267,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "summarize-pdf": [
         {"name": "Choose your PDF", "text": "Select a text-based PDF. The text is read page by page in your browser with pdf.js; a scanned PDF has no text layer, so run OCR PDF on it first."},
         {"name": "Decide where the model runs", "text": "'On this device' (the default) downloads a DistilBART model of about 250 MB once, caches it in this browser and then works offline. 'My own API key' sends the extracted text from your browser straight to the AI provider you configured, billed to your account."},
-        {"name": "Pick a summary length", "text": "Choose Short, Medium or Long. The setting controls how much is written for each chunk of the document, so a long PDF still produces a longer summary than a short one."},
+        {"name": "Pick a summary length", "text": "Choose Short, Medium or Long (Medium is the default). On this device the setting controls how much is written for each chunk of the document, so a long PDF still produces a longer summary than a short one; with your own API key it sets the length of the whole summary."},
         {"name": "Run the summary", "text": "Start the run and watch the progress readout. On this device the text is split into chunks of roughly 600 words at sentence boundaries and summarized chunk by chunk; longer documents get a second pass that condenses the partial summaries."},
         {"name": "Copy or download the summary", "text": "The summary appears on the page. Copy it to the clipboard or download it as a .txt file named after your PDF."},
     ],
@@ -332,8 +332,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Compress and download as ZIP", "text": "Click Compress. Files are processed in parallel, up to four at a time, and the results come back in one ZIP, in upload order."},
     ],
     "pdf-page-counter": [
-        {"name": "Upload up to 100 PDFs", "text": "Drag up to 100 PDF files. The tool reads only metadata, not content — page counts come back almost instantly."},
-        {"name": "Read the per-file count", "text": "Each filename appears with its page count. The total across all files appears at the bottom — ideal for print quotes."},
+        {"name": "Upload up to 100 PDFs", "text": "Drag up to 100 PDF files, 500 MB in total. They are uploaded together, and the server reads each file's page count without rendering any pages, so the counts come back quickly once the upload finishes."},
+        {"name": "Read the per-file count", "text": "Each filename appears with its page count, and the total across all files appears above the list — ideal for print quotes. Files that cannot be read are marked invalid and left out of the total."},
     ],
     "webp-to-jpg": [
         {"name": "Add your WebP images", "text": "Drop or select .webp files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."},
@@ -566,8 +566,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "compare-pdf": [
         {"name": "Upload two PDFs", "text": "The first is the baseline; the second is the revised version."},
-        {"name": "Choose comparison mode", "text": "Text: word-level diff. Visual: side-by-side rendered pages with changes highlighted."},
-        {"name": "Download or view the diff", "text": "PrivaTools returns a report PDF with additions in green and deletions in red, plus a summary of changed pages and word counts."},
+        {"name": "Choose comparison mode", "text": "Visual (the default) renders both versions and paints the areas that differ in a highlight colour you can pick. Text compares the extracted text line by line."},
+        {"name": "Download or view the diff", "text": "Visual mode downloads a PDF of page images, the original pages with the changed areas painted in the highlight colour, covering up to the first 50 pages. Text mode shows the diff on the page, with added lines in green and removed lines in red, plus the page count of each file."},
     ],
     "crop-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
@@ -602,7 +602,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "extract-images": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "PrivaTools pulls out every image", "text": "Each embedded image (raster or vector) is extracted at its native resolution, with original format preserved (JPEG, PNG, TIFF, etc.)."},
+        {"name": "PrivaTools pulls out the images", "text": "Each embedded raster image is saved at the pixel size stored in the PDF. JPEG and JPEG 2000 images keep their format; others are saved as PNG. Vector drawings are not images and are not extracted, and images stored inline in the page content are skipped."},
         {"name": "Download as ZIP", "text": "All extracted images are bundled into a ZIP archive, named by page and order."},
     ],
     "extract-pages": [
@@ -612,7 +612,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "fill-form": [
         {"name": "Upload a fillable PDF form", "text": "Drop a PDF with AcroForm fields up to 500 MB. The tool detects form fields automatically."},
-        {"name": "Fill in the values", "text": "Provide a JSON object mapping field names to values: text strings for text fields, true/false for checkboxes, option labels for radio buttons / dropdowns."},
+        {"name": "Fill in the values", "text": "Click Detect form fields. Each field is listed with its name and type: type into text fields, tick checkboxes and choose dropdown options from their list. Signature fields cannot be filled here; use E-Sign PDF for a visible signature."},
         {"name": "Download the filled form", "text": "Click Fill. The PDF is returned with values populated. Field structure is preserved so the form can be filled again later."},
     ],
     "gif-to-pdf": [
@@ -658,7 +658,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "nup": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Choose pages-per-sheet", "text": "2, 4, 6, 8, 9, or 16. Each input page is shrunk to fit; output pages are filled left-to-right, top-to-bottom."},
+        {"name": "Choose pages-per-sheet", "text": "2, 4, 6, 9, or 16, and for 2-up either side-by-side or stacked. Every sheet is A4 landscape; each input page is shrunk to fit its cell, and cells are filled left-to-right, top-to-bottom."},
         {"name": "Download the n-up PDF", "text": "Use this to save paper when printing or to create thumbnail-style overviews."},
     ],
     "odt-to-pdf": [
@@ -673,9 +673,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Save the new PDF", "text": "Apply the changes and download the PDF with the pages in the order you arranged."},
     ],
     "overlay": [
-        {"name": "Upload the base PDF", "text": "The PDF that forms the background."},
-        {"name": "Upload the overlay PDF", "text": "A PDF whose pages will be layered on top of the base."},
-        {"name": "Choose mode and download", "text": "Overlay: foreground on top. Underlay: behind. Stamp: applied to every page repeatedly. Output: a merged PDF with the overlay rendered onto each base page."},
+        {"name": "Upload the base PDF", "text": "The main document (A). The output keeps its pages, bookmarks, links and form fields."},
+        {"name": "Upload the overlay PDF", "text": "The PDF (B) whose pages are layered onto the base, on top of it or behind it depending on the mode."},
+        {"name": "Choose mode and download", "text": "Overlay puts B on top of A; Stamp puts B behind A as a background. Output: the base PDF with an overlay page drawn onto each of its pages."},
     ],
     "page-numbers": [
         {"name": "Upload your PDF", "text": "Drop one or more PDFs, up to 500 MB each. The same settings apply to all of them."},
@@ -740,9 +740,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "The output preserves slide aspect ratio (16:9 or 4:3 as designed)."},
     ],
     "qr-code": [
-        {"name": "Enter the data to encode", "text": "URL, contact card (vCard), wifi credentials, plain text, or any string up to ~2,500 characters."},
-        {"name": "Choose size and format", "text": "Pixel dimensions of the output QR. Format: PNG (raster) or SVG (vector, scales infinitely)."},
-        {"name": "Download the QR", "text": "PrivaTools generates a QR code with error correction level L (default; supports up to 7% damage)."},
+        {"name": "Enter the data to encode", "text": "Type or paste a URL or plain text, or a contact card (vCard) or WiFi login already written in its standard text format; there is no form that builds them for you. Ordinary text can run to about 2,200 characters."},
+        {"name": "Choose size and format", "text": "Set the size from 100 to 1,200 pixels (300 by default) and download as a PNG image or a one-page PDF containing the same image. You can also change the code and background colours and add a small centre logo."},
+        {"name": "Download the QR", "text": "Click Generate QR code and download the result; PNG codes also show a preview. Codes use error correction level M, which tolerates about 15% damage, or level H, about 30%, when you add a centre logo."},
     ],
     "remove-blank-pages": [
         {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB. Scanned documents from a duplex scanner, which often contain empty reverse sides, are the typical case."},
@@ -1156,7 +1156,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Choose the PDF", "text": "Select a text-based PDF. The text is extracted in your browser, so the file itself is not uploaded; a scanned PDF needs OCR PDF first."},
         {"name": "Pick a translator and languages", "text": "'On this device' (the default) translates English to or from the listed languages with an OPUS-MT model of about 107 MB per language pair, downloaded once and cached. 'My own API key' sends the text to the AI provider you configured and offers more target languages."},
         {"name": "Translate and review", "text": "Run the translation and read the result page by page. The on-device models translate text, not layout, so check names, numbers and long sentences."},
-        {"name": "Save the result", "text": "Download the translation as a .txt file, which stays on your device. 'Save as PDF' is optional and sends the translated text, not your original PDF, to the PrivaTools server to be typeset."},
+        {"name": "Save the result", "text": "Download the translation as a .txt file, which stays on your device. 'Save as PDF' is optional and sends the translated text, not your original PDF, to the PrivaTools server to be typeset in a basic Latin font; letters outside Western European alphabets, such as Cyrillic, Chinese, Arabic or Hindi, come out as boxes, so keep the .txt for those languages."},
     ],
 }
 
@@ -1250,10 +1250,10 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and watermarked on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "ocr-pdf": [
-        {"q": "What languages does the OCR support?", "a": "PrivaTools ships Tesseract's full language pack: 100+ languages including English, Spanish, French, German, Italian, Portuguese, Chinese (Simplified and Traditional), Japanese, Korean, Arabic, Hindi, Russian, Hebrew, Thai, and Vietnamese. Pick the language explicitly for best accuracy; auto-detect works but adds a few seconds."},
-        {"q": "Will OCR change how my scanned PDF looks?", "a": "No — the visual page stays pixel-identical to the input. OCR adds an invisible text layer behind the scan so the PDF becomes searchable and copy-pasteable, but the human-readable appearance is unchanged."},
-        {"q": "How accurate is the OCR?", "a": "Clean 300 DPI scans typically reach 95–99% accuracy on Latin scripts. Lower resolutions or skewed pages drop to 85–95%. For best results, run Deskew PDF before OCR if pages are tilted, and crank up the scanner DPI if you control the scan."},
-        {"q": "Can I get the extracted text as a separate file?", "a": "Yes. The default output is a searchable PDF, but you can also download just the extracted text as .txt (per page or combined) or as structured JSON with per-page text and bounding boxes."},
+        {"q": "What languages does the OCR support?", "a": "The server engine has 17 language packs: English, French, German, Spanish, Italian, Portuguese, Dutch, Russian, Polish, Turkish, Japanese, Korean, Chinese (Simplified and Traditional), Arabic, Hindi and Vietnamese. The list offers 45 languages; the rest, such as Hebrew, Thai and Ukrainian, are marked as not installed on the server but work with the In this browser engine, which downloads that language's data once and returns text only. There is no auto-detect, so pick the document's language."},
+        {"q": "Will OCR change how my scanned PDF looks?", "a": "It can. The server engine renders each page to an image at the DPI you pick (200 by default), has Tesseract rebuild the page from that image with an invisible text layer, and joins the pages into a new PDF. The pages are therefore new images rather than your original scan data, digital text and drawings become part of the image, and links, bookmarks, form fields and comments are not carried over. Choose Precise (300 DPI) if fine detail matters."},
+        {"q": "How accurate is the OCR?", "a": "It depends on the scan. Clean, straight pages of printed text read well, while blurry, skewed or low-contrast pages produce more mistakes, so check important passages against the page. For best results, run Deskew PDF before OCR if pages are tilted, choose Precise (300 DPI) for small or faint print, and scan at a higher resolution if you control the scan."},
+        {"q": "Can I get the extracted text as a separate file?", "a": "Yes. Show text, the default output, displays the recognised text on the page ready to copy; Download .txt saves it as one text file with a marker before each page; Searchable PDF returns the PDF with its text layer. The in-browser and own-key engines give text only, which you can copy or download as .txt."},
         {"q": "Where is my document processed?", "a": "That depends on the engine you pick. 'On our server' (the default) uploads the PDF over HTTPS and runs Tesseract in isolated temporary per-request storage; response cleanup removes the job's temporary files after the result is sent, and a background sweep clears anything left behind by an interrupted request. 'In this browser' runs OCR on your device after a one-time engine download, and with your own AI key the page images go from your browser straight to that provider."},
         {"q": "Can I OCR a scanned PDF in a language I don't have the keyboard for?", "a": "Yes. OCR needs the right language to be available to the engine, not a keyboard. Once the text is recognised you can copy it, or use Translate PDF to translate the searchable result."},
     ],
@@ -1276,9 +1276,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I import a bookmark structure from a text file?", "a": "There is no file import, but the JSON view accepts a pasted array of entries, each with a title and a page, so a list prepared elsewhere goes in at once."},
     ],
     "form-creator": [
-        {"q": "What field types can I add?", "a": "Text inputs, text areas, checkboxes, radio buttons, dropdowns, date pickers, and signature fields."},
-        {"q": "Will the form work in Adobe Reader?", "a": "Yes. The forms use the standard AcroForm format, which is compatible with Adobe Reader, Foxit, and all major PDF viewers."},
-        {"q": "Can I set fields as required?", "a": "Yes. Mark any field as required to prevent submission without filling it in. You can also set validation rules like numeric-only or email format."},
+        {"q": "What field types can I add?", "a": "Single-line and multi-line text fields, checkboxes, dropdowns, list boxes, and empty signature fields. There are no date pickers, and the Radio type in the list currently fails with an error."},
+        {"q": "Will the form work in Adobe Reader?", "a": "It should. The fields are standard AcroForm fields, the form format that Adobe Reader and other common PDF viewers support, and the file asks viewers to draw the fields' appearance themselves. Open the finished form in the reader your recipients use before sending it."},
+        {"q": "Can I set fields as required?", "a": "Yes. Tick Required on a field to set the PDF required flag; how it is enforced depends on the PDF reader and on how the form is submitted. Validation rules such as numeric-only or email format are not available."},
     ],
     "extract-tables": [
         {"q": "What output formats are supported?", "a": "CSV only. All detected tables go into one CSV file, with a blank row between tables. For an Excel workbook, use PDF to Excel, which puts each page on its own sheet."},
@@ -1287,8 +1287,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "pdf-to-pdfa": [
         {"q": "What is PDF/A and why would I need it?", "a": "PDF/A is an ISO-standardized archival format that ensures documents remain viewable long-term. Government agencies, courts, and archives often require PDF/A submissions."},
-        {"q": "What changes does the conversion make?", "a": "The tool embeds all fonts, converts color spaces to sRGB, removes JavaScript and multimedia, and adds the required PDF/A metadata."},
-        {"q": "Will the document look different after conversion?", "a": "Visually the document should look the same. Transparency may be flattened in PDF/A-1b, and embedded multimedia will be removed since PDF/A does not allow it."},
+        {"q": "What changes does the conversion make?", "a": "It re-saves the file with unused objects removed and streams compressed, sets the producer to PrivaTools PDF/A Converter, and writes PDF/A-2b identification into the XMP metadata. It also drops the author, subject, keywords, creating application and creation and modification dates from the document properties, keeping only the title. It does not embed fonts, add an output colour profile, convert colours or remove JavaScript, so the result is labelled PDF/A-2b without being checked against the standard."},
+        {"q": "Will the document look different after conversion?", "a": "No. Pages are not re-rendered, and text, images, links, bookmarks, form fields and annotations stay as they were. Because fonts are not embedded, text in a font that was not already embedded still depends on the fonts of the computer that opens the file."},
     ],
     "image-to-pdf": [
         {"q": "What image formats are supported?", "a": "JPG, PNG, WebP, BMP, TIFF, GIF, HEIC/HEIF, and SVG, up to 50 images and 200 MB in total per PDF. Animated GIF and WebP files and multi-page TIFFs contribute only their first frame, SVGs are converted to images, and transparent areas are not kept."},
@@ -1479,7 +1479,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What languages are supported?", "a": "The on-device DistilBART model was trained on English news text, so it is only dependable for English documents. For other languages, use 'My own API key' with a multilingual model from your provider."},
         {"q": "How good is the on-device summary?", "a": "Modest. DistilBART is a small model that runs in a browser tab, so it gives a serviceable gist, not a nuanced analysis, and it can miss or distort details. Check anything important against the source. 'My own API key' gives better results at your provider's prices."},
         {"q": "What leaves my device when I use my own API key?", "a": "The extracted text of the PDF and the summarization instructions go from your browser directly to the provider you selected, using your key. PrivaTools does not relay the request. That provider's terms and retention settings then apply, so check them before sending confidential material."},
-        {"q": "Is there a file size or page limit?", "a": "Nothing is uploaded, so the server's 500 MB cap does not apply; the practical limit is your browser's memory and your patience. Very long PDFs are slow on the on-device engine because every chunk is summarized in turn."},
+        {"q": "Is there a file size or page limit?", "a": "The PDF is not uploaded, so the server's 500 MB cap does not apply; the practical limit is your browser's memory and your patience. Very long PDFs are slow on the on-device engine because every chunk is summarized in turn."},
         {"q": "Why does my scanned PDF produce no summary?", "a": "A scan is a set of page images with no text layer, so there is nothing for the tool to read. Run OCR PDF first to add real text, then summarize the result."},
     ],
     "smart-redact": [
@@ -1560,9 +1560,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How much smaller will my files get?", "a": "It depends on how much waste a file carries. Batch Compress removes unused objects and compresses streams, but it does not touch images: in a test, a PDF made of one JPEG photo shrank by less than 0.1 %. For image compression, use Compress PDF, which offers Light, Recommended and Extreme levels."},
     ],
     "pdf-page-counter": [
-        {"q": "How is this faster than opening each PDF?", "a": "The tool reads only the PDF's page metadata, not the page content. For 100 PDFs the total scan time is typically under a second."},
-        {"q": "Does it work on encrypted PDFs?", "a": "Yes for most. Password-protected PDFs that block metadata access return as invalid."},
-        {"q": "Useful for print pricing?", "a": "Yes — print shops use this exact tool to count total pages across multi-file print jobs for instant quotes."},
+        {"q": "How is this faster than opening each PDF?", "a": "You drop all the files at once instead of opening them one by one, and the server reads each page count without rendering any pages, so once the upload finishes the counts come back quickly."},
+        {"q": "Does it work on encrypted PDFs?", "a": "Often. Files that only restrict printing or editing are counted normally, and some files that need a password to open are counted too. When a password-protected file keeps its page list encrypted, though, it shows 0 pages, so remove the password with Unlock PDF first. Files the tool cannot read at all are marked invalid."},
+        {"q": "Useful for print pricing?", "a": "Yes. Add every file in a print job to get each file's page count and the combined total in one go, which is what a per-page quote needs."},
     ],
     "webp-to-jpg": [
         {"q": "Why convert WebP to JPG?", "a": "WebP is efficient but still refused by plenty of older software, print workflows and desktop applications. JPG is the format that opens essentially everywhere, which makes it the safe choice for sending a picture to someone whose tools you do not control."},
@@ -1850,8 +1850,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and reordered on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "compare-pdf": [
-        {"q": "Does this work on scanned PDFs?", "a": "Only with OCR. Run OCR PDF on both files first so the text layer is present, then compare."},
-        {"q": "How accurate is the text diff?", "a": "Word-level diff handles reordering, insertion, deletion, and formatting changes. Diffs based on character runs would be noisier."},
+        {"q": "Does this work on scanned PDFs?", "a": "Visual mode does, because it compares how the pages look, but scanner noise and small shifts between two scans also show up as changes. Text mode needs a text layer, so run OCR PDF on both files first."},
+        {"q": "How accurate is the text diff?", "a": "It compares the extracted text line by line, so changing one word marks the whole line as removed and added again. Fonts, colours and other formatting are ignored, and moved text shows up as a deletion plus an addition. Use Visual mode to spot layout changes."},
         {"q": "Can I compare more than two files?", "a": "Run Compare twice (A vs B, then B vs C) to chain a multi-revision comparison."},
     ],
     "crop-pdf": [
@@ -1891,8 +1891,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How does it handle very wide sheets?", "a": "All columns are squeezed across one landscape A4 page and long values are cut short to fit, so very wide sheets become hard to read. The header row is not repeated on later pages."},
     ],
     "extract-images": [
-        {"q": "Will the images be the original resolution?", "a": "Yes. PDF embeds images at the resolution set when the PDF was created — extraction recovers them unchanged."},
-        {"q": "What if the same image appears multiple times?", "a": "Each visual occurrence is extracted, even if it's the same underlying image data. Use deduplication after if needed."},
+        {"q": "Will the images be the original resolution?", "a": "Yes. Each image is saved at the pixel size stored in the PDF, without resampling. RGB and greyscale JPEGs are copied byte for byte, CMYK JPEGs are re-saved as high-quality JPEG, and other images are saved without further quality loss, but a separate transparency mask is not applied, so a logo with a transparent background comes out on a solid one."},
+        {"q": "What if the same image appears multiple times?", "a": "Each page that uses it gets its own copy in the ZIP, so a logo repeated on every page comes out once per page. Remove the duplicates afterwards if you need to."},
         {"q": "Does it work on scanned PDFs?", "a": "Yes — each page of a scanned PDF is one big image. The tool extracts that page-image directly."},
     ],
     "extract-pages": [
@@ -1904,8 +1904,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and processed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "fill-form": [
-        {"q": "How do I know what the form field names are?", "a": "Use the /api/fill-form/fields endpoint (or paste-then-inspect): PrivaTools returns the list of field names, types, and current values without filling anything."},
-        {"q": "Can I flatten the filled form?", "a": "Yes — run the Flatten tool afterwards to bake the values into the page content so they can't be edited."},
+        {"q": "How do I know what the form field names are?", "a": "You do not need to. Detect form fields lists every field with its name, type and current value, ready to fill, without changing anything. Developers can get the same list from the /api/fill-form/fields endpoint."},
+        {"q": "Can I flatten the filled form?", "a": "Partly. The Flatten tool marks the filled fields read-only so PDF viewers stop offering to edit them, but the fields stay in the file as form fields and their values are not baked into the page content."},
         {"q": "Does this work on signed forms?", "a": "Filling a signed form invalidates the signature. Sign last, after filling."},
     ],
     "gif-to-pdf": [
@@ -1955,7 +1955,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "nup": [
         {"q": "Why is this called 'N-up'?", "a": "Print-industry terminology: '2-up' = 2 pages per sheet, '4-up' = 4 per sheet, etc. Saves paper and ink for review prints."},
         {"q": "Are page numbers preserved?", "a": "Original page numbers (rendered on the page) shrink with the page. Add new page numbers afterwards if you need them readable."},
-        {"q": "What aspect ratio works best?", "a": "2-up and 8-up work well for landscape, 4-up and 9-up for portrait. Mismatches add whitespace around each sub-page."},
+        {"q": "What aspect ratio works best?", "a": "Sheets are always A4 landscape. Portrait pages fill 2-up side-by-side with no wasted space, while landscape pages fill 4-up, 9-up and 16-up. Mismatches add whitespace around each sub-page."},
     ],
     "odt-to-pdf": [
         {"q": "What about ODT-specific features (math equations, drawings)?", "a": "OpenDocument math (Formula) and drawings render correctly as the LibreOffice converter handles them natively."},
@@ -1972,7 +1972,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "overlay": [
         {"q": "What's the difference between overlay and merge?", "a": "Merge concatenates files page-by-page. Overlay composites pages on top of each other — useful for adding letterheads, watermarks-from-PDF, or repeating templates."},
-        {"q": "Can I overlay only some pages?", "a": "By default it applies cycle-wise: if the overlay has 3 pages and the base has 10, the overlay repeats. For one-time overlay, use a base + overlay of equal length."},
+        {"q": "Can I overlay only some pages?", "a": "No. Every base page gets an overlay page: overlay page 1 goes on base page 1, page 2 on page 2, and so on, and once the overlay runs out its first page is reused for the remaining base pages. A one-page overlay, such as a letterhead, therefore lands on every page."},
         {"q": "Does transparency work?", "a": "Yes — PDF supports transparency and the overlay's alpha is honored. White rectangles still cover what's beneath; transparent regions show base content through."},
     ],
     "page-numbers": [
@@ -2041,9 +2041,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What about embedded videos?", "a": "They are left out, poster frame included, because only text is converted. If you have the video file itself, Video to PDF can lay out evenly spaced frames from it."},
     ],
     "qr-code": [
-        {"q": "Can I customize colors?", "a": "No. Codes are generated black on white; custom colours and centre logos are not supported. Plain high-contrast codes are also the most reliable to scan."},
+        {"q": "Can I customize colors?", "a": "Yes. Pick any colour for the code and the background, and optionally add a small centre logo as a PNG, JPG or WebP image. Keep a dark code on a light background with strong contrast, and scan the finished code before sharing it."},
         {"q": "How do I encode a URL with parameters?", "a": "Just paste the full URL. Special characters are encoded automatically inside the QR."},
-        {"q": "What's the maximum data I can encode?", "a": "Around 2,500 alphanumeric characters or 4,000 numeric digits at error correction level L. Higher EC levels reduce capacity."},
+        {"q": "What's the maximum data I can encode?", "a": "About 2,200 characters of ordinary text, such as a long URL, or about 5,300 digits, at the error correction level M the tool uses. Adding a centre logo switches to level H and roughly halves that. Longer input cannot be encoded."},
     ],
     "remove-blank-pages": [
         {"q": "How does it decide a page is blank?", "a": "Each page is rendered at a low resolution and the proportion of near-white pixels is measured. A page that is white enough for the sensitivity you chose is treated as blank. Pages carrying text are normally kept."},
@@ -2360,7 +2360,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is my PDF uploaded anywhere?", "a": "The PDF itself is not. With the default 'On this device' engine, text extraction and translation both run in your browser. Two optional steps do send text out: 'My own API key' sends the extracted text directly to the AI provider you chose, and 'Save as PDF' sends the translated text to the PrivaTools server, where it is typeset in temporary per-request storage."},
         {"q": "Why does the first translation take a while?", "a": "Because the model for that language pair, about 107 MB, downloads the first time you use it. After that it is cached in your browser and reused on later visits."},
         {"q": "How good is the translation?", "a": "Good enough to read and understand a document. These are compact models chosen so they can run in a browser, so they will not match a large cloud translator on nuance or long, complex sentences. For better quality, 'My own API key' uses a model from your provider instead."},
-        {"q": "Does it keep the original layout?", "a": "No. Text is translated, not typeset: the result is plain text per page, and 'Save as PDF' produces a simple text PDF, not a copy of the original design."},
+        {"q": "Does it keep the original layout?", "a": "No. Text is translated, not typeset: the result is plain text per page, and 'Save as PDF' produces a simple text PDF in a basic Latin font, not a copy of the original design. That font has no letters for scripts such as Cyrillic, Chinese, Arabic or Hindi, or for letters such as ř and ł, which print as boxes, so use the .txt download for those languages."},
         {"q": "Which languages are supported?", "a": "On this device, English can be translated into 19 languages, and 24 languages can be translated into English; each direction is its own model, so English to French does not also fetch French to English. Pairs that do not involve English are not available on-device. 'My own API key' detects the source language itself and offers a wider list of targets."},
         {"q": "Why is nothing translated from my scanned PDF?", "a": "A scan has no text layer, so there is nothing to extract. Run OCR PDF first, then translate the result."},
     ],

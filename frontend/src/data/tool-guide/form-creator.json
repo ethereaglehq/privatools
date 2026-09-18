@@ -1,34 +1,34 @@
 {
   "howto": [
     {
-      "name": "Upload a PDF or start blank",
-      "text": "Upload an existing PDF to add form fields on top, or start with a blank page."
+      "name": "Upload a PDF",
+      "text": "Upload the PDF you want to add form fields to. The fields are placed on top of its existing pages, and its bookmarks, links and comments are kept."
     },
     {
       "name": "Add form fields",
-      "text": "Drag text inputs, checkboxes, dropdowns, radio buttons, or signature fields onto the page. Set field names and validation rules."
+      "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. Give each field a name and choose its type: text, checkbox, dropdown, list or signature."
     },
     {
       "name": "Configure form properties",
-      "text": "Set tab order, default values, and required-field flags. Preview the form to test interactivity."
+      "text": "Set default values, mark fields as required, allow several lines in a text field, pre-tick checkboxes, and type the options for dropdowns and lists, separated by commas."
     },
     {
       "name": "Export the fillable PDF",
-      "text": "Click Save. The PDF contains standard AcroForm fields that work in any PDF reader."
+      "text": "Click Generate fillable PDF. The download contains standard AcroForm fields, the interactive form format PDF readers use; test it in the reader your recipients use."
     }
   ],
   "faq": [
     {
       "q": "What field types can I add?",
-      "a": "Text inputs, text areas, checkboxes, radio buttons, dropdowns, date pickers, and signature fields."
+      "a": "Single-line and multi-line text fields, checkboxes, dropdowns, list boxes, and empty signature fields. There are no date pickers, and the Radio type in the list currently fails with an error."
     },
     {
       "q": "Will the form work in Adobe Reader?",
-      "a": "Yes. The forms use the standard AcroForm format, which is compatible with Adobe Reader, Foxit, and all major PDF viewers."
+      "a": "It should. The fields are standard AcroForm fields, the form format that Adobe Reader and other common PDF viewers support, and the file asks viewers to draw the fields' appearance themselves. Open the finished form in the reader your recipients use before sending it."
     },
     {
       "q": "Can I set fields as required?",
-      "a": "Yes. Mark any field as required to prevent submission without filling it in. You can also set validation rules like numeric-only or email format."
+      "a": "Yes. Tick Required on a field to set the PDF required flag; how it is enforced depends on the PDF reader and on how the form is submitted. Validation rules such as numeric-only or email format are not available."
     }
   ]
 }

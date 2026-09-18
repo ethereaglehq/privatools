@@ -2,25 +2,25 @@
   "howto": [
     {
       "name": "Upload up to 100 PDFs",
-      "text": "Drag up to 100 PDF files. The tool reads only metadata, not content — page counts come back almost instantly."
+      "text": "Drag up to 100 PDF files, 500 MB in total. They are uploaded together, and the server reads each file's page count without rendering any pages, so the counts come back quickly once the upload finishes."
     },
     {
       "name": "Read the per-file count",
-      "text": "Each filename appears with its page count. The total across all files appears at the bottom — ideal for print quotes."
+      "text": "Each filename appears with its page count, and the total across all files appears above the list — ideal for print quotes. Files that cannot be read are marked invalid and left out of the total."
     }
   ],
   "faq": [
     {
       "q": "How is this faster than opening each PDF?",
-      "a": "The tool reads only the PDF's page metadata, not the page content. For 100 PDFs the total scan time is typically under a second."
+      "a": "You drop all the files at once instead of opening them one by one, and the server reads each page count without rendering any pages, so once the upload finishes the counts come back quickly."
     },
     {
       "q": "Does it work on encrypted PDFs?",
-      "a": "Yes for most. Password-protected PDFs that block metadata access return as invalid."
+      "a": "Often. Files that only restrict printing or editing are counted normally, and some files that need a password to open are counted too. When a password-protected file keeps its page list encrypted, though, it shows 0 pages, so remove the password with Unlock PDF first. Files the tool cannot read at all are marked invalid."
     },
     {
       "q": "Useful for print pricing?",
-      "a": "Yes — print shops use this exact tool to count total pages across multi-file print jobs for instant quotes."
+      "a": "Yes. Add every file in a print job to get each file's page count and the combined total in one go, which is what a per-page quote needs."
     }
   ]
 }

@@ -465,9 +465,9 @@ Convert PDF to Word online for free. Extract text, paragraphs, and images into a
 
 URL: https://privatools.me/tool/alternate-mix
 
-Mix pages of two or more PDFs alternately
+Mix pages of two PDFs alternately
 
-Alternate mix PDF pages online — interleave pages from two or more PDFs for duplex scanning workflows. Combine front-side and back-side scans into the correct page order. Free tool, no sign-up.
+Alternate mix PDF pages online — interleave pages from two PDFs for duplex scanning workflows. Combine front-side and back-side scans into the correct page order. Free tool, no sign-up.
 
 ### Compare PDF
 
@@ -475,15 +475,15 @@ URL: https://privatools.me/tool/compare-pdf
 
 Visually compare two PDF documents
 
-Compare two PDFs online for free — upload two versions of a document and get a visual diff highlighting every text change, addition, and deletion. Essential for contract review, version control, and proofreading.
+Compare two PDFs online for free — upload two versions of a document and get a visual diff that highlights the areas that changed on each page, or a line-by-line text diff of additions and deletions. Essential for contract review, version control, and proofreading.
 
 ### Extract Images
 
 URL: https://privatools.me/tool/extract-images
 
-Extract all embedded images from the PDF
+Extract the embedded images from a PDF
 
-Extract images from PDF online for free — detect and download all embedded images from your PDF as individual PNG or JPEG files. Get all photos, logos, and graphics out of any PDF document.
+Extract images from PDF online for free — detect and download the embedded images in your PDF as individual files, mostly PNG or JPEG. Get photos, scanned pages, and raster logos out of any PDF document; vector drawings are not images and are not extracted.
 
 ### Fill Form
 
@@ -499,7 +499,7 @@ URL: https://privatools.me/tool/nup
 
 Print multiple pages per sheet
 
-Print multiple PDF pages per sheet online — arrange 2, 4, 6, or 9 pages onto a single sheet for booklet-style printing. Save paper and create handouts. Free N-Up PDF tool with no watermarks.
+Print multiple PDF pages per sheet online — arrange 2, 4, 6, 9, or 16 pages onto a single sheet for compact printing. Save paper and create handouts. Free N-Up PDF tool with no watermarks.
 
 ### OCR PDF
 
@@ -507,7 +507,7 @@ URL: https://privatools.me/tool/ocr-pdf
 
 Extract text or create a searchable PDF using OCR
 
-OCR PDF online for free — convert scanned documents into searchable, selectable text using Tesseract OCR. Supports 100+ languages including English, Hindi, Spanish, French, and more. Output as searchable PDF or plain text.
+OCR PDF online for free — convert scanned documents into searchable, selectable text using Tesseract OCR. The server engine reads 17 languages, including English, Hindi, Spanish, and French, and the in-browser engine offers 45. Output as searchable PDF or plain text.
 
 ### Overlay PDF
 
@@ -521,17 +521,17 @@ Overlay PDF pages online — layer one PDF document on top of another. Perfect f
 
 URL: https://privatools.me/tool/qr-code
 
-Generate QR codes — download as PNG or stamp into a PDF
+Generate QR codes — download as PNG or PDF
 
-Generate QR codes online for free — encode any URL, contact card, WiFi credentials, or plain text into a QR code. Download as PNG, or optionally stamp the QR onto a PDF page at a chosen position and size. Standard QR with built-in error correction; reads with any phone camera.
+Generate QR codes online for free — encode any URL, contact card, WiFi credentials, or plain text into a QR code. Download it as a PNG image or a one-page PDF, choose the size and colours, and optionally add a small centre logo. Standard QR with built-in error correction that phone cameras can read.
 
 ### PDF to PDF/A
 
 URL: https://privatools.me/tool/pdf-to-pdfa
 
-Convert to PDF/A format for long-term archiving
+Save a cleaned copy labelled PDF/A-2b for archiving
 
-Convert PDF to PDF/A online for free — create ISO-standardized archival documents for long-term digital preservation. Essential for legal compliance, government records, and permanent document storage.
+Convert PDF to PDF/A online for free — the tool re-saves your PDF with a cleaned-up structure and marks it as PDF/A-2b in its XMP metadata. It does not embed fonts, add a colour profile or check the file against the standard, so validate the result before you rely on it for legal, government or archive submissions.
 
 ### Remove Blank Pages
 
@@ -753,9 +753,9 @@ Add clickable links to PDF pages online — PrivaTools finds every web address i
 
 URL: https://privatools.me/tool/form-creator
 
-Add text fields, checkboxes, radios, and dropdowns to PDFs
+Add text fields, checkboxes, dropdowns, and lists to PDFs
 
-Create fillable PDF forms online for free — add text fields, checkboxes, radio buttons, dropdowns, and signature fields to any PDF. Build professional forms without Adobe Acrobat. Free form builder.
+Create fillable PDF forms online for free — add text fields, checkboxes, dropdowns, list boxes, and signature fields to any PDF. Build professional forms without Adobe Acrobat. Free form builder.
 
 ### Transparent Background
 
