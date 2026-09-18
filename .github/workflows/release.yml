@@ -109,7 +109,7 @@ jobs:
           path: trivy-image.sarif
           if-no-files-found: error
           retention-days: 14
-      - uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v3
+      - uses: github/codeql-action/upload-sarif@b96794f015dfd88f77b49b1c93e0fa7110f94c63 # v4.38.0
         if: ${{ !cancelled() && hashFiles('trivy-image.sarif') != '' }}
         continue-on-error: true
         with:
