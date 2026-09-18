@@ -5,7 +5,7 @@ import { AiTaskWorkspace } from "./AiTaskWorkspace";
  * Summarize PDF — runs entirely in the browser.
  *
  * 1. pdfjs-dist extracts text from the PDF (client-side).
- * 2. @huggingface/transformers loads a small distilbart-cnn model (~250 MB,
+ * 2. @huggingface/transformers loads a small distilbart-cnn model (~275 MB,
  *    cached in the browser Cache API after the first load).
  * 3. Long PDFs are chunked at sentence boundaries and summarized chunk-by-
  *    chunk; the chunk summaries are stitched back together. For very long
@@ -296,7 +296,7 @@ export function SummarizePdfUI() {
                         <span className="font-medium text-[11px] text-muted-foreground">
                             {engine === "byok"
                                 ? `${providerById(byok.provider)?.label ?? "no provider selected"} · your account`
-                                : "distilbart-cnn-6-6 · ~250 MB · downloads when needed"}
+                                : "distilbart-cnn-6-6 · ~275 MB · downloads when needed"}
                         </span>
                     </div>
                     {/*
@@ -391,7 +391,7 @@ export function SummarizePdfUI() {
                             >
                                 <span className="block text-[13.5px] font-medium text-foreground">On this device</span>
                                 <span className="block text-[11.5px] text-muted-foreground mt-0.5 leading-snug">
-                                    Free, no key. Downloads a ~250MB model once, then works offline.
+                                    Free, no key. Downloads a ~275 MB model once, then works offline.
                                     Quality is modest — it is a small model.
                                 </span>
                             </button>

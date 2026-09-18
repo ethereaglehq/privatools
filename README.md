@@ -132,7 +132,7 @@ The full, always-current catalogue, with each tool's page and guide, lives at [p
 
 | Model | Powers | Size |
 |---|---|---|
-| DistilBART CNN 6-6 | Summarize PDF | ~250 MB |
+| DistilBART CNN 6-6 | Summarize PDF | ~275 MB |
 | BERT-base-NER | Smart Redact PII detection | ~110 MB |
 | OPUS-MT (per language pair) | Translate PDF | ~107 MB |
 | U²-Net-P | Background Remover (optional on-device engine; the server engine is the default) | ~4.4 MB + runtime |

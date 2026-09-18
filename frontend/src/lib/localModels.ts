@@ -75,7 +75,7 @@ export const LOCAL_MODELS: LocalModelInfo[] = [
         label: "Summarizer — DistilBART CNN",
         powers: "Summarize PDF · the free on-device engine",
         toolHref: "/tool/summarize-pdf",
-        approxLabel: "~250 MB",
+        approxLabel: "~275 MB",
         predownload: (p) => pipelinePredownload("summarization", "Xenova/distilbart-cnn-6-6", p, 250 * 1024 * 1024),
     },
     {

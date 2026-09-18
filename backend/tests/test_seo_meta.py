@@ -808,3 +808,32 @@ def test_llms_facts_describe_the_analytics_actually_in_use():
             text = handle.read()
         assert "Google Analytics" in text, name
         assert "first-party pageview telemetry" not in text, name
+
+
+def _body_for(path: str) -> str:
+    html = "<html><head><title>Old</title></head><body><div id='root'></div></body></html>"
+    return re.sub(r"\s+", " ", inject_seo(html, path))
+
+
+def test_server_rendered_pages_never_promise_immediate_deletion():
+    # Server tools remove files after the response, with a background sweep
+    # for leftovers: a cleanup policy, not an instant guarantee.
+    for path in ("/tools", "/privacy", "/terms"):
+        body = _body_for(path)
+        assert "immediately after the response" not in body, path
+        assert "immediately delete" not in body, path
+
+
+def test_server_rendered_privacy_page_describes_default_on_analytics():
+    # Since v2.5.0 analytics is on by default; the Privacy page switch is the
+    # only opt-out, and Do Not Track or GPC are not read.
+    body = _body_for("/privacy")
+    assert "on by default" in body
+    assert "requires opt-in" not in body
+    assert "Do Not Track" not in body
+
+
+def test_server_rendered_terms_page_does_not_deny_limits():
+    body = _body_for("/terms")
+    assert "no limits" not in body
+    assert "fair-use limits" in body
