@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "My scans look fine — should I run deskew?",
-      "a": "It does no harm: pages whose detected tilt is 0.3° or less are left exactly as they were. A tilted page is replaced by a rotated image, so any text layer on that page is lost."
+      "a": "Pages whose detected tilt is 0.3° or less keep their original content, but the file is rebuilt, so bookmarks and document metadata are dropped either way. A tilted page is replaced by a rotated image, so any text layer on that page is lost. Use it on scans only: on born-digital pages the detector reported tilts of 0.5° to 1° that were not there."
     },
     {
       "q": "Will deskew add white margins?",

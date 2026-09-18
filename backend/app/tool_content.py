@@ -1873,7 +1873,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and processed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "deskew-pdf": [
-        {"q": "My scans look fine — should I run deskew?", "a": "It does no harm: pages whose detected tilt is 0.3° or less are left exactly as they were. A tilted page is replaced by a rotated image, so any text layer on that page is lost."},
+        {"q": "My scans look fine — should I run deskew?", "a": "Pages whose detected tilt is 0.3° or less keep their original content, but the file is rebuilt, so bookmarks and document metadata are dropped either way. A tilted page is replaced by a rotated image, so any text layer on that page is lost. Use it on scans only: on born-digital pages the detector reported tilts of 0.5° to 1° that were not there."},
         {"q": "Will deskew add white margins?", "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills it with white and scales the result to fit the original page size."},
         {"q": "Should I deskew before or after OCR?", "a": "Before. A straightened page is replaced by an image without a text layer, so OCR has to run on the deskewed file anyway."},
     ],
