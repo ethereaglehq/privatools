@@ -38,7 +38,8 @@ P2_SLUGS = P2_CONVERSION_SLUGS + P2_DEV_SLUGS
 
 @pytest.mark.parametrize("slug", P2_SLUGS)
 def test_phase2_slug_is_in_sitemap_registry(slug: str):
-    assert slug in sitemap.NON_PDF_TOOLS
+    pdf, nonpdf = seo_meta._tool_registries()
+    assert slug in nonpdf
 
 
 @pytest.mark.parametrize("slug", P2_SLUGS)
