@@ -20,7 +20,7 @@
     },
     {
       "q": "What if the video has multiple audio tracks?",
-      "a": "PrivaTools extracts the first/default audio track. Multi-track extraction is on the roadmap."
+      "a": "The first (default) audio track is extracted. Choosing another track, or extracting several at once, is not supported."
     },
     {
       "q": "Can I extract just a section of the audio?",

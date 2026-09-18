@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Paste your JWT",
-      "text": "Copy the full token (three dot-separated base64url segments) into the input area."
+      "name": "Paste the token",
+      "text": "Paste a JSON Web Token: three base64url parts separated by dots, header.payload.signature."
     },
     {
-      "name": "Inspect the decoded structure",
-      "text": "Header, payload, and signature are decoded in your browser. Standard claims (iss, sub, aud, exp, iat, nbf, jti) are highlighted; expiry status is shown."
+      "name": "Read the header and claims",
+      "text": "The header and payload are decoded to readable JSON, and time claims such as exp and iat are shown as dates, with a clear indication when the token has expired."
     },
     {
-      "name": "Copy decoded values",
-      "text": "Click Copy on any section to grab the JSON. Decoding never sends your token to a server."
+      "name": "Copy what you need",
+      "text": "Copy the decoded parts for a bug report or a test. The decoding happens on this page; the token is not uploaded to PrivaTools."
     }
   ],
   "faq": [
     {
-      "q": "Is it safe to paste a real production JWT here?",
-      "a": "Yes — decoding happens entirely in your browser using JavaScript's atob(). No part of the token is sent to a server. Verify by checking DevTools → Network."
+      "q": "Does this verify the token's signature?",
+      "a": "No, and that matters. The tool decodes and displays the contents; it does not check the signature against a key. A token that decodes cleanly may still be forged or tampered with, so never treat a decoded token as trusted."
     },
     {
-      "q": "Can it verify the signature?",
-      "a": "Not in this tool. Verification requires the issuer's signing key (HMAC secret for HS*, public key for RS*/ES*). The decoder displays the signature for inspection but doesn't validate it."
+      "q": "Why can anyone read my token's payload?",
+      "a": "Because a standard signed JWT is encoded, not encrypted. Base64url is reversible by anyone, which is why a JWT should never carry secrets such as passwords."
     },
     {
-      "q": "What if my JWT is malformed?",
-      "a": "If the three-part dot structure is wrong, you'll see a clear error. If the base64 is malformed, the parser shows which segment failed."
+      "q": "Is my token sent anywhere?",
+      "a": "No. Decoding runs in JavaScript on this page and the token is not uploaded to PrivaTools. Even so, treat a live production token like a password and avoid pasting it into places you do not control."
+    },
+    {
+      "q": "It says the token needs three parts.",
+      "a": "A signed JWT is three sections separated by two dots. A missing section usually means the token was truncated when copied, or it includes a prefix such as Bearer that should be removed."
+    },
+    {
+      "q": "How do I read exp and iat?",
+      "a": "They are Unix timestamps in seconds: iat is when the token was issued and exp when it expires. The tool converts them to dates and highlights an expired token."
+    },
+    {
+      "q": "Can it decode encrypted tokens?",
+      "a": "No. An encrypted token (JWE) has five parts and cannot be read without the key. This tool handles the common signed format."
     }
   ]
 }

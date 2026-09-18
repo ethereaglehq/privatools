@@ -24,7 +24,7 @@
     },
     {
       "q": "Are files kept after conversion?",
-      "a": "No. Input and output files are temporary and deleted as soon as the download is returned."
+      "a": "No. Input and output are temporary files; response cleanup removes them after the BMP is sent, and a background sweep clears anything left behind by an interrupted request."
     }
   ]
 }

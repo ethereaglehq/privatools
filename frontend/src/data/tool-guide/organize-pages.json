@@ -1,30 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload your PDF",
-      "text": "Drop a PDF up to 500 MB. Each page renders as a thumbnail."
+      "name": "Add the PDF",
+      "text": "Drop or select a PDF up to 500 MB. A thumbnail of every page is generated so you can see what you are rearranging."
     },
     {
-      "name": "Drag and rearrange",
-      "text": "Reorder, rotate, or delete pages visually. Use Duplicate to repeat a page."
+      "name": "Reorder the pages",
+      "text": "Drag thumbnails into a new position, or use the move left and move right buttons for precise single steps."
     },
     {
-      "name": "Apply and download",
-      "text": "Click Save. The output PDF has pages in your specified order."
+      "name": "Remove pages you do not need",
+      "text": "Use the remove button on any thumbnail to leave that page out of the result."
+    },
+    {
+      "name": "Save the new PDF",
+      "text": "Apply the changes and download the PDF with the pages in the order you arranged."
     }
   ],
   "faq": [
     {
-      "q": "Can I rotate individual pages independently?",
-      "a": "Yes — each thumbnail has its own rotate button. Rotations are 90° clockwise / counter-clockwise / 180°."
+      "q": "What can I change with this tool?",
+      "a": "The order of the pages, and which pages are included. It does not rotate, edit or add pages; use Rotate PDF, Edit PDF or Merge PDF for those."
     },
     {
-      "q": "How is this different from Extract Pages?",
-      "a": "Extract keeps a subset in original order. Organize lets you reorder, duplicate, rotate, and delete all in one pass."
+      "q": "Can I move a page from one PDF into another?",
+      "a": "Merge the two files first with Merge PDF, then open the merged document here and drag the page to where it belongs."
     },
     {
-      "q": "Does it preserve bookmarks?",
-      "a": "Bookmarks targeting deleted pages are removed; targeting reordered pages, they follow to the new position."
+      "q": "Is there a quicker way to reverse every page?",
+      "a": "Yes. Reverse PDF flips the whole document in one step, which is handy when a scanner fed the pages last page first."
+    },
+    {
+      "q": "Will the pages lose quality?",
+      "a": "No. Pages are reordered, not re-rendered, so text stays selectable and images are not recompressed."
+    },
+    {
+      "q": "Do the thumbnails mean my PDF is uploaded twice?",
+      "a": "The PDF is sent to the server to render the thumbnails and again to build the reordered file. Both requests use the same temporary per-request handling."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and reorganised on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

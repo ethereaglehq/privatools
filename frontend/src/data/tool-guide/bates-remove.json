@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the clean PDF",
-      "text": "The matching stamps are removed and the rest of the page is untouched. The original on your device is never modified."
+      "text": "The matching stamps are removed and the rest of the page is untouched. You download a new PDF; the original on your device is not changed."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "Does removing Bates numbers change the rest of the page?",
-      "a": "No. Only the matching stamp objects are removed; the remaining text, images and layout are untouched, and the file on your device is never modified."
+      "a": "No. Only the matching stamp objects are removed; the remaining text, images and layout are untouched. The result is a new PDF, so the file on your device stays as it was."
     },
     {
       "q": "Can I renumber after removing?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "Is it free and account-free?",
-      "a": "Yes. No account, no watermark, no daily cap, the same as every other tool on the site."
+      "a": "Yes. No account and no watermark, the same as every other tool on the site. Fair-use rate limits apply."
     }
   ]
 }

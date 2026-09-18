@@ -1,34 +1,50 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Select a PDF up to 500 MB. Best for batch-style documents: monthly statements, multi-invoice exports, chapter-divided manuscripts."
+      "name": "Add the PDF",
+      "text": "Drop or select a PDF up to 500 MB that has a text layer, such as a batch of invoices or statements exported from software."
     },
     {
-      "name": "Enter the search phrase",
-      "text": "Type the keyword that appears at the start of each section (e.g. 'Invoice #', 'Statement of', 'Chapter')."
+      "name": "Enter the text that starts each part",
+      "text": "Type a word or phrase that appears on the first page of every section, for example Invoice Number or Statement Date."
     },
     {
-      "name": "Toggle case sensitivity",
-      "text": "Enable case-sensitive matching if your keyword's capitalization matters."
+      "name": "Choose case matching",
+      "text": "Matching ignores capitalisation by default. Turn on case-sensitive matching when the phrase also appears in lower case elsewhere and you want only the exact form."
     },
     {
       "name": "Split and download",
-      "text": "Click Split. Every page containing the keyword starts a new chunk. The result is a ZIP of part1.pdf, part2.pdf, etc."
+      "text": "Run it. A new part begins at each page where the text is found, and the parts arrive in a ZIP."
     }
   ],
   "faq": [
     {
-      "q": "How does it decide where to split?",
-      "a": "It scans every page for your search term. Every page that contains the term becomes the start of a new chunk. The chunk runs until the next match-page or the end of the document."
+      "q": "Where exactly does each split happen?",
+      "a": "At every page that contains your text: that page starts a new part. Choose a phrase that appears once, on the first page of each section, so the parts line up with the documents you expect."
     },
     {
-      "q": "Can I use a regex?",
-      "a": "Not in the current version — the search is a literal string match (case-sensitive optional). For regex splits, use the dev API directly."
+      "q": "Why does it find nothing in my scanned PDF?",
+      "a": "A scan is a picture of text with no text layer to search. Run OCR PDF first to add one, then split the result."
     },
     {
-      "q": "What if my keyword doesn't appear at all?",
-      "a": "The tool returns a 400 error with a clear message. Make sure your search exactly matches the casing if you have case-sensitive enabled."
+      "q": "Is the search case-sensitive?",
+      "a": "Not by default: Invoice, INVOICE and invoice all match. Switch on case-sensitive matching when only one form should trigger a split."
+    },
+    {
+      "q": "My phrase appears several times on some pages.",
+      "a": "That only starts one part per page, but a phrase that also appears in running headers or on continuation pages will create extra splits. Use a phrase unique to the start of each section."
+    },
+    {
+      "q": "What happens to the pages before the first match?",
+      "a": "They are kept as the first part, so nothing is lost. If your phrase appears nowhere in the document, the tool stops and tells you rather than returning a single unchanged file."
+    },
+    {
+      "q": "What is this typically used for?",
+      "a": "Splitting a single export that holds many documents — invoices, payslips, statements or letters — back into one file per document."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

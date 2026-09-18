@@ -1,30 +1,50 @@
 {
   "howto": [
     {
-      "name": "Upload a video",
-      "text": "Select an MP4, WebM, MOV, or AVI file up to 500 MB."
+      "name": "Add a short video",
+      "text": "Drop or select a video up to 200 MB — this tool's limit is lower than the site-wide one. Trim long footage first with Trim Media; GIFs are only practical for a few seconds."
     },
     {
-      "name": "Set GIF parameters",
-      "text": "Choose the start time, duration (max 30 seconds recommended for file size), frame rate (10–30 fps), and output width."
+      "name": "Set the frame rate",
+      "text": "Choose how many frames per second the GIF keeps; the default is 10. Higher rates are smoother but make the file much larger."
+    },
+    {
+      "name": "Set the width",
+      "text": "Choose the width in pixels, from 120 up to 1920; the default is 480. The height follows automatically so the picture keeps its proportions."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. FFmpeg extracts the frames and optimizes the color palette for the smallest possible GIF."
+      "text": "Create the GIF and save it. It loops, and it has no sound."
     }
   ],
   "faq": [
     {
-      "q": "What is the maximum GIF duration?",
-      "a": "There is no strict limit, but GIFs longer than 15-30 seconds can become very large. Keeping clips short produces better results."
+      "q": "Why is my GIF so large?",
+      "a": "GIF stores every frame as a separate image and compresses poorly, so a few seconds of video can produce a file far bigger than the video itself. Lower the frame rate, reduce the width or shorten the clip."
     },
     {
-      "q": "Can I control the file size?",
-      "a": "Yes. Lower the frame rate (10 fps is usually enough), reduce the width, and shorten the duration to get smaller files."
+      "q": "Can I choose which part of the video to use?",
+      "a": "There are no start and end controls here; the whole clip is converted. Cut the section you want with Trim Media first, then convert the trimmed clip."
     },
     {
-      "q": "Which video formats are supported?",
-      "a": "MP4, WebM, MOV, and AVI. The server uses FFmpeg, which supports virtually all common video codecs."
+      "q": "Why do the colours look banded?",
+      "a": "GIF allows at most 256 colours per frame, so gradients and skin tones show steps. That is a limit of the format; for smooth colour, share a short MP4 or WebM instead."
+    },
+    {
+      "q": "Does the GIF include sound?",
+      "a": "No. GIF is an image format and cannot carry audio."
+    },
+    {
+      "q": "Why did my conversion fail on a long video?",
+      "a": "Long or high-resolution clips take a long time to turn into frames and can exceed the processing time limit. Trim the clip and lower the width, then try again."
+    },
+    {
+      "q": "What is a good setting for chat and social posts?",
+      "a": "Around 10 frames per second at 480 pixels wide keeps motion readable and the file manageable. Raise the width only when the detail really matters."
+    },
+    {
+      "q": "What happens to my video after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the video and the GIF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

@@ -1,42 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload an image",
-      "text": "Select a JPG, PNG, or WebP image up to 500 MB. Photos of people, products, and animals work best."
+      "name": "Add the images",
+      "text": "Drop or select JPG, PNG or WebP pictures. Photos with a clear subject and a reasonably distinct background give the best results. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."
     },
     {
-      "name": "Background removal runs automatically",
-      "text": "The server uses an AI model to detect the foreground subject and remove the background. No manual tracing is needed."
+      "name": "Choose where the model runs",
+      "text": "The server engine is the default: it runs a compact U-2-Net model on the PrivaTools server with nothing to download. The in-browser engine downloads the same small model once, around four and a half megabytes plus its runtime, and then works on your device."
     },
     {
-      "name": "Download the result",
-      "text": "Save the transparent PNG. You can also choose a solid-color replacement background before downloading."
+      "name": "Cut out the subject",
+      "text": "Run it. The model estimates which pixels belong to the subject and makes the rest transparent."
+    },
+    {
+      "name": "Check the edges",
+      "text": "Look closely at hair, fur, thin objects and anything semi-transparent, which are the hardest cases for any automatic cut-out. A busy or low-contrast background is where mistakes appear."
+    },
+    {
+      "name": "Download the PNG",
+      "text": "Save the result. It is a PNG, because the transparency that replaces the background needs a format that can store it."
     }
   ],
   "faq": [
     {
-      "q": "What kinds of photos work best?",
-      "a": "People, animals, products, and objects with clear edges work best. The U²-Net AI model handles fine details like hair, fur, and semi-transparent edges (sunglasses, leaves, water droplets) reasonably well — much better than the chroma-key technique on a green screen."
+      "q": "How good is the cut-out?",
+      "a": "Good on a clear subject against a distinct background, and noticeably weaker on fine detail. Hair, fur, foliage, glass and motion blur are where automatic cut-outs struggle, because the model has to decide a single yes or no for pixels that are genuinely part subject and part background."
     },
     {
-      "q": "Is the output a transparent PNG?",
-      "a": "Yes — the output is a 32-bit PNG with a real alpha channel. You can drop it onto any background in Figma, Canva, Photoshop, or PowerPoint and it composites cleanly. You can also pick a solid-color or image replacement background before downloading."
+      "q": "What is the difference between the two engines?",
+      "a": "The in-browser engine downloads a compact model once and then runs on your own hardware, so the image is not uploaded for that path. The server engine needs no download and does not depend on your device's speed, but the picture is uploaded to be processed."
     },
     {
-      "q": "Does it work on group photos with multiple people?",
-      "a": "Yes, but quality varies. The model is trained on single-subject portraits, so isolated people in a group are detected well. Overlapping bodies, faces in the background, and partial occlusions may need touch-up in an image editor."
+      "q": "Why is the result always a PNG?",
+      "a": "Because the background is replaced with transparency, and JPG cannot store transparency. Saving the result as JPG afterwards would fill the cut-out area with a solid colour and undo the point of the exercise."
     },
     {
-      "q": "Is my photo uploaded somewhere external — like remove.bg?",
-      "a": "No. The U²-Net model runs on PrivaTools' own server inside an isolated Docker container. The photo enters temporary per-request storage, the model runs locally, the result is sent back, and both the input and output are unlinked from the temp directory immediately after the response. No third-party background-removal service is called."
+      "q": "Which formats can I upload?",
+      "a": "JPG, PNG and WebP work with both engines, and the server engine rejects anything else. Convert a HEIC, TIFF or other format with Image Converter first."
     },
     {
-      "q": "What's the maximum image size?",
-      "a": "500 MB per file, or 100 megapixels of pixel area — whichever you hit first. For most photography that's never a limit. RAW DSLR files at full resolution work; cropped product photos are well within bounds."
+      "q": "Can I put a new background behind the subject?",
+      "a": "Not here — this tool produces the cut-out. Drop the resulting PNG onto a background in any editor, or use it directly in a document or presentation, where the transparency behaves as you would expect."
     },
     {
-      "q": "How does this compare to remove.bg or Canva?",
-      "a": "Free with no daily quota or watermark (remove.bg adds a watermark on the free tier and caps at 1 image per session), no account required (Canva requires sign-up), and the entire pipeline is open source so you can self-host it. Quality is comparable to remove.bg's free tier."
+      "q": "The edges are not quite right. What can I do?",
+      "a": "Crop tightly around the subject first so there is less background to judge, and prefer a source image where subject and background differ clearly in colour or focus. For a critical cut-out, expect to tidy the edges by hand afterwards."
+    },
+    {
+      "q": "What happens to my image if I use the server engine?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

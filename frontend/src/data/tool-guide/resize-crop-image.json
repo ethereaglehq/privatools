@@ -1,30 +1,50 @@
 {
   "howto": [
     {
-      "name": "Upload an image",
-      "text": "JPG, PNG, WebP up to 500 MB."
+      "name": "Add your image",
+      "text": "Drop or select one picture up to 500 MB. This tool works on a single image at a time."
     },
     {
-      "name": "Set target dimensions and mode",
-      "text": "Resize: scale to fit (preserves aspect ratio with padding) or fill (crops to fill). Crop: cut to exact dimensions from the center."
+      "name": "Choose resize or crop",
+      "text": "Resize stretches the whole image to exactly the width and height you give. Crop fills that same size without distorting anything: it scales the picture to cover the box and trims the overflow evenly from the centre."
     },
     {
-      "name": "Download the result",
-      "text": "Single processed image at the specified dimensions."
+      "name": "Set the width and height",
+      "text": "Enter the target size in pixels. Both values accept anything from 1 up to 8000, and the starting point is 800 by 600."
+    },
+    {
+      "name": "Process and download",
+      "text": "Run it and save the result, which keeps the format of your original. Check the edges when cropping, since anything outside the centred box is removed."
     }
   ],
   "faq": [
     {
-      "q": "Should I resize or crop?",
-      "a": "Resize when you want to keep the entire image. Crop when you have a specific aspect ratio target (e.g. social media banner)."
+      "q": "What is the difference between resizing and cropping?",
+      "a": "Resize forces the picture to the exact width and height, so everything stays in frame but it stretches if the proportions differ from the original. Crop never distorts: it scales the picture until it covers the target size and cuts off whatever overflows, taking equal amounts from both sides."
     },
     {
-      "q": "Will upscaling lose quality?",
-      "a": "Some sharpness loss is unavoidable when upscaling. For 2x or 4x enlargement with AI smoothing, use Image Upscaler."
+      "q": "Can I choose which part of the picture the crop keeps?",
+      "a": "No. The crop is always centred, so equal amounts come off opposite edges. If the subject is off to one side, the centre crop may cut into it; resize or trim the image in an editor first in that case."
     },
     {
-      "q": "Can I pick the crop position?",
-      "a": "Currently crop is centered. Drag-to-crop with a custom anchor is on the roadmap."
+      "q": "Will resizing make my photo blurry?",
+      "a": "Making an image smaller is generally clean. Making it larger cannot invent detail that was never captured, so an enlarged photo looks soft. Image Upscaler is the tool aimed at enlargement, though it faces the same underlying limit."
+    },
+    {
+      "q": "What are the size limits?",
+      "a": "Width and height each accept values from 1 to 8000 pixels. Very large images are also subject to a pixel-count limit on the server, which protects it from images that would exhaust memory; an image beyond that is rejected rather than processed slowly."
+    },
+    {
+      "q": "Does resize keep the aspect ratio?",
+      "a": "Only if the width and height you enter match the original proportions. A different ratio stretches the picture, so either work out the matching dimension first or use crop, which fills the size without distortion."
+    },
+    {
+      "q": "Is the original file changed?",
+      "a": "No. The file on your device is untouched — you receive a new image, and the copy on the server is temporary."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

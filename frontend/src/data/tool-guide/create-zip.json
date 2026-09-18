@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Can I password-protect the ZIP?",
-      "a": "Not yet. Create ZIP currently produces standard unencrypted ZIP archives; password-protected ZIP creation is on the roadmap."
+      "a": "Not yet. Create ZIP produces standard, unencrypted ZIP archives; password-protected archives are not supported."
     },
     {
       "q": "Will it preserve folder structure?",

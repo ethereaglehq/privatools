@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Select a PDF file up to 500 MB that you want to split into smaller chunks."
+      "name": "Add the PDF",
+      "text": "Drop or select a PDF up to 500 MB that is too large for an email, a portal or an upload form."
     },
     {
-      "name": "Set the target chunk size",
-      "text": "Enter the maximum file size per chunk in megabytes (e.g. 10 MB). The tool will split at page boundaries to stay under the limit."
+      "name": "Set the maximum part size",
+      "text": "Enter the largest size each part may be, in megabytes, from 1 to 1024. The default is 10, which suits many email attachment limits."
     },
     {
-      "name": "Download the parts",
-      "text": "Click Split. The server breaks the PDF into parts that respect your size target and delivers them in a ZIP archive."
+      "name": "Split and download",
+      "text": "Run it. The document is divided at page boundaries so each part stays under your limit, and the parts arrive in a ZIP."
     }
   ],
   "faq": [
     {
-      "q": "How does size-based splitting work?",
-      "a": "The tool splits at page boundaries to keep each chunk under your target size. It cannot split in the middle of a page, so some chunks may be slightly under the target."
+      "q": "Where does it cut the document?",
+      "a": "Between pages. A page is never split in half; the tool fills each part with as many whole pages as fit under your limit, then starts the next part."
     },
     {
-      "q": "What is the minimum chunk size I can set?",
-      "a": "The minimum is effectively the size of the largest single page. If one page is 5 MB, you cannot create chunks smaller than 5 MB."
+      "q": "What if a single page is bigger than my limit?",
+      "a": "A page cannot be divided, so it ends up in a part of its own that is larger than the target. Compress PDF can shrink image-heavy pages before splitting."
     },
     {
-      "q": "Is this useful for email attachment limits?",
-      "a": "Yes. Set the chunk size to your email provider's attachment limit (e.g. 25 MB for Gmail) and each part will be small enough to attach."
+      "q": "What size should I choose for email?",
+      "a": "Stay comfortably below the attachment limit of the service you are sending through, because email encoding makes attachments larger in transit. The default of 10 MB is a reasonable starting point."
+    },
+    {
+      "q": "Should I compress instead?",
+      "a": "Try compressing first when the goal is a smaller file: Compress PDF may bring it under the limit in one piece. Split by size when the document is genuinely too big even after compression."
+    },
+    {
+      "q": "Does splitting reduce quality?",
+      "a": "No. Pages are copied as they are; only the division into files changes."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

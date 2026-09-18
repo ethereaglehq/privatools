@@ -12,7 +12,7 @@
   "faq": [
     {
       "q": "Is it 100% in my browser?",
-      "a": "Yes. The YAML never leaves your device — no server roundtrip, no logs, no analytics on the content."
+      "a": "Yes. The conversion runs in JavaScript on this page, so the YAML you paste is not uploaded to PrivaTools."
     },
     {
       "q": "Which YAML features are supported?",

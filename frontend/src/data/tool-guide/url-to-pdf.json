@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I convert pages behind a login?",
-      "a": "Not currently — only public pages. Authenticated capture is on the roadmap."
+      "a": "No — only publicly reachable pages can be converted. Pages behind a login are not supported, because the server fetches the page without your session."
     },
     {
       "q": "Does it use my browser cookies?",

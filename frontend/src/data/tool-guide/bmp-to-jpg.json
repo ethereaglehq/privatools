@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a BMP",
-      "text": "Drop a Windows bitmap (.bmp) file."
+      "name": "Add your BMP images",
+      "text": "Drop or select .bmp files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The uncompressed BMP is re-encoded as a JPEG — typically 10–50× smaller for photographs."
+      "name": "Convert to JPG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to JPG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the JPG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new JPG rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert BMP to JPG?",
-      "a": "BMP files are uncompressed and can be 10–50× larger than the same image as JPG. Converting saves enormous space with virtually no visible quality difference for photos."
+      "a": "Size. BMP stores every pixel uncompressed, so even a modest image can run to many megabytes. JPG compresses it to a fraction of that, which is what makes it practical to send or upload."
     },
     {
-      "q": "What about screenshots in BMP?",
-      "a": "For screenshots and pixel art, consider BMP to PNG instead — PNG is lossless and handles sharp edges better than JPG."
+      "q": "How much smaller will it get?",
+      "a": "Dramatically, in most cases: uncompressed bitmaps have a great deal of redundancy for a lossy encoder to remove. The exact ratio depends on the image, with photographs shrinking much more than flat graphics."
     },
     {
-      "q": "Are old Windows BMPs supported?",
-      "a": "Yes. All standard BMP variants (1-bit, 4-bit, 8-bit, 16-bit, 24-bit, 32-bit, RLE-compressed) are supported."
+      "q": "Will it look the same?",
+      "a": "JPEG is a lossy format, so the conversion re-encodes the picture and throws away a little detail. There is no quality slider on this page; JPEGs are written at the imaging library's default quality of 75. On a photograph it is hard to tell the two apart. On a screenshot or a diagram with sharp edges, JPG's fringing is more noticeable — BMP to PNG is the better choice for those."
+    },
+    {
+      "q": "What about transparency?",
+      "a": "Standard BMP has no usable transparency and JPG has none at all, so there is nothing to carry over. If your source really does have an alpha channel, convert to PNG instead."
+    },
+    {
+      "q": "Why would anyone still have BMP files?",
+      "a": "They are produced by older Windows software, some scanners, and industrial or embedded equipment that only writes uncompressed bitmaps. Converting is usually the first step in making that output usable anywhere else."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

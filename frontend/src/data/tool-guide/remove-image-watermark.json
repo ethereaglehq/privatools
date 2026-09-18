@@ -28,7 +28,7 @@
     },
     {
       "q": "Does the image leave my device?",
-      "a": "Only to the same isolated processing container every server-side tool here uses, and it is deleted after the response. It is never stored, never inspected, and never used for training."
+      "a": "Yes, for the repair step. It is uploaded over HTTPS to the PrivaTools server, processed in isolated temporary per-request storage, and removed by response cleanup after the result is sent; a background sweep clears anything left behind by an interrupted request. It is not passed to a third-party service or used for model training."
     },
     {
       "q": "Is it legal to remove a watermark?",

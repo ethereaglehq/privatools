@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Drop your PDF",
-      "text": "Select a PDF up to 500 MB that you want to password-protect. The file enters an isolated Docker container only for the encryption pass."
+      "text": "Select a PDF up to 500 MB that you want to password-protect. The file is uploaded over HTTPS and processed in isolated temporary per-request storage."
     },
     {
       "name": "Choose your password",
@@ -14,7 +14,7 @@
     },
     {
       "name": "Download the encrypted PDF",
-      "text": "Click Protect. The output uses AES-256 encryption (bank-grade) and requires your password to open in any PDF reader."
+      "text": "Click Protect. The output uses AES-256 encryption and requires your password to open in any PDF reader."
     }
   ],
   "faq": [
@@ -31,20 +31,20 @@
       "a": "PrivaTools does not store your password. If you lose it, there is no way to recover it — AES-256 has no backdoor. Save your password in a password manager like 1Password, Bitwarden, or your browser's built-in store before you encrypt."
     },
     {
-      "q": "Is it safe to upload a sensitive PDF for encryption?",
-      "a": "Yes. The PDF enters temporary per-request storage inside an isolated Docker container for the encryption pass only, and your chosen password is used only for that pass. Both the input plaintext and the password are discarded the moment the encrypted file is delivered. Nothing is logged. The encryption pipeline is open source on GitHub."
+      "q": "What happens to my PDF and password after I upload them?",
+      "a": "Both are sent over HTTPS and used for that one request. The PDF is processed in isolated temporary per-request storage; response cleanup removes the job's temporary files after the encrypted copy is sent, and a background sweep clears anything left behind by an interrupted request. The password is not saved, which is also why nobody can recover it for you."
     },
     {
       "q": "What's the file size limit?",
-      "a": "500 MB per file with no daily or monthly quota. There is no page-count limit."
+      "a": "Up to 500 MB per file on the hosted site. Resource and fair-use rate limits also apply, as they do on every tool, so an unusually large or complex PDF can time out."
     },
     {
       "q": "Can I batch-protect multiple PDFs?",
       "a": "Yes — upload multiple files and they will each be encrypted with the same password, then bundled into a ZIP. Use different passwords for different files by running the tool separately."
     },
     {
-      "q": "How is this different from Adobe Acrobat or Smallpdf encryption?",
-      "a": "Same AES-256 cryptography, but free with no daily limit (Smallpdf caps free use at 2 protections/day, Adobe requires a subscription) and no account required. The protection code is open source so you can verify the encryption is real and not a backdoored stub."
+      "q": "Does a password stop someone from copying or printing the PDF?",
+      "a": "An open password encrypts the file, so it cannot be read without the password. Restrictions such as no-print or no-copy work differently: PDF readers honour them voluntarily, and anyone who can open the file can strip them with other software. Set an open password when the content itself has to stay private."
     }
   ]
 }

@@ -16,11 +16,11 @@
   "faq": [
     {
       "q": "What about password-protected archives?",
-      "a": "Password-protected archives are not supported yet. Extract Archive currently handles unencrypted ZIP and TAR-family archives; encrypted archive support is on the roadmap."
+      "a": "Password-protected archives are not supported yet. Extract Archive handles unencrypted ZIP and TAR-family archives."
     },
     {
       "q": "Does it support RAR / 7z?",
-      "a": "No. Extract Archive currently supports ZIP and TAR-family archives (.tar, .tar.gz, .tar.bz2, .tar.xz). RAR and 7z support is on the roadmap."
+      "a": "No. Extract Archive supports ZIP and TAR-family archives (.tar, .tar.gz, .tar.bz2, .tar.xz). RAR and 7z are not supported."
     },
     {
       "q": "What if the archive contains many small files?",

@@ -1,42 +1,46 @@
 {
   "howto": [
     {
-      "name": "Add PDF files",
-      "text": "Drop or select two or more PDF files into the upload area. There is no page-count limit; the max per file is 500 MB."
+      "name": "Add the PDFs",
+      "text": "Drop or select two or more PDF files, up to 500 MB each and up to 100 files at a time. The whole upload also has to fit within the same overall request limit, so several very large files may need to be merged in stages."
     },
     {
-      "name": "Reorder the files",
-      "text": "Drag the thumbnail cards to set the order in which the PDFs will be joined."
+      "name": "Put them in order",
+      "text": "Drag the file cards into the order the files should appear in the merged PDF."
+    },
+    {
+      "name": "Choose the pages from each file",
+      "text": "Select thumbnails, or type ranges for each file in the merge settings. Leave a file's field blank to include every page; 1-3,5 or 2-end includes just those pages, in the order you type them."
     },
     {
       "name": "Merge and download",
-      "text": "Click Merge. The server concatenates the files, preserving bookmarks and links, and returns a single PDF."
+      "text": "Click merge. The server joins the files in the order shown and returns a single PDF."
     }
   ],
   "faq": [
     {
       "q": "How many PDFs can I merge at once?",
-      "a": "There is no hard cap on the number of files. Each individual file must be under 500 MB. We routinely handle merges of 30–50 files in one call; if you need more, run the merge twice."
+      "a": "Up to 100 files in one merge, each up to 500 MB. The combined upload is also capped at roughly 500 MB, so a handful of very large files may need to be merged in two passes — merge some, then merge that result with the rest."
     },
     {
-      "q": "Are bookmarks and hyperlinks preserved?",
-      "a": "Yes. Existing bookmarks, internal links, and external hyperlinks from every input file are preserved in the merged output. Bookmarks are renamed with a numeric prefix so two PDFs with the same chapter titles don't collide."
+      "q": "Can I change the order after adding files?",
+      "a": "Yes. Drag the cards into the order you want before merging; the output follows it exactly. To reorder pages within a file, type them in the order you want in that file's page field, or use Organize Pages on the merged result."
     },
     {
-      "q": "Will PrivaTools watermark the merged PDF?",
-      "a": "No. The output has zero watermarks, no PrivaTools tag in the metadata, and no header/footer added. iLovePDF and Smallpdf both add a watermark or limit free merges to 2 files; PrivaTools has no such limit."
+      "q": "Can I merge only some pages from each file?",
+      "a": "Yes. Each file has its own page field in the merge settings: leave it blank to include every page, or enter ranges such as 1-3,5 or 2-end. Pages are added in the order you type them, so you can also reorder pages within a file."
     },
     {
-      "q": "Is it safe to upload sensitive PDFs to be merged?",
-      "a": "Yes. Files enter an isolated Docker container, are processed in temporary per-request storage, and are unlinked the moment the response is delivered. They are never written to permanent storage, never logged, and never used to train any model. The merger code is open source on GitHub."
+      "q": "Are bookmarks kept?",
+      "a": "No. The merged PDF does not carry over the bookmarks (outline) of the individual files. Page content is copied unchanged, so the document reads the same, but if navigation matters, add a new outline afterwards with the Bookmarks tool."
     },
     {
-      "q": "What's the file size limit?",
-      "a": "500 MB per file with no per-day or per-month quota. The merged output can be any size — the only constraint is each input file."
+      "q": "Can I merge password-protected PDFs?",
+      "a": "A file that needs a password to open has to be unlocked first, because the merge has to read its pages. Use Unlock PDF with the password you already have, then merge the unlocked copy."
     },
     {
-      "q": "Do I need to create an account to merge PDFs?",
-      "a": "No. No account, no email, no sign-up. Drop the files, drag to reorder, click Merge, and download. The privacy guarantees come from the architecture, not from a user profile."
+      "q": "What happens to my files after I upload them?",
+      "a": "It is uploaded over HTTPS and merged on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDFs and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

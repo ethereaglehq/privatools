@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Can I use Roman numerals or letters?",
-      "a": "Currently Arabic digits only. Roman / alpha numbering is on the roadmap."
+      "a": "No. Page numbers are Arabic digits only; Roman numerals and letters are not supported."
     },
     {
       "q": "How is this different from Bates numbering?",

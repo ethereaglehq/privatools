@@ -1,30 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload an audio file",
-      "text": "Select an MP3, WAV, OGG, FLAC, AAC, or M4A file up to 200 MB."
+      "name": "Add the audio file",
+      "text": "Drop or select an audio file up to 500 MB."
     },
     {
-      "name": "Choose output format and bitrate",
-      "text": "Select the target format (MP3, WAV, OGG, FLAC, AAC) and bitrate (64k to 320k). Default is MP3 at 192k."
+      "name": "Choose the output format",
+      "text": "Pick MP3, AAC, OGG, FLAC or WAV. MP3 is the most widely compatible; FLAC and WAV are lossless."
+    },
+    {
+      "name": "Choose a bitrate",
+      "text": "For MP3, AAC and OGG choose from 64 to 320 kbps; the default is 192. Higher bitrates keep more detail and make bigger files. WAV and FLAC are lossless, so the bitrate does not apply."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. FFmpeg processes the audio and the converted file downloads automatically."
+      "text": "Run the conversion and save the new file."
     }
   ],
   "faq": [
     {
-      "q": "What audio formats are supported?",
-      "a": "Convert between MP3, WAV, OGG, FLAC, and AAC. The tool uses FFmpeg for professional-quality conversion with precise codec handling."
+      "q": "Which format should I choose?",
+      "a": "MP3 when you need something that plays everywhere. AAC for Apple devices and good quality at modest sizes. OGG for games and open-source software. FLAC to archive without loss, and WAV when an editor or device asks for uncompressed audio."
     },
     {
-      "q": "Can I choose the bitrate?",
-      "a": "Yes. Available bitrates: 64k (small file), 128k (good), 192k (high quality), 256k (very high), and 320k (maximum). Default is 192k."
+      "q": "Will converting improve the sound?",
+      "a": "No. Converting a lossy file such as an MP3 to FLAC or WAV preserves exactly what the MP3 contains in a bigger file; detail removed earlier cannot come back."
     },
     {
-      "q": "What is the file size limit?",
-      "a": "Audio files up to 200 MB are supported. This covers most audio files including full albums in lossless FLAC format."
+      "q": "What bitrate should I pick?",
+      "a": "192 kbps, the default, is a good general choice. Use 256 or 320 for music you care about, and 64 or 128 for speech, podcasts and voice memos where small size matters more."
+    },
+    {
+      "q": "Does converting between lossy formats lose quality?",
+      "a": "Yes, a little. Each lossy encode discards more detail, so MP3 to AAC or OGG to MP3 is a trade for compatibility. Start from the highest-quality source you have."
+    },
+    {
+      "q": "Can I take the audio out of a video?",
+      "a": "Use Extract Audio for that; it is built for pulling the soundtrack out of a video file."
+    },
+    {
+      "q": "What happens to my file after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the audio file and the result and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

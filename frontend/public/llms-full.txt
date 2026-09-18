@@ -35,7 +35,7 @@ URL: https://privatools.me/tool/merge-pdf
 
 Combine multiple PDFs into one
 
-Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. Up to 500 MB per file, no sign-up, no watermarks. Your files are processed securely and never stored.
+Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. Up to 500 MB per file, no sign-up, no watermarks. Files are processed in temporary storage and cleaned up after the response.
 
 ### Split PDF
 
@@ -43,7 +43,7 @@ URL: https://privatools.me/tool/split-pdf
 
 Split by selecting specific page ranges
 
-Split PDF online for free — divide a PDF into separate files by page range. Extract specific pages or split every page into individual PDFs. No installation, no registration required. Privacy-first: files are never stored on our servers.
+Split PDF online for free — divide a PDF into separate files by page range. Extract specific pages or split every page into individual PDFs. No installation, no registration required. Files are processed in temporary storage and cleaned up after the response.
 
 ### Split by Bookmarks
 
@@ -83,7 +83,7 @@ URL: https://privatools.me/tool/delete-pages
 
 Remove specific pages from a PDF
 
-Remove pages from PDF online for free. Select specific pages or ranges to permanently delete. Preview thumbnails and choose exactly which pages to remove. No sign-up, no watermarks, files never stored.
+Remove pages from PDF online for free. Select specific pages or ranges to permanently delete. Preview thumbnails and choose exactly which pages to remove. No sign-up, no watermarks; files are cleaned up after processing.
 
 ### Extract Pages
 
@@ -107,7 +107,7 @@ URL: https://privatools.me/tool/sign-pdf
 
 Add a visual signature image to a PDF
 
-Add signature to PDF online for free. Draw, type, or upload your signature image and place it anywhere on the document. Create legally-binding electronic signatures without printing. No account required.
+Add signature to PDF online for free. Draw or upload your signature image and place it anywhere on the document. Sign without printing; the signature is placed as an image, not as a certificate-based digital signature. No account required.
 
 ### Watermark
 
@@ -227,7 +227,7 @@ URL: https://privatools.me/tool/protect-pdf
 
 Encrypt a PDF with a password or set permissions
 
-Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set open passwords, permission passwords, and control printing, copying, and editing access. Military-grade security, no sign-up.
+Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set open passwords, permission passwords, and control printing, copying, and editing access. No sign-up needed.
 
 ### Unlock PDF
 
@@ -291,7 +291,7 @@ URL: https://privatools.me/tool/jpg-to-pdf
 
 Convert JPG / JPEG photos into a single PDF
 
-Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document with adjustable page size, orientation, and margins. Bulk convert phone photos, scans, or screenshots in seconds. No file size limit, no watermarks, no sign-up.
+Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 500 MB per file, no watermarks, no sign-up.
 
 ### PNG to PDF
 
@@ -387,7 +387,7 @@ URL: https://privatools.me/tool/pdf-to-long-image
 
 Stitch every PDF page into one tall image
 
-Turn a whole PDF into a single long image online for free — every page is rendered and stacked vertically into one tall PNG or JPG, ready to share or scroll. Unlike PDF-to-Image (one file per page), this gives you the entire document as a single picture. Runs on your own server; the file is deleted right after.
+Turn a whole PDF into a single long image online for free — every page is rendered and stacked vertically into one tall PNG or JPG, ready to share or scroll. Unlike PDF-to-Image (one file per page), this gives you the entire document as a single picture. Runs on the PrivaTools server; the file is cleaned up after the response.
 
 ### PDF to TIFF
 
@@ -795,7 +795,7 @@ URL: https://privatools.me/tool/accessibility-check
 
 Audit a PDF against PDF/UA and WCAG
 
-Check PDF accessibility online for free — audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks, no limits.
+Check PDF accessibility online for free — audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks; standard upload and rate limits apply.
 
 ### PDF/A Validator
 
@@ -889,7 +889,7 @@ Convert PDF to RTF online for free — produce a Rich Text Format file that open
 
 URL: https://privatools.me/tools/image-compressor
 
-Reduce JPEG/PNG/WebP size without losing quality
+Reduce the file size of JPEG, PNG, and WebP images
 
 Compress JPEG, PNG, or WebP images online. Choose quality settings, compare file sizes, and inspect the result before downloading. Savings depend on the source and settings. Files use temporary server processing when you run this tool.
 
@@ -897,9 +897,9 @@ Compress JPEG, PNG, or WebP images online. Choose quality settings, compare file
 
 URL: https://privatools.me/tools/image-converter
 
-Convert between WebP, PNG, JPG, TIFF, and HEIC
+Convert between WebP, PNG, JPG, BMP, and TIFF
 
-Convert images online for free — change between WebP, PNG, JPG, TIFF, BMP and HEIC formats instantly. Perfect for converting iPhone HEIC photos to JPG. Files are uploaded to PrivaTools for temporary conversion.
+Convert images online for free — change between WebP, PNG, JPG, TIFF and BMP formats instantly. For iPhone HEIC photos, use HEIC to JPG or HEIC to PNG. Files are uploaded to PrivaTools for temporary conversion.
 
 ### Remove EXIF Data
 
@@ -907,15 +907,15 @@ URL: https://privatools.me/tools/remove-exif
 
 Strip GPS, camera, and timestamp metadata from photos
 
-Remove EXIF data from photos online for free — strip GPS location, camera model, timestamps, and all metadata before sharing images online. Protect your privacy with one click. No sign-up needed.
+Remove EXIF data from photos online for free — strip GPS location, camera model, timestamps, and other embedded metadata before sharing images online; the color profile is kept so colors stay true. Protect your privacy with one click. No sign-up needed.
 
 ### Resize & Crop Image
 
 URL: https://privatools.me/tools/resize-crop-image
 
-Bulk resize or crop images to any dimension
+Resize or crop an image to exact pixel dimensions
 
-Resize and crop images online for free — set exact dimensions, aspect ratios, or pixel sizes. Bulk resize multiple images for social media, thumbnails, profile pictures, and website optimization.
+Resize and crop images online for free — set exact dimensions, aspect ratios, or pixel sizes, or start from a social media preset. Size images one at a time for social media, thumbnails, profile pictures, and website optimization.
 
 ### Video / Audio to GIF
 
@@ -923,7 +923,7 @@ URL: https://privatools.me/tools/video-to-gif
 
 Convert short video clips into animated GIFs
 
-Convert video to GIF online for free — upload MP4, MOV, or WebM files, select the clip range, and export a looping animated GIF. Adjust FPS and resolution for the perfect file size. No watermarks.
+Convert video to GIF online for free — upload an MP4, MOV, or WebM clip up to 200 MB and export the whole clip as a looping animated GIF. Adjust FPS and width to control the file size, and trim long videos first. No watermarks.
 
 ### Image OCR
 
@@ -1131,7 +1131,7 @@ URL: https://privatools.me/tools/image-watermark
 
 Add text watermarks to photos and images
 
-Add watermark to images online for free — protect your photos with customizable text watermarks. Choose position (center, corners, or tiled), opacity, font size, and color. Files are processed temporarily on the PrivaTools server.
+Add watermark to images online for free — protect your photos with customizable text watermarks. Choose position (center, corners, or tiled), opacity, and font size. Files are processed temporarily on the PrivaTools server.
 
 ### Favicon Generator
 
@@ -1267,7 +1267,7 @@ URL: https://privatools.me/tools/webp-to-jpg
 
 Convert WebP images to JPEG
 
-Convert WebP to JPG online for free — change Google's WebP image format to the universally-compatible JPEG. Drag-and-drop multiple files, no sign-up, no watermarks. Files are processed and discarded immediately.
+Convert WebP to JPG online for free — change Google's WebP image format to the universally-compatible JPEG. Drag-and-drop multiple files, no sign-up, no watermarks. Files are processed in temporary storage and cleaned up after the response.
 
 ### WebP to PNG
 
@@ -1315,7 +1315,7 @@ URL: https://privatools.me/tools/jpg-to-png
 
 Convert JPG to PNG online — lossless conversion
 
-Convert JPG to PNG online for free — lossless conversion preserving every pixel. PNG supports transparency and lossless compression, ideal for graphics, logos, and screenshots. No upload to third parties; processed and discarded immediately.
+Convert JPG to PNG online for free — lossless conversion preserving every pixel. PNG supports transparency and lossless compression, ideal for graphics, logos, and screenshots. No upload to third parties; files are cleaned up from temporary storage after the response.
 
 ### PNG to JPG
 
@@ -1323,7 +1323,7 @@ URL: https://privatools.me/tools/png-to-jpg
 
 Convert PNG to JPG for smaller file size
 
-Convert PNG to JPG online for free — change PNG images to JPEG, typically 3–5x smaller in file size. JPEG uses lossy compression which is invisible at normal viewing sizes. Perfect for email attachments and web upload limits. Transparent pixels become white.
+Convert PNG to JPG online for free — change PNG images to JPEG, typically 3–5x smaller in file size. JPEG uses lossy compression which is invisible at normal viewing sizes. Perfect for email attachments and web upload limits. Transparency is not kept: see-through areas usually turn black, so add a background first if you need white.
 
 ### JPG to WebP
 
@@ -1339,7 +1339,7 @@ URL: https://privatools.me/tools/png-to-webp
 
 Convert PNG to WebP — smaller files, transparency preserved
 
-Convert PNG to WebP online for free — WebP supports transparency like PNG but with 25–50% smaller file sizes. Perfect for web graphics and PWAs. Lossless mode available for pixel-perfect output.
+Convert PNG to WebP online for free — WebP supports transparency like PNG but with 25–50% smaller file sizes. Perfect for web graphics and PWAs. The output is lossy WebP, so keep the PNG if you need a pixel-perfect copy.
 
 ### TIFF to JPG
 
@@ -1347,7 +1347,7 @@ URL: https://privatools.me/tools/tiff-to-jpg
 
 Convert TIFF to JPG for sharing and email
 
-Convert TIFF to JPG online for free — TIFF is a large, lossless format used in archival and pro photography; JPEG is universally compatible. Typical 5–10x size reduction. Multi-page TIFF supported — each page becomes a separate JPG.
+Convert TIFF to JPG online for free — TIFF is a large, lossless format used in archival and pro photography; JPEG is universally compatible. Typical 5–10x size reduction. For a multi-page TIFF, only the first page is converted.
 
 ### TIFF to PNG
 
@@ -1443,7 +1443,7 @@ URL: https://privatools.me/tools/jpg-to-tiff
 
 Convert JPG photos to TIFF for archive workflows
 
-Convert JPG to TIFF online for free — turn JPEG photos into TIFF files for archival, print, scanning, or document-management systems. Powered by the existing image converter and deleted immediately after processing.
+Convert JPG to TIFF online for free — turn JPEG photos into TIFF files for archival, print, scanning, or document-management systems. Powered by the existing image converter; files are cleaned up after the response.
 
 ### PNG to TIFF
 
@@ -1779,7 +1779,7 @@ URL: https://privatools.me/tools/pixelate-image
 
 Censor part of an image with mosaic or Gaussian blur
 
-Pixelate or blur an image to obscure sensitive content before sharing — block faces, license plates, addresses, screenshots. Choose mosaic-style pixelation or smooth Gaussian blur, adjust strength 1-100. Runs server-side, image is deleted immediately after processing.
+Pixelate or blur an image to obscure sensitive content before sharing — block faces, license plates, addresses, screenshots. Choose mosaic-style pixelation or smooth Gaussian blur, adjust strength 1-100. Runs server-side; the image is cleaned up from temporary storage after the response.
 
 ### Rotate Image
 

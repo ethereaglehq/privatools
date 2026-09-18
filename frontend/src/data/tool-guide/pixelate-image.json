@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the result",
-      "text": "The processed image downloads immediately. The original is deleted from the server seconds later."
+      "text": "The processed image downloads once the effect has been applied. Response cleanup then removes the uploaded original and the result from the server's temporary storage."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "Does the original get stored?",
-      "a": "No — your image is processed in an isolated Docker container and deleted the moment the response is returned."
+      "a": "No. The image is uploaded over HTTPS, processed in isolated temporary per-request storage, and removed by response cleanup after the result is sent; a background sweep clears anything left behind by an interrupted request. It is not added to an account or file library."
     }
   ]
 }

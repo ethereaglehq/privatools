@@ -1,42 +1,50 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Select a PDF up to 500 MB. Large scanned documents benefit the most from compression."
+      "name": "Add your PDFs",
+      "text": "Drop or select one or more PDFs, up to 500 MB each and up to 100 in one go. Documents full of photos or scans shrink the most."
     },
     {
       "name": "Pick a compression level",
-      "text": "Choose Low (best quality, modest reduction), Medium (balanced), or High (smallest file, some quality loss on images)."
+      "text": "Light keeps images closest to the original, Recommended (the default) balances size and quality, and Extreme gives the smallest file. Presets for Email and Print are there too."
     },
     {
-      "name": "Download the compressed file",
-      "text": "Click Compress. The result shows the new file size and the percentage saved compared to the original."
+      "name": "Or set it yourself",
+      "text": "Custom lets you choose the JPEG quality and the maximum image dimension directly, when none of the presets fits."
+    },
+    {
+      "name": "Compress and download",
+      "text": "Run it and compare the new size with the original. One file downloads directly; several come back together."
     }
   ],
   "faq": [
     {
-      "q": "How much smaller will my PDF actually get?",
-      "a": "Most PDFs shrink 50–75%. Scanned PDFs with large embedded images often see 70–90% reduction; text-heavy PDFs with vector graphics may only shrink 5–15% because the text is already minimally encoded."
+      "q": "What does compression actually change?",
+      "a": "Mainly the images. Each embedded picture is downsampled to a maximum dimension and re-encoded as JPEG at a quality that depends on the level, and the file structure is rewritten more compactly. Text and vector graphics are not rasterised, so they stay sharp and selectable."
     },
     {
-      "q": "Will I lose quality when I compress?",
-      "a": "Text and vector graphics are always lossless — you cannot tell them apart from the original. Only embedded raster images are recompressed, and only at the Recommended or Extreme presets. Use the Light preset to keep images untouched."
+      "q": "Which level should I use?",
+      "a": "Recommended suits most documents. Light is for files where image detail matters, such as photos you may print. Extreme is for getting under a strict size limit when some image softness is acceptable. Email aims at a typical attachment limit; Print keeps images at a print-friendly resolution."
     },
     {
-      "q": "Is it safe to upload a sensitive PDF here?",
-      "a": "Yes. The compressed file is processed in an isolated Docker container, held in temporary per-request storage for the duration of the request, and unlinked the moment the response is delivered. The file is never written to permanent storage, never logged, and never used to train any model. The entire stack is open source so you can verify this on GitHub."
+      "q": "Why did my PDF barely shrink?",
+      "a": "Because there was little to compress. A PDF made mostly of text and vector graphics is already small, and one whose images were compressed hard before has little left to give. The biggest savings come from scans and photo-heavy documents."
     },
     {
-      "q": "What's the file size limit?",
-      "a": "500 MB per file. There is no daily, weekly, or monthly quota — you can compress unlimited files. If you need to compress dozens of files at once, use the Batch Compress PDF tool which accepts up to 50 PDFs in one go."
+      "q": "Will text stay searchable?",
+      "a": "Yes. Compression works on images and file structure; the text layer is left in place, so you can still search, select and copy text."
     },
     {
-      "q": "Can I compress a password-protected PDF?",
-      "a": "Not directly — encryption prevents the compressor from rewriting the content streams. Use the Unlock PDF tool first (you'll need the password), compress the unlocked version, then re-protect with the Protect PDF tool if needed."
+      "q": "Can I compress many PDFs at once?",
+      "a": "Yes, up to 100 files in one request, each up to 500 MB. Compression is one of the heavier jobs, so fair-use rate limits apply and very large batches are best split into smaller runs."
     },
     {
-      "q": "How is this different from iLovePDF or Smallpdf?",
-      "a": "Free with no daily quota (iLovePDF and Smallpdf cap free tier at 2 files/day), no watermark, no account required, no file size limit beyond 500 MB, and the entire compressor is open source under the MIT license so you can self-host it."
+      "q": "The result is still too big. What next?",
+      "a": "Try Extreme, or Custom with a lower quality and a smaller maximum image dimension. If it still will not fit, Split by Size divides the document into parts under a size you choose."
+    },
+    {
+      "q": "What happens to my PDFs after I upload them?",
+      "a": "It is uploaded over HTTPS and compressed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDFs and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

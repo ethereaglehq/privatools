@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload the PDF (or batch)",
-      "text": "Drop a PDF up to 500 MB. Multi-PDF Bates batches are coming."
+      "text": "Drop a PDF up to 500 MB. The numbering is applied to one document per run."
     },
     {
       "name": "Configure the Bates format",

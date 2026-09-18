@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the bundle",
-      "text": "Drop into your site's public/ folder, paste the meta tags into <head>."
+      "text": "Drop the files into your site's public folder and paste the meta tags into the head section of your pages."
     }
   ],
   "faq": [

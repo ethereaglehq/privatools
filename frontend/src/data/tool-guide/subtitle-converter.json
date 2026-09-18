@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "What's the difference between SRT and VTT?",
-      "a": "SRT: simplest. VTT (WebVTT): used by HTML5 <track>, supports styling. ASS (Advanced SubStation Alpha): rich styling like karaoke colors, but less compatible."
+      "a": "SRT is the simplest format. VTT (WebVTT) is the one HTML5 video players load through their track element, and it supports styling. ASS (Advanced SubStation Alpha) allows rich styling such as karaoke colours, but fewer players support it."
     },
     {
       "q": "Will styling carry over?",

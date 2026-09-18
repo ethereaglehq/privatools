@@ -1,54 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Select a PDF up to 500 MB. The first visit downloads a BERT NER model (~250 MB) into your browser; cached for future use."
+      "name": "Choose a text-based PDF",
+      "text": "Select a PDF up to 500 MB. The text is extracted in your browser; a scanned PDF needs OCR PDF first because there is no text to scan."
     },
     {
-      "name": "Wait for the NER scan",
-      "text": "The model scans your document for names, emails, phone numbers, addresses, SSNs, credit cards, and other PII. Entirely client-side."
+      "name": "Pick the detection engine",
+      "text": "'On this device' (the default) downloads a BERT NER model of about 110 MB once and finds names, organisations and locations locally. 'My own API key' sends the extracted text to the AI provider you configured instead, with anything the pattern pass already found masked first."
     },
     {
-      "name": "Review and uncheck false positives",
-      "text": "Proposed redactions are grouped by entity type. Uncheck anything that shouldn't be redacted."
+      "name": "Let the scan finish",
+      "text": "Pattern matching finds emails, phone numbers, SSN-style numbers, card-length digit runs and dates in your browser, then the chosen engine adds people, organisations and locations."
     },
     {
-      "name": "Apply redactions",
-      "text": "Click Redact. The backend applies real PyMuPDF redactions — permanently removing the underlying content, not just covering it."
+      "name": "Review every suggestion",
+      "text": "Detections are grouped by type. Untick anything that should stay visible; only the strings you leave selected are redacted."
+    },
+    {
+      "name": "Apply and download",
+      "text": "Click the Redact button. The PDF and your approved strings are uploaded to the PrivaTools server, which removes the matching text with PyMuPDF redactions and returns the redacted PDF."
     }
   ],
   "faq": [
     {
-      "q": "What entities does it detect?",
-      "a": "Names (persons and organizations), emails, phone numbers, postal addresses, SSNs and other government IDs, credit card numbers, dates, locations, and IP addresses. The BERT-base-NER model also catches custom patterns via regex hooks — useful for proprietary identifiers like case numbers or patient IDs."
+      "q": "What does it detect?",
+      "a": "Pattern matching finds email addresses, phone numbers, SSN-style numbers (3-2-4 digits), runs of 13 to 19 digits that look like card numbers, and numeric dates. The entity model adds people, organisations, locations and other named entities. It does not look for postal addresses, IP addresses or custom identifiers, so check the document for those yourself."
     },
     {
-      "q": "Where does the NER scan run?",
-      "a": "Entity detection runs in your browser using @huggingface/transformers WebAssembly. The PDF text never leaves your machine during scanning. When you click Apply, the PDF and selected strings are sent to the isolated backend so PyMuPDF can permanently bake in the redactions; temporary files are unlinked after the response."
+      "q": "Which parts run in my browser and which on the server?",
+      "a": "Text extraction, pattern matching and the default entity model all run in your browser, so nothing is uploaded while you scan and review. When you apply, the PDF and the strings you approved are sent over HTTPS to the PrivaTools server, which writes the redactions in isolated temporary per-request storage; response cleanup removes the job's temporary files after the result is sent."
+    },
+    {
+      "q": "What is sent if I use my own AI key?",
+      "a": "The extracted text of the PDF goes from your browser directly to the provider you chose, using your key, so that provider's terms apply. Values the pattern pass already found, such as emails, phone numbers, SSNs and card numbers, are masked before the text is sent. Applying the redactions still happens on the PrivaTools server."
     },
     {
       "q": "Is the redaction reversible?",
-      "a": "No. The backend applies real PyMuPDF redactions which permanently destroy the underlying glyphs and image pixels under each redaction rectangle. The redacted file cannot be 'unredacted' even with forensic tools — there is nothing left to recover."
+      "a": "No. The server applies PyMuPDF redactions, which remove the matched text from the page content instead of drawing a box over it, and the file is rewritten without the removed objects. Document metadata is separate: run Strip Metadata afterwards if the author or title fields are sensitive."
     },
     {
-      "q": "How is this different from regular Redact?",
-      "a": "Regular Redact PDF requires you to draw rectangles manually over each piece of sensitive content. Smart Redact auto-detects PII entities so you only need to review the model's suggestions and click 'apply' on the ones to redact. For known-pattern data (SSNs, credit cards) accuracy is near-perfect; for free-text names, you should review."
+      "q": "How is this different from Redact PDF?",
+      "a": "Redact PDF has you mark each area by hand. Smart Redact proposes candidates for you to approve, which is faster on long documents but only as good as the detection: patterns are dependable for well-formed emails and numbers, while names rely on the model and should always be reviewed."
     },
     {
-      "q": "Is it safe to use on a confidential legal or medical document?",
-      "a": "Yes — and arguably safer than manual redaction because the model catches PII you'd miss. Detection runs in-browser (the document text never uploads); only the final redacted file is sent to the server for the permanent-redaction pass, then unlinked immediately. The whole pipeline is open source for verification."
+      "q": "Will it catch everything?",
+      "a": "No automatic detector does. The on-device entity model is English-trained and misses unusual names and initials, the patterns only match common formats, and text inside images is invisible to it. Treat the list as a first pass, then search the redacted PDF for names and numbers you know should be gone."
     },
     {
       "q": "What's the file size limit?",
-      "a": "Detection runs in-browser so it's bounded by browser memory (typically 500 MB practical). The server-side redaction pass accepts up to 500 MB. No daily or monthly quota."
-    },
-    {
-      "q": "What languages are supported for entity detection?",
-      "a": "The default BERT-base-NER model is English-only with strong coverage. Multilingual NER models are on the roadmap. For non-English documents, you can use Smart Redact for the pattern-based entities (numbers, emails, dates) which work across languages, plus regular Redact PDF for free-text."
-    },
-    {
-      "q": "Do I need an account?",
-      "a": "No — no account, no email, no sign-up. The tool loads in your browser; privacy guarantees are architectural."
+      "a": "The server step accepts PDFs up to 500 MB. Detection runs in your browser, so very long documents are limited by your device's memory and take longer to scan. Fair-use rate limits apply to the server step."
     }
   ]
 }

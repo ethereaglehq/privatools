@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Can I customize colors?",
-      "a": "Currently black-on-white only. Custom colors and logos in the center are on the roadmap."
+      "a": "No. Codes are generated black on white; custom colours and centre logos are not supported. Plain high-contrast codes are also the most reliable to scan."
     },
     {
       "q": "How do I encode a URL with parameters?",

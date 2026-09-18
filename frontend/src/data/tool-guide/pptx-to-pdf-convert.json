@@ -20,7 +20,7 @@
     },
     {
       "q": "How are speaker notes handled?",
-      "a": "Notes are not included in the PDF by default. We don't currently offer a 'with notes' option but it's on the roadmap."
+      "a": "Speaker notes are not included in the PDF, and there is no option to add them. Export the notes from your presentation software if you need them."
     },
     {
       "q": "What about embedded videos?",

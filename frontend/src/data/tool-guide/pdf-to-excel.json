@@ -31,12 +31,12 @@
       "a": "The tool can detect tables based on text alignment even without ruled borders, but results are more reliable on clearly bordered tables. For borderless tables with very irregular spacing, manual page selection plus column-position hints in the advanced settings give better accuracy."
     },
     {
-      "q": "Is it safe to upload a confidential financial PDF?",
-      "a": "Yes. The PDF and the generated .xlsx are held in temporary per-request storage inside an isolated Docker container for the conversion pass only — both are unlinked the moment your download begins. Nothing is logged, indexed, or sent to a third-party API. The conversion code is open source on GitHub."
+      "q": "What happens to a confidential financial PDF after I upload it?",
+      "a": "The PDF is uploaded over HTTPS and converted in isolated temporary per-request storage on the PrivaTools server, using local libraries rather than a third-party API. Response cleanup removes the PDF and the generated .xlsx after the result is sent, and a background sweep clears anything left behind by an interrupted request."
     },
     {
       "q": "What's the file size limit?",
-      "a": "500 MB per file with no daily or monthly quota. Large PDFs with many tables may take 15-30 seconds to extract."
+      "a": "Up to 500 MB per file on the hosted site. Table extraction is one of the heavier jobs, so fair-use rate limits apply and a very long PDF can hit the request timeout; splitting the document first avoids that."
     },
     {
       "q": "Does it work on scanned PDFs?",
@@ -47,8 +47,8 @@
       "a": "Yes — upload multiple PDFs and each is converted independently, then bundled into a ZIP of .xlsx files. Useful for processing a folder of monthly statements or invoices."
     },
     {
-      "q": "How is this different from Adobe Acrobat PDF to Excel?",
-      "a": "Comparable accuracy on standard tables. Adobe Acrobat handles complex merged-cell layouts slightly better; PrivaTools is faster, free with no daily limit, and doesn't require an Adobe ID or send your data to Adobe's cloud."
+      "q": "Which tables convert most reliably?",
+      "a": "Tables with clear ruled lines and one value per cell. Merged cells, tables that break across pages and borderless layouts with irregular spacing are the hardest cases and usually need tidying in the spreadsheet afterwards."
     }
   ]
 }
