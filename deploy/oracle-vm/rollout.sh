@@ -338,8 +338,10 @@ drain_http() {  # drain_http CONTAINER RETIRED_NGINX_PID...: 0 drained, 4 nginx 
     start="$(now)"
     while :; do
         elapsed=$(( $(now) - start ))
-        busy="$(connections "$container")"
+        # Workers first: a connection counted after they were seen gone is
+        # not one of theirs.
         old="$(alive_workers "$@" | wc -l)"
+        busy="$(connections "$container")"
         if (( busy == 0 )); then
             quiet_since="${quiet_since:-$(now)}"
             routed_since=""

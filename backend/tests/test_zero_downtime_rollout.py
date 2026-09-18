@@ -252,7 +252,7 @@ elif name == "docker":
                 c["passive"] = True
         elif sig == "SIGUSR2":
             if c["role"] == "draining":
-                c["role"] = "active"        # the drain is cancelled; it keeps the lock
+                c["role"] = "active"        # eager again: it retakes the lock as its job ends
             c["passive"] = False
         settle()
         save()
@@ -602,9 +602,12 @@ def test_requests_from_workers_a_killed_run_retired_are_not_mistaken_for_routing
         "project": "privatools-interim", "image": "sha256:new", "sha": NEW, "port": host.interim_port,
         "status": "running", "role": "standby", "passive": False, "restarts": 0, "booted": True, "boot_polls": 0}
     host.save()
-    result = host.run("ghcr.io/x@sha256:new", NEW)
+    # Caps long enough that only those workers' exit can end the drain. Their
+    # last connection, counted just before they exit, is not routing either.
+    result = host.run("ghcr.io/x@sha256:new", NEW, DRAIN_MAX="60", DRAIN_EXTRA="60")
     assert result.returncode == 0, result.stdout + result.stderr
     assert "still receives requests" not in result.stdout
+    assert "retiring it anyway" not in result.stdout
     assert host.live_port() == host.canonical_port
     assert [c["sha"] for c in host.containers("privatools")] == [NEW]
 
