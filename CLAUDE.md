@@ -252,9 +252,9 @@ CSP-walker and guide-export tests catch most misses.
     configuration moves into CSS and utilities the UI uses are renamed, so it
     needs visual checks of Air and Play; tailwind-merge 3 supports only
     Tailwind 4 (#231).
-  - **pdf.js 6** (`pdfjs-dist`, held by #236): it removes APIs the PDF tools
-    call, such as `PDFDocumentProxy.destroy`, and every tool that renders or
-    reads PDFs in the browser needs a browser check.
+  - **pdf.js 6** (`pdfjs-dist`): it removes APIs the PDF tools call, such as
+    `PDFDocumentProxy.destroy`, and every tool that renders or reads PDFs in
+    the browser needs a browser check (#236).
   - **The `python` base image** ignores minor and major updates: moving Python
     is a migration, because the locks are compiled for 3.12. Without the rule
     Dependabot targeted only the newest tag and proposed no digest refresh at

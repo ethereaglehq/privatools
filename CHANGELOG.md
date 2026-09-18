@@ -44,7 +44,7 @@ Merged to `main` since v2.6.1, not yet in a release.
 - The on-device AI tools run transformers.js 4.3.0. Its runtime files stay in the browser's HTTP cache, so the AI hub lists and deletes only model files. (#209)
 - Frontend: onnxruntime-web 1.30.0 for background removal, sonner 2.0.8, next-themes 0.4.6, react-router-dom 7.18.4, Radix dialog and tooltip, and dev tooling (typescript-eslint 8.70.0, eslint-plugin-react-refresh 0.5.7, @vitejs/plugin-react-swc 4.3.3). (#192, #194, #134, #217, #230, #190, #226, #216, #212)
 - Unused frontend packages and three dead `components/ui` wrappers are removed, among them recharts, react-hook-form, cmdk, vaul and date-fns; `esbuild` becomes a direct dev dependency. The production bundle is unchanged apart from 242 bytes of CSS. Earlier bumps of removed packages went with them. (#205, #235; #137, #140, #142, #146, #215)
-- Majors held for dedicated migrations in `.github/dependabot.yml`: React 19, eslint-plugin-react-hooks 7, and Tailwind CSS 4 with tailwind-merge 3. (#225, #231)
+- Majors held for dedicated migrations in `.github/dependabot.yml`: React 19, eslint-plugin-react-hooks 7, Tailwind CSS 4 with tailwind-merge 3, and pdf.js 6. (#225, #231, #236)
 
 ### CI
 
