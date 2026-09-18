@@ -63,24 +63,53 @@ def _extract_choice_options(field) -> list[str]:
     return parsed
 
 
-def _extract_button_options(field) -> list[str]:
-    ap = field.get("/AP")
+def _widgets(field) -> list:
+    """The widget annotations that draw `field` on the page.
+
+    A field with one widget is often a single merged dictionary; otherwise its
+    widgets are its /Kids, which is how every radio group is built. A kid with
+    a /T of its own is a child field, not a widget of this one.
+    """
+    kids = field.get("/Kids")
+    if kids is None:
+        return [field]
+    return [kid for kid in kids if "/T" not in kid]
+
+
+def _appearance_states(widget) -> list[str]:
+    """A button widget's normal appearance states, such as ["Off", "Yes"]."""
+    ap = widget.get("/AP")
     if not ap or "/N" not in ap:
         return []
-
     normal_appearance = ap["/N"]
-    try:
-        states = list(normal_appearance.keys())
-    except (AttributeError, TypeError):
+    if not isinstance(normal_appearance, pikepdf.Dictionary):
         return []
+    return [_pdf_value_to_string(state) for state in normal_appearance.keys()]
 
+
+def _extract_button_options(field) -> list[str]:
     options: list[str] = []
-    for state in states:
-        label = _pdf_value_to_string(state)
-        if label and label.lower() != "off":
-            options.append(label)
+    for widget in _widgets(field):
+        for label in _appearance_states(widget):
+            if label and label.lower() != "off" and label not in options:
+                options.append(label)
 
     return options
+
+
+def _set_button_state(field, state) -> None:
+    """Record `state` as the field's value and show it on its widgets.
+
+    Each widget shows the state if it has an appearance for it; the others,
+    the unchosen buttons of a radio group, show Off.
+    """
+    field["/V"] = state
+    for widget in _widgets(field):
+        states = _appearance_states(widget)
+        if states and _pdf_value_to_string(state) not in states:
+            widget["/AS"] = pikepdf.Name("/Off")
+        else:
+            widget["/AS"] = state
 
 
 def _checkbox_on_state(field):
@@ -162,12 +191,21 @@ def fill_form(input_path: str, field_values: dict) -> str:
                     state = _checkbox_on_state(field)
                 else:
                     state = pikepdf.Name("/Off")
-                field["/V"] = state
-                field["/AS"] = state
+                _set_button_state(field, state)
             elif field_type == "radio":
                 state = _to_pdf_name(raw_value)
-                field["/V"] = state
-                field["/AS"] = state
+                options = _extract_button_options(field)
+                chosen = _pdf_value_to_string(state)
+                if options and chosen != "Off" and chosen not in options:
+                    # The page sends every field back, touched or not; leave a
+                    # value the form already had as it is, however odd.
+                    if chosen == _pdf_value_to_string(field.get("/V", "")):
+                        continue
+                    raise ValidationError(
+                        f"'{raw_value}' is not an option of radio field '{name}'. "
+                        f"Choose one of: {', '.join(options)}."
+                    )
+                _set_button_state(field, state)
             elif field_type == "choice":
                 field["/V"] = pikepdf.String(raw_value)
                 if "/AP" in field:
