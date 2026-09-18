@@ -474,6 +474,16 @@ def _tool_registries() -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str,
     return pdf, nonpdf
 
 
+_SEO_FIELDS = ("seoTitle", "metaDescription", "lastReviewed", "category", "popularity")
+
+
+def _tool_seo_fields(slug: str) -> dict[str, str]:
+    """Search copy and review data the registries carry through the build manifest."""
+    data = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
+    row = (data or {}).get(slug) or {}
+    return {key: str(row[key]).strip() for key in _SEO_FIELDS if row.get(key) not in (None, "")}
+
+
 def _reviewed_date(entry: dict) -> str | None:
     for field in ("reviewedAt", "dateModified", "updatedAt", "publishedAt", "date"):
         value = entry.get(field)
@@ -1339,7 +1349,8 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
         slug = path[len("/tool/"):]
         if slug in _PDF_TOOLS:
             name, desc = _PDF_TOOLS[slug]
-            return _tool_title(name), _tool_desc(desc)
+            fields = _tool_seo_fields(slug)
+            return fields.get("seoTitle") or _tool_title(name), fields.get("metaDescription") or _tool_desc(desc)
         # Unknown slug — explicit 404 so HTTP status and body content match
         return _NOT_FOUND_META
 
@@ -1348,7 +1359,8 @@ def get_meta_for_path(path: str) -> tuple[str, str]:
         slug = path[len("/tools/"):]
         if slug in _NONPDF_TOOLS:
             name, desc = _NONPDF_TOOLS[slug]
-            return _tool_title(name), _tool_desc(desc)
+            fields = _tool_seo_fields(slug)
+            return fields.get("seoTitle") or _tool_title(name), fields.get("metaDescription") or _tool_desc(desc)
         return _NOT_FOUND_META
 
     # Any other unknown top-level path
@@ -1982,7 +1994,7 @@ def _tool_page_body(slug: str, name: str, desc: str, registry: dict, prefix: str
     for the same content is untouched by this — it's JSON, not HTML.
     """
     parts: list[str] = []
-    parts.append(f"<h1>{escape(name)}</h1>")  # the titles plan swaps in the registry seoTitle
+    parts.append(f"<h1>{escape(_tool_seo_fields(slug).get('seoTitle') or name)}</h1>")
     short = _tool_registry_short_description(slug) or desc
     parts.append(f'<p class="tool-summary">{escape(short)}</p>')
     parts.append(f'<p class="tool-intro">{escape(desc)}</p>')
