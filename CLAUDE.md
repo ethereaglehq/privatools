@@ -118,15 +118,24 @@ also from the degraded state. Details, evidence and the cut-over runbook are in
   before the file exists would create one the timer can't open. By hand:
   `sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout ...`.
 - **Rollout exit codes drive the timer.** 1: the release is at fault, marked
-  failed until a newer tag. 2: a host problem or unmet precondition, retried
-  after a 10-minute backoff. 3: degraded, the interim serves. 4: nginx or a
-  still-routed container needs a human. Classify new failure paths accordingly;
-  a host problem reported as 1 blocks the release for good.
-- **nginx is verified, not trusted.** Every run first re-applies the port its
-  upstream file names, because a kill between the helper's rename and reload
-  leaves them apart. Each switch must visibly retire nginx's old worker
-  generation. A container that still receives requests after that generation
-  exits is never removed (exit 4).
+  failed until a newer tag. 2: a host problem or unmet precondition. 3:
+  degraded, the interim serves. 4: nginx or a still-routed container needs a
+  human. The timer retries 2, 3 and 4 only after a 10-minute backoff. Classify
+  new failure paths accordingly; a host problem reported as 1 blocks the
+  release for good.
+- **nginx is verified, not trusted, and otherwise left alone.** Each switch is
+  recorded (`.privatools-deploy.switching`) before the helper runs and cleared
+  once nginx visibly retires its old worker generation. A run that finds one
+  recorded re-applies the file's port, because a kill between the helper's
+  rename and reload leaves them apart; no other run reloads the shared nginx.
+  Traffic never falls back to an interim the file does not name: it may not
+  have passed the gates. A container that still receives requests after the
+  generation this deploy retired exits is never removed (exit 4).
+- **One failed Docker call proves nothing.** Status polls and `docker
+  inspect` are asked again until their deadline; a supervisor or container is
+  judged failed only from an answer. In the cut-over deploy, a container nginx
+  routes to is stopped only if it actually restarted; otherwise the run ends
+  degraded.
 - **Old and new code share the SQLite database for the overlap** (about a
   minute), and the new container applies its migrations on start. Migrations must
   be additive and quick (one `BEGIN IMMEDIATE` against a database the live
@@ -142,9 +151,9 @@ also from the degraded state. Details, evidence and the cut-over runbook are in
   the supervisor finishes its job, then releases the lock. SIGUSR2 resumes. The
   launcher starts children with both ignored until the worker installs its
   handlers. Readiness counts this container's live standby through
-  `backend/app/job_handover.py`'s state file in its private `/tmp`, for at most
-  `queue_seconds`, because the shared heartbeat names the old build until the
-  handover. The deploy polls `python -m backend.app.job_handover --status`,
+  `backend/app/job_handover.py`'s state file in its private `/tmp`, because the
+  shared heartbeat names the old build until the handover: without limit while
+  another supervisor serves the queue, for at most `queue_seconds` otherwise. The deploy polls `python -m backend.app.job_handover --status`,
   which is standard library only on purpose: keep FastAPI and pydantic out of
   it.
 - **The only root step is the nginx switch.** It runs through
@@ -153,9 +162,9 @@ also from the degraded state. Details, evidence and the cut-over runbook are in
   `nginx -t` and restores the old upstream on failure. It also ignores SIGTERM
   from rename to reload. The deploy unit must not set `NoNewPrivileges`.
 - **The installed rollout reads a release's files** (`deploy/README.md` lists
-  them): the probe's `--running` command line, `compose.interim.yml` and its
-  volume variables, `PRIVATOOLS_HOST_PORT`, the status JSON and the signal
-  meanings. Change them only compatibly.
+  them): the probe's `--running` command line and `PRIVATOOLS_PROBE_HOST`,
+  `compose.interim.yml` and its volume variables, `PRIVATOOLS_HOST_PORT`, the
+  status JSON and the signal meanings. Change them only compatibly.
 - **Installed scripts are copies.** A deploy resets the checkout, not
   `/usr/local/bin`. Reinstall with `install-auto-deploy.sh`, which never starts a
   deploy unless given `--start`; the backup script is installed separately and

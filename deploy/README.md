@@ -33,11 +33,11 @@ Added 18 September 2026. Until then `auto-deploy.sh` replaced the running contai
 
 Now `privatools-rollout` ([`oracle-vm/rollout.sh`](oracle-vm/rollout.sh)) replaces the release and nothing ever stops before its successor serves. `auto-deploy.sh` still chooses the release and verifies the tag, cosign signature, digest and revision, then hands the verified digest to the rollout. It runs as the deploy user, never as root (below).
 
-0. **Reconcile.** Re-apply the port that the upstream file names, through the root helper, so nginx really serves it. A run killed between the helper's rename and its reload leaves the file and nginx apart. If nothing is ready on that port but the other one serves, switch there. Retire any interim container a previous run left behind.
-1. **Candidate.** Start the new image as a second compose project, `privatools-interim`, on `127.0.0.1:8001`, with the same compose file and the live container's two volumes ([`compose.interim.yml`](oracle-vm/compose.interim.yml)). Wait up to 180 s for `/readyz` to report the new build; a crash loop is caught early. Then run the real-page probe, `scripts/ci/probe-image.py --running`. It is the same set of checks CI runs on a freshly booted image: readiness, a real 404, the homepage's advertised tool count, two server-rendered tool pages and the sitemap.
-2. **Queue handover, before any traffic moves.** The old container's job supervisor finishes its current job and releases the lock (SIGUSR1). The candidate's supervisor must take the lock and keep it for 5 s without its container restarting. If it cannot, the candidate is removed, the old supervisor resumes (SIGUSR2) and the release is rejected (exit 1). If the old supervisor's job does not finish within 360 s, the attempt is undone and retried later (exit 2).
+0. **Reconcile.** Every switch is recorded (`.privatools-deploy.switching`) before the root helper runs and cleared once nginx is seen to have reloaded. If a run finds a switch still recorded, a killed run may have left the file renamed but not reloaded, so it re-applies the file's port. Otherwise it leaves the shared nginx alone: nothing reloads it for nothing, even while the rollout backs off in the degraded state. A port counts as down only after failing `/readyz` for 30 s, since one failure can be a busy uvicorn's 503. Even then, traffic falls back only to a canonical container that passes the page probe again. It never falls back to an interim the file does not name, because that interim may never have passed the gates: a run killed in phase 1 leaves one behind. Any interim a previous run left behind is then drained and removed.
+1. **Candidate.** Start the new image as a second compose project, `privatools-interim`, on `127.0.0.1:8001`, with the same compose file and the live container's two volumes ([`compose.interim.yml`](oracle-vm/compose.interim.yml)). Wait up to 180 s for `/readyz` to report the new build; a crash loop is caught early. Then run the real-page probe, `scripts/ci/probe-image.py --running`. It is the same set of checks CI runs on a freshly booted image: readiness, a real 404, the homepage's advertised tool count, two server-rendered tool pages and the sitemap. It asks for `Host: privatools.me`, as nginx does. A release whose `TRUSTED_HOSTS` rejects the public name therefore fails here (exit 1), not at the check through nginx after the switch.
+2. **Queue handover, before any traffic moves.** The old container's job supervisor finishes its current job and releases the lock (SIGUSR1). The candidate's supervisor must take the lock and keep it for 5 s without its container restarting. If it cannot, the candidate is removed, the old supervisor resumes (SIGUSR2) and the release is rejected (exit 1). If the old supervisor's job does not finish within 360 s, the attempt is undone and retried later (exit 2). A failed Docker call proves nothing. A status poll or `docker inspect` that fails is asked again until the deadline. A supervisor fails only on an answer: its container restarted or stopped, or it reported that it did not hold the queue. If Docker never answers, that is a host problem (exit 2).
 3. **Switch.** Point host nginx at 8001 through the root helper. The helper checks that 8001 is ready, runs `nginx -t` and reloads gracefully. The rollout then checks two things: that nginx's previous worker generation is retiring, which proves the reload happened, and that `https://privatools.me/readyz` through nginx reports the new build. If either fails, it switches back, returns the queue and removes the candidate (exit 2).
-4. **Drain.** Keep the old container until no request has been open on it for 3 s. Also wait until the nginx worker generation that the reload retired has exited, and any older one still shutting down, capped at 300 s: nginx buffers a request body before it connects upstream, so an upload that began before the switch still reaches the old container afterwards. A container that still receives requests after that generation has exited means nginx still routes to it. It is kept, and the rollout stops with exit 4.
+4. **Drain.** Keep the old container until no request has been open on it for 3 s. Also wait until the nginx worker generation that this deploy's reload retired has exited, capped at 300 s. That includes the generation a killed run's switch retired, which its record lists. Other sites' reloads are not waited for: their workers never reach PrivaTools. The wait matters because nginx buffers a request body before it connects upstream, so an upload that began before the switch still reaches the old container afterwards. A container that still receives requests after that generation has exited means nginx still routes to it. It is kept, and the rollout stops with exit 4.
 5. **Steady state.** Check again that the new supervisor holds the queue and its container never restarted. If that fails, return traffic to the old container, which is still running. Record the replaced release for `--rollback`, then recreate `privatools-privatools-1` on 8000 with the new image; Compose stops the drained old container. Gate it on readiness and the page probe, hand the queue from the interim to it, switch nginx back to 8000, drain the interim like step 4 and remove it.
 
 The exit status tells the timer what to do:
@@ -47,10 +47,10 @@ The exit status tells the timer what to do:
 | 0 | The new release serves from the canonical container | Records it as deployed |
 | 1 | The release is at fault: not ready, broken pages, or its job supervisor cannot hold the queue. The previous release serves | Marks the tag failed until a newer one |
 | 2 | Nothing started, or a host problem undid the attempt: nginx, Docker, memory, port 8001, or a job that would not finish. The previous release serves | Retries after a 10-minute backoff |
-| 3 | Degraded: the new release serves from the interim container because the canonical one did not come up (retried once) | Pings failure; each run retries after the rollout's own 10-minute backoff |
-| 4 | nginx could not be brought to a verified state, or a container that still receives requests was kept | Pings failure; act now |
+| 3 | Degraded: the new release serves from the interim container. Either the canonical one did not come up (retried once), or in the cut-over deploy the new supervisor has not confirmed the queue while its container serves | Pings failure; retries after a 10-minute backoff |
+| 4 | nginx could not be brought to a verified state, or a container that still receives requests was kept | Pings failure; act now; the next attempt waits 10 minutes |
 
-A run interrupted at any point is reconciled by the next one. An interim that nginx points at is moved back to 8000; one it does not point at is drained and removed. The rollout never falls back to a stop-and-start deploy.
+A run interrupted at any point is reconciled by the next one. An interim that the upstream file names is moved back to 8000; one it does not name is drained and removed, never given traffic. The rollout never falls back to a stop-and-start deploy.
 
 ### Why it is built this way
 
@@ -73,16 +73,18 @@ The backup timer is still never touched. The backup *script* ([`backup-app-data.
   - **Standby and drain.** A supervisor that finds the lock taken now waits as a standby. `docker kill --signal SIGUSR1` (relayed by the launcher, PID 1) drains it: it finishes the job it is running, stops claiming and releases the lock. It then waits as a passive standby that retakes the lock only if nobody heartbeats for 30 s, so a failed handover heals itself; SIGUSR2 makes it eager again.
   - **The handover happens before the switch.** The new supervisor must take the lock, and keep it for a soak period without its container restarting, while the old container still serves every request. The launcher stops the whole container when a child exits. So a release whose supervisor crashes on taking the queue is rejected there, instead of taking its web server down after the switch. Only the lock holder claims, so no job is interrupted and none runs twice. Jobs accepted by the old web during the handover are processed by the new supervisor, since the queue is durable.
   - **Signals are safe.** The launcher starts its children with SIGUSR1 and SIGUSR2 ignored, until the worker installs its handlers; their default action would kill it. The rollout sends SIGUSR1 only to a supervisor that reports itself alive and holding the queue, and SIGUSR2 only to a live one that reports itself passive or still draining.
-  - **A standby counts as ready, for a bounded time.** Readiness and job admission count this container's own live standby of the same build, through the state file `backend/app/job_handover.py` reads from its private `/tmp`; the shared heartbeat names the old build until the handover. A standby counts for at most `queue_seconds` (900 s), the time after which a queued job fails anyway. Past that, `/readyz` turns 503 and submissions get `jobs_unavailable`, which is loud (monitor.yml probes `/readyz` every 30 minutes) while pages keep serving. The alternative, failing loudly by exiting, was rejected. The launcher stops the whole container when its supervisor exits, so a routing anomaly between two containers would become a site outage or a crash-looping live container.
+  - **A standby counts as ready, for a bounded time.** Readiness and job admission count this container's own live standby of the same build, through the state file `backend/app/job_handover.py` reads from its private `/tmp`; the shared heartbeat names the old build until the handover. While another supervisor visibly serves the queue, a standby stays ready however long it waits. Serving means a fresh heartbeat that still accepts work, from any build, so every job this container accepts will run. The first deploy after the cut-over depends on this: a long drain and then the wait for v2.6.1 to go idle can keep the new container a standby for more than 15 minutes while it serves. With nobody serving, a standby counts for at most `queue_seconds` (900 s), the time after which a queued job fails anyway. Past that, `/readyz` turns 503 and submissions get `jobs_unavailable`, which is loud (monitor.yml probes `/readyz` every 30 minutes) while pages keep serving. The alternative, failing loudly by exiting, was rejected. The launcher stops the whole container when its supervisor exits, so a routing anomaly between two containers would become a site outage or a crash-looping live container.
 - *The one exception is the first deploy after the cut-over.* Its old container runs v2.6.x, whose supervisor cannot drain, so the new supervisor can only take the queue after the switch. The rollout stops the old container as soon as nothing is queued or running, waiting up to 60 s for that, otherwise as soon as nothing is running. A job claimed in the instant before SIGTERM is interrupted and retried once, never lost. The rollout then confirms the new supervisor holds the queue before it destroys the old container.
-  - If the new supervisor fails there, the rollout restarts the old container, waits for it to be ready and switches back (exit 1). That double fault costs about as long as the old container's boot of 502s, because the new container's web server stops with its supervisor.
+  - If the new supervisor crashes there, its container restarts, and its web server with it. The rollout then restarts the old container, waits for it to be ready and switches back (exit 1). That double fault costs about as long as the old container's boot of 502s.
+  - If the new supervisor merely does not confirm the queue, the container nginx routes to is healthy. That covers a supervisor that never takes the lock, or Docker failing to answer. Stopping it would cause exactly that outage, so the rollout leaves it serving and records the stopped old release for `--rollback`. It exits degraded (3), and the next run tries the queue again. A single failed status poll is asked again, not taken for a failure.
+  - If the old container will not stop, the switch is undone (exit 2): its supervisor would keep the lock from the new one.
   - CI makes it unlikely: the `test.yml` image probe now boots every image with async jobs enabled, as production runs, and requires its supervisor to take the queue.
 
 **Resources.** Compose caps each container at 4 GB, 1.8 CPUs and 512 PIDs. During the overlap the caps add up to more than a 2-core, 12 GB VM shared with other projects can promise, but the caps are not usage.
 
-- **Memory.** A ready instance serving the load test used 300–380 MiB on the dev VM, and the two containers together peaked at 760 MiB during an overlap, with async jobs running. The overlap lasts about a minute, and the old container takes no new work after the switch, so the combined load is the old one's in-flight tail plus new requests. A burst of heavy conversions during a deploy could raise that, so the rollout refuses rather than overcommits: it needs `MIN_AVAILABLE_MB` (default 1536). Memory is checked before the first overlap, and before a run resumed from the degraded state starts the canonical container beside the interim. The second overlap of a deploy is never larger: Compose stops the drained old container before it starts the new canonical one, so that overlap is the interim plus one new container again.
+- **Memory.** A ready instance serving the load test used 305–370 MiB on the dev VM, and the two containers together peaked at 745 MiB during an overlap, with async jobs running. The overlap lasts about a minute, and the old container takes no new work after the switch, so the combined load is the old one's in-flight tail plus new requests. A burst of heavy conversions during a deploy could raise that, so the rollout refuses rather than overcommits: it needs `MIN_AVAILABLE_MB` (default 1536). Memory is checked before the first overlap, and before a run resumed from the degraded state starts the canonical container beside the interim. The second overlap of a deploy is never larger: Compose stops the drained old container before it starts the new canonical one, so that overlap is the interim plus one new container again.
 - **The deploy's own polling.** The job handover is polled through `python -m backend.app.job_handover --status`, which is standard library only: about 0.06 CPU-s and 12 MB per call. The app's job package imports FastAPI, pydantic and the auth stack, about 0.9 CPU-s and 103 MB. Polled once a second for up to 6 minutes, the old way would have cost a busy VM real CPU and memory.
-- **CPU.** It is shared while the new container boots, about 10 s. In the test, p99 latency rose from 98 ms before the rollouts to 110 ms during them.
+- **CPU.** It is shared while the new container boots, about 10 s. In the test, p99 latency rose from 68 ms before the rollouts to 125 ms during them.
 
 Production's current free memory was not verified for this change (no host access from where it was built), so the runbook checks it first.
 
@@ -96,7 +98,7 @@ The root helper [`nginx-upstream.sh`](oracle-vm/nginx-upstream.sh) (installed as
 4. It runs `nginx -t` on the whole configuration, then `systemctl reload nginx`.
 5. On any failure it puts the previous file back, so the file always matches what nginx runs.
 
-From the rename to the reload or restore, it ignores SIGTERM, SIGINT and SIGHUP, so `systemctl stop` or the unit's start timeout cannot interrupt it there. Its children, `nginx -t` and the reload, inherit that. The load test's SIGTERM, sent to every process of a deploy inside that window, left a completed switch: the reload came three seconds later. If a child is killed anyway, the helper counts it as a failure and restores the old file. SIGKILL cannot be ignored at all. Two further safeguards cover what is left: every rollout first re-applies the file's port, and every switch is proven by the retirement of nginx's previous worker generation.
+From the rename to the reload or restore, it ignores SIGTERM, SIGINT and SIGHUP, so `systemctl stop` or the unit's start timeout cannot interrupt it there. Its children, `nginx -t` and the reload, inherit that. The load test's SIGTERM, sent to every process of a deploy inside that window, left a completed switch: the reload came three seconds later. If a child is killed anyway, the helper counts it as a failure and restores the old file. SIGKILL cannot be ignored at all. Two further safeguards cover what is left. The rollout records each switch before calling the helper and clears the record only once nginx has visibly reloaded, so the next run re-applies any switch that did not finish. And every switch is proven by the retirement of nginx's previous worker generation.
 
 **Privileges.** The deploy service stays `User=ubuntu` with the docker group. Its only root step is `sudo -n /usr/local/sbin/privatools-nginx-upstream set 8000|8001`, allowed by [`/etc/sudoers.d/privatools-deploy`](oracle-vm/privatools-deploy.sudoers) for exactly those two argument lists. The helper validates the port, ignores its environment as root and writes one fixed file. The drain and resume signals and the containers go through the docker group like every other deploy action. The unit must not set `NoNewPrivileges`, or sudo stops working and every deploy refuses at the switch while the previous release keeps serving.
 
@@ -111,7 +113,7 @@ sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout --rollback
 This works whether or not ubuntu's login session is in the docker group.
 
 **Stable interfaces.** The installed `privatools-rollout` changes only when someone reinstalls it, but it reads these from the checkout of whichever release it deploys. Change them only compatibly, or reinstall the rollout in the same release:
-- `scripts/ci/probe-image.py --running CONTAINER --url BASE_URL --sha BUILD_SHA`: exit 0 means real pages serve.
+- `scripts/ci/probe-image.py --running CONTAINER --url BASE_URL --sha BUILD_SHA`: exit 0 means real pages serve. The rollout sets `PRIVATOOLS_PROBE_HOST=privatools.me` for it. It is an environment variable, so an older probe ignores it and asks for `127.0.0.1` as before.
 - `deploy/oracle-vm/compose.interim.yml`, which takes `PRIVATOOLS_DATA_VOLUME` and `PRIVATOOLS_TEMP_VOLUME`, and `docker-compose.yml`'s `PRIVATOOLS_HOST_PORT`.
 - `python -m backend.app.job_handover --status` in the container: the JSON keys `enabled`, `local.role` (`active`, `draining` or `standby`), `local.passive`, `local.alive`, `local.ready`, `running_jobs` and `queued_jobs`. A release without it is treated as predating the handover.
 - The signals, sent to the container: SIGUSR1 drains its job supervisor and SIGUSR2 resumes it. `/readyz`'s `status` and `build_sha` complete the list.
@@ -120,7 +122,7 @@ This works whether or not ubuntu's login session is in the docker group.
 
 ### Load test on the dev VM
 
-Rerun on 18 September 2026 after the review of the first version, on the shared 2-core ARM dev VM (not production), with other projects' containers running. Every row uses the final scripts in this change. The scenarios ran back to back from fresh volumes, each starting from the state the previous one left.
+Rerun on 18 September 2026 after the second review, on the shared 2-core ARM dev VM (not production), with other projects' containers running. Every row uses the final scripts in this change: the rollout's checksum was the same before and after the run. The scenarios ran back to back from fresh volumes, each starting from the state the previous one left.
 
 **Setup.** The image was built once from this branch. Each "release" is a throwaway image `FROM` that build:
 
@@ -130,50 +132,54 @@ Rerun on 18 September 2026 after the review of the first version, on the shared 
 - The release whose supervisor crashes raises in the supervisor's loop as soon as it holds the queue's lock. Its web app is sound, so it passes readiness and the page probe. The launcher then stops its container, and Docker restarts it.
 - The pre-handover release copies main's four job, launcher and storage files back in and removes the status module. That is what v2.6.1 runs.
 
-The canonical and interim projects ran from this checkout's `docker-compose.yml` on 127.0.0.1:8016 and 8017, because another application owns 8000 on that VM. The nginx stand-in was `nginx:alpine` in a host-network container on 127.0.0.1:8015, with production's proxying: the included upstream file, `Host $host`, and the `/api/` limits and timeouts. The switch ran the real `nginx-upstream.sh` through its unprivileged testing hook, with `nginx -t` and the reload executed in that container. The rollout verified each reload against that container's nginx master. Async jobs were enabled as in production. `READY_TIMEOUT` was 120 s (production default 180 s).
+The canonical and interim projects ran from this checkout's `docker-compose.yml` on 127.0.0.1:8016 and 8017, because another application owns 8000 on that VM. The nginx stand-in was `nginx:alpine` in a host-network container on 127.0.0.1:8015, with production's proxying: the included upstream file, `Host $host`, and the `/api/` limits and timeouts. The switch ran the real `nginx-upstream.sh` through its unprivileged testing hook, with `nginx -t` and the reload executed in that container. The rollout verified each reload against that container's nginx master. The page probe asked for `Host: privatools.me`, which the compose file's `TRUSTED_HOSTS` accepts. Async jobs were enabled as in production. `READY_TIMEOUT` was 120 s (production default 180 s).
 
 **Faults injected.**
 - **(f)** The helper's `nginx -t` rejects any configuration naming the interim port, as a broken site elsewhere on a shared nginx would.
 - **(h)** The helper's `nginx -t` takes 3 s longer on the switch to the interim. As soon as the helper is inside its rename-to-reload window, SIGTERM goes to every process of the deploy: its process group, as `systemctl stop` signals the unit's cgroup. The rollout then runs again.
 - **(g)** SIGKILL to the rollout as soon as it logs `phase 1 done`, then the rollout runs again 15 s later.
+- **(j)** A leftover interim that never passed the gates, as a run killed in phase 1 leaves one: the broken-pages release, ready on 8017, with its home page returning 404. The first readiness probe of the live port also fails once, through a `curl` wrapper on the rollout's `PATH`, as a busy uvicorn's 503 would. Then a normal rollout runs.
+- **(k)** The first deploy after the cut-over, with a `docker` wrapper on the rollout's `PATH`. After the old container is stopped, the first status poll that shows the new supervisor holding the queue starts the soak; the next poll fails once, as a busy Docker daemon's can.
 
-**Load and pass criteria.** Through nginx, `GET /` and `GET /readyz` each every 100 ms, a fresh connection per request. A request failed on any transport error or timeout, a non-200 status, a page without `<div id="root">`, or a `/readyz` that was not `ready`. At the same time an API client kept async `compress` jobs flowing through nginx, keeping up to two outstanding. It then audited every accepted job's final state and attempt count.
+**Load and pass criteria.** Through nginx, `GET /` and `GET /readyz` each every 100 ms, a fresh connection per request. A request failed on any transport error or timeout, a non-200 status, a page without `<div id="root">`, or a `/readyz` that was not `ready`. At the same time an API client kept two async `compress` jobs outstanding through nginx. It recorded each job's final state and attempt count, then deleted the result, so retained results never filled the job-storage budget.
 
 | Scenario | Rollout | Page + `/readyz` requests | Failed | Jobs: first attempt / accepted |
 | --- | --- | --- | --- | --- |
-| (a) Good release (image changes) | exit 0, 53 s | 1266 | **0** | 36 / 36 |
-| (b) Release that never becomes ready | exit 1 after the readiness deadline, 124 s | 2690 | **0** | 66 / 66 |
-| (c) Ready release that fails the page probe | exit 1, 13 s | 466 | **0** | 14 / 14 |
-| (i) Ready release whose job supervisor crashes on taking the lock | exit 1 before any switch, 15 s | 520 | **0** | 12 / 12 |
-| (e) `privatools-rollout --rollback` | exit 0, 59 s | 1390 | **0** | 34 / 34 |
-| (f) nginx rejects the switch (`nginx -t` fails) | exit 2, undone, 35 s | 924 | **0** | 19 / 19 |
-| (h) SIGTERM to the whole deploy inside the helper's rename-to-reload window, then rerun | killed (143); rerun exit 0, 36 s | 1585 | **0** | 43 / 43 |
-| (g) Rollout SIGKILLed right after its switch, then rerun | rerun exit 0, 37 s | 1720 | **0** | 42 / 42 |
-| (d) First deploy after the cut-over (old container runs the pre-handover supervisor) | exit 0, 104 s | 2318 | **0** | 58 / 59; the other succeeded on its retry |
+| (a) Good release (image changes) | exit 0, 62 s | 1448 | **0** | 35 / 35 |
+| (b) Release that never becomes ready | exit 1 after the readiness deadline, 130 s | 2818 | **0** | 55 / 55 |
+| (c) Ready release that fails the page probe | exit 1, 23 s | 668 | **0** | 14 / 14 |
+| (i) Ready release whose job supervisor crashes on taking the lock | exit 1 before any switch, 18 s | 582 | **0** | 13 / 13 |
+| (e) `privatools-rollout --rollback` | exit 0, 43 s | 1076 | **0** | 31 / 31 |
+| (f) nginx rejects the switch (`nginx -t` fails) | exit 2, undone, 24 s | 688 | **0** | 19 / 19 |
+| (h) SIGTERM to the whole deploy inside the helper's rename-to-reload window, then rerun | killed (143); rerun exit 0, 32 s | 1518 | **0** | 41 / 41 |
+| (g) Rollout SIGKILLed right after its switch, then rerun | rerun exit 0, 35 s | 1638 | **0** | 44 / 44 |
+| (j) Leftover interim that never passed the gates, plus one failed probe of the live port | exit 0, 53 s; the leftover never took traffic | 1419 | **0** | 37 / 37 |
+| (d) First deploy after the cut-over (old container runs the pre-handover supervisor) | exit 0, 105 s | 2308 | **0** | 60 / 61; the other succeeded on its retry |
+| (k) The same, with one failed status poll inside the soak | exit 0, 110 s | 2414 | **0** | 61 / 62; the other succeeded on its retry |
 
-- **Build SHA.** In every run, `/readyz` through nginx reported the old build until the switch and the new one after it, and changed exactly once. The rejected releases never appeared.
-- **(i).** The candidate's supervisor took the lock and raised, and the launcher stopped its container. The rollout saw that within 4 s of the handover. It removed the candidate, resumed the old supervisor, and exited 1 while the old release kept serving. Before the review's fix, this release would have taken traffic and then stopped its own web server.
-- **(h).** The SIGTERM killed the rollout, but the helper finished its switch: `nginx -t` passed and the reload ran three seconds after the signal. The load generator saw the new build from the reload on, the file named 8017, and no staged file was left. The rerun re-applied 8017, took over from the interim container and finished.
-- **(g).** The rerun found nginx on the interim and the old canonical container still running. It confirmed the queue, drained and recorded the old release, then moved the new one to the canonical container.
-- **(d).** The v2.6.1-style supervisor could not drain. With jobs arriving continuously, the queue was never empty, so the rollout used its full 60 s idle wait. It then stopped the old container at a moment when nothing was running. One job claimed in that instant was interrupted and retried once, and it succeeded. The new supervisor held the queue 5 s after the stop.
-- **Latency.** In the seconds before each rollout started: p50 8 ms, p99 98 ms. During the rollouts: p50 9 ms, p99 110 ms. The slowest request during a rollout took 0.60 s.
+- **Build SHA.** In every run, `/readyz` through nginx reported the old build until the switch and the new one after it, and changed exactly once. The rejected releases and the leftover of (j) never appeared.
+- **nginx reloads.** The rejected releases (b, c, i) never touched nginx, and a good deploy reloaded it exactly twice: to the interim and back. Only the rerun of (h) re-applied the upstream, because the killed run's switch was still recorded. The reload came three seconds after the SIGTERM, since the helper ignored the signal and finished; the load generator saw the new build from then on, and no staged file was left.
+- **(i).** The candidate's supervisor took the lock and raised, and the launcher stopped its container. The rollout saw that within 4 s of the handover. It removed the candidate, resumed the old supervisor, and exited 1 while the old release kept serving.
+- **(j).** The failed probe was asked again a second later and passed. The leftover was drained and removed without traffic, and the new release went through every gate.
+- **(k).** The failed poll was asked again, and the soak completed 5 s after the old container stopped. Without the fix, that poll would have stopped the interim nginx routed to and restarted the old release.
+- **(d) and (k).** The v2.6.1-style supervisor could not drain. Under a saturated job stream the queue was never empty, so the rollout used its full 60 s idle wait, then stopped the old container once nothing was running. In each run one job claimed in that instant was interrupted, retried once and succeeded. This is the documented one-time exception.
+- **Latency.** In the seconds before each rollout started: p50 9 ms, p99 68 ms. During the rollouts: p50 11 ms, p99 125 ms. The slowest request during a rollout took 0.69 s.
 - **Timeline of (a).** Seconds from the start:
-  - 0–2: the run re-applied the upstream.
+  - 0–2: checks; nginx was left alone, since no switch was unfinished.
   - 2: the interim started.
-  - 10: the interim was ready.
-  - 12: it passed the page probe, and the old supervisor was asked to hand over.
-  - 20: the new supervisor had held the queue for the 5 s soak, and nginx switched.
-  - 21: the switch was verified through nginx.
-  - 24: the old container had drained.
-  - 29: the queue was confirmed again, and the old release was recorded and replaced.
-  - 38: the canonical container was ready.
-  - 46: the canonical container held the queue, and nginx switched back.
-  - 51: the interim had drained and was removed.
+  - 13: the interim was ready.
+  - 15: it passed the page probe, and the old supervisor was asked to hand over.
+  - 23: the new supervisor had held the queue for the 5 s soak, and nginx switched.
+  - 27: the switch was verified through nginx.
+  - 30: the old container had drained.
+  - 36: the queue was confirmed again, and the old release was recorded and replaced.
+  - 47: the canonical container was ready.
+  - 56: the canonical container held the queue, and nginx switched back.
+  - 61: the interim had drained and was removed.
 
-  In every drain of every run, the retired nginx workers had exited and the container was quiet within 3–4 s.
-- **Memory.** A ready instance serving the test load used 300–380 MiB. The two containers together peaked at 760 MiB during an overlap, and one container at 426 MiB, with jobs running.
-- **Refusals.** The job client deleted each result once it had recorded its final state, so the 1 GiB job-storage budget never filled. The only refusals were the test key's fair-use limits: three `429 job_rate_limited` and two `429 quota_exceeded`. No submission was refused with a 503. The runs started on fresh volumes. An earlier pass had kept its results, filled the budget, and had most of its jobs refused with `job_queue_full`.
-- **Cut-over caveat.** Every run of (d), in development and here, was made under a saturated job stream. Each interrupted and retried at most one job, and none lost one. That is the documented one-time exception for the first deploy after the cut-over.
+  In every drain of every run, the retired nginx workers had exited and the container was quiet within 2–4 s.
+- **Memory.** A ready instance serving the test load used 305–370 MiB. The two containers together peaked at 745 MiB during an overlap, and one container at 436 MiB, with jobs running.
+- **Refusals.** The only refusals were the test key's fair-use limits: two `429 job_rate_limited` and two `429 rate_limit_exceeded`. No submission was refused with a 503.
 - **nginx 1.18.** The shipped production site with the upstream include also passed `nginx -t` on `nginx:1.18.0-alpine`, production's version, with the upstream file naming 8000 and naming 8001.
 
 Reproduce with a stand-in of your own. Never point these at production.
@@ -312,7 +318,7 @@ It takes two to three minutes if retiring nginx workers exit promptly (step 0's 
 
 - `REJECTED` (exit 1): the release was at fault and the old release kept serving; read the probe or supervisor lines above it.
 - `host problem` or `refused` (exit 2): nothing changed or the attempt was undone; the timer would retry after 10 minutes.
-- `DEGRADED` (exit 3): the new release serves from the interim container; the next run finishes the move.
+- `DEGRADED` (exit 3): the new release serves from the interim container, and the timer retries after 10 minutes. The log says whether the canonical container did not come up, or whether the new job supervisor has not confirmed the queue. For the queue, check `python -m backend.app.job_handover --status` in the interim container. v2.6.1 is stopped, not removed, and recorded; if the queue stays unheld, roll back with the stop-and-start command under Rollback.
 - `CRITICAL` (exit 4): act now; the log says whether nginx or a container still receiving requests needs attention.
 
 **8. Verify.**
@@ -479,18 +485,22 @@ For nginx failure, restore the recorded old config, validate with `nginx -t`, th
   - rejection of never-ready and page-broken releases, and of a supervisor that crashes on taking the queue or after the switch, including in the cut-over deploy;
   - host failures exiting 2;
   - a killed switch-back repaired rather than trusted, a still-routed container kept, and late requests from the workers a killed run retired not mistaken for routing;
+  - a leftover interim that never passed the gates never given traffic, after one failed probe or a canonical container that stays down;
+  - no reload of the shared nginx unless a switch was left unfinished, including in the degraded state;
+  - failed status polls and `docker inspect` calls inside the soak asked again, and a cut-over whose supervisor does not confirm the queue left serving, degraded;
+  - drains that wait only for the workers this deploy retired, and a page probe that asks for the public host name;
   - a reload that nginx never applied, undone;
   - degraded mode, its backoff, its memory check and `--rollback` from it, and the rollback record written before the old release is destroyed;
   - resuming after a killed run, root refusal and preconditions;
   - the root helper: readiness of the target, restore on failure, serialization and a SIGTERM inside its rename-to-reload window.
 - `backend/tests/test_api_v1_jobs.py` and `test_launcher.py`:
   - Two real supervisors on one lock. A standby takes over only after a drain, the drained job finishes where it started, and a drained supervisor heals itself.
-  - Readiness accepts only this container's live standby of the same build, and only within `queue_seconds`.
+  - Readiness accepts only this container's live standby of the same build: while another supervisor serves the queue, or otherwise only within `queue_seconds`.
   - The status command imports no web stack.
   - The launcher relays the drain signals to the worker only, and an early signal is harmless.
-- `backend/tests/test_release_deploy_contract.py`: the timer's handling of each rollout exit (marked failed only for exit 1; exit 2 backs off). It and the manual deploy both refuse root.
+- `backend/tests/test_release_deploy_contract.py`: the timer's handling of each rollout exit (marked failed only for exit 1; exits 2, 3 and 4 back off). It and the manual deploy both refuse root.
 - `backend/tests/test_backup_script.py`: the backup falls back to the interim container and waits for a deploy's lock.
-- `backend/tests/test_probe_image.py`: the CI image probe boots with async jobs and requires the supervisor to hold the queue.
+- `backend/tests/test_probe_image.py`: the CI image probe boots with async jobs and requires the supervisor to hold the queue; the deploy's probe sends the public Host header.
 - `backend/tests/test_release_preflight.py`: `--zero-downtime` runs from an export without a checkout, nginx or Docker.
 - `backend/tests/test_nginx_country_boundary.py`: source-level proxy/header/CIDR checks, including visitor-IP restoration, original-peer preservation, and every location proxying through `privatools_app` with `Host $host`. It is not native nginx validation; the load test above ran real nginx.
 - Keep deployment, browser, provider and account-specific evidence privately with the release record.
