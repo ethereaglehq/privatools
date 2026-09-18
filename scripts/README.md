@@ -9,7 +9,7 @@ Run these commands from the repository root. Application code lives in
 | `api/` | Measure API capacity inside an isolated candidate container. |
 | `analytics/` | Inspect public Google tag configuration without executing it. |
 | `dev/` | Start the backend with the pinned local virtual environment. |
-| `seo/` | Check generated public assets against a local HTTP server; export per-tool guide JSON from the Python content module. |
+| `seo/` | `check-manifest-http.py` checks generated public assets against a local HTTP server; `export-tool-guides.py` exports per-tool guide JSON from the Python content module; `merge-tool-copy.py` is a one-shot script that inserts `seoTitle`/`metaDescription` into the registries from JSON copy files — not idempotent, so only run it on a clean checkout of the registries. |
 
 ## API starter downloads
 

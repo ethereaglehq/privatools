@@ -147,4 +147,7 @@ load-bearing.
   `test_tool_guide_export`), `seo_meta.py`, `sitemap.py`, CSP
   sets, `gen-llms.mjs` run, and the public count literals
   (manifest/opensearch/samples + blog copy). The count tests enforce most of
-  it; the CSP walker and guide export tests catch the rest.
+  it; the CSP walker and guide export tests catch the rest. Every tool also
+  needs a `seoTitle` (40–60 chars, query-first, no brand, unique) and a
+  `metaDescription` (120–160 chars, ends with a period, unique), enforced by
+  `frontend/src/test/tool-registry.test.ts`.
