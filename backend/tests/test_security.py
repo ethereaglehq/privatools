@@ -372,6 +372,100 @@ class TestSecurityHeaders:
         assert "'wasm-unsafe-eval'" in ai_script_src
 
 
+def _png_bomb(width: int, height: int) -> bytes:
+    """An all-black 1-bit PNG: tens of KB on disk, width x height pixels open."""
+    import struct
+    import zlib
+
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + tag + data + struct.pack(">I", zlib.crc32(tag + data))
+
+    row = b"\x00" * (1 + (width + 7) // 8)  # filter byte + packed pixels
+    packer = zlib.compressobj(9)
+    idat = b"".join(packer.compress(row) for _ in range(height)) + packer.flush()
+    ihdr = struct.pack(">IIBBBBB", width, height, 1, 0, 0, 0, 0)
+    return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr) + chunk(b"IDAT", idat) + chunk(b"IEND", b"")
+
+
+class TestSecurityHeadersOnEarlyErrors:
+    """413 and 504 answers often come from outside the route: the upload-size
+    and timeout middlewares, and the catch-all handler, which Starlette runs
+    in ServerErrorMiddleware around every add_middleware layer. They must carry
+    the headers every other response does."""
+
+    # Copied by hand from SecurityHeadersMiddleware. CSP is checked apart
+    # because its nonce changes per request.
+    EXPECTED = {
+        "x-content-type-options": "nosniff",
+        "x-frame-options": "DENY",
+        "x-xss-protection": "1; mode=block",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "permissions-policy": "camera=(), microphone=(), geolocation=()",
+        "cross-origin-opener-policy": "same-origin",
+        "cross-origin-embedder-policy": "credentialless",
+        "cross-origin-resource-policy": "same-origin",
+        "cache-control": "no-store, max-age=0",
+    }
+
+    @pytest.fixture
+    def quiet_client(self):
+        # The catch-all re-raises after answering; keep the answer.
+        from fastapi.testclient import TestClient
+
+        from backend.app.main import app
+
+        return TestClient(app, raise_server_exceptions=False)
+
+    def _assert_security_headers(self, resp):
+        h = {k.lower(): v for k, v in resp.headers.items()}
+        assert {k: h.get(k) for k in self.EXPECTED} == self.EXPECTED
+        csp = h.get("content-security-policy", "")
+        assert "default-src 'self'" in csp and "frame-ancestors 'none'" in csp
+
+    def test_413_from_the_upload_size_limit(self, client):
+        resp = client.post(
+            "/api/compress",
+            content=b"x",
+            headers={
+                "content-type": "application/octet-stream",
+                "content-length": str(600 * 1024 * 1024),
+            },
+        )
+        assert resp.status_code == 413
+        self._assert_security_headers(resp)
+
+    def test_504_from_the_request_timeout(self, quiet_client, monkeypatch, tmp_path):
+        import time
+
+        from backend.app import main
+        from backend.app.services import url_to_pdf_service
+
+        page = tmp_path / "page.pdf"
+        page.write_bytes(b"%PDF-1.4\n")
+
+        # The request only completes once the route ends, even after the 504
+        # has gone out, so the slow conversion has to end on its own.
+        def slow(url):
+            time.sleep(0.5)
+            return str(page)
+
+        monkeypatch.setattr(url_to_pdf_service, "url_to_pdf", slow)
+        monkeypatch.setattr(main, "_REQUEST_TIMEOUT", 0.1)
+        resp = quiet_client.post("/api/url-to-pdf", data={"url": "https://example.com/"})
+        assert resp.status_code == 504
+        self._assert_security_headers(resp)
+
+    def test_413_from_the_catch_all_handler(self, quiet_client):
+        # Pillow raises DecompressionBombError past twice MAX_IMAGE_PIXELS
+        # (150M here), and image-compressor lets it reach the catch-all.
+        resp = quiet_client.post(
+            "/api/image-compressor",
+            files={"file": ("big.png", _png_bomb(20000, 20000), "image/png")},
+        )
+        assert resp.status_code == 413
+        self._assert_security_headers(resp)
+
+
 class TestCacheControlForStaticContent:
     """Sitemap / og-image use ``cache_response`` to set a long max-age —
     the SecurityHeadersMiddleware must NOT trample those values."""

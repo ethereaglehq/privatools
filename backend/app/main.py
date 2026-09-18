@@ -9,7 +9,7 @@ from pathlib import Path
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, RedirectResponse
+from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, RedirectResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.trustedhost import TrustedHostMiddleware
 from slowapi import _rate_limit_exceeded_handler
@@ -450,35 +450,43 @@ def _content_security_policy(path: str, nonce: str, api_base: str = "") -> str:
     )
 
 
+def _apply_security_headers(request: Request, response: Response) -> None:
+    """Set the headers every response carries. Shared by the middleware and
+    the catch-all exception handler, which answers from outside it."""
+    nonce = getattr(request.state, "csp_nonce", None) or secrets.token_urlsafe(16)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+    response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+    response.headers["Cross-Origin-Embedder-Policy"] = "credentialless"
+    response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+    # Force Cache-Control: no-store on dynamic /api/ responses so tool
+    # outputs (per-user, per-request) are never retained by a shared
+    # CDN, transparent proxy, or browser back/forward cache. Skip
+    # routes that already set their own Cache-Control (sitemap +
+    # og-image emit a long max-age via `cache_response`).
+    if request.url.path.startswith("/api/") and "cache-control" not in {
+        k.lower() for k in response.headers
+    }:
+        response.headers["Cache-Control"] = "no-store, max-age=0"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    if request.url.scheme == "https" or os.environ.get("FORCE_HSTS"):
+        response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
+    response.headers["Content-Security-Policy"] = _content_security_policy(
+        request.url.path, nonce, _PUBLIC_API_BASE
+    )
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        nonce = secrets.token_urlsafe(16)
-        request.state.csp_nonce = nonce
+        # Set before the call: the HTML further in carries this nonce, and the
+        # CSP header must name the same one.
+        request.state.csp_nonce = secrets.token_urlsafe(16)
         response = await call_next(request)
-        response.headers["X-Content-Type-Options"] = "nosniff"
-        response.headers["X-Frame-Options"] = "DENY"
-        response.headers["X-XSS-Protection"] = "1; mode=block"
-        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
-        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
-        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
-        response.headers["Cross-Origin-Embedder-Policy"] = "credentialless"
-        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
-        # Force Cache-Control: no-store on dynamic /api/ responses so tool
-        # outputs (per-user, per-request) are never retained by a shared
-        # CDN, transparent proxy, or browser back/forward cache. Skip
-        # routes that already set their own Cache-Control (sitemap +
-        # og-image emit a long max-age via `cache_response`).
-        if request.url.path.startswith("/api/") and "cache-control" not in {
-            k.lower() for k in response.headers
-        }:
-            response.headers["Cache-Control"] = "no-store, max-age=0"
-            response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
-        if request.url.scheme == "https" or os.environ.get("FORCE_HSTS"):
-            response.headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload"
-        response.headers["Content-Security-Policy"] = _content_security_policy(
-            request.url.path, nonce, _PUBLIC_API_BASE
-        )
+        _apply_security_headers(request, response)
         return response
 
 # ---------------------------------------------------------------------------
@@ -711,8 +719,9 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # into JSON bodies with frontend-friendly `detail` strings. Registered
 # AFTER the rate-limit handler so RateLimitExceeded keeps its dedicated
 # 429 path (slowapi exposes a Retry-After header that our generic
-# handler wouldn't add).
-register_error_handlers(app)
+# handler wouldn't add). The catch-all answers from outside every
+# add_middleware layer, so it applies the security headers itself.
+register_error_handlers(app, security_headers=_apply_security_headers)
 
 # CORS origin allow-list. We keep it small and explicit — no wildcards.
 # Dev defaults cover local Vite + the FastAPI dev server.
@@ -770,11 +779,13 @@ from starlette.middleware.gzip import GZipMiddleware
 # layer, so RequestIDMiddleware here runs first on every request and
 # can stamp `request.state.request_id` before anything else touches it.
 app.add_middleware(SPASEOMiddleware)
-app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(BrotliMiddleware, minimum_size=500)
 app.add_middleware(GZipMiddleware, minimum_size=500)
 app.add_middleware(UploadSizeLimitMiddleware)
 app.add_middleware(RequestTimeoutMiddleware)
+# Outside the two layers above: their 413 and 504 must carry the same headers
+# as every other answer.
+app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AccessLogMiddleware)
 app.add_middleware(InFlightMiddleware)
 app.add_middleware(

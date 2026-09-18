@@ -13,11 +13,11 @@ Wire via :func:`register_error_handlers(app)` in `main.py`.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Callable
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ..utils.exceptions import ToolError
@@ -35,6 +35,15 @@ _V1_SERVICE_MESSAGES = {
     "server_busy": "The API is busy. Retry shortly.",
     "admission_unavailable": "API admission is temporarily unavailable. Try again shortly.",
 }
+# A 5xx body names the kind of failure and nothing else, on every surface.
+# The detail a service or route raised with can carry stderr, exception text
+# or a server path (qpdf's stderr names the upload's temp file), so the
+# handlers log it, and the request id in the body finds that log line.
+_GENERIC_5XX = {
+    501: "This feature is not available.",
+    503: "The service is temporarily unavailable. Please try again.",
+    504: "The operation timed out. Try a smaller file.",
+}
 
 
 def _is_v1(request: Request | None) -> bool:
@@ -49,12 +58,8 @@ def _json(
     extra: dict[str, Any] | None = None,
     passthrough_headers: dict[str, str] | None = None,
 ) -> JSONResponse:
-    if _is_v1(request) and status >= 500:
-        detail = {
-            501: "This feature is not available.",
-            503: "The service is temporarily unavailable. Please try again.",
-            504: "The operation timed out. Try a smaller file.",
-        }.get(status, "Processing failed. Please try again.")
+    if status >= 500:
+        detail = _GENERIC_5XX.get(status, "Processing failed. Please try again.")
     body: dict[str, Any] = {"detail": detail}
     if extra:
         body.update(extra)
@@ -140,11 +145,11 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     # Never echo internal exception text to clients on a 5xx. Many route
     # handlers raise HTTPException(500, detail=f"...{exc}"), which would leak
     # stack/path fragments and library internals. Log the specifics server-side
-    # (route handlers already logger.exception; this captures the rest) and
-    # return a generic message. 4xx detail is author-curated and passes through.
+    # (route handlers already logger.exception; this captures the rest); _json
+    # answers with a generic message. 4xx detail is author-curated and passes
+    # through.
     if exc.status_code >= 500:
         logger.warning("%d on %s: %s", exc.status_code, request.url.path, detail)
-        detail = "Processing failed. Please try again."
     return _json(
         exc.status_code, detail, request=request,
         passthrough_headers=getattr(exc, "headers", None) if exc.status_code < 500 else None,
@@ -275,11 +280,20 @@ async def builtin_exception_handler(request: Request, exc: Exception) -> JSONRes
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
-def register_error_handlers(app: FastAPI) -> None:
+def register_error_handlers(
+    app: FastAPI,
+    *,
+    security_headers: Callable[[Request, Response], None] | None = None,
+) -> None:
     """Attach all handlers to the given FastAPI app.
 
     Call this exactly once during app construction. Order doesn't matter
     — FastAPI matches handlers by exception type.
+
+    ``security_headers`` is applied to the catch-all's responses. Starlette
+    runs that handler in ServerErrorMiddleware, which wraps every
+    ``add_middleware`` layer, so the security-headers middleware never sees
+    them: a decompression-bomb 413 or an unhandled 500 would go out bare.
     """
     app.add_exception_handler(ToolError, tool_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
@@ -288,6 +302,8 @@ def register_error_handlers(app: FastAPI) -> None:
     # Keep this last — it's the catch-all.
     async def final_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         response = await builtin_exception_handler(request, exc)
+        if security_headers is not None:
+            security_headers(request, response)
         if getattr(request.state, "v1_activity_deferred", False):
             from ..api_v1.activity import finish
             await finish(request.scope, response.status_code)
