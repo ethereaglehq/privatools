@@ -21,7 +21,6 @@ import {
 } from "../accountLogic";
 import { describeEntry, vaultApi } from "../vaultLogic";
 import { readThemeChoice, resolveTheme, setThemeChoice, watchThemeChoice } from "@/lib/skinTheme";
-import { blogPosts } from "@/data/blog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,7 +40,7 @@ import consumerCSS from "./consumer/consumer.css?inline";
 import { ExperienceShell, AppearanceControls } from "../experience/ExperienceShell";
 import { ExperienceHome } from "../experience/ExperienceHome";
 import { ToolWorkspace } from "../experience/ToolWorkspace";
-import { CatalogStudio, AboutStudio, SupportStudio, MissingStudio, GuidesStudio } from "../experience/ContentStudio";
+import { CatalogStudio, AboutStudio, SupportStudio, MissingStudio } from "../experience/ContentStudio";
 import experienceCSS from "../experience/experience.css?inline";
 import { cn } from "@/lib/utils";
 import { ToolFaq } from "@/components/ToolFaq";
@@ -59,6 +58,15 @@ const HouseTrust = React.lazy(() => import("../experience/TrustCenter"));
 const HousePrivacy = React.lazy(() => import("@/pages/PrivacyPage"));
 const HouseTerms = React.lazy(() => import("@/pages/TermsPage"));
 const HouseSecurity = React.lazy(() => import("@/pages/SecurityPage"));
+
+/* The journal and article titles read data/blog.ts, every article's HTML, so
+   only blog routes load it. Everywhere else, including tool pages, stays
+   without it (src/test/blog-module-boundary.test.ts). */
+const GuidesStudio = React.lazy(() => import("../experience/GuidesStudio"));
+let postTitles = null;
+const loadPostTitles = () => import("@/data/blog").then(({ blogPosts }) => {
+    postTitles = new Map(blogPosts.map((post) => [post.slug, post.title]));
+});
 
 /* ═══════════════════════════ catalogue (real) ═══════════════════════════ */
 
@@ -133,7 +141,6 @@ const fmtDate = (iso) => {
     const [y, m, d] = iso.split("-").map(Number);
     return `${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m - 1]} ${d}, ${y}`;
 };
-const POSTS_NEWEST = [...blogPosts].sort((x, y) => y.publishedAt.localeCompare(x.publishedAt));
 
 /* ═══════════════════════════ small helpers ═══════════════════════════ */
 
@@ -854,8 +861,8 @@ export default class DaylightSkinApp extends React.Component {
             return "Tool not found · PrivaTools";
         }
         if (r.view === "blog" && r.post) {
-            const post = blogPosts.find((b) => b.slug === r.post);
-            if (post) return `${post.title} · PrivaTools`;
+            const title = postTitles?.get(r.post);
+            if (title) return `${title} · PrivaTools`;
         }
         const NAMES = {
             tools: "All tools", pipeline: "Pipeline", batch: "Batch",
@@ -869,6 +876,23 @@ export default class DaylightSkinApp extends React.Component {
         return name ? `${name} · PrivaTools` : "PrivaTools — Free, Open-Source Privacy-First File Tools";
     }
 
+    /**
+     * Sets the tab title for the current route. An article's title waits for
+     * data/blog.ts, which its view loads anyway; until then the tab keeps what
+     * it has, which on a first load is the server's title for that article.
+     */
+    applyTitle() {
+        const r = this.state;
+        if (r.view === "blog" && r.post && !postTitles) {
+            const settle = () => {
+                if (this.state.view === "blog" && this.state.post === r.post) document.title = this.titleFor(this.state);
+            };
+            loadPostTitles().then(settle, settle);
+            return;
+        }
+        document.title = this.titleFor(r);
+    }
+
     /** Extended by the mixins; the base contributes only the absorber they inject nav into. */
     renderVals() { return { dlNav: [] }; }
 
@@ -879,7 +903,7 @@ export default class DaylightSkinApp extends React.Component {
             const r = parseRoute(currentRoute());
             this.setState({ ...r, ...(r.view === "tools" ? { catFilter: r.cat || "" } : {}) }, () => {
                 window.scrollTo(0, 0);
-                document.title = this.titleFor(this.state);
+                this.applyTitle();
                 this._timers.push(setTimeout(this._armReveals, 60));
                 if (r.view === "tool" && BY_SLUG.has(r.slug)) this.logHistory(r.slug);
             });
@@ -984,7 +1008,7 @@ export default class DaylightSkinApp extends React.Component {
         if (new URLSearchParams(location.search).get("mode") === "signup" && location.pathname.startsWith("/account")) this._setAcct?.({ mode: "signup" });
 
         // First mount can already be deep-linked to a tool.
-        document.title = this.titleFor(this.state);
+        this.applyTitle();
         if (this.state.view === "tool" && BY_SLUG.has(this.state.slug)) this.logHistory(this.state.slug);
     }
 
@@ -1260,16 +1284,20 @@ export default class DaylightSkinApp extends React.Component {
     HousePage(Comp, label, props = {}) {
         return (
             <div className="pt-page-host">
-                <React.Suspense fallback={
-                    <div style={{ marginTop: 48, display: "grid", gap: 14 }} aria-label={`Loading ${label}`}>
-                        <Skeleton className="h-10 w-64" />
-                        <Skeleton className="h-4 w-96 max-w-full" />
-                        <Skeleton className="h-40 w-full rounded-[14px]" />
-                        <Skeleton className="h-40 w-full rounded-[14px]" />
-                    </div>
-                }>
+                <React.Suspense fallback={this.PageLoading(label)}>
                     <Comp {...props} />
                 </React.Suspense>
+            </div>
+        );
+    }
+
+    PageLoading(label) {
+        return (
+            <div style={{ marginTop: 48, display: "grid", gap: 14 }} aria-label={`Loading ${label}`}>
+                <Skeleton className="h-10 w-64" />
+                <Skeleton className="h-4 w-96 max-w-full" />
+                <Skeleton className="h-40 w-full rounded-[14px]" />
+                <Skeleton className="h-40 w-full rounded-[14px]" />
             </div>
         );
     }
@@ -1604,7 +1632,14 @@ export default class DaylightSkinApp extends React.Component {
         return this.HousePage(HouseCompare, "Comparison", { competitorSlug: this.state.competitor || undefined });
     }
 
-    Blog() { return <GuidesStudio slug={this.state.post} tag={this.state.blogTag} onTag={blogTag=>this.setState({blogTag})} />; }
+    Blog() {
+        // No pt-page-host wrapper: the journal renders exactly as it did when it was eager.
+        return (
+            <React.Suspense fallback={this.PageLoading("Guides")}>
+                <GuidesStudio slug={this.state.post} tag={this.state.blogTag} onTag={blogTag=>this.setState({blogTag})} />
+            </React.Suspense>
+        );
+    }
 
     Doc(title, eyebrow, sections, rail) {
         return (
