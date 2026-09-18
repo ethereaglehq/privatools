@@ -57,7 +57,10 @@ python3 scripts/ci/probe-image.py --running CONTAINER --url http://127.0.0.1:800
 
 That is `deploy/oracle-vm/rollout.sh`'s real-page probe: a release whose
 `/readyz` is ready but which cannot serve those pages is removed instead of
-switched to (`deploy/README.md`, Zero-downtime deploys).
+switched to (`deploy/README.md`, Zero-downtime deploys). The rollout sets
+`PRIVATOOLS_PROBE_HOST=privatools.me`, so every request carries the Host
+header nginx forwards and a release that rejects the public name fails here.
+Without it, as in CI, requests go to `127.0.0.1`.
 
 ## Local development
 

@@ -129,9 +129,20 @@ def isolate_environment(image: str, build_sha: str) -> None:
     os.environ.update(PRIVATOOLS_IMAGE=image, GIT_SHA=build_sha, API_V1_JOBS_ENABLED="true")
 
 
+def request_headers() -> dict[str, str]:
+    """The deploy's probe (rollout.sh) sets PRIVATOOLS_PROBE_HOST to the public
+    site's name, the Host nginx forwards, so a release whose TRUSTED_HOSTS
+    rejects it fails here rather than after traffic moved. Unset in CI."""
+    headers = {"User-Agent": "privatools-image-probe"}
+    host = os.environ.get("PRIVATOOLS_PROBE_HOST", "").strip()
+    if host:
+        headers["Host"] = host
+    return headers
+
+
 def fetch(base_url: str, path: str, timeout: float = REQUEST_TIMEOUT_SECONDS) -> tuple[int, bytes]:
     """Status and body, without following redirects or raising on 4xx and 5xx."""
-    request = Request(base_url + path, headers={"User-Agent": "privatools-image-probe"})
+    request = Request(base_url + path, headers=request_headers())
     try:
         with _opener.open(request, timeout=timeout) as response:
             return response.status, response.read()
