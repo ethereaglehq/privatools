@@ -11,13 +11,16 @@ import { parseContentArray, readContentArray } from './content-data.mjs';
 const COPY_FIELDS = ['seoTitle', 'metaDescription', 'longDescription', 'description'];
 const BULK_LIMIT = 25;
 const BULK_MARKER = '[bulk-review]';
+// Counts only as the first text on a line of the PR title or of a commit
+// message, so a message that merely explains the flag cannot switch it on.
+const BULK_MARKER_LINE = /^[ \t]*\[bulk-review\]/m;
 // The same files, variables and routes gen-llms.mjs publishes from.
 const REGISTRIES = [
   { file: 'frontend/src/data/tools.ts', variable: '_toolsRaw', route: '/tool/' },
   { file: 'frontend/src/data/non-pdf-tools.ts', variable: '_nonPdfToolsRaw', route: '/tools/' },
 ];
 
-export const hasBulkMarker = texts => texts.some(text => text?.includes(BULK_MARKER));
+export const hasBulkMarker = texts => texts.some(text => Boolean(text) && BULK_MARKER_LINE.test(text));
 
 // Tools are matched on `path`, since nothing stops both registries using one
 // slug. A date only "moves" when the base already had one: a new tool, or the
@@ -42,7 +45,7 @@ export function compareReviewDates(base, head, { bulkAllowed = false } = {}) {
   }
   const errors = stale.map(({ path, fields }) => `${path}: ${fields.join(', ')} changed but lastReviewed did not. Set it to the day this copy was reviewed.`);
   if (moved.length > BULK_LIMIT && !bulkAllowed) {
-    errors.push(`lastReviewed moved on ${moved.length} tools in one change (limit ${BULK_LIMIT}). Move a date only when that tool's own copy changed. If every one of these pages really was re-read, put ${BULK_MARKER} in a commit message, or in the PR title before the next push.`);
+    errors.push(`lastReviewed moved on ${moved.length} tools in one change (limit ${BULK_LIMIT}). Move a date only when that tool's own copy changed. If every one of these pages really was re-read, put ${BULK_MARKER} on its own line in a commit message, or at the start of the PR title before the next push.`);
   }
   return { compared, stale, moved, firstDated, errors };
 }

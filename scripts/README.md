@@ -77,14 +77,17 @@ working tree with the commit where the branch left its base. It fails when a
 tool's `seoTitle`, `metaDescription`, `longDescription` or `description`
 changed and its `lastReviewed` did not, and when more than 25 existing dates
 moved in one change. A new tool's first date is not a move. A genuine bulk
-review passes with `[bulk-review]` in a commit message or in the PR title; CI
-reads the title when a run starts, so push after editing it.
+review passes with `[bulk-review]` on its own line: the first non-space text of
+the PR title or of any line in a commit message on the branch, with or without
+more text after it. CI reads the title when a run starts, so push after
+editing it.
 
-The marker matches anywhere in those texts, so a commit message that merely
-*mentions* it opts that pull request in — writing this check out in full in its
-own commit message did exactly that. Describe it without the brackets unless
-you mean it. Documentation files are never read, only commit messages and the
-PR title.
+A mention anywhere else — mid-sentence, or quoted in backticks — does not
+count, so a commit message can explain the flag without switching it on. (While
+any mention counted, this check's own first commit message did exactly that.)
+When hard-wrapping such prose, keep the marker from landing at the start of a
+line. Documentation files are never read, only commit messages and the PR
+title.
 
 It needs the base branch and real history: `git fetch origin` locally,
 `fetch-depth: 0` in a workflow. With neither it fails instead of skipping, so

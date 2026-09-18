@@ -113,10 +113,22 @@ test('keeps the same slug in the two registries apart', () => {
   assert.deepEqual(compareReviewDates(base, head).stale, [{ path: '/tools/compress', fields: ['description'] }]);
 });
 
-test('finds the bulk marker in a PR title or any commit message', () => {
-  assert.equal(hasBulkMarker(['[bulk-review] Re-read every organize tool', 'Fix a typo']), true);
-  assert.equal(hasBulkMarker(['Quarterly review', 'Re-read every tool\n\n[bulk-review] each page checked against the live tool']), true);
-  assert.equal(hasBulkMarker(['Bulk review of every tool', 'bulk-review']), false);
+// Only a marker that starts a line counts, so explaining the flag in prose
+// cannot switch it on. The second `false` row is this check's own first commit
+// message, which did exactly that while any mention counted.
+test('accepts the bulk marker only as the first text on a line', () => {
+  const cases = [
+    ['[bulk-review] Re-read every tool', true],
+    ['   [bulk-review] Re-read every tool', true],
+    ['Re-read every tool\n\n[bulk-review] each page was checked against the live tool', true],
+    ['Re-read every tool\n\n  [bulk-review]', true],
+    ['Re-read every tool [bulk-review]', false],
+    ['Add the guard\n\nA real bulk review opts in with [bulk-review] in a commit message.', false],
+    ['Add the guard\n\n`[bulk-review]` opts a real bulk review in.', false],
+    ['Bulk review of every tool\n\nbulk-review', false],
+  ];
+  for (const [text, expected] of cases) assert.equal(hasBulkMarker([text]), expected, JSON.stringify(text));
+  assert.equal(hasBulkMarker(['Fix a typo', '[bulk-review] Re-read every tool']), true);
   assert.equal(hasBulkMarker([undefined, '']), false);
 });
 
@@ -180,11 +192,20 @@ test('measures a branch from where it left the base, not from the base tip', t =
   assert.deepEqual(result.errors, []);
 });
 
-test('accepts the bulk marker from the body of a commit on the branch', t => {
+test('accepts the bulk marker at the start of a commit body line', t => {
   const root = makeRepo(t, plain(26), []);
   writeRegistries(root, plain(26, { lastReviewed: '2026-09-18' }), []);
   commit(root, 'Re-read every tool\n\n[bulk-review] each page was checked against the live tool');
   assert.deepEqual(checkRepo({ root, baseRef: 'main' }).errors, []);
+});
+
+test('does not accept the bulk marker mid-sentence in a commit message', t => {
+  const root = makeRepo(t, plain(26), []);
+  writeRegistries(root, plain(26, { lastReviewed: '2026-09-18' }), []);
+  commit(root, 'Bump every date\n\nA real bulk review opts in with [bulk-review] in a commit message.');
+  const { errors } = checkRepo({ root, baseRef: 'main' });
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /moved on 26 tools/);
 });
 
 test('does not accept a bulk marker that is already in the base history', t => {
@@ -196,11 +217,20 @@ test('does not accept a bulk marker that is already in the base history', t => {
   assert.equal(result.errors.length, 1);
 });
 
-test('accepts the bulk marker from the PR title', t => {
+test('accepts the bulk marker at the start of the PR title', t => {
   const root = makeRepo(t, plain(26), []);
   writeRegistries(root, plain(26, { lastReviewed: '2026-09-18' }), []);
   commit(root, 'Re-read every tool');
   assert.deepEqual(checkRepo({ root, baseRef: 'main', prTitle: '[bulk-review] Re-read every tool' }).errors, []);
+});
+
+test('does not accept the bulk marker mid-sentence in the PR title', t => {
+  const root = makeRepo(t, plain(26), []);
+  writeRegistries(root, plain(26, { lastReviewed: '2026-09-18' }), []);
+  commit(root, 'Re-read every tool');
+  const { errors } = checkRepo({ root, baseRef: 'main', prTitle: 'Re-read every tool [bulk-review]' });
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /moved on 26 tools/);
 });
 
 // The field was added to every tool at once, so any base older than that
