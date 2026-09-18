@@ -6,5 +6,5 @@
 #
 # Regenerate the lock the same way as the others:
 #   uv pip compile requirements-ci.txt --generate-hashes --universal \
-#       --python-version 3.10 -o requirements-ci.lock
+#       --python-version 3.12 -o requirements-ci.lock
 pip-audit==2.10.1

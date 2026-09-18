@@ -16,41 +16,43 @@
 # (This is why every Dependabot pip PR must be closed rather than merged: it
 # edits this file and never regenerates the lock.)
 #
-# Regenerate on the PROD VM, not a laptop — the lock must resolve for
-# linux/aarch64, and uv otherwise mis-resolves numba/llvmlite for py3.10:
+# Regenerate both locks with the command in their headers. They are universal,
+# so any machine resolves them for arm64 and amd64 alike, and uv keeps every pin
+# it is not forced to move:
 #
-#   # 1. constraints from the RUNNING container, minus whatever you are bumping
-#   docker exec privatools-privatools-1 pip freeze > prod-freeze.txt
-#   grep -vE '^(pkg-you-are-bumping)==' prod-freeze.txt > constraints.txt
+#   uv pip compile requirements.txt     --generate-hashes --universal \
+#       --python-version 3.12 -o requirements.lock
+#   uv pip compile requirements-dev.txt --generate-hashes --universal \
+#       --python-version 3.12 -o requirements-dev.lock
 #
-#   # 2. compile both locks against it
-#   uv pip compile requirements.txt     -c constraints.txt --generate-hashes \
-#       --universal --python-version 3.10 -o requirements.lock
-#   uv pip compile requirements-dev.txt -c constraints.txt --generate-hashes \
-#       --universal --python-version 3.10 -o requirements-dev.lock
+# Then prove it installs before committing. The release image is arm64 and PR CI
+# builds only amd64, so check that a bumped native package has an arm64 wheel.
+# Ask for manylinux_2_28: pikepdf, onnxruntime and pillow-heif ship no
+# manylinux2014 wheels any more, so that platform finds nothing.
 #
-#   # 3. prove it installs before committing
 #   pip install --dry-run --require-hashes -r requirements.lock
+#   pip download --only-binary=:all: --platform manylinux_2_28_aarch64 \
+#       --python-version 3.12 --no-deps <package>==<version> -d <scratch-dir>
 fastapi==0.141.1
 # Used directly for cancellation-safe database work and reservation cleanup.
 anyio==4.14.2
 uvicorn[standard]==0.52.3
 python-multipart==0.0.32
-pikepdf==8.12.0
-pypdf==6.16.1
+pikepdf==10.12.0
+pypdf==6.19.0
 pdf2image==1.17.0
 Pillow==12.3.0
 reportlab==4.1.0
 brotli==1.2.0
-slowapi==0.1.9
+slowapi==0.1.10
 pymupdf==1.28.2
 pytesseract==0.3.13
 weasyprint==70.0
 python-docx==1.2.0
 openpyxl==3.1.5
 python-pptx==1.0.2
-pillow-heif==1.4.0
-onnxruntime==1.23.2
+pillow-heif==1.7.0
+onnxruntime==1.30.0
 rembg==2.0.81
 # Declared explicitly because app code imports cv2 directly
 # (services/image_watermark_remove_service.py). It used to arrive transitively
