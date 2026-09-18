@@ -98,7 +98,12 @@ describe("SmartRedactUI privacy copy", () => {
     // reachable only by scrolling past the input someone is about to fill in.
     await mountAndPick();
     await userEvent.click(screen.getByText(/my own api key/i));
-    await userEvent.click(screen.getByRole("button", { name: /OpenAI Connect with your key/i }));
+    // In a browser the stylesheet makes the provider button's <small> status
+    // line a block, so its accessible name reads "OpenAI Connect with your key".
+    // Tests load no stylesheet, and jsdom computes <small> as inline, which
+    // joins the two parts with no space. (jsdom before 27 computed no display
+    // at all, and that happened to read as a space.) \s* accepts both.
+    await userEvent.click(screen.getByRole("button", { name: /OpenAI\s*Connect with your key/i }));
     await waitFor(() => {
       const warning = screen.getByText(/contains the personal information you are trying\s+to remove/i);
       const keyField = screen.getByLabelText("OpenAI API key");
