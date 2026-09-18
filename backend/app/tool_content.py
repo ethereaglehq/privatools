@@ -30,7 +30,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Split and download", "text": "Run it. The document is divided at page boundaries so each part stays under your limit, and the parts arrive in a ZIP."},
     ],
     "compress-pdf": [
-        {"name": "Add your PDFs", "text": "Drop or select one or more PDFs, up to 500 MB each and up to 100 in one go. Documents full of photos or scans shrink the most."},
+        {"name": "Add your PDFs", "text": "Drop or select one or more PDFs, up to 500 MB each; each file is uploaded and compressed separately. Documents full of photos or scans shrink the most."},
         {"name": "Pick a compression level", "text": "Light keeps images closest to the original, Recommended (the default) balances size and quality, and Extreme gives the smallest file. Presets for Email and Print are there too."},
         {"name": "Or set it yourself", "text": "Custom lets you choose the JPEG quality and the maximum image dimension directly, when none of the presets fits."},
         {"name": "Compress and download", "text": "Run it and compare the new size with the original. One file downloads directly; several come back together."},
@@ -1194,8 +1194,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Which level should I use?", "a": "Recommended suits most documents. Light is for files where image detail matters, such as photos you may print. Extreme is for getting under a strict size limit when some image softness is acceptable. Email aims at a typical attachment limit; Print keeps images at a print-friendly resolution."},
         {"q": "Why did my PDF barely shrink?", "a": "Because there was little to compress. A PDF made mostly of text and vector graphics is already small, and one whose images were compressed hard before has little left to give. The biggest savings come from scans and photo-heavy documents."},
         {"q": "Will text stay searchable?", "a": "Yes. Compression works on images and file structure; the text layer is left in place, so you can still search, select and copy text."},
-        {"q": "Can I compress many PDFs at once?", "a": "Yes, up to 100 files in one request, each up to 500 MB. Compression is one of the heavier jobs, so fair-use rate limits apply and very large batches are best split into smaller runs."},
-        {"q": "The result is still too big. What next?", "a": "Try Extreme, or Custom with a lower quality and a smaller maximum image dimension. If it still will not fit, Split by Size divides the document into parts under a size you choose."},
+        {"q": "Can I compress many PDFs at once?", "a": "Yes. The page sends each file as its own request, three at a time, and each can be up to 500 MB. Compression is one of the heavier jobs, so fair-use rate limits apply and very large batches are best split into smaller runs."},
+        {"q": "The result is still too big. What next?", "a": "Try Extreme, Target size, or Custom with a lower quality and a smaller maximum image dimension. If it still will not fit, Split by Size divides the document into parts under a size you choose."},
         {"q": "What happens to my PDFs after I upload them?", "a": "It is uploaded over HTTPS and compressed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDFs and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "edit-pdf": [

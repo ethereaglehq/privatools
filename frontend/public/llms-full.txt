@@ -115,7 +115,7 @@ URL: https://privatools.me/tool/watermark
 
 Add text or image watermark over PDF pages
 
-Add watermark to PDF online for free. Apply text or image watermarks to every page with full control over opacity, position, rotation, and font size. Protect your documents from unauthorized use. No sign-up needed.
+Add watermark to PDF online for free. Apply text or image watermarks to every page with control over opacity, position, and font size or image scale; centred, diagonal and tiled text runs at a 45° angle. Clearly mark drafts and confidential copies. No sign-up needed.
 
 ### Header & Footer
 

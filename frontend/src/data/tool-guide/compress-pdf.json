@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add your PDFs",
-      "text": "Drop or select one or more PDFs, up to 500 MB each and up to 100 in one go. Documents full of photos or scans shrink the most."
+      "text": "Drop or select one or more PDFs, up to 500 MB each; each file is uploaded and compressed separately. Documents full of photos or scans shrink the most."
     },
     {
       "name": "Pick a compression level",
@@ -36,11 +36,11 @@
     },
     {
       "q": "Can I compress many PDFs at once?",
-      "a": "Yes, up to 100 files in one request, each up to 500 MB. Compression is one of the heavier jobs, so fair-use rate limits apply and very large batches are best split into smaller runs."
+      "a": "Yes. The page sends each file as its own request, three at a time, and each can be up to 500 MB. Compression is one of the heavier jobs, so fair-use rate limits apply and very large batches are best split into smaller runs."
     },
     {
       "q": "The result is still too big. What next?",
-      "a": "Try Extreme, or Custom with a lower quality and a smaller maximum image dimension. If it still will not fit, Split by Size divides the document into parts under a size you choose."
+      "a": "Try Extreme, Target size, or Custom with a lower quality and a smaller maximum image dimension. If it still will not fit, Split by Size divides the document into parts under a size you choose."
     },
     {
       "q": "What happens to my PDFs after I upload them?",
