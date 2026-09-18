@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload PNG images",
-      "text": "Drop one or many .png files up to 500 MB total."
+      "text": "Drop one or many .png files, up to 50 images and 200 MB in total."
     },
     {
       "name": "Choose page size",
-      "text": "Letter or A4. Transparency in PNGs renders against a white page background."
+      "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."
     },
     {
       "name": "Download the PDF",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "Will the PDF be larger than the PNGs?",
-      "a": "Roughly the same — PNGs are already losslessly compressed, and PDF embeds them with minimal overhead."
+      "a": "It depends on the image. Screenshots and flat graphics come out about the same size, but photographic PNGs can come out noticeably larger, because the pixels are recompressed losslessly without the filters PNG uses."
     },
     {
       "q": "How is transparency handled?",
-      "a": "Transparent PNGs render over a white background. If you need true alpha through, use the Image to PDF generic tool with the keep-alpha option."
+      "a": "It is not kept. The PDF stores only the colour of each pixel, so fully transparent areas show whatever colour is stored beneath them, often black rather than white. Flatten the image onto a white background before converting if that matters; Image to PDF behaves the same way."
     },
     {
       "q": "Is there a max number of images?",
-      "a": "Practical limit is around 100 images per conversion before browser upload time becomes inconvenient. Backend limit is 500 MB total."
+      "a": "Yes. One conversion takes up to 50 images with a combined size of up to 200 MB. For more, convert them in batches and join the PDFs with Merge PDF."
     }
   ]
 }

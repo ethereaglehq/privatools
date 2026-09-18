@@ -1,30 +1,30 @@
 {
   "howto": [
     {
-      "name": "Upload a text file or paste text",
-      "text": "Select a .txt file up to 500 MB or paste plain text directly into the editor."
+      "name": "Upload a text file",
+      "text": "Select one or more .txt files, up to 500 MB each; each file becomes its own PDF. Save the text as UTF-8 so accented characters come through."
     },
     {
-      "name": "Choose formatting",
-      "text": "Pick the font family, font size, page size, and margins. Monospace fonts work best for code or tabular content."
+      "name": "Know the fixed layout",
+      "text": "There are no formatting options: text is set in 11 pt Courier on A4 pages with 1-inch margins, and long lines wrap at spaces. Runs of spaces and tabs collapse to a single space, so indentation and space-aligned columns are not kept, and a single word longer than a line runs off the page."
     },
     {
       "name": "Generate the PDF",
-      "text": "Click Convert. The text is reflowed into paginated PDF pages with the selected formatting."
+      "text": "Click Convert. The text is wrapped and paginated automatically into a PDF for you to download."
     }
   ],
   "faq": [
     {
       "q": "Can I change the font and page size?",
-      "a": "Yes. Choose from several font families (serif, sans-serif, monospace), set the font size, and select A4 or Letter page size with custom margins."
+      "a": "No. Every PDF uses 11 pt Courier, a monospace font, on A4 pages with 1-inch margins; there are no font, size, page, or margin settings."
     },
     {
       "q": "Does the tool handle Unicode text?",
-      "a": "Yes. UTF-8 encoded text is fully supported, including non-Latin scripts like Chinese, Arabic, Cyrillic, and Devanagari."
+      "a": "Only partly. The file must be UTF-8, and only Western European characters print, such as accented letters, curly quotes, and the euro sign. Other scripts, including Chinese, Arabic, Cyrillic, and Devanagari, come out as black boxes."
     },
     {
       "q": "Is there a character or line limit?",
-      "a": "No character limit beyond the 500 MB file-size cap. The text is automatically reflowed and paginated."
+      "a": "There is no separate character or line limit, but the conversion has to finish within the two-minute request limit, so text files of tens of megabytes can time out. Split very large files first."
     }
   ]
 }

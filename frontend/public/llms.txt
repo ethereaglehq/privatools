@@ -96,7 +96,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Auto-Crop PDF (Remove Margins)](https://privatools.me/tool/auto-crop): Auto-detect content and trim margins from every page
 - [PDF to EPUB](https://privatools.me/tool/pdf-to-epub): Convert a PDF into the EPUB format for e-readers
 - [Markdown / Config to PDF](https://privatools.me/tool/markdown-to-pdf): Convert a Markdown document to PDF
-- [CSV to PDF](https://privatools.me/tool/csv-to-pdf): Generate table-style or invoice PDFs from CSV data
+- [CSV to PDF](https://privatools.me/tool/csv-to-pdf): Turn CSV data into a clean PDF table
 - [Word to PDF](https://privatools.me/tool/word-to-pdf): Convert .docx Word documents to PDF
 - [Excel to PDF](https://privatools.me/tool/excel-to-pdf): Convert .xlsx spreadsheets to PDF
 - [PowerPoint to PDF](https://privatools.me/tool/pptx-to-pdf-convert): Convert .pptx presentations to PDF

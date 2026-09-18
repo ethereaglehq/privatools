@@ -275,7 +275,7 @@ URL: https://privatools.me/tool/html-to-pdf
 
 Convert web pages or HTML code into a PDF
 
-Convert HTML to PDF online for free. Paste a URL or upload an HTML file and render it as a pixel-perfect, print-ready PDF document. Preserves CSS styles, images, and layout. No installation required.
+Convert HTML to PDF online for free. Paste HTML code or enter a public web address and download the result as a PDF document. Pasted HTML keeps its CSS, including stylesheets and images linked by full http(s) addresses, and its clickable links; a web address is rendered from the page's HTML alone, without external stylesheets, images, or JavaScript. No installation required.
 
 ### Image to PDF
 
@@ -283,7 +283,7 @@ URL: https://privatools.me/tool/image-to-pdf
 
 Convert JPG, PNG, or other images into a PDF
 
-Convert images to PDF online for free — combine JPG, PNG, TIFF, WebP, or BMP images into a single PDF document. Set page size, orientation, margins, and image quality. Bulk convert multiple images at once.
+Convert images to PDF online for free — combine JPG, PNG, TIFF, WebP, or BMP images into a single PDF document. Choose Auto, where each page matches its image, or fit every image onto A4 or Letter pages. Bulk convert multiple images at once.
 
 ### JPG to PDF
 
@@ -299,7 +299,7 @@ URL: https://privatools.me/tool/png-to-pdf
 
 Convert PNG images into a single PDF document
 
-Convert PNG to PDF online for free — turn one or more PNG images into a single PDF, preserving transparency-aware backgrounds. Bulk convert screenshots, design exports, or charts. No quality loss, no watermark, no sign-up.
+Convert PNG to PDF online for free — turn one or more PNG images into a single PDF, one image per page (transparent areas are not kept). Bulk convert screenshots, design exports, or charts. No quality loss, no watermark, no sign-up.
 
 ### HEIC to PDF
 
@@ -323,7 +323,7 @@ URL: https://privatools.me/tool/tiff-to-pdf
 
 Convert TIFF / TIF scans into a single PDF
 
-Convert TIFF to PDF online for free — combine multi-page TIFF scans, fax images, or archival photos into one PDF. Ideal for healthcare, legal, and government workflows that ship TIFF but need PDF for distribution.
+Convert TIFF to PDF online for free — combine TIFF scans, fax images, or archival photos into one PDF, one page per file (only the first page of a multi-page TIFF is used). Ideal for healthcare, legal, and government workflows that ship TIFF but need PDF for distribution.
 
 ### BMP to PDF
 
@@ -331,7 +331,7 @@ URL: https://privatools.me/tool/bmp-to-pdf
 
 Convert Windows BMP bitmaps into a PDF
 
-Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 500 MB per file.
+Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 50 images and 200 MB per PDF.
 
 ### GIF to PDF
 
@@ -347,7 +347,7 @@ URL: https://privatools.me/tool/svg-to-pdf
 
 Convert SVG vector graphics into PDF
 
-Convert SVG to PDF online for free — turn vector SVG icons, logos, charts, and diagrams into a high-quality PDF. Each SVG becomes one page; line art stays crisp at any zoom level. Perfect for sharing design exports without losing quality.
+Convert SVG to PDF online for free — turn SVG icons, logos, charts, and diagrams into a PDF. Each SVG becomes one page, drawn as a high-resolution image 2400 pixels wide: sharp at normal sizes, though no longer vector, so its text cannot be selected. Handy for sharing design exports with people who expect a PDF.
 
 ### ODT to PDF
 
@@ -355,7 +355,7 @@ URL: https://privatools.me/tool/odt-to-pdf
 
 Convert OpenDocument (ODT) into PDF
 
-Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a polished PDF with all styles, fonts, and layouts preserved. Powered by LibreOffice in the background.
+Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a polished PDF with their styles, images, and layout kept; fonts the server does not have are replaced with similar ones. Powered by LibreOffice in the background.
 
 ### Office to PDF
 
@@ -363,7 +363,7 @@ URL: https://privatools.me/tool/office-to-pdf
 
 Convert Word, Excel, or PowerPoint to PDF
 
-Convert Word, Excel, and PowerPoint to PDF online for free. Upload any Microsoft Office document (.docx, .xlsx, .pptx) and get a perfectly formatted PDF with all styles, fonts, and layouts preserved.
+Convert Word, Excel, and PowerPoint to PDF online for free. Upload a Microsoft Office document (.doc, .docx, .xls, .xlsx, .ppt, or .pptx) and LibreOffice converts it to a PDF that keeps its layout, tables, charts, and images. Fonts the server does not have are replaced with similar ones.
 
 ### PDF to Excel
 
@@ -569,9 +569,9 @@ Convert Markdown to PDF online. Upload a .md, .markdown, or .txt document for te
 
 URL: https://privatools.me/tool/csv-to-pdf
 
-Generate table-style or invoice PDFs from CSV data
+Turn CSV data into a clean PDF table
 
-Convert CSV to PDF online for free — upload a CSV spreadsheet and generate a cleanly formatted PDF with tables, invoices, or report layouts. Instant conversion, no sign-up, free to use.
+Convert CSV to PDF online for free — upload a CSV spreadsheet and generate a cleanly formatted PDF table, with the first row as a bold header and striped rows. Instant conversion, no sign-up, free to use.
 
 ### Word to PDF
 
@@ -587,7 +587,7 @@ URL: https://privatools.me/tool/excel-to-pdf
 
 Convert .xlsx spreadsheets to PDF
 
-Convert Excel to PDF online for free — upload .xlsx spreadsheets and convert all sheets into a formatted PDF with headers, grid lines, and automatic column sizing. No Microsoft Office required.
+Convert Excel to PDF online for free — upload .xlsx spreadsheets and convert every sheet into a simple PDF table: the sheet name as a title, the first row in bold, a line under each row, and equal-width columns. No Microsoft Office required.
 
 ### PowerPoint to PDF
 
@@ -595,7 +595,7 @@ URL: https://privatools.me/tool/pptx-to-pdf-convert
 
 Convert .pptx presentations to PDF
 
-Convert PowerPoint to PDF online for free — upload .pptx presentations and get a high-quality PDF preserving slide dimensions, text, headings, and formatting. No Microsoft Office required.
+Convert PowerPoint to PDF online for free — upload .pptx presentations and get a PDF with one page per slide at the slide's own size, holding the text from each slide's text boxes. Pictures, tables, charts, and most formatting are not carried over. No Microsoft Office required.
 
 ### Text to PDF
 
@@ -715,7 +715,7 @@ URL: https://privatools.me/tool/json-to-pdf
 
 Format JSON data as a styled PDF document
 
-Convert JSON to PDF online for free — upload a JSON file and get a beautifully formatted PDF with syntax highlighting, key-value coloring, and proper indentation. Perfect for API documentation.
+Convert JSON to PDF online for free — upload a JSON file and get a neatly formatted PDF with the JSON pretty-printed, keys highlighted in bold blue, and proper indentation. Perfect for API documentation.
 
 ### XML to PDF
 
@@ -731,7 +731,7 @@ URL: https://privatools.me/tool/epub-to-pdf
 
 Convert e-books from EPUB to PDF format
 
-Convert EPUB to PDF online for free — transform e-books into paginated PDF documents preserving text content. Compatible with all PDF readers and printers. No Kindle or e-reader required.
+Convert EPUB to PDF online for free — transform e-books into paginated PDF documents that keep the book's text, without its images or formatting. Open the result in a standard PDF reader or print it. No Kindle or e-reader required.
 
 ### RTF to PDF
 
@@ -739,7 +739,7 @@ URL: https://privatools.me/tool/rtf-to-pdf
 
 Convert Rich Text Format files to PDF
 
-Convert RTF to PDF online for free — upload Rich Text Format files and get a cleanly formatted PDF with preserved formatting, fonts, and layout. Instant conversion, no software needed.
+Convert RTF to PDF online for free — upload Rich Text Format files and get a simple PDF of the document's text, set in 11 pt Helvetica on A4 pages; the original formatting, fonts, and layout are not kept. Instant conversion, no software needed.
 
 ### Add Hyperlinks
 

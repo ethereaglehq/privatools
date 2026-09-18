@@ -112,19 +112,19 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
 
     # ── PDF conversion ────────────────────────────────────────────────
     "image-to-pdf": [
-        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF). Each image can be up to 500 MB."},
-        {"name": "Arrange and configure", "text": "Reorder images by dragging thumbnails. Set page size (A4, Letter, or fit-to-image) and orientation."},
+        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 50 images with a combined size of up to 200 MB."},
+        {"name": "Arrange and configure", "text": "Reorder images by dragging thumbnails or with the arrow buttons. Choose Auto (the default), which makes each page the size of its image, or A4 or Letter, which fit each image on a portrait page with a half-inch margin."},
         {"name": "Convert to PDF", "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution."},
     ],
     "txt-to-pdf": [
-        {"name": "Upload a text file or paste text", "text": "Select a .txt file up to 500 MB or paste plain text directly into the editor."},
-        {"name": "Choose formatting", "text": "Pick the font family, font size, page size, and margins. Monospace fonts work best for code or tabular content."},
-        {"name": "Generate the PDF", "text": "Click Convert. The text is reflowed into paginated PDF pages with the selected formatting."},
+        {"name": "Upload a text file", "text": "Select one or more .txt files, up to 500 MB each; each file becomes its own PDF. Save the text as UTF-8 so accented characters come through."},
+        {"name": "Know the fixed layout", "text": "There are no formatting options: text is set in 11 pt Courier on A4 pages with 1-inch margins, and long lines wrap at spaces. Runs of spaces and tabs collapse to a single space, so indentation and space-aligned columns are not kept, and a single word longer than a line runs off the page."},
+        {"name": "Generate the PDF", "text": "Click Convert. The text is wrapped and paginated automatically into a PDF for you to download."},
     ],
     "office-to-pdf": [
         {"name": "Upload an Office document", "text": "Select a Word (.docx), Excel (.xlsx), or PowerPoint (.pptx) file up to 500 MB."},
-        {"name": "Convert via LibreOffice", "text": "The server uses LibreOffice in headless mode for high-fidelity conversion, preserving fonts, tables, charts, and layouts."},
-        {"name": "Download the PDF", "text": "Click Convert. The resulting PDF is ready within seconds for most documents."},
+        {"name": "Convert via LibreOffice", "text": "The server converts the file with LibreOffice in headless mode, keeping tables, charts, and layout. Fonts the server does not have are replaced with similar ones, which can shift line and page breaks."},
+        {"name": "Download the PDF", "text": "Click Convert. Each file becomes its own PDF; queue up to 25 files and they are converted one after another, with an option to download them all as a ZIP."},
     ],
     "word-to-pdf": [
         {"name": "Add the Word document", "text": "Drop or select a .docx file up to 500 MB. Older .doc files are not accepted here; Office to PDF handles a wider range of formats."},
@@ -133,28 +133,28 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "epub-to-pdf": [
         {"name": "Upload an EPUB file", "text": "Select an .epub e-book file up to 500 MB."},
-        {"name": "Choose page layout", "text": "Select a page size (A4, Letter, or custom dimensions). The tool reflows text and embeds images to match the chosen layout."},
-        {"name": "Convert and download", "text": "Click Convert. Chapters, formatting, and embedded images are preserved in the output PDF."},
+        {"name": "Know what is kept", "text": "There are no layout options: the text of each chapter is set in 11 pt Helvetica on A4 pages as one running paragraph. Images, headings, bold and italic, and paragraph breaks are not kept, and characters outside Western European scripts print as black boxes."},
+        {"name": "Convert and download", "text": "Click Convert. Chapters follow the order of their file names inside the EPUB, which is not always the reading order, so check the result."},
     ],
     "html-to-pdf": [
         {"name": "Enter a URL or paste HTML", "text": "Type a public URL to render, or paste raw HTML/CSS directly into the editor."},
-        {"name": "Configure rendering options", "text": "Set page size, margins, and whether to include background graphics. JavaScript rendering is supported for dynamic pages."},
-        {"name": "Generate the PDF", "text": "Click Convert. The server uses a headless browser to render the page and produce a pixel-perfect PDF."},
+        {"name": "Know what gets rendered", "text": "There are no page, margin, or background settings. Pasted HTML is laid out on A4 pages unless its CSS sets a page size, and stylesheets and images linked by full http(s) addresses are fetched. A web address is fetched as HTML only and laid out on A4 pages without its external stylesheets or images. JavaScript is not run in either mode."},
+        {"name": "Generate the PDF", "text": "Click Convert to PDF. The server renders pasted HTML with WeasyPrint and a fetched page with PyMuPDF, then the PDF downloads."},
     ],
     "xml-to-pdf": [
-        {"name": "Upload an XML file", "text": "Select an .xml file up to 500 MB. Common schemas like RSS, Atom, and XHTML are supported."},
-        {"name": "Choose display format", "text": "Select tree view (collapsible hierarchy) or formatted table view for structured data."},
+        {"name": "Upload an XML file", "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed UTF-8 XML works, including RSS, Atom, and XHTML."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. A line too long for the page is cut off at the right margin, and the rest of it is not printed."},
         {"name": "Convert and download", "text": "Click Convert. The XML is rendered into a readable, paginated PDF document."},
     ],
     "csv-to-pdf": [
-        {"name": "Upload a CSV file", "text": "Select a .csv or .tsv file up to 500 MB. The first row is treated as column headers by default."},
-        {"name": "Customize table appearance", "text": "Set font size, enable zebra striping, choose landscape or portrait orientation. Wide tables automatically wrap or scale to fit."},
+        {"name": "Upload a CSV file", "text": "Select a comma-separated .csv file up to 500 MB. The first row always becomes the column header."},
+        {"name": "Check the table width", "text": "There are no layout settings: the table is drawn on portrait A4 pages in 9 pt text with striped rows. Columns that do not fit across the page are cut off rather than wrapped or moved to another page, so trim wide files first."},
         {"name": "Convert to PDF", "text": "Click Convert. The data is rendered into a clean, paginated table in the output PDF."},
     ],
     "json-to-pdf": [
-        {"name": "Upload a JSON file or paste JSON", "text": "Select a .json file up to 500 MB or paste JSON directly into the editor."},
-        {"name": "Choose the rendering style", "text": "Pick syntax-highlighted code view for developers or a table/tree view for structured data."},
-        {"name": "Convert and download", "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation and optional line numbers."},
+        {"name": "Upload a JSON file", "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid UTF-8 and nest no more than 25 levels deep."},
+        {"name": "Know the fixed layout", "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page."},
+        {"name": "Convert and download", "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation."},
     ],
     "pdf-to-word": [
         {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB. Documents created digitally, with real text rather than scanned images, convert best."},
@@ -556,7 +556,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "bmp-to-pdf": [
         {"name": "Upload BMP images", "text": "Drop one or many .bmp files. BMP is the legacy Windows bitmap format — uncompressed and lossless."},
-        {"name": "Choose page size", "text": "Letter (8.5 × 11 in) or A4 (210 × 297 mm). Each BMP scales to fit the page while preserving aspect ratio."},
+        {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image. Letter (8.5 × 11 in) or A4 (210 × 297 mm) scale each BMP to fit the page while preserving aspect ratio."},
         {"name": "Download the PDF", "text": "Click Convert. All input images are combined into a single PDF, one image per page in upload order."},
     ],
     "booklet-pdf": [
@@ -597,7 +597,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "excel-to-pdf": [
         {"name": "Upload an .xlsx file", "text": "Drop an Excel workbook up to 500 MB."},
-        {"name": "PrivaTools converts each sheet to a PDF page", "text": "Cell values, formulas (as computed), formatting, and column widths are preserved. Each worksheet becomes one or more pages depending on content size."},
+        {"name": "PrivaTools converts each sheet to a PDF page", "text": "Each sheet, hidden ones included, is drawn as a plain table on landscape A4 pages in 8 pt Helvetica, over one or more pages. Only cell values come across: number and date formats, colours, fonts, and column widths are not kept, the columns share the page width equally, and text too long for its column is cut short."},
         {"name": "Download the PDF", "text": "Click Convert. The output PDF has one section per worksheet."},
     ],
     "extract-images": [
@@ -617,7 +617,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "gif-to-pdf": [
         {"name": "Upload GIF images", "text": "Drop one or many .gif files. Animated GIFs use only the first frame."},
-        {"name": "Choose page size", "text": "Letter or A4. Each GIF scales to fit while preserving aspect ratio."},
+        {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its GIF; Letter or A4 scale each GIF to fit while preserving aspect ratio."},
         {"name": "Download the PDF", "text": "All GIFs are combined into one PDF, one image per page in upload order."},
     ],
     "grayscale-pdf": [
@@ -632,8 +632,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "heic-to-pdf": [
         {"name": "Upload HEIC images", "text": "Drop one or many .heic / .heif files (e.g. from iPhone photos)."},
-        {"name": "Choose page size", "text": "Letter or A4. Each HEIC is decoded via libheif and scaled to fit."},
-        {"name": "Download the PDF", "text": "All images become one PDF, one photo per page. EXIF metadata is stripped by default."},
+        {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its photo; A4 or Letter scale each photo to fit a standard page. Each HEIC is decoded with libheif."},
+        {"name": "Download the PDF", "text": "All images become one PDF, one photo per page. Camera EXIF metadata, including GPS location, is not copied into the PDF."},
     ],
     "invert-colors": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
@@ -648,8 +648,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "markdown-to-pdf": [
         {"name": "Upload a Markdown file", "text": "Drop a .md file up to 500 MB."},
-        {"name": "PrivaTools renders to HTML, then PDF", "text": "Standard Markdown syntax: headings, lists, links, images, code blocks, tables, blockquotes. GitHub-flavored extensions supported."},
-        {"name": "Download the styled PDF", "text": "The output has a clean typographic style with proper headings, monospace code, and clickable links."},
+        {"name": "PrivaTools renders to HTML, then PDF", "text": "Standard Markdown syntax is converted: headings, lists, links, code blocks, blockquotes, and GitHub-style tables and footnotes. Task-list checkboxes and bare web addresses stay plain text, and only images embedded as data: URIs are drawn."},
+        {"name": "Download the styled PDF", "text": "The output is an A4 PDF with a clean typographic style, proper headings, and monospace code. Link text is shown in colour but is not clickable, and the link address itself is not printed."},
     ],
     "metadata": [
         {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB."},
@@ -663,7 +663,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "odt-to-pdf": [
         {"name": "Upload an .odt file", "text": "Drop an OpenDocument Text file (LibreOffice / OpenOffice) up to 500 MB."},
-        {"name": "PrivaTools renders via LibreOffice headless", "text": "Fonts, styles, embedded images, tables, footnotes, and bibliography are preserved."},
+        {"name": "PrivaTools renders via LibreOffice headless", "text": "Styles, embedded images, tables, footnotes, and bibliography are kept; fonts the server does not have are replaced with similar ones, which can shift line and page breaks."},
         {"name": "Download the PDF", "text": "Click Convert. The output PDF matches the on-screen rendering closely."},
     ],
     "organize-pages": [
@@ -730,13 +730,13 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Read the validation report", "text": "It shows whether a PDF/A label was found and lists any warnings. A pass means those basic checks passed, not that the file conforms to PDF/A."},
     ],
     "png-to-pdf": [
-        {"name": "Upload PNG images", "text": "Drop one or many .png files up to 500 MB total."},
-        {"name": "Choose page size", "text": "Letter or A4. Transparency in PNGs renders against a white page background."},
+        {"name": "Upload PNG images", "text": "Drop one or many .png files, up to 50 images and 200 MB in total."},
+        {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."},
         {"name": "Download the PDF", "text": "All images become a single PDF, one per page. Lossless — PNG pixels map directly to PDF image objects."},
     ],
     "pptx-to-pdf-convert": [
         {"name": "Upload a .pptx file", "text": "Drop a PowerPoint presentation up to 500 MB."},
-        {"name": "Each slide becomes one PDF page", "text": "PrivaTools renders fonts, animations (first state), embedded images, and SmartArt diagrams."},
+        {"name": "Each slide becomes one PDF page", "text": "The text of each text box and placeholder is drawn at its position in Helvetica, using the first run's size (capped at 36 pt) and bold setting. Pictures, tables, charts, SmartArt, backgrounds, colours, and speaker notes are left out; for a visual copy of the slides, use Office to PDF."},
         {"name": "Download the PDF", "text": "The output preserves slide aspect ratio (16:9 or 4:3 as designed)."},
     ],
     "qr-code": [
@@ -766,7 +766,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "rtf-to-pdf": [
         {"name": "Upload an .rtf file", "text": "Drop a Rich Text Format file (Word, WordPad, TextEdit, Pages all save in RTF)."},
-        {"name": "PrivaTools renders to PDF", "text": "Bold, italic, underline, paragraph styles, lists, tables, and embedded images transfer faithfully."},
+        {"name": "PrivaTools extracts the text", "text": "The RTF codes are stripped and the remaining text is set in 11 pt Helvetica on A4 pages. Bold, italic, underline, fonts, tables, and images are not kept, paragraphs can run together, and some leftover codes or font names may appear as text."},
         {"name": "Download the PDF", "text": "Click Convert. Open in any PDF viewer."},
     ],
     "sanitize-pdf": [
@@ -795,14 +795,14 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the clean PDF (or ZIP)", "text": "Single file → single PDF; multiple files → ZIP. Visible content is unchanged."},
     ],
     "svg-to-pdf": [
-        {"name": "Upload SVG images", "text": "Drop one or many .svg files. Vector content scales infinitely."},
-        {"name": "Choose page size", "text": "Letter or A4. Each SVG scales proportionally to fit while preserving aspect ratio."},
-        {"name": "Download the PDF", "text": "All SVGs become one PDF, one per page. Vector content stays vector — no rasterization."},
+        {"name": "Upload SVG images", "text": "Drop one or many .svg files, up to 50 files and 200 MB in total. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."},
+        {"name": "Choose page size", "text": "Auto (the default) sizes the page to the rendered image, which is 2400 points wide, so choose A4 or Letter for a printable page; each SVG is then scaled to fit while preserving its aspect ratio."},
+        {"name": "Download the PDF", "text": "All SVGs become one PDF, one per page. Each drawing is rasterized into an image first, so the PDF contains pictures rather than vector paths or selectable text."},
     ],
     "tiff-to-pdf": [
-        {"name": "Upload TIFF images", "text": "Drop .tif / .tiff files. Multi-page TIFFs are supported and each page becomes a PDF page."},
-        {"name": "Choose page size", "text": "Letter or A4. Single-page TIFFs scale; multi-page TIFFs preserve their per-page sizes."},
-        {"name": "Download the PDF", "text": "All TIFFs become one PDF. Compression (LZW, Deflate, JPEG inside TIFF) is converted to PDF-native equivalents."},
+        {"name": "Upload TIFF images", "text": "Drop one or more .tif / .tiff files, up to 50 files and 200 MB in total. Only the first page of a multi-page TIFF is converted."},
+        {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter scale each image to fit a standard page."},
+        {"name": "Download the PDF", "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF."},
     ],
     "transparent-background": [
         {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300)."},
@@ -815,9 +815,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Read the result", "text": "Any fields found are listed with the status detected, beside a note that cryptographic verification is not supported. For a real check, open the file in a PDF reader that validates signatures."},
     ],
     "webp-to-pdf": [
-        {"name": "Upload WebP images", "text": "Drop one or many .webp files up to 500 MB total."},
-        {"name": "Choose page size", "text": "Letter or A4. Transparency in WebP is rendered against a white page background."},
-        {"name": "Download the PDF", "text": "All images become one PDF in upload order. WebP's smaller size is reflected in a smaller PDF."},
+        {"name": "Upload WebP images", "text": "Drop one or many .webp files, up to 50 images and 200 MB in total."},
+        {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."},
+        {"name": "Download the PDF", "text": "All images become one PDF in upload order. The PDF is usually much larger than the WebP files, because the pixels are stored with lossless compression."},
     ],
     "whiteout-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
@@ -1291,19 +1291,19 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will the document look different after conversion?", "a": "Visually the document should look the same. Transparency may be flattened in PDF/A-1b, and embedded multimedia will be removed since PDF/A does not allow it."},
     ],
     "image-to-pdf": [
-        {"q": "What image formats are supported?", "a": "JPG, PNG, WebP, BMP, and TIFF. Each image can be up to 500 MB."},
-        {"q": "Can I control the page size?", "a": "Yes. Choose A4, Letter, or fit-to-image (where the page matches the image dimensions exactly). You can also set landscape or portrait orientation."},
+        {"q": "What image formats are supported?", "a": "JPG, PNG, WebP, BMP, TIFF, GIF, HEIC/HEIF, and SVG, up to 50 images and 200 MB in total per PDF. Animated GIF and WebP files and multi-page TIFFs contribute only their first frame, SVGs are converted to images, and transparent areas are not kept."},
+        {"q": "Can I control the page size?", "a": "Yes. Auto (the default) makes each page match its image, one point per pixel. A4 and Letter place each image on a portrait page, scaled to fit inside a half-inch margin. There is no separate orientation setting."},
         {"q": "Are multiple images combined into one PDF?", "a": "Yes. All uploaded images become pages in a single PDF. Drag to reorder them before converting."},
     ],
     "txt-to-pdf": [
-        {"q": "Can I change the font and page size?", "a": "Yes. Choose from several font families (serif, sans-serif, monospace), set the font size, and select A4 or Letter page size with custom margins."},
-        {"q": "Does the tool handle Unicode text?", "a": "Yes. UTF-8 encoded text is fully supported, including non-Latin scripts like Chinese, Arabic, Cyrillic, and Devanagari."},
-        {"q": "Is there a character or line limit?", "a": "No character limit beyond the 500 MB file-size cap. The text is automatically reflowed and paginated."},
+        {"q": "Can I change the font and page size?", "a": "No. Every PDF uses 11 pt Courier, a monospace font, on A4 pages with 1-inch margins; there are no font, size, page, or margin settings."},
+        {"q": "Does the tool handle Unicode text?", "a": "Only partly. The file must be UTF-8, and only Western European characters print, such as accented letters, curly quotes, and the euro sign. Other scripts, including Chinese, Arabic, Cyrillic, and Devanagari, come out as black boxes."},
+        {"q": "Is there a character or line limit?", "a": "There is no separate character or line limit, but the conversion has to finish within the two-minute request limit, so text files of tens of megabytes can time out. Split very large files first."},
     ],
     "office-to-pdf": [
         {"q": "Which Office formats are supported?", "a": "Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx), and OpenDocument formats (.odt, .ods, .odp)."},
         {"q": "Are charts and images preserved?", "a": "Yes. The conversion uses LibreOffice, which preserves charts, images, tables, headers, footers, and most formatting accurately."},
-        {"q": "How long does conversion take?", "a": "Most documents convert in 2-10 seconds. Large files with many images or complex layouts may take up to 30 seconds."},
+        {"q": "How long does conversion take?", "a": "It depends on the size and complexity of the document. Each conversion starts LibreOffice with a fresh profile, and a conversion still running after two minutes is stopped with a timeout error, so split very large documents first."},
     ],
     "word-to-pdf": [
         {"q": "Will the PDF look exactly like my Word document?", "a": "Usually very close. The layout is recalculated by LibreOffice rather than Microsoft Word, so complex documents can differ in small ways, most often in line breaks and page breaks."},
@@ -1314,29 +1314,29 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my document after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the document and the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "epub-to-pdf": [
-        {"q": "Are images and formatting preserved?", "a": "Yes. Chapter headings, bold/italic text, embedded images, and basic CSS styling are preserved in the PDF output."},
+        {"q": "Are images and formatting preserved?", "a": "No. Only the text is extracted: images, headings, bold and italic, and the book's styling are dropped, and each chapter becomes one continuous block of text. The chapter's page title and any style rules written inside it can also appear as text at the start of the chapter."},
         {"q": "Can I convert DRM-protected EPUBs?", "a": "No. DRM-protected e-books cannot be converted. The tool only works with DRM-free EPUB files."},
-        {"q": "What page size options are available?", "a": "A4, Letter, and custom dimensions. The text is reflowed to fit the chosen page size while keeping chapter breaks."},
+        {"q": "What page size options are available?", "a": "Only A4, with 1-inch margins. There is no Letter or custom size, and the text is wrapped to fit that page."},
     ],
     "html-to-pdf": [
-        {"q": "Can I convert a live website URL to PDF?", "a": "Yes. Enter any public URL and the server will render the page — including CSS, images, and JavaScript — and convert it to PDF."},
-        {"q": "Is JavaScript rendered?", "a": "Yes. A headless browser executes JavaScript before capturing the page, so dynamically loaded content appears in the PDF."},
-        {"q": "Are external stylesheets and images included?", "a": "Yes. The renderer fetches external CSS, web fonts, and images. Only resources behind authentication may not load."},
+        {"q": "Can I convert a live website URL to PDF?", "a": "Yes, for public http and https addresses; local and private network addresses are refused, and the address must start with http:// or https://. The server fetches the page's HTML, up to 5 MB, and lays it out on A4 pages, but it does not load the page's external stylesheets or images or run its JavaScript, so many sites come out plainer than in a browser."},
+        {"q": "Is JavaScript rendered?", "a": "No. Neither mode runs JavaScript, so content that a page builds with scripts after it loads does not appear in the PDF. If you can copy the finished HTML, for example from your browser's developer tools, paste that instead."},
+        {"q": "Are external stylesheets and images included?", "a": "Only for pasted HTML. There, stylesheets and images referenced by full http(s) addresses are fetched, up to 25 MB each, while relative paths such as images/logo.png cannot be resolved and are skipped. For a web address, only styles written inside the page itself are applied; its external stylesheets and images are not loaded."},
     ],
     "xml-to-pdf": [
-        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported. The tool renders the structure as a readable tree or table — it does not apply XSL transforms."},
-        {"q": "Is syntax highlighting included?", "a": "Yes. Element names, attributes, and values are color-coded for readability in the PDF output."},
-        {"q": "Can I convert large XML files?", "a": "Files up to 500 MB are supported. Very deeply nested structures may produce many pages."},
+        {"q": "What XML schemas are supported?", "a": "Any well-formed XML file is supported. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."},
+        {"q": "Is syntax highlighting included?", "a": "Only simple colouring: every line that contains a tag is printed in blue and text-only lines in black. Element names, attributes, and values are not coloured separately."},
+        {"q": "Can I convert large XML files?", "a": "Up to 5 MB per file; larger files are refused. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide or deeply nested documents lose text."},
     ],
     "csv-to-pdf": [
-        {"q": "Does the tool auto-detect delimiters?", "a": "Yes. Comma, semicolon, tab, and pipe delimiters are automatically detected. You can also specify the delimiter manually."},
-        {"q": "How are wide tables handled?", "a": "Wide tables can be rendered in landscape orientation. If they still exceed the page width, columns are scaled to fit or split across pages."},
-        {"q": "Is the first row treated as a header?", "a": "By default yes — the first row is bolded as a header. You can disable this if your data has no header row."},
+        {"q": "Does the tool auto-detect delimiters?", "a": "No. Only commas separate columns, and quoted values may contain commas. Semicolon-, tab-, or pipe-separated files come out as a single column, so save them as comma-separated CSV first."},
+        {"q": "How are wide tables handled?", "a": "Pages are always portrait A4, and columns that do not fit across the page are cut off at the right edge rather than wrapped or split across pages. For example, a file with 30 short columns shows only its first nine, so remove or split columns before converting."},
+        {"q": "Is the first row treated as a header?", "a": "Yes, always. The first row is drawn in bold white text on a dark background, and there is no option to turn this off, so add a header row if your data has none. The header appears once, at the top of the first page."},
     ],
     "json-to-pdf": [
-        {"q": "Is JSON validated before conversion?", "a": "Yes. The tool validates the JSON and shows a clear error message with the line number if the syntax is invalid."},
-        {"q": "How are nested objects displayed?", "a": "Nested objects and arrays are indented with syntax highlighting. Collapsible sections are shown in the preview but expanded in the PDF."},
-        {"q": "Can I convert JSON arrays into tables?", "a": "Yes. Arrays of objects with consistent keys are rendered as a table, with keys as column headers and each object as a row."},
+        {"q": "Is JSON validated before conversion?", "a": "Yes. The file is parsed first and invalid JSON is not converted, but the error is a general conversion failure without a line number. Check the syntax in JSON / XML Formatter to find the problem."},
+        {"q": "How are nested objects displayed?", "a": "Nested objects and arrays are indented two spaces per level, with every key in bold blue. Everything is printed fully expanded; there is no preview or collapsing."},
+        {"q": "Can I convert JSON arrays into tables?", "a": "No. Arrays of objects are printed as indented JSON like the rest of the file, not as a table. For a table, convert the array to CSV with the CSV ↔ JSON Converter and then use CSV to PDF."},
     ],
     "pdf-to-word": [
         {"q": "Will the Word file look exactly like the PDF?", "a": "Close for straightforward documents, not identical for complex ones. A PDF describes where text sits on a page, not how it flows, so the converter has to reconstruct paragraphs. Multi-column layouts, text boxes and intricate tables usually need some tidying afterwards."},
@@ -1837,9 +1837,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does it survive redaction?", "a": "Yes — Bates numbers are stamped directly onto the page content, so they remain after redaction (unless the redaction rectangle covers them)."},
     ],
     "bmp-to-pdf": [
-        {"q": "Why is the output PDF so much smaller than the BMPs?", "a": "BMP is uncompressed; PDF stores images in DCT (JPEG) or Flate format. A 5 MB BMP usually becomes a few hundred KB inside the PDF."},
-        {"q": "Will quality degrade?", "a": "By default the conversion is near-lossless using high-quality JPEG. For 100% lossless, convert via PNG first (PNG-to-PDF) — slightly larger output."},
-        {"q": "How many BMPs can I convert at once?", "a": "Up to the 500 MB total file limit. Several dozen images is routine."},
+        {"q": "Will the PDF be smaller than the BMPs?", "a": "Usually, because BMP is uncompressed and the PDF stores the pixels with lossless Flate compression. How much depends on the picture: screenshots and flat graphics shrink dramatically, photos much less, and very noisy images may not shrink at all."},
+        {"q": "Will quality degrade?", "a": "No. The BMP pixels are stored with lossless compression, so the PDF shows exactly the same image; there is no JPEG step."},
+        {"q": "How many BMPs can I convert at once?", "a": "Up to 50 images, with a combined size of up to 200 MB, in one PDF. Uncompressed BMPs are large, so big photos reach the size limit first."},
     ],
     "booklet-pdf": [
         {"q": "Why were blank pages added?", "a": "A folded booklet is made from sheets that each carry four pages, two on each side. When your page count is not a multiple of four, blank pages are added at the end so the imposition works."},
@@ -1886,9 +1886,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my document after I upload it?", "a": "It is uploaded over HTTPS and signed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the document and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "excel-to-pdf": [
-        {"q": "Will my formulas be visible?", "a": "No — only computed values appear. The formulas themselves are not included (PDF has no formula concept)."},
-        {"q": "What about charts and images?", "a": "Charts render as static images. Embedded images are preserved at their original size."},
-        {"q": "How does it handle very wide sheets?", "a": "Wide sheets paginate across multiple PDF pages, with column headers repeated on each."},
+        {"q": "Will my formulas be visible?", "a": "No. Each formula shows the result saved with the workbook the last time a spreadsheet app calculated it. Files written by tools that do not store those results show formula cells as blank."},
+        {"q": "What about charts and images?", "a": "They are left out: only cell values are converted, so charts, pictures, and shapes do not appear. Office to PDF, which uses LibreOffice, includes them."},
+        {"q": "How does it handle very wide sheets?", "a": "All columns are squeezed across one landscape A4 page and long values are cut short to fit, so very wide sheets become hard to read. The header row is not repeated on later pages."},
     ],
     "extract-images": [
         {"q": "Will the images be the original resolution?", "a": "Yes. PDF embeds images at the resolution set when the PDF was created — extraction recovers them unchanged."},
@@ -1909,9 +1909,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does this work on signed forms?", "a": "Filling a signed form invalidates the signature. Sign last, after filling."},
     ],
     "gif-to-pdf": [
-        {"q": "Do animated GIFs animate inside the PDF?", "a": "No — PDF doesn't support animation. Only the first frame is used. To convert animation to PDF, use GIF to MP4 then Video to PDF for keyframes."},
-        {"q": "How is transparency handled?", "a": "GIF transparent pixels render against a white page background. Use PNG-to-PDF if you need true alpha."},
-        {"q": "Can the GIF stay as a GIF inside the PDF?", "a": "PDF doesn't natively support GIF — the image is re-encoded as JPEG or Flate during embedding."},
+        {"q": "Do animated GIFs animate inside the PDF?", "a": "No — PDF doesn't support animation. Only the first frame is used. To convert animation to PDF, use GIF to MP4 and then Video to PDF, which lays out evenly spaced frames, one per page."},
+        {"q": "How is transparency handled?", "a": "It is not kept. Transparent pixels show the colour stored in their palette entry, which is often black, and PNG to PDF does not keep transparency either. Flatten the GIF onto a white background first if needed."},
+        {"q": "Can the GIF stay as a GIF inside the PDF?", "a": "No. PDF has no GIF image type, so the first frame is decoded and stored with lossless Flate compression; no JPEG step is involved."},
     ],
     "grayscale-pdf": [
         {"q": "Will text still be searchable?", "a": "Only if all the text and drawings were already black or gray: then only the images change and the text layer is kept. If anything is in color, every page becomes an image and the text is no longer searchable; run OCR PDF afterwards to add a text layer back."},
@@ -1924,8 +1924,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Are these editable annotations or baked-in?", "a": "Baked into the page content. They can't be removed without re-editing — use Whiteout to cover them if needed later."},
     ],
     "heic-to-pdf": [
-        {"q": "Will the PDF be much larger than the HEIC?", "a": "Yes — HEIC is more efficient than JPEG. The PDF uses JPEG internally and is typically 2-3x the size of the source HEICs."},
-        {"q": "Does this preserve image quality?", "a": "Default JPEG quality is 90, which is visually indistinguishable. Lossless would require PNG-to-PDF and produce much larger files."},
+        {"q": "Will the PDF be much larger than the HEIC?", "a": "Often, yes. Each photo is re-encoded as a JPEG at quality 92 inside the PDF, and JPEG generally needs more space than HEIC for the same picture. How much larger depends on the photo."},
+        {"q": "Does this preserve image quality?", "a": "Photos keep their full pixel dimensions and are re-encoded once as JPEG at quality 92, a high setting. For a lossless copy, convert the photos to PNG first and use PNG to PDF, which gives much larger files."},
         {"q": "What happens to GPS metadata?", "a": "Stripped during conversion. Use View EXIF first if you want to record GPS coordinates before they're gone."},
     ],
     "invert-colors": [
@@ -1943,9 +1943,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my images after I upload them?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the images and the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "markdown-to-pdf": [
-        {"q": "Are images included?", "a": "Local image references in the Markdown are inlined if they're in the same upload; remote URLs are fetched at render time."},
+        {"q": "Are images included?", "a": "Only images embedded in the Markdown as data: URIs. The Markdown file is uploaded on its own, so relative image paths cannot be found, and web addresses are not fetched; each such image appears as an [image] placeholder."},
         {"q": "Can I customize the styling?", "a": "Not at the moment. The PDF uses a fixed, GitHub-inspired style with monospace code blocks, and custom CSS is not supported."},
-        {"q": "Does it handle code-block syntax highlighting?", "a": "Yes — fenced code blocks with language hints get tokenized and colored (Python, JS, SQL, Bash, etc.)."},
+        {"q": "Does it handle code-block syntax highlighting?", "a": "No. Fenced code blocks are set in a monospace font, but the code is not coloured, whatever language hint you add."},
     ],
     "metadata": [
         {"q": "What metadata does a typical PDF carry?", "a": "Usually: producer (the software that created it) and creation date. Often also: author name, original filename, software version. Scanned PDFs may carry scanner model + driver."},
@@ -2031,14 +2031,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "If it's not PDF/A, can I convert it?", "a": "The PDF to PDF/A tool re-saves the file and adds a PDF/A-2b label, which this check then detects. It does not embed fonts or add a colour profile, so the result is not guaranteed to conform."},
     ],
     "png-to-pdf": [
-        {"q": "Will the PDF be larger than the PNGs?", "a": "Roughly the same — PNGs are already losslessly compressed, and PDF embeds them with minimal overhead."},
-        {"q": "How is transparency handled?", "a": "Transparent PNGs render over a white background. If you need true alpha through, use the Image to PDF generic tool with the keep-alpha option."},
-        {"q": "Is there a max number of images?", "a": "Practical limit is around 100 images per conversion before browser upload time becomes inconvenient. Backend limit is 500 MB total."},
+        {"q": "Will the PDF be larger than the PNGs?", "a": "It depends on the image. Screenshots and flat graphics come out about the same size, but photographic PNGs can come out noticeably larger, because the pixels are recompressed losslessly without the filters PNG uses."},
+        {"q": "How is transparency handled?", "a": "It is not kept. The PDF stores only the colour of each pixel, so fully transparent areas show whatever colour is stored beneath them, often black rather than white. Flatten the image onto a white background before converting if that matters; Image to PDF behaves the same way."},
+        {"q": "Is there a max number of images?", "a": "Yes. One conversion takes up to 50 images with a combined size of up to 200 MB. For more, convert them in batches and join the PDFs with Merge PDF."},
     ],
     "pptx-to-pdf-convert": [
-        {"q": "Will animations be preserved?", "a": "PDF doesn't support animation. Each slide renders in its initial state. For animation, export to video first."},
+        {"q": "Will animations be preserved?", "a": "No. Animations are ignored and every text box on a slide is drawn, including text that would only appear later in the animation."},
         {"q": "How are speaker notes handled?", "a": "Speaker notes are not included in the PDF, and there is no option to add them. Export the notes from your presentation software if you need them."},
-        {"q": "What about embedded videos?", "a": "Videos render as a poster frame (the first frame). Use Extract Audio + Video to PDF for video-centric conversion."},
+        {"q": "What about embedded videos?", "a": "They are left out, poster frame included, because only text is converted. If you have the video file itself, Video to PDF can lay out evenly spaced frames from it."},
     ],
     "qr-code": [
         {"q": "Can I customize colors?", "a": "No. Codes are generated black on white; custom colours and centre logos are not supported. Plain high-contrast codes are also the most reliable to scan."},
@@ -2072,9 +2072,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and reordered on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "rtf-to-pdf": [
-        {"q": "What about RTF features like fields?", "a": "Calculated fields (page numbers, dates) render as their current values. Form fields aren't converted to PDF form fields — use Form Creator for that."},
-        {"q": "Does it preserve fonts?", "a": "Fonts referenced in the RTF are matched to server-installed fonts. Missing fonts fall back to a close visual equivalent."},
-        {"q": "How does this differ from DOCX-to-PDF?", "a": "RTF is an older Microsoft format. DOCX is a newer ZIP-based format. Both convert similarly but DOCX preserves more layout fidelity."},
+        {"q": "What about RTF features like fields?", "a": "Fields are not recalculated. The converter only strips RTF codes, so a field shows its last saved result, and parts of the field code can appear as stray text. Form fields are not converted to PDF form fields; use Form Creator to add fillable fields."},
+        {"q": "Does it preserve fonts?", "a": "No. All text is set in 11 pt Helvetica, whatever fonts the RTF names. Accented letters stored as RTF escape codes, which is how Word and WordPad usually save them, are dropped, and characters from other scripts come out as question marks."},
+        {"q": "How does this differ from DOCX-to-PDF?", "a": "RTF is an older Microsoft format and DOCX a newer ZIP-based one. The tools differ too: Word to PDF keeps headings and some bold and italic styling from a DOCX, while this tool keeps only plain text. For a conversion that keeps the formatting, use Office to PDF, which lays the file out with LibreOffice."},
     ],
     "sanitize-pdf": [
         {"q": "What is sanitization protecting against?", "a": "In general, malicious PDFs that abuse embedded scripts or attachments. This tool does not remove those: in a test, a document-level JavaScript action, a link that launches a program and an embedded file all survived. Use it to clear identifying document info, not to neutralise a suspicious file."},
@@ -2105,14 +2105,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and Movie and RichMedia (Flash) annotations; it leaves JavaScript, embedded files and XMP in place."},
     ],
     "svg-to-pdf": [
-        {"q": "Will my SVG stay as vector inside the PDF?", "a": "Yes — PDF natively supports vector content, so paths, text, and gradients remain editable at any zoom level."},
-        {"q": "What about embedded raster images inside SVG?", "a": "Embedded raster images (data URLs, external image refs) are preserved as raster within the PDF."},
-        {"q": "Does it handle CSS styles inside SVG?", "a": "Standard SVG CSS (fill, stroke, opacity, transform) is honored. External stylesheet refs are inlined first."},
+        {"q": "Will my SVG stay as vector inside the PDF?", "a": "No. Each SVG is rendered with CairoSVG to a PNG image 2400 pixels wide, and that image is placed on the page. It looks sharp at normal sizes, but edges soften when you zoom in far, and text cannot be selected or searched."},
+        {"q": "What about embedded raster images inside SVG?", "a": "Images embedded in the SVG as data: URIs are drawn. References to images in other files or at web addresses are blocked for security, and an SVG that contains one is rejected with an error."},
+        {"q": "Does it handle CSS styles inside SVG?", "a": "Styles written inside the SVG, in a style element or style attributes, are applied, but external stylesheets are not loaded. Note that transparency is not kept: areas with no background come out black, so add a white background rectangle to drawings that need one."},
     ],
     "tiff-to-pdf": [
-        {"q": "Will quality be preserved?", "a": "Yes — TIFF is lossless. PDF uses Flate (lossless) or JPEG (near-lossless) when embedding. Default is high-quality JPEG to keep file size reasonable."},
-        {"q": "What about CMYK TIFFs (for print)?", "a": "CMYK is preserved through to the PDF. Use this workflow for prepress / professional printing pipelines."},
-        {"q": "How are multi-page TIFFs handled?", "a": "Each TIFF page becomes a PDF page in order. Multiple multi-page TIFFs in one upload are concatenated."},
+        {"q": "Will quality be preserved?", "a": "For standard 8-bit TIFFs, yes: the decoded pixels are stored with lossless Flate compression and no JPEG step is added. The trade-off is file size, since nothing is recompressed to save space."},
+        {"q": "What about CMYK TIFFs (for print)?", "a": "CMYK TIFFs stay CMYK: the pixels are embedded as DeviceCMYK image data. An embedded ICC colour profile is not carried over, so check colour-critical print jobs with your printer."},
+        {"q": "How are multi-page TIFFs handled?", "a": "Only the first page of each TIFF is converted; the other pages are ignored. Every TIFF file you add becomes one PDF page, in the order shown, so save each page as a separate TIFF first if you need them all."},
     ],
     "transparent-background": [
         {"q": "Will text be affected?", "a": "Dark text is kept fully opaque. Each pixel is either kept or made fully transparent, with nothing in between, so light grey text at or above the threshold disappears. Raise the threshold toward 255 to remove only the purest white, or lower it to clear off-white backgrounds as well. The text also stops being selectable, because each page becomes an image."},
@@ -2125,9 +2125,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I verify multiple signatures?", "a": "PDFs can have multiple signatures (e.g. one per signing party), but this tool verifies none of them, and at present it does not recognise signature fields, so the list comes back empty."},
     ],
     "webp-to-pdf": [
-        {"q": "Will the PDF be much smaller than from JPG?", "a": "Slightly smaller — WebP-derived JPEGs inside PDF are similar to direct JPGs. The main benefit was at upload time (smaller WebP files)."},
+        {"q": "Will the PDF be much smaller than from JPG?", "a": "No, usually larger. WebP pixels are decoded and stored with lossless compression, so a lossy WebP photo can grow many times over, while a JPG is placed in the PDF without re-encoding."},
         {"q": "What about animated WebP?", "a": "Only the first frame is used. PDF doesn't support animation."},
-        {"q": "Does this preserve transparency?", "a": "PDF supports transparency but most readers render text-on-transparency oddly. We default to compositing over white for best compatibility."},
+        {"q": "Does this preserve transparency?", "a": "No. Only the colour of each pixel is stored, so transparent areas show whatever colour is stored beneath them, which is often black. Flatten the image onto a white background first if you need a white page."},
     ],
     "whiteout-pdf": [
         {"q": "Is whiteout the same as redaction?", "a": "No — whiteout covers content visually but the underlying text remains in the file. For permanent redaction (text removed), use Redact PDF or Smart Redact."},

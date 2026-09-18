@@ -6,7 +6,7 @@
     },
     {
       "name": "Each slide becomes one PDF page",
-      "text": "PrivaTools renders fonts, animations (first state), embedded images, and SmartArt diagrams."
+      "text": "The text of each text box and placeholder is drawn at its position in Helvetica, using the first run's size (capped at 36 pt) and bold setting. Pictures, tables, charts, SmartArt, backgrounds, colours, and speaker notes are left out; for a visual copy of the slides, use Office to PDF."
     },
     {
       "name": "Download the PDF",
@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Will animations be preserved?",
-      "a": "PDF doesn't support animation. Each slide renders in its initial state. For animation, export to video first."
+      "a": "No. Animations are ignored and every text box on a slide is drawn, including text that would only appear later in the animation."
     },
     {
       "q": "How are speaker notes handled?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "What about embedded videos?",
-      "a": "Videos render as a poster frame (the first frame). Use Extract Audio + Video to PDF for video-centric conversion."
+      "a": "They are left out, poster frame included, because only text is converted. If you have the video file itself, Video to PDF can lay out evenly spaced frames from it."
     }
   ]
 }

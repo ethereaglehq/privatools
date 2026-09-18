@@ -6,17 +6,17 @@
     },
     {
       "name": "PrivaTools renders to HTML, then PDF",
-      "text": "Standard Markdown syntax: headings, lists, links, images, code blocks, tables, blockquotes. GitHub-flavored extensions supported."
+      "text": "Standard Markdown syntax is converted: headings, lists, links, code blocks, blockquotes, and GitHub-style tables and footnotes. Task-list checkboxes and bare web addresses stay plain text, and only images embedded as data: URIs are drawn."
     },
     {
       "name": "Download the styled PDF",
-      "text": "The output has a clean typographic style with proper headings, monospace code, and clickable links."
+      "text": "The output is an A4 PDF with a clean typographic style, proper headings, and monospace code. Link text is shown in colour but is not clickable, and the link address itself is not printed."
     }
   ],
   "faq": [
     {
       "q": "Are images included?",
-      "a": "Local image references in the Markdown are inlined if they're in the same upload; remote URLs are fetched at render time."
+      "a": "Only images embedded in the Markdown as data: URIs. The Markdown file is uploaded on its own, so relative image paths cannot be found, and web addresses are not fetched; each such image appears as an [image] placeholder."
     },
     {
       "q": "Can I customize the styling?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Does it handle code-block syntax highlighting?",
-      "a": "Yes — fenced code blocks with language hints get tokenized and colored (Python, JS, SQL, Bash, etc.)."
+      "a": "No. Fenced code blocks are set in a monospace font, but the code is not coloured, whatever language hint you add."
     }
   ]
 }

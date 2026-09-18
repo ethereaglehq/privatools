@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload images",
-      "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF). Each image can be up to 500 MB."
+      "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 50 images with a combined size of up to 200 MB."
     },
     {
       "name": "Arrange and configure",
-      "text": "Reorder images by dragging thumbnails. Set page size (A4, Letter, or fit-to-image) and orientation."
+      "text": "Reorder images by dragging thumbnails or with the arrow buttons. Choose Auto (the default), which makes each page the size of its image, or A4 or Letter, which fit each image on a portrait page with a half-inch margin."
     },
     {
       "name": "Convert to PDF",
@@ -16,11 +16,11 @@
   "faq": [
     {
       "q": "What image formats are supported?",
-      "a": "JPG, PNG, WebP, BMP, and TIFF. Each image can be up to 500 MB."
+      "a": "JPG, PNG, WebP, BMP, TIFF, GIF, HEIC/HEIF, and SVG, up to 50 images and 200 MB in total per PDF. Animated GIF and WebP files and multi-page TIFFs contribute only their first frame, SVGs are converted to images, and transparent areas are not kept."
     },
     {
       "q": "Can I control the page size?",
-      "a": "Yes. Choose A4, Letter, or fit-to-image (where the page matches the image dimensions exactly). You can also set landscape or portrait orientation."
+      "a": "Yes. Auto (the default) makes each page match its image, one point per pixel. A4 and Letter place each image on a portrait page, scaled to fit inside a half-inch margin. There is no separate orientation setting."
     },
     {
       "q": "Are multiple images combined into one PDF?",

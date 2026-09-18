@@ -2,21 +2,21 @@
   "howto": [
     {
       "name": "Upload WebP images",
-      "text": "Drop one or many .webp files up to 500 MB total."
+      "text": "Drop one or many .webp files, up to 50 images and 200 MB in total."
     },
     {
       "name": "Choose page size",
-      "text": "Letter or A4. Transparency in WebP is rendered against a white page background."
+      "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."
     },
     {
       "name": "Download the PDF",
-      "text": "All images become one PDF in upload order. WebP's smaller size is reflected in a smaller PDF."
+      "text": "All images become one PDF in upload order. The PDF is usually much larger than the WebP files, because the pixels are stored with lossless compression."
     }
   ],
   "faq": [
     {
       "q": "Will the PDF be much smaller than from JPG?",
-      "a": "Slightly smaller — WebP-derived JPEGs inside PDF are similar to direct JPGs. The main benefit was at upload time (smaller WebP files)."
+      "a": "No, usually larger. WebP pixels are decoded and stored with lossless compression, so a lossy WebP photo can grow many times over, while a JPG is placed in the PDF without re-encoding."
     },
     {
       "q": "What about animated WebP?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Does this preserve transparency?",
-      "a": "PDF supports transparency but most readers render text-on-transparency oddly. We default to compositing over white for best compatibility."
+      "a": "No. Only the colour of each pixel is stored, so transparent areas show whatever colour is stored beneath them, which is often black. Flatten the image onto a white background first if you need a white page."
     }
   ]
 }

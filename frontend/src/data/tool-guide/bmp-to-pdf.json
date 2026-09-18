@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose page size",
-      "text": "Letter (8.5 × 11 in) or A4 (210 × 297 mm). Each BMP scales to fit the page while preserving aspect ratio."
+      "text": "Auto (the default) makes each page the size of its image. Letter (8.5 × 11 in) or A4 (210 × 297 mm) scale each BMP to fit the page while preserving aspect ratio."
     },
     {
       "name": "Download the PDF",
@@ -15,16 +15,16 @@
   ],
   "faq": [
     {
-      "q": "Why is the output PDF so much smaller than the BMPs?",
-      "a": "BMP is uncompressed; PDF stores images in DCT (JPEG) or Flate format. A 5 MB BMP usually becomes a few hundred KB inside the PDF."
+      "q": "Will the PDF be smaller than the BMPs?",
+      "a": "Usually, because BMP is uncompressed and the PDF stores the pixels with lossless Flate compression. How much depends on the picture: screenshots and flat graphics shrink dramatically, photos much less, and very noisy images may not shrink at all."
     },
     {
       "q": "Will quality degrade?",
-      "a": "By default the conversion is near-lossless using high-quality JPEG. For 100% lossless, convert via PNG first (PNG-to-PDF) — slightly larger output."
+      "a": "No. The BMP pixels are stored with lossless compression, so the PDF shows exactly the same image; there is no JPEG step."
     },
     {
       "q": "How many BMPs can I convert at once?",
-      "a": "Up to the 500 MB total file limit. Several dozen images is routine."
+      "a": "Up to 50 images, with a combined size of up to 200 MB, in one PDF. Uncompressed BMPs are large, so big photos reach the size limit first."
     }
   ]
 }
