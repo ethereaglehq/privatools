@@ -1,91 +1,14 @@
-// Mirrors backend/app/seo_meta.py. Update a tool date only after a real review.
-export const TOOL_LAST_REVIEWED_DEFAULT = "2026-05-01";
+// The `lastReviewed` field on each tool's registry entry (tools.ts,
+// non-pdf-tools.ts) is the authoritative last-reviewed date — it also
+// drives the sitemap lastmod on the backend. This module used to carry its
+// own mirrored dict, which could and did drift from the registries; now it
+// just looks the date up. Returns undefined for a slug in neither registry
+// (both current callers only render the "Last reviewed" line when defined).
+import { toolBySlug } from "@/data/tools";
+import { nonPdfToolBySlug } from "@/data/non-pdf-tools";
 
-export const TOOL_LAST_REVIEWED: Record<string, string> = {
-  "compress-pdf": "2026-05-15",
-  "merge-pdf": "2026-05-10",
-  "split-pdf": "2026-05-08",
-  "pdf-to-word": "2026-05-12",
-  "pdf-to-excel": "2026-04-28",
-  "pdf-to-jpg": "2026-04-22",
-  "jpg-to-pdf": "2026-04-18",
-  "edit-pdf": "2026-05-05",
-  "sign-pdf": "2026-05-02",
-  "ocr-pdf": "2026-05-14",
-  "protect-pdf": "2026-04-12",
-  "unlock-pdf": "2026-04-10",
-  "rotate-pdf": "2026-03-25",
-  "watermark": "2026-04-05",
-  "redact-pdf": "2026-05-09",
-  "smart-redact": "2026-05-13",
-  "summarize-pdf": "2026-05-16",
-  "chat-with-pdf": "2026-09-01",
-  "transcribe-audio": "2026-09-01",
-  "highlight-pdf": "2026-03-20",
-  "image-compressor": "2026-05-11",
-  "image-converter": "2026-04-15",
-  "heic-to-jpg": "2026-04-02",
-  "remove-background": "2026-05-06",
-  "remove-exif": "2026-03-28",
-  "video-converter": "2026-04-25",
-  "audio-converter": "2026-04-20",
-  "compress-video": "2026-04-08",
-  "video-to-gif": "2026-03-30",
-  "jwt-decoder": "2026-02-15",
-  "regex-tester": "2026-02-22",
-  "password-generator": "2026-02-10",
-  "pdf-to-text": "2026-03-15",
-  "pdf-to-image": "2026-03-12",
-  "word-to-pdf": "2026-03-18",
-  "excel-to-pdf": "2026-03-08",
-  "html-to-pdf": "2026-03-05",
-  "extract-pages": "2026-02-28",
-  "delete-pages": "2026-02-26",
-  "compare-pdfs": "2026-02-20",
-  "batch-compress-pdf": "2026-04-30",
-  "hash-generator": "2026-01-25",
-  "base64": "2026-01-22",
-  "qr-code": "2026-01-18",
-  "qr-reader": "2026-01-15",
-  "uuid-generator": "2026-01-12",
-  "jpg-to-tiff": "2026-06-18",
-  "png-to-tiff": "2026-06-18",
-  "webp-to-tiff": "2026-06-18",
-  "jpg-to-bmp": "2026-06-18",
-  "png-to-bmp": "2026-06-18",
-  "webp-to-bmp": "2026-06-18",
-  "mp3-to-wav": "2026-06-18",
-  "wav-to-mp3": "2026-06-18",
-  "flac-to-mp3": "2026-06-18",
-  "ogg-to-mp3": "2026-06-18",
-  "aac-to-mp3": "2026-06-18",
-  "mp3-to-ogg": "2026-06-18",
-  "mp3-to-flac": "2026-06-18",
-  "mp3-to-aac": "2026-06-18",
-  "wav-to-flac": "2026-06-18",
-  "wav-to-ogg": "2026-06-18",
-  "mkv-to-mp4": "2026-06-18",
-  "mp4-to-mov": "2026-06-18",
-  "mov-to-webm": "2026-06-18",
-  "mkv-to-webm": "2026-06-18",
-  "mp4-to-avi": "2026-06-18",
-  "avi-to-webm": "2026-06-18",
-  "webm-to-mov": "2026-06-18",
-  "mov-to-mkv": "2026-06-18",
-  "webm-to-gif": "2026-06-18",
-  "mov-to-gif": "2026-06-18",
-  "cron-parser": "2026-06-18",
-  "sql-formatter": "2026-06-18",
-  "graphql-formatter": "2026-06-18",
-  "yaml-toml-converter": "2026-06-18",
-  "gitignore-generator": "2026-06-18",
-  "semver-bumper": "2026-06-18",
-  "env-validator": "2026-06-18",
-  "json-to-csv-schema": "2026-06-18",
-};
-
-export function getToolLastReviewed(slug: string) {
-  return TOOL_LAST_REVIEWED[slug] ?? TOOL_LAST_REVIEWED_DEFAULT;
+export function getToolLastReviewed(slug: string): string | undefined {
+  return toolBySlug[slug]?.lastReviewed ?? nonPdfToolBySlug[slug]?.lastReviewed;
 }
 
 export function formatReviewedDate(isoDate: string) {

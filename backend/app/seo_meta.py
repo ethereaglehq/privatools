@@ -479,8 +479,8 @@ _SEO_FIELDS = ("seoTitle", "metaDescription", "lastReviewed")
 
 def _tool_seo_fields(slug: str) -> dict[str, str]:
     """seoTitle and metaDescription search copy, plus lastReviewed, that the
-    registries carry through the build manifest. lastReviewed is unused here
-    today but stays because a follow-up PR reads it from this helper."""
+    registries carry through the build manifest. lastReviewed is carried here
+    for callers that need all three fields."""
     data = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
     row = (data or {}).get(slug) or {}
     return {key: str(row[key]).strip() for key in _SEO_FIELDS if row.get(key) not in (None, "")}
@@ -1151,8 +1151,10 @@ for _slug, (_name, _desc) in _tool_registries()[1].items():
 
 TOOL_LAST_REVIEWED_DEFAULT = "2026-05-01"
 TOOL_LAST_REVIEWED: dict[str, str] = {
-    # Top-30 tools — dates spread across Jan–May 2026 reflect actual review
-    # cadence as we audit copy and behaviour. NOT auto-bumped on every render.
+    # No-manifest fallback only: `_last_reviewed_for` reads the registry's
+    # own `lastReviewed` through the build manifest first. These dates are
+    # NOT the review cadence and are NOT auto-bumped on every render — they
+    # only matter when a slug is missing from the manifest.
     "compress-pdf":     "2026-05-15",
     "merge-pdf":        "2026-05-10",
     "split-pdf":        "2026-05-08",
@@ -1237,10 +1239,14 @@ TOOL_LAST_REVIEWED: dict[str, str] = {
 
 
 def _last_reviewed_for(slug: str) -> str:
-    """Return the hand-curated last-reviewed date for a tool, or the default."""
+    """The registry's `lastReviewed`, read through the build manifest, is the
+    source of truth. TOOL_LAST_REVIEWED is only the fallback for a slug the
+    manifest doesn't cover, or whose lastReviewed can't be parsed as a date."""
     manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
     if manifest is not None and slug in manifest:
-        return _reviewed_date({"reviewedAt": manifest[slug].get("lastReviewed")}) or "2026-09-13"
+        reviewed = _reviewed_date({"reviewedAt": manifest[slug].get("lastReviewed")})
+        if reviewed is not None:
+            return reviewed
     return TOOL_LAST_REVIEWED.get(slug, TOOL_LAST_REVIEWED_DEFAULT)
 
 
@@ -1618,9 +1624,10 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
         # recommended type for installable / web-based file tools per Google's
         # rich-results docs.
         #
-        # `lastReviewed` and `dateModified` are pulled from the per-tool
-        # TOOL_LAST_REVIEWED dict (not date.today()) so freshness signals
-        # are honest and don't get devalued by Google for inflation.
+        # `lastReviewed` and `dateModified` come from the registry's own
+        # `lastReviewed` field through the build manifest (not date.today()),
+        # with TOOL_LAST_REVIEWED as the no-manifest fallback, so freshness
+        # signals are honest and don't get devalued by Google for inflation.
         reviewed = _last_reviewed_for(slug)
         graph: list[dict] = [
             {

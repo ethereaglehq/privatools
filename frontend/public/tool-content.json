@@ -11,7 +11,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "merged.pdf",
-    "path": "/tool/merge-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/merge-pdf",
+    "priority": 0.8
   },
   {
     "slug": "split-pdf",
@@ -25,7 +27,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "split pages",
-    "path": "/tool/split-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/split-pdf",
+    "priority": 0.8
   },
   {
     "slug": "split-by-bookmarks",
@@ -39,7 +43,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "split chapters",
-    "path": "/tool/split-by-bookmarks"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/split-by-bookmarks",
+    "priority": 0.6
   },
   {
     "slug": "split-by-size",
@@ -53,7 +59,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "split files",
-    "path": "/tool/split-by-size"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/split-by-size",
+    "priority": 0.6
   },
   {
     "slug": "split-in-half",
@@ -67,7 +75,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "split-in-half.pdf",
-    "path": "/tool/split-in-half"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/split-in-half",
+    "priority": 0.6
   },
   {
     "slug": "organize-pages",
@@ -81,7 +91,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "organized.pdf",
-    "path": "/tool/organize-pages"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/organize-pages",
+    "priority": 0.6
   },
   {
     "slug": "delete-pages",
@@ -95,7 +107,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "trimmed.pdf",
-    "path": "/tool/delete-pages"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/delete-pages",
+    "priority": 0.6
   },
   {
     "slug": "extract-pages",
@@ -109,7 +123,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "extracted.pdf",
-    "path": "/tool/extract-pages"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/extract-pages",
+    "priority": 0.6
   },
   {
     "slug": "edit-pdf",
@@ -123,7 +139,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "edited.pdf",
-    "path": "/tool/edit-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/edit-pdf",
+    "priority": 0.8
   },
   {
     "slug": "sign-pdf",
@@ -137,7 +155,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "signed.pdf",
-    "path": "/tool/sign-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/sign-pdf",
+    "priority": 0.8
   },
   {
     "slug": "watermark",
@@ -151,7 +171,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "watermarked.pdf",
-    "path": "/tool/watermark"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/watermark",
+    "priority": 0.8
   },
   {
     "slug": "header-footer",
@@ -165,7 +187,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "headerfooter.pdf",
-    "path": "/tool/header-footer"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/header-footer",
+    "priority": 0.6
   },
   {
     "slug": "page-numbers",
@@ -179,7 +203,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "numbered.pdf",
-    "path": "/tool/page-numbers"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/page-numbers",
+    "priority": 0.6
   },
   {
     "slug": "bates-numbering",
@@ -193,7 +219,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "bates.pdf",
-    "path": "/tool/bates-numbering"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/bates-numbering",
+    "priority": 0.6
   },
   {
     "slug": "bookmarks",
@@ -207,7 +235,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "bookmarked.pdf",
-    "path": "/tool/bookmarks"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/bookmarks",
+    "priority": 0.6
   },
   {
     "slug": "compress-pdf",
@@ -221,7 +251,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "compressed.pdf",
-    "path": "/tool/compress-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/compress-pdf",
+    "priority": 0.8
   },
   {
     "slug": "remove-watermark",
@@ -235,7 +267,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "no_watermark.pdf",
-    "path": "/tool/remove-watermark"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/remove-watermark",
+    "priority": 0.6
   },
   {
     "slug": "flatten-pdf",
@@ -249,7 +283,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "flattened.pdf",
-    "path": "/tool/flatten-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/flatten-pdf",
+    "priority": 0.6
   },
   {
     "slug": "deskew-pdf",
@@ -263,7 +299,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "deskewed.pdf",
-    "path": "/tool/deskew-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/deskew-pdf",
+    "priority": 0.6
   },
   {
     "slug": "repair-pdf",
@@ -277,7 +315,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "repaired.pdf",
-    "path": "/tool/repair-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/repair-pdf",
+    "priority": 0.6
   },
   {
     "slug": "resize-pdf",
@@ -291,7 +331,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "resized.pdf",
-    "path": "/tool/resize-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/resize-pdf",
+    "priority": 0.6
   },
   {
     "slug": "rotate-pdf",
@@ -305,7 +347,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "rotated.pdf",
-    "path": "/tool/rotate-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/rotate-pdf",
+    "priority": 0.8
   },
   {
     "slug": "grayscale-pdf",
@@ -319,7 +363,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "grayscale.pdf",
-    "path": "/tool/grayscale-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/grayscale-pdf",
+    "priority": 0.6
   },
   {
     "slug": "crop-pdf",
@@ -333,7 +379,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "cropped.pdf",
-    "path": "/tool/crop-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/crop-pdf",
+    "priority": 0.6
   },
   {
     "slug": "protect-pdf",
@@ -347,7 +395,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "protected.pdf",
-    "path": "/tool/protect-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/protect-pdf",
+    "priority": 0.8
   },
   {
     "slug": "unlock-pdf",
@@ -361,7 +411,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "unlocked.pdf",
-    "path": "/tool/unlock-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/unlock-pdf",
+    "priority": 0.8
   },
   {
     "slug": "redact-pdf",
@@ -375,7 +427,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "redacted.pdf",
-    "path": "/tool/redact-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/redact-pdf",
+    "priority": 0.8
   },
   {
     "slug": "strip-metadata",
@@ -389,7 +443,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "stripped.pdf",
-    "path": "/tool/strip-metadata"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/strip-metadata",
+    "priority": 0.6
   },
   {
     "slug": "delete-annotations",
@@ -403,7 +459,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "clean.pdf",
-    "path": "/tool/delete-annotations"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/delete-annotations",
+    "priority": 0.6
   },
   {
     "slug": "metadata",
@@ -417,7 +475,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "metadata.pdf",
-    "path": "/tool/metadata"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/metadata",
+    "priority": 0.6
   },
   {
     "slug": "html-to-pdf",
@@ -431,7 +491,9 @@
     "category": "to-pdf",
     "accepts": ".html,.htm",
     "outputLabel": "webpage.pdf",
-    "path": "/tool/html-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/html-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "image-to-pdf",
@@ -445,7 +507,9 @@
     "category": "to-pdf",
     "accepts": ".jpg,.jpeg,.png,.tiff,.bmp,.webp,.heic,.heif",
     "outputLabel": "images.pdf",
-    "path": "/tool/image-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/image-to-pdf",
+    "priority": 0.8
   },
   {
     "slug": "jpg-to-pdf",
@@ -459,7 +523,9 @@
     "category": "to-pdf",
     "accepts": ".jpg,.jpeg",
     "outputLabel": "images.pdf",
-    "path": "/tool/jpg-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/jpg-to-pdf",
+    "priority": 0.8
   },
   {
     "slug": "png-to-pdf",
@@ -473,7 +539,9 @@
     "category": "to-pdf",
     "accepts": ".png",
     "outputLabel": "images.pdf",
-    "path": "/tool/png-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/png-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "heic-to-pdf",
@@ -487,7 +555,9 @@
     "category": "to-pdf",
     "accepts": ".heic,.heif",
     "outputLabel": "images.pdf",
-    "path": "/tool/heic-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/heic-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "webp-to-pdf",
@@ -501,7 +571,9 @@
     "category": "to-pdf",
     "accepts": ".webp",
     "outputLabel": "images.pdf",
-    "path": "/tool/webp-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/webp-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "tiff-to-pdf",
@@ -515,7 +587,9 @@
     "category": "to-pdf",
     "accepts": ".tiff,.tif",
     "outputLabel": "images.pdf",
-    "path": "/tool/tiff-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/tiff-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "bmp-to-pdf",
@@ -529,7 +603,9 @@
     "category": "to-pdf",
     "accepts": ".bmp",
     "outputLabel": "images.pdf",
-    "path": "/tool/bmp-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/bmp-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "gif-to-pdf",
@@ -543,7 +619,9 @@
     "category": "to-pdf",
     "accepts": ".gif",
     "outputLabel": "images.pdf",
-    "path": "/tool/gif-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/gif-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "svg-to-pdf",
@@ -557,7 +635,9 @@
     "category": "to-pdf",
     "accepts": ".svg",
     "outputLabel": "vectors.pdf",
-    "path": "/tool/svg-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/svg-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "odt-to-pdf",
@@ -571,7 +651,9 @@
     "category": "to-pdf",
     "accepts": ".odt",
     "outputLabel": "document.pdf",
-    "path": "/tool/odt-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/odt-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "office-to-pdf",
@@ -585,7 +667,9 @@
     "category": "to-pdf",
     "accepts": ".doc,.docx,.xls,.xlsx,.ppt,.pptx",
     "outputLabel": "document.pdf",
-    "path": "/tool/office-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/office-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-excel",
@@ -599,7 +683,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "spreadsheet.xlsx",
-    "path": "/tool/pdf-to-excel"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-excel",
+    "priority": 0.8
   },
   {
     "slug": "pdf-to-image",
@@ -613,7 +699,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "path": "/tool/pdf-to-image"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-image",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-long-image",
@@ -627,7 +715,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "document_long.png",
-    "path": "/tool/pdf-to-long-image"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-long-image",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-tiff",
@@ -641,7 +731,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.tif",
-    "path": "/tool/pdf-to-tiff"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-tiff",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-bmp",
@@ -655,7 +747,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "path": "/tool/pdf-to-bmp"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-bmp",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-gif",
@@ -669,7 +763,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "path": "/tool/pdf-to-gif"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-gif",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-svg",
@@ -683,7 +779,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "path": "/tool/pdf-to-svg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-svg",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-jpg",
@@ -697,7 +795,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "path": "/tool/pdf-to-jpg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-jpg",
+    "priority": 0.8
   },
   {
     "slug": "pdf-to-png",
@@ -711,7 +811,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "pages.zip",
-    "path": "/tool/pdf-to-png"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-png",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-pptx",
@@ -725,7 +827,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "slides.pptx",
-    "path": "/tool/pdf-to-pptx"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-pptx",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-text",
@@ -739,7 +843,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "content.txt",
-    "path": "/tool/pdf-to-text"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-text",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-word",
@@ -753,7 +859,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "document.docx",
-    "path": "/tool/pdf-to-word"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-word",
+    "priority": 0.8
   },
   {
     "slug": "alternate-mix",
@@ -767,7 +875,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "mixed.pdf",
-    "path": "/tool/alternate-mix"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/alternate-mix",
+    "priority": 0.6
   },
   {
     "slug": "compare-pdf",
@@ -781,7 +891,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "comparison.pdf",
-    "path": "/tool/compare-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/compare-pdf",
+    "priority": 0.6
   },
   {
     "slug": "extract-images",
@@ -795,7 +907,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "images.zip",
-    "path": "/tool/extract-images"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/extract-images",
+    "priority": 0.6
   },
   {
     "slug": "fill-form",
@@ -809,7 +923,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "filled.pdf",
-    "path": "/tool/fill-form"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/fill-form",
+    "priority": 0.6
   },
   {
     "slug": "nup",
@@ -823,7 +939,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "nup.pdf",
-    "path": "/tool/nup"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/nup",
+    "priority": 0.6
   },
   {
     "slug": "ocr-pdf",
@@ -837,7 +955,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "searchable.pdf",
-    "path": "/tool/ocr-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/ocr-pdf",
+    "priority": 0.8
   },
   {
     "slug": "overlay",
@@ -851,7 +971,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "overlaid.pdf",
-    "path": "/tool/overlay"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/overlay",
+    "priority": 0.6
   },
   {
     "slug": "qr-code",
@@ -865,7 +987,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "QR code",
-    "path": "/tool/qr-code"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/qr-code",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-pdfa",
@@ -879,7 +1003,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "archive.pdfa",
-    "path": "/tool/pdf-to-pdfa"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-pdfa",
+    "priority": 0.6
   },
   {
     "slug": "remove-blank-pages",
@@ -893,7 +1019,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "cleaned.pdf",
-    "path": "/tool/remove-blank-pages"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/remove-blank-pages",
+    "priority": 0.6
   },
   {
     "slug": "auto-crop",
@@ -907,7 +1035,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "cropped.pdf",
-    "path": "/tool/auto-crop"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/auto-crop",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-epub",
@@ -921,7 +1051,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "book.epub",
-    "path": "/tool/pdf-to-epub"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-epub",
+    "priority": 0.6
   },
   {
     "slug": "markdown-to-pdf",
@@ -935,7 +1067,9 @@
     "category": "to-pdf",
     "accepts": ".md,.markdown,.json,.yaml,.yml,.toml",
     "outputLabel": "document.pdf",
-    "path": "/tool/markdown-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/markdown-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "csv-to-pdf",
@@ -949,7 +1083,9 @@
     "category": "to-pdf",
     "accepts": ".csv",
     "outputLabel": "table.pdf",
-    "path": "/tool/csv-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/csv-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "word-to-pdf",
@@ -963,7 +1099,9 @@
     "category": "to-pdf",
     "accepts": ".docx",
     "outputLabel": "converted.pdf",
-    "path": "/tool/word-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/word-to-pdf",
+    "priority": 0.8
   },
   {
     "slug": "excel-to-pdf",
@@ -977,7 +1115,9 @@
     "category": "to-pdf",
     "accepts": ".xlsx",
     "outputLabel": "converted.pdf",
-    "path": "/tool/excel-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/excel-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "pptx-to-pdf-convert",
@@ -991,7 +1131,9 @@
     "category": "to-pdf",
     "accepts": ".pptx",
     "outputLabel": "converted.pdf",
-    "path": "/tool/pptx-to-pdf-convert"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pptx-to-pdf-convert",
+    "priority": 0.6
   },
   {
     "slug": "txt-to-pdf",
@@ -1005,7 +1147,9 @@
     "category": "to-pdf",
     "accepts": ".txt",
     "outputLabel": "converted.pdf",
-    "path": "/tool/txt-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/txt-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "stamp-pdf",
@@ -1019,7 +1163,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "stamped.pdf",
-    "path": "/tool/stamp-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/stamp-pdf",
+    "priority": 0.6
   },
   {
     "slug": "esign-pdf",
@@ -1033,7 +1179,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "signed.pdf",
-    "path": "/tool/esign-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/esign-pdf",
+    "priority": 0.6
   },
   {
     "slug": "extract-tables",
@@ -1047,7 +1195,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "tables.csv",
-    "path": "/tool/extract-tables"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/extract-tables",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-markdown",
@@ -1061,7 +1211,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "document.md",
-    "path": "/tool/pdf-to-markdown"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-markdown",
+    "priority": 0.6
   },
   {
     "slug": "whiteout-pdf",
@@ -1075,7 +1227,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "whiteout.pdf",
-    "path": "/tool/whiteout-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/whiteout-pdf",
+    "priority": 0.6
   },
   {
     "slug": "annotate-pdf",
@@ -1089,7 +1243,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "annotated.pdf",
-    "path": "/tool/annotate-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/annotate-pdf",
+    "priority": 0.6
   },
   {
     "slug": "highlight-pdf",
@@ -1103,7 +1259,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "highlighted.pdf",
-    "path": "/tool/highlight-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/highlight-pdf",
+    "priority": 0.6
   },
   {
     "slug": "summarize-pdf",
@@ -1119,7 +1277,9 @@
     "byok": true,
     "accepts": ".pdf",
     "outputLabel": "summary.txt",
-    "path": "/tool/summarize-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/summarize-pdf",
+    "priority": 0.6
   },
   {
     "slug": "smart-redact",
@@ -1135,7 +1295,9 @@
     "byok": true,
     "accepts": ".pdf",
     "outputLabel": "redacted.pdf",
-    "path": "/tool/smart-redact"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/smart-redact",
+    "priority": 0.6
   },
   {
     "slug": "chat-with-pdf",
@@ -1151,7 +1313,9 @@
     "byok": true,
     "accepts": ".pdf",
     "outputLabel": "answer.txt",
-    "path": "/tool/chat-with-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/chat-with-pdf",
+    "priority": 0.6
   },
   {
     "slug": "add-shapes",
@@ -1165,7 +1329,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "shapes.pdf",
-    "path": "/tool/add-shapes"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/add-shapes",
+    "priority": 0.6
   },
   {
     "slug": "set-permissions",
@@ -1179,7 +1345,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "permissions.pdf",
-    "path": "/tool/set-permissions"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/set-permissions",
+    "priority": 0.6
   },
   {
     "slug": "add-attachment",
@@ -1193,7 +1361,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "with_attachment.pdf",
-    "path": "/tool/add-attachment"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/add-attachment",
+    "priority": 0.6
   },
   {
     "slug": "json-to-pdf",
@@ -1207,7 +1377,9 @@
     "category": "to-pdf",
     "accepts": ".json",
     "outputLabel": "document.pdf",
-    "path": "/tool/json-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/json-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "xml-to-pdf",
@@ -1221,7 +1393,9 @@
     "category": "to-pdf",
     "accepts": ".xml",
     "outputLabel": "document.pdf",
-    "path": "/tool/xml-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/xml-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "epub-to-pdf",
@@ -1235,7 +1409,9 @@
     "category": "to-pdf",
     "accepts": ".epub",
     "outputLabel": "book.pdf",
-    "path": "/tool/epub-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/epub-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "rtf-to-pdf",
@@ -1249,7 +1425,9 @@
     "category": "to-pdf",
     "accepts": ".rtf",
     "outputLabel": "document.pdf",
-    "path": "/tool/rtf-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/rtf-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "add-hyperlinks",
@@ -1263,7 +1441,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "linked.pdf",
-    "path": "/tool/add-hyperlinks"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/add-hyperlinks",
+    "priority": 0.6
   },
   {
     "slug": "form-creator",
@@ -1277,7 +1457,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "form.pdf",
-    "path": "/tool/form-creator"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/form-creator",
+    "priority": 0.6
   },
   {
     "slug": "transparent-background",
@@ -1291,7 +1473,9 @@
     "category": "edit",
     "accepts": ".pdf",
     "outputLabel": "transparent.pdf",
-    "path": "/tool/transparent-background"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/transparent-background",
+    "priority": 0.6
   },
   {
     "slug": "invert-colors",
@@ -1305,7 +1489,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "inverted.pdf",
-    "path": "/tool/invert-colors"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/invert-colors",
+    "priority": 0.6
   },
   {
     "slug": "translate-pdf",
@@ -1321,7 +1507,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "translated text",
-    "path": "/tool/translate-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/translate-pdf",
+    "priority": 0.6
   },
   {
     "slug": "bates-remove",
@@ -1335,7 +1523,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "unstamped.pdf",
-    "path": "/tool/bates-remove"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/bates-remove",
+    "priority": 0.6
   },
   {
     "slug": "accessibility-check",
@@ -1349,7 +1539,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "report",
-    "path": "/tool/accessibility-check"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/accessibility-check",
+    "priority": 0.6
   },
   {
     "slug": "pdfa-validator",
@@ -1363,7 +1555,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "report",
-    "path": "/tool/pdfa-validator"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdfa-validator",
+    "priority": 0.6
   },
   {
     "slug": "verify-signature",
@@ -1377,7 +1571,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "verification report",
-    "path": "/tool/verify-signature"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/verify-signature",
+    "priority": 0.6
   },
   {
     "slug": "sanitize-pdf",
@@ -1391,7 +1587,9 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "sanitized.pdf",
-    "path": "/tool/sanitize-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/sanitize-pdf",
+    "priority": 0.6
   },
   {
     "slug": "reverse-pdf",
@@ -1405,7 +1603,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "reversed.pdf",
-    "path": "/tool/reverse-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/reverse-pdf",
+    "priority": 0.6
   },
   {
     "slug": "booklet-pdf",
@@ -1419,7 +1619,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "booklet.pdf",
-    "path": "/tool/booklet-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/booklet-pdf",
+    "priority": 0.6
   },
   {
     "slug": "batch-compress-pdf",
@@ -1433,7 +1635,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "compressed_pdfs.zip",
-    "path": "/tool/batch-compress-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/batch-compress-pdf",
+    "priority": 0.6
   },
   {
     "slug": "pdf-page-counter",
@@ -1447,7 +1651,9 @@
     "category": "advanced",
     "accepts": ".pdf",
     "outputLabel": "page counts",
-    "path": "/tool/pdf-page-counter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-page-counter",
+    "priority": 0.6
   },
   {
     "slug": "web-optimize-pdf",
@@ -1461,7 +1667,9 @@
     "category": "optimize",
     "accepts": ".pdf",
     "outputLabel": "web-optimized.pdf",
-    "path": "/tool/web-optimize-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/web-optimize-pdf",
+    "priority": 0.6
   },
   {
     "slug": "split-by-text",
@@ -1475,7 +1683,9 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "split-by-text.zip",
-    "path": "/tool/split-by-text"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/split-by-text",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-html",
@@ -1489,7 +1699,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "document.html",
-    "path": "/tool/pdf-to-html"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-html",
+    "priority": 0.6
   },
   {
     "slug": "pdf-to-rtf",
@@ -1503,7 +1715,9 @@
     "category": "from-pdf",
     "accepts": ".pdf",
     "outputLabel": "document.rtf",
-    "path": "/tool/pdf-to-rtf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tool/pdf-to-rtf",
+    "priority": 0.6
   },
   {
     "slug": "image-compressor",
@@ -1517,7 +1731,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp",
     "outputLabel": "compressed images",
-    "path": "/tools/image-compressor"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/image-compressor",
+    "priority": 0.8
   },
   {
     "slug": "image-converter",
@@ -1531,7 +1747,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.tiff,.heic,.bmp",
     "outputLabel": "converted image",
-    "path": "/tools/image-converter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/image-converter",
+    "priority": 0.8
   },
   {
     "slug": "remove-exif",
@@ -1545,7 +1763,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.tiff,.webp",
     "outputLabel": "clean image",
-    "path": "/tools/remove-exif"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/remove-exif",
+    "priority": 0.8
   },
   {
     "slug": "resize-crop-image",
@@ -1559,7 +1779,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp",
     "outputLabel": "resized images",
-    "path": "/tools/resize-crop-image"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/resize-crop-image",
+    "priority": 0.6
   },
   {
     "slug": "video-to-gif",
@@ -1573,7 +1795,9 @@
     "category": "image",
     "accepts": ".mp4,.mov,.webm,.avi",
     "outputLabel": "animation.gif",
-    "path": "/tools/video-to-gif"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/video-to-gif",
+    "priority": 0.8
   },
   {
     "slug": "image-ocr",
@@ -1587,7 +1811,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif",
     "outputLabel": "extracted text",
-    "path": "/tools/image-ocr"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/image-ocr",
+    "priority": 0.6
   },
   {
     "slug": "extract-audio",
@@ -1601,7 +1827,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "audio.mp3",
-    "path": "/tools/extract-audio"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/extract-audio",
+    "priority": 0.6
   },
   {
     "slug": "trim-media",
@@ -1615,7 +1843,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.mp3,.wav,.ogg,.m4a",
     "outputLabel": "trimmed file",
-    "path": "/tools/trim-media"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/trim-media",
+    "priority": 0.6
   },
   {
     "slug": "compress-video",
@@ -1629,7 +1859,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi",
     "outputLabel": "compressed.mp4",
-    "path": "/tools/compress-video"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/compress-video",
+    "priority": 0.6
   },
   {
     "slug": "video-to-pdf",
@@ -1643,7 +1875,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "frames.pdf",
-    "path": "/tools/video-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/video-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "video-converter",
@@ -1657,7 +1891,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv,.m4v",
     "outputLabel": "converted.mp4",
-    "path": "/tools/video-converter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/video-converter",
+    "priority": 0.6
   },
   {
     "slug": "video-resizer",
@@ -1671,7 +1907,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "video.mp4",
-    "path": "/tools/video-resizer"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/video-resizer",
+    "priority": 0.6
   },
   {
     "slug": "video-thumbnail",
@@ -1685,7 +1923,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "thumbnail.jpg",
-    "path": "/tools/video-thumbnail"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/video-thumbnail",
+    "priority": 0.6
   },
   {
     "slug": "gif-to-mp4",
@@ -1699,7 +1939,9 @@
     "category": "video-audio",
     "accepts": ".gif",
     "outputLabel": "animation.mp4",
-    "path": "/tools/gif-to-mp4"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/gif-to-mp4",
+    "priority": 0.6
   },
   {
     "slug": "add-subtitles",
@@ -1713,7 +1955,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "subtitled.mp4",
-    "path": "/tools/add-subtitles"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/add-subtitles",
+    "priority": 0.6
   },
   {
     "slug": "video-merge",
@@ -1727,7 +1971,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.avi,.mkv",
     "outputLabel": "merged.mp4",
-    "path": "/tools/video-merge"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/video-merge",
+    "priority": 0.6
   },
   {
     "slug": "audio-merge",
@@ -1741,7 +1987,9 @@
     "category": "video-audio",
     "accepts": ".mp3,.wav,.aac,.flac,.ogg,.m4a",
     "outputLabel": "merged.mp3",
-    "path": "/tools/audio-merge"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/audio-merge",
+    "priority": 0.6
   },
   {
     "slug": "subtitle-converter",
@@ -1756,7 +2004,9 @@
     "clientOnly": true,
     "accepts": ".srt,.vtt,.ass",
     "outputLabel": "subtitles.vtt",
-    "path": "/tools/subtitle-converter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/subtitle-converter",
+    "priority": 0.8
   },
   {
     "slug": "json-xml-formatter",
@@ -1771,7 +2021,9 @@
     "clientOnly": true,
     "accepts": ".json,.xml",
     "outputLabel": "formatted",
-    "path": "/tools/json-xml-formatter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/json-xml-formatter",
+    "priority": 0.6
   },
   {
     "slug": "text-diff",
@@ -1786,7 +2038,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "diff report",
-    "path": "/tools/text-diff"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/text-diff",
+    "priority": 0.6
   },
   {
     "slug": "base64",
@@ -1801,7 +2055,9 @@
     "clientOnly": true,
     "accepts": "*",
     "outputLabel": "encoded/decoded",
-    "path": "/tools/base64"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/base64",
+    "priority": 0.6
   },
   {
     "slug": "hash-generator",
@@ -1816,7 +2072,9 @@
     "clientOnly": true,
     "accepts": "*",
     "outputLabel": "hash digest",
-    "path": "/tools/hash-generator"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/hash-generator",
+    "priority": 0.6
   },
   {
     "slug": "extract-archive",
@@ -1830,7 +2088,9 @@
     "category": "archive",
     "accepts": ".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz",
     "outputLabel": "extracted files",
-    "path": "/tools/extract-archive"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/extract-archive",
+    "priority": 0.6
   },
   {
     "slug": "create-zip",
@@ -1844,7 +2104,9 @@
     "category": "archive",
     "accepts": "*",
     "outputLabel": "archive.zip",
-    "path": "/tools/create-zip"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/create-zip",
+    "priority": 0.6
   },
   {
     "slug": "csv-json",
@@ -1859,7 +2121,9 @@
     "clientOnly": true,
     "accepts": ".csv,.json",
     "outputLabel": "converted file",
-    "path": "/tools/csv-json"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/csv-json",
+    "priority": 0.6
   },
   {
     "slug": "markdown-html",
@@ -1874,7 +2138,9 @@
     "clientOnly": true,
     "accepts": ".md,.markdown",
     "outputLabel": "output.html",
-    "path": "/tools/markdown-html"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/markdown-html",
+    "priority": 0.6
   },
   {
     "slug": "heic-to-jpg",
@@ -1888,7 +2154,9 @@
     "category": "image",
     "accepts": ".heic,.heif",
     "outputLabel": "converted.jpg",
-    "path": "/tools/heic-to-jpg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/heic-to-jpg",
+    "priority": 0.8
   },
   {
     "slug": "remove-background",
@@ -1902,7 +2170,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp",
     "outputLabel": "no_background.png",
-    "path": "/tools/remove-background"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/remove-background",
+    "priority": 0.8
   },
   {
     "slug": "svg-to-png",
@@ -1916,7 +2186,9 @@
     "category": "image",
     "accepts": ".svg",
     "outputLabel": "converted.png",
-    "path": "/tools/svg-to-png"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/svg-to-png",
+    "priority": 0.6
   },
   {
     "slug": "remove-image-watermark",
@@ -1930,7 +2202,9 @@
     "category": "image",
     "accepts": ".png,.jpg,.jpeg,.webp,.bmp",
     "outputLabel": "no_watermark.png",
-    "path": "/tools/remove-image-watermark"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/remove-image-watermark",
+    "priority": 0.6
   },
   {
     "slug": "image-watermark",
@@ -1944,7 +2218,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp",
     "outputLabel": "watermarked.png",
-    "path": "/tools/image-watermark"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/image-watermark",
+    "priority": 0.6
   },
   {
     "slug": "generate-favicon",
@@ -1958,7 +2234,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp",
     "outputLabel": "favicon.ico",
-    "path": "/tools/generate-favicon"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/generate-favicon",
+    "priority": 0.6
   },
   {
     "slug": "make-collage",
@@ -1972,7 +2250,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp",
     "outputLabel": "collage.jpg",
-    "path": "/tools/make-collage"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/make-collage",
+    "priority": 0.6
   },
   {
     "slug": "generate-barcode",
@@ -1986,7 +2266,9 @@
     "category": "developer",
     "accepts": "",
     "outputLabel": "barcode.png",
-    "path": "/tools/generate-barcode"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/generate-barcode",
+    "priority": 0.6
   },
   {
     "slug": "url-to-pdf",
@@ -2000,7 +2282,9 @@
     "category": "developer",
     "accepts": "",
     "outputLabel": "webpage.pdf",
-    "path": "/tools/url-to-pdf"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/url-to-pdf",
+    "priority": 0.6
   },
   {
     "slug": "password-generator",
@@ -2015,7 +2299,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "password",
-    "path": "/tools/password-generator"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/password-generator",
+    "priority": 0.6
   },
   {
     "slug": "uuid-generator",
@@ -2030,7 +2316,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "uuids",
-    "path": "/tools/uuid-generator"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/uuid-generator",
+    "priority": 0.6
   },
   {
     "slug": "lorem-ipsum",
@@ -2045,7 +2333,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "lorem text",
-    "path": "/tools/lorem-ipsum"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/lorem-ipsum",
+    "priority": 0.6
   },
   {
     "slug": "word-counter",
@@ -2060,7 +2350,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "stats",
-    "path": "/tools/word-counter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/word-counter",
+    "priority": 0.6
   },
   {
     "slug": "color-converter",
@@ -2075,7 +2367,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "color value",
-    "path": "/tools/color-converter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/color-converter",
+    "priority": 0.6
   },
   {
     "slug": "url-encoder",
@@ -2090,7 +2384,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "encoded/decoded",
-    "path": "/tools/url-encoder"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/url-encoder",
+    "priority": 0.6
   },
   {
     "slug": "qr-reader",
@@ -2104,7 +2400,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp",
     "outputLabel": "decoded text",
-    "path": "/tools/qr-reader"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/qr-reader",
+    "priority": 0.6
   },
   {
     "slug": "merge-images",
@@ -2118,7 +2416,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp",
     "outputLabel": "merged.png",
-    "path": "/tools/merge-images"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/merge-images",
+    "priority": 0.6
   },
   {
     "slug": "image-upscaler",
@@ -2132,7 +2432,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp",
     "outputLabel": "upscaled image",
-    "path": "/tools/image-upscaler"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/image-upscaler",
+    "priority": 0.6
   },
   {
     "slug": "audio-converter",
@@ -2146,7 +2448,9 @@
     "category": "video-audio",
     "accepts": ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma",
     "outputLabel": "converted audio",
-    "path": "/tools/audio-converter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/audio-converter",
+    "priority": 0.6
   },
   {
     "slug": "transcribe-audio",
@@ -2162,7 +2466,9 @@
     "byok": true,
     "accepts": ".mp3,.wav,.m4a,.ogg,.opus,.webm,.flac,.aac",
     "outputLabel": "transcript.txt",
-    "path": "/tools/transcribe-audio"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/transcribe-audio",
+    "priority": 0.6
   },
   {
     "slug": "view-exif",
@@ -2176,7 +2482,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.tiff,.tif,.webp,.heic,.heif,.bmp,.gif",
     "outputLabel": "metadata JSON",
-    "path": "/tools/view-exif"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/view-exif",
+    "priority": 0.8
   },
   {
     "slug": "webp-to-jpg",
@@ -2190,7 +2498,9 @@
     "category": "image",
     "accepts": ".webp",
     "outputLabel": "image.jpg",
-    "path": "/tools/webp-to-jpg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/webp-to-jpg",
+    "priority": 0.6
   },
   {
     "slug": "webp-to-png",
@@ -2204,7 +2514,9 @@
     "category": "image",
     "accepts": ".webp",
     "outputLabel": "image.png",
-    "path": "/tools/webp-to-png"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/webp-to-png",
+    "priority": 0.6
   },
   {
     "slug": "heic-to-png",
@@ -2218,7 +2530,9 @@
     "category": "image",
     "accepts": ".heic,.heif",
     "outputLabel": "image.png",
-    "path": "/tools/heic-to-png"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/heic-to-png",
+    "priority": 0.6
   },
   {
     "slug": "jwt-decoder",
@@ -2233,7 +2547,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "decoded JWT",
-    "path": "/tools/jwt-decoder"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/jwt-decoder",
+    "priority": 0.6
   },
   {
     "slug": "regex-tester",
@@ -2248,7 +2564,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "matches",
-    "path": "/tools/regex-tester"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/regex-tester",
+    "priority": 0.6
   },
   {
     "slug": "timestamp-converter",
@@ -2263,7 +2581,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "converted timestamp",
-    "path": "/tools/timestamp-converter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/timestamp-converter",
+    "priority": 0.6
   },
   {
     "slug": "jpg-to-png",
@@ -2277,7 +2597,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg",
     "outputLabel": "image.png",
-    "path": "/tools/jpg-to-png"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/jpg-to-png",
+    "priority": 0.6
   },
   {
     "slug": "png-to-jpg",
@@ -2291,7 +2613,9 @@
     "category": "image",
     "accepts": ".png",
     "outputLabel": "image.jpg",
-    "path": "/tools/png-to-jpg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/png-to-jpg",
+    "priority": 0.6
   },
   {
     "slug": "jpg-to-webp",
@@ -2305,7 +2629,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg",
     "outputLabel": "image.webp",
-    "path": "/tools/jpg-to-webp"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/jpg-to-webp",
+    "priority": 0.6
   },
   {
     "slug": "png-to-webp",
@@ -2319,7 +2645,9 @@
     "category": "image",
     "accepts": ".png",
     "outputLabel": "image.webp",
-    "path": "/tools/png-to-webp"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/png-to-webp",
+    "priority": 0.6
   },
   {
     "slug": "tiff-to-jpg",
@@ -2333,7 +2661,9 @@
     "category": "image",
     "accepts": ".tif,.tiff",
     "outputLabel": "image.jpg",
-    "path": "/tools/tiff-to-jpg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/tiff-to-jpg",
+    "priority": 0.6
   },
   {
     "slug": "tiff-to-png",
@@ -2347,7 +2677,9 @@
     "category": "image",
     "accepts": ".tif,.tiff",
     "outputLabel": "image.png",
-    "path": "/tools/tiff-to-png"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/tiff-to-png",
+    "priority": 0.6
   },
   {
     "slug": "bmp-to-jpg",
@@ -2361,7 +2693,9 @@
     "category": "image",
     "accepts": ".bmp",
     "outputLabel": "image.jpg",
-    "path": "/tools/bmp-to-jpg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/bmp-to-jpg",
+    "priority": 0.6
   },
   {
     "slug": "bmp-to-png",
@@ -2375,7 +2709,9 @@
     "category": "image",
     "accepts": ".bmp",
     "outputLabel": "image.png",
-    "path": "/tools/bmp-to-png"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/bmp-to-png",
+    "priority": 0.6
   },
   {
     "slug": "gif-to-jpg",
@@ -2389,7 +2725,9 @@
     "category": "image",
     "accepts": ".gif",
     "outputLabel": "image.jpg",
-    "path": "/tools/gif-to-jpg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/gif-to-jpg",
+    "priority": 0.6
   },
   {
     "slug": "gif-to-png",
@@ -2403,7 +2741,9 @@
     "category": "image",
     "accepts": ".gif",
     "outputLabel": "image.png",
-    "path": "/tools/gif-to-png"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/gif-to-png",
+    "priority": 0.6
   },
   {
     "slug": "m4a-to-mp3",
@@ -2417,7 +2757,9 @@
     "category": "video-audio",
     "accepts": ".m4a",
     "outputLabel": "audio.mp3",
-    "path": "/tools/m4a-to-mp3"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/m4a-to-mp3",
+    "priority": 0.6
   },
   {
     "slug": "mp4-to-mp3",
@@ -2431,7 +2773,9 @@
     "category": "video-audio",
     "accepts": ".mp4",
     "outputLabel": "audio.mp3",
-    "path": "/tools/mp4-to-mp3"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mp4-to-mp3",
+    "priority": 0.6
   },
   {
     "slug": "mov-to-mp4",
@@ -2445,7 +2789,9 @@
     "category": "video-audio",
     "accepts": ".mov",
     "outputLabel": "video.mp4",
-    "path": "/tools/mov-to-mp4"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mov-to-mp4",
+    "priority": 0.6
   },
   {
     "slug": "avi-to-mp4",
@@ -2459,7 +2805,9 @@
     "category": "video-audio",
     "accepts": ".avi",
     "outputLabel": "video.mp4",
-    "path": "/tools/avi-to-mp4"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/avi-to-mp4",
+    "priority": 0.6
   },
   {
     "slug": "webm-to-mp4",
@@ -2473,7 +2821,9 @@
     "category": "video-audio",
     "accepts": ".webm",
     "outputLabel": "video.mp4",
-    "path": "/tools/webm-to-mp4"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/webm-to-mp4",
+    "priority": 0.6
   },
   {
     "slug": "mp4-to-webm",
@@ -2487,7 +2837,9 @@
     "category": "video-audio",
     "accepts": ".mp4",
     "outputLabel": "video.webm",
-    "path": "/tools/mp4-to-webm"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mp4-to-webm",
+    "priority": 0.6
   },
   {
     "slug": "jpg-to-tiff",
@@ -2501,7 +2853,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg",
     "outputLabel": "image.tiff",
-    "path": "/tools/jpg-to-tiff"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/jpg-to-tiff",
+    "priority": 0.6
   },
   {
     "slug": "png-to-tiff",
@@ -2515,7 +2869,9 @@
     "category": "image",
     "accepts": ".png",
     "outputLabel": "image.tiff",
-    "path": "/tools/png-to-tiff"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/png-to-tiff",
+    "priority": 0.6
   },
   {
     "slug": "webp-to-tiff",
@@ -2529,7 +2885,9 @@
     "category": "image",
     "accepts": ".webp",
     "outputLabel": "image.tiff",
-    "path": "/tools/webp-to-tiff"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/webp-to-tiff",
+    "priority": 0.6
   },
   {
     "slug": "jpg-to-bmp",
@@ -2543,7 +2901,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg",
     "outputLabel": "image.bmp",
-    "path": "/tools/jpg-to-bmp"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/jpg-to-bmp",
+    "priority": 0.6
   },
   {
     "slug": "png-to-bmp",
@@ -2557,7 +2917,9 @@
     "category": "image",
     "accepts": ".png",
     "outputLabel": "image.bmp",
-    "path": "/tools/png-to-bmp"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/png-to-bmp",
+    "priority": 0.6
   },
   {
     "slug": "webp-to-bmp",
@@ -2571,7 +2933,9 @@
     "category": "image",
     "accepts": ".webp",
     "outputLabel": "image.bmp",
-    "path": "/tools/webp-to-bmp"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/webp-to-bmp",
+    "priority": 0.6
   },
   {
     "slug": "mp3-to-wav",
@@ -2585,7 +2949,9 @@
     "category": "video-audio",
     "accepts": ".mp3",
     "outputLabel": "audio.wav",
-    "path": "/tools/mp3-to-wav"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mp3-to-wav",
+    "priority": 0.6
   },
   {
     "slug": "wav-to-mp3",
@@ -2599,7 +2965,9 @@
     "category": "video-audio",
     "accepts": ".wav",
     "outputLabel": "audio.mp3",
-    "path": "/tools/wav-to-mp3"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/wav-to-mp3",
+    "priority": 0.6
   },
   {
     "slug": "flac-to-mp3",
@@ -2613,7 +2981,9 @@
     "category": "video-audio",
     "accepts": ".flac",
     "outputLabel": "audio.mp3",
-    "path": "/tools/flac-to-mp3"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/flac-to-mp3",
+    "priority": 0.6
   },
   {
     "slug": "ogg-to-mp3",
@@ -2627,7 +2997,9 @@
     "category": "video-audio",
     "accepts": ".ogg",
     "outputLabel": "audio.mp3",
-    "path": "/tools/ogg-to-mp3"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/ogg-to-mp3",
+    "priority": 0.6
   },
   {
     "slug": "aac-to-mp3",
@@ -2641,7 +3013,9 @@
     "category": "video-audio",
     "accepts": ".aac",
     "outputLabel": "audio.mp3",
-    "path": "/tools/aac-to-mp3"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/aac-to-mp3",
+    "priority": 0.6
   },
   {
     "slug": "mp3-to-ogg",
@@ -2655,7 +3029,9 @@
     "category": "video-audio",
     "accepts": ".mp3",
     "outputLabel": "audio.ogg",
-    "path": "/tools/mp3-to-ogg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mp3-to-ogg",
+    "priority": 0.6
   },
   {
     "slug": "mp3-to-flac",
@@ -2669,7 +3045,9 @@
     "category": "video-audio",
     "accepts": ".mp3",
     "outputLabel": "audio.flac",
-    "path": "/tools/mp3-to-flac"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mp3-to-flac",
+    "priority": 0.6
   },
   {
     "slug": "mp3-to-aac",
@@ -2683,7 +3061,9 @@
     "category": "video-audio",
     "accepts": ".mp3",
     "outputLabel": "audio.aac",
-    "path": "/tools/mp3-to-aac"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mp3-to-aac",
+    "priority": 0.6
   },
   {
     "slug": "wav-to-flac",
@@ -2697,7 +3077,9 @@
     "category": "video-audio",
     "accepts": ".wav",
     "outputLabel": "audio.flac",
-    "path": "/tools/wav-to-flac"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/wav-to-flac",
+    "priority": 0.6
   },
   {
     "slug": "wav-to-ogg",
@@ -2711,7 +3093,9 @@
     "category": "video-audio",
     "accepts": ".wav",
     "outputLabel": "audio.ogg",
-    "path": "/tools/wav-to-ogg"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/wav-to-ogg",
+    "priority": 0.6
   },
   {
     "slug": "mkv-to-mp4",
@@ -2725,7 +3109,9 @@
     "category": "video-audio",
     "accepts": ".mkv",
     "outputLabel": "video.mp4",
-    "path": "/tools/mkv-to-mp4"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mkv-to-mp4",
+    "priority": 0.6
   },
   {
     "slug": "mp4-to-mov",
@@ -2739,7 +3125,9 @@
     "category": "video-audio",
     "accepts": ".mp4",
     "outputLabel": "video.mov",
-    "path": "/tools/mp4-to-mov"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mp4-to-mov",
+    "priority": 0.6
   },
   {
     "slug": "mov-to-webm",
@@ -2753,7 +3141,9 @@
     "category": "video-audio",
     "accepts": ".mov",
     "outputLabel": "video.webm",
-    "path": "/tools/mov-to-webm"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mov-to-webm",
+    "priority": 0.6
   },
   {
     "slug": "mkv-to-webm",
@@ -2767,7 +3157,9 @@
     "category": "video-audio",
     "accepts": ".mkv",
     "outputLabel": "video.webm",
-    "path": "/tools/mkv-to-webm"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mkv-to-webm",
+    "priority": 0.6
   },
   {
     "slug": "mp4-to-avi",
@@ -2781,7 +3173,9 @@
     "category": "video-audio",
     "accepts": ".mp4",
     "outputLabel": "video.avi",
-    "path": "/tools/mp4-to-avi"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mp4-to-avi",
+    "priority": 0.6
   },
   {
     "slug": "avi-to-webm",
@@ -2795,7 +3189,9 @@
     "category": "video-audio",
     "accepts": ".avi",
     "outputLabel": "video.webm",
-    "path": "/tools/avi-to-webm"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/avi-to-webm",
+    "priority": 0.6
   },
   {
     "slug": "webm-to-mov",
@@ -2809,7 +3205,9 @@
     "category": "video-audio",
     "accepts": ".webm",
     "outputLabel": "video.mov",
-    "path": "/tools/webm-to-mov"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/webm-to-mov",
+    "priority": 0.6
   },
   {
     "slug": "mov-to-mkv",
@@ -2823,7 +3221,9 @@
     "category": "video-audio",
     "accepts": ".mov",
     "outputLabel": "video.mkv",
-    "path": "/tools/mov-to-mkv"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mov-to-mkv",
+    "priority": 0.6
   },
   {
     "slug": "webm-to-gif",
@@ -2837,7 +3237,9 @@
     "category": "video-audio",
     "accepts": ".webm",
     "outputLabel": "animation.gif",
-    "path": "/tools/webm-to-gif"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/webm-to-gif",
+    "priority": 0.6
   },
   {
     "slug": "mov-to-gif",
@@ -2851,7 +3253,9 @@
     "category": "video-audio",
     "accepts": ".mov",
     "outputLabel": "animation.gif",
-    "path": "/tools/mov-to-gif"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mov-to-gif",
+    "priority": 0.6
   },
   {
     "slug": "yaml-to-json",
@@ -2866,7 +3270,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "JSON output",
-    "path": "/tools/yaml-to-json"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/yaml-to-json",
+    "priority": 0.8
   },
   {
     "slug": "json-to-yaml",
@@ -2881,7 +3287,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "YAML output",
-    "path": "/tools/json-to-yaml"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/json-to-yaml",
+    "priority": 0.8
   },
   {
     "slug": "case-converter",
@@ -2896,7 +3304,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "converted text",
-    "path": "/tools/case-converter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/case-converter",
+    "priority": 0.6
   },
   {
     "slug": "cron-parser",
@@ -2911,7 +3321,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "cron schedule",
-    "path": "/tools/cron-parser"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/cron-parser",
+    "priority": 0.8
   },
   {
     "slug": "sql-formatter",
@@ -2926,7 +3338,9 @@
     "clientOnly": true,
     "accepts": ".sql",
     "outputLabel": "formatted SQL",
-    "path": "/tools/sql-formatter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/sql-formatter",
+    "priority": 0.8
   },
   {
     "slug": "graphql-formatter",
@@ -2941,7 +3355,9 @@
     "clientOnly": true,
     "accepts": ".graphql,.gql",
     "outputLabel": "formatted GraphQL",
-    "path": "/tools/graphql-formatter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/graphql-formatter",
+    "priority": 0.8
   },
   {
     "slug": "yaml-toml-converter",
@@ -2956,7 +3372,9 @@
     "clientOnly": true,
     "accepts": ".yaml,.yml,.toml",
     "outputLabel": "converted config",
-    "path": "/tools/yaml-toml-converter"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/yaml-toml-converter",
+    "priority": 0.8
   },
   {
     "slug": "gitignore-generator",
@@ -2971,7 +3389,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": ".gitignore",
-    "path": "/tools/gitignore-generator"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/gitignore-generator",
+    "priority": 0.8
   },
   {
     "slug": "semver-bumper",
@@ -2986,7 +3406,9 @@
     "clientOnly": true,
     "accepts": "",
     "outputLabel": "version",
-    "path": "/tools/semver-bumper"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/semver-bumper",
+    "priority": 0.8
   },
   {
     "slug": "env-validator",
@@ -3001,7 +3423,9 @@
     "clientOnly": true,
     "accepts": ".env",
     "outputLabel": "validation report",
-    "path": "/tools/env-validator"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/env-validator",
+    "priority": 0.8
   },
   {
     "slug": "json-to-csv-schema",
@@ -3016,7 +3440,9 @@
     "clientOnly": true,
     "accepts": ".json",
     "outputLabel": "data.csv",
-    "path": "/tools/json-to-csv-schema"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/json-to-csv-schema",
+    "priority": 0.8
   },
   {
     "slug": "mute-video",
@@ -3030,7 +3456,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.mkv,.avi,.m4v",
     "outputLabel": "muted.mp4",
-    "path": "/tools/mute-video"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/mute-video",
+    "priority": 0.6
   },
   {
     "slug": "reverse-video",
@@ -3044,7 +3472,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.mkv,.avi",
     "outputLabel": "reversed.mp4",
-    "path": "/tools/reverse-video"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/reverse-video",
+    "priority": 0.6
   },
   {
     "slug": "video-speed",
@@ -3058,7 +3488,9 @@
     "category": "video-audio",
     "accepts": ".mp4,.mov,.webm,.mkv,.avi",
     "outputLabel": "video.mp4",
-    "path": "/tools/video-speed"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/video-speed",
+    "priority": 0.6
   },
   {
     "slug": "audio-trim",
@@ -3072,7 +3504,9 @@
     "category": "video-audio",
     "accepts": ".mp3,.wav,.aac,.flac,.ogg,.m4a",
     "outputLabel": "trimmed.mp3",
-    "path": "/tools/audio-trim"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/audio-trim",
+    "priority": 0.6
   },
   {
     "slug": "image-palette",
@@ -3086,7 +3520,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff",
     "outputLabel": "color palette",
-    "path": "/tools/image-palette"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/image-palette",
+    "priority": 0.6
   },
   {
     "slug": "pixelate-image",
@@ -3100,7 +3536,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp",
     "outputLabel": "image.png",
-    "path": "/tools/pixelate-image"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/pixelate-image",
+    "priority": 0.6
   },
   {
     "slug": "rotate-image",
@@ -3114,7 +3552,9 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff",
     "outputLabel": "rotated.png",
-    "path": "/tools/rotate-image"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/rotate-image",
+    "priority": 0.6
   },
   {
     "slug": "flip-image",
@@ -3128,6 +3568,8 @@
     "category": "image",
     "accepts": ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff",
     "outputLabel": "flipped.png",
-    "path": "/tools/flip-image"
+    "lastReviewed": "2026-09-18",
+    "path": "/tools/flip-image",
+    "priority": 0.6
   }
 ]

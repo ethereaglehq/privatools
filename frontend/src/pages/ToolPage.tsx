@@ -475,9 +475,11 @@ export default function ToolPage() {
                   </span>
                 )}
                 <ToolPrivacyBadge clientOnly={tool.clientOnly} />
-                <span className="section-flag">
-                  Last reviewed <time dateTime={reviewedDate}>{formatReviewedDate(reviewedDate)}</time>
-                </span>
+                {reviewedDate && (
+                  <span className="section-flag">
+                    Last reviewed <time dateTime={reviewedDate}>{formatReviewedDate(reviewedDate)}</time>
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <h1 className="font-display font-extrabold text-foreground text-[38px] sm:text-[52px] tracking-[-0.04em] leading-[1.02] text-balance">

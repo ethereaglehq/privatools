@@ -140,14 +140,21 @@ load-bearing.
 - **npm lockfile rule:** regenerate only with `npx -y npm@11.19.0` (CI's npm).
   Local npm 11.6 prunes `@emnapi/*` platform entries and breaks CI's `npm ci`.
 - **Registering a tool slug touches ~14 places** — registries, ToolPage or
-  NonPdfToolPage, ToolIllustration, review dates, palette synonyms, FAQ and
-  steps via `tool_content.py`, then run
+  NonPdfToolPage, ToolIllustration, `lastReviewed` on the registry entry
+  (move it only when that tool's own copy changes; never bulk-bump, because a
+  sitemap where every date moves together is discounted), palette synonyms,
+  FAQ and steps via `tool_content.py`, then run
   `.venv/bin/python scripts/seo/export-tool-guides.py` to regenerate
   `frontend/src/data/tool-guide/*.json` (Python is authoritative,
-  `test_tool_guide_export`), `seo_meta.py`, `sitemap.py`, CSP
+  `test_tool_guide_export`), `seo_meta.py`, CSP
   sets, `gen-llms.mjs` run, and the public count literals
-  (manifest/opensearch/samples + blog copy). The count tests enforce most of
-  it; the CSP walker and guide export tests catch the rest. Every tool also
-  needs a `seoTitle` (40–60 chars, query-first, no brand, unique) and a
-  `metaDescription` (120–160 chars, ends with a period, unique), enforced by
-  `frontend/src/test/tool-registry.test.ts`.
+  (manifest/opensearch/samples + blog copy). The sitemap reads the build
+  manifest, so nothing in `sitemap.py` is edited per slug. The count tests
+  enforce most of it; the CSP walker and guide export tests catch the rest.
+  Every tool also needs a `seoTitle` (40–60 chars, query-first, no brand,
+  unique) and a `metaDescription` (120–160 chars, ends with a period,
+  unique), enforced by `frontend/src/test/tool-registry.test.ts`.
+  `frontend/src/data/sitemap-priority.json` lists the tools that get sitemap
+  priority 0.8 — head PDF tools plus developer tools chosen because their
+  search results are winnable niches; keep it short and reviewed, not a wish
+  list.

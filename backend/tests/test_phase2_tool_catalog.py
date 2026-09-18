@@ -36,7 +36,8 @@ P2_SLUGS = P2_CONVERSION_SLUGS + P2_DEV_SLUGS
 
 @pytest.mark.parametrize("slug", P2_SLUGS)
 def test_phase2_slug_is_in_sitemap_registry(slug: str):
-    assert slug in sitemap.NON_PDF_TOOLS
+    pdf, nonpdf = seo_meta._tool_registries()
+    assert slug in nonpdf
 
 
 @pytest.mark.parametrize("slug", P2_SLUGS)
@@ -66,5 +67,8 @@ def test_phase2_slug_renders_in_sitemap_xml(slug: str):
 
 
 @pytest.mark.parametrize("slug", P2_SLUGS)
-def test_phase2_slug_has_fixed_review_date(slug: str):
-    assert seo_meta.TOOL_LAST_REVIEWED[slug] == "2026-06-18"
+def test_phase2_slug_has_a_review_date(slug: str):
+    manifest = seo_meta._load_manifest(str(seo_meta._TOOL_JSON), seo_meta.blog_content_mtime_ns())
+    if manifest is None:
+        pytest.skip("frontend/dist/tool-content.json is missing; run npm run build in frontend/ first")
+    assert seo_meta._last_reviewed_for(slug) == manifest[slug]["lastReviewed"]
