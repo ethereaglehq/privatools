@@ -6,7 +6,7 @@
     },
     {
       "name": "Fill in the values",
-      "text": "Click Detect form fields. Each field is listed with its name and type: type into text fields, tick checkboxes and choose dropdown options from their list. Signature fields cannot be filled here; use E-Sign PDF for a visible signature."
+      "text": "Click Detect form fields. Each field is listed with its name and type: type into text fields, tick checkboxes and choose radio button and dropdown options from their lists. Signature fields cannot be filled here; use E-Sign PDF for a visible signature."
     },
     {
       "name": "Download the filled form",
@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I flatten the filled form?",
-      "a": "Partly. The Flatten tool marks the filled fields read-only so PDF viewers stop offering to edit them, but the fields stay in the file as form fields and their values are not baked into the page content."
+      "a": "Yes — run the Flatten tool afterwards to bake the values into the page content, so they can no longer be edited as form fields."
     },
     {
       "q": "Does this work on signed forms?",

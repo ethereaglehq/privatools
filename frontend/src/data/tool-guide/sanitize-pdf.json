@@ -20,7 +20,7 @@
     },
     {
       "q": "Does this remove form fields?",
-      "a": "No — form fields are kept, along with any actions attached to them."
+      "a": "No — form fields are kept, along with any actions attached to them. To remove them, run the Flatten tool, which draws the fields into the page content and drops their actions."
     },
     {
       "q": "Are hyperlinks removed?",

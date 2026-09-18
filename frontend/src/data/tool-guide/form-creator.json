@@ -6,11 +6,11 @@
     },
     {
       "name": "Add form fields",
-      "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. Give each field a name and choose its type: text, checkbox, dropdown, list or signature."
+      "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. Give each field a name and choose its type: text, checkbox, radio buttons, dropdown, list or signature."
     },
     {
       "name": "Configure form properties",
-      "text": "Set default values, mark fields as required, allow several lines in a text field, pre-tick checkboxes, and type the options for dropdowns and lists, separated by commas."
+      "text": "Set default values, mark fields as required, allow several lines in a text field, pre-tick checkboxes, and type the options for radio buttons, dropdowns and lists, separated by commas. A radio field gets one button per option inside its box, each labelled with its option; the labels are set in Helvetica, so accented Western European letters print, but other characters, such as the euro sign, curly quotes or Cyrillic, show as dots."
     },
     {
       "name": "Export the fillable PDF",
@@ -20,7 +20,7 @@
   "faq": [
     {
       "q": "What field types can I add?",
-      "a": "Single-line and multi-line text fields, checkboxes, dropdowns, list boxes, and empty signature fields. There are no date pickers, and the Radio type in the list currently fails with an error."
+      "a": "Single-line and multi-line text fields, checkboxes, radio buttons, dropdowns, list boxes, and empty signature fields. There are no date pickers."
     },
     {
       "q": "Will the form work in Adobe Reader?",

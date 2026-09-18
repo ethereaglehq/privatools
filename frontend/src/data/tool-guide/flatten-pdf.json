@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload the PDF",
-      "text": "Select one or more filled PDF forms, up to 500 MB each. A PDF that contains comments, highlights or other annotations currently fails with an error."
+      "text": "Select one or more PDFs, up to 500 MB each, with form fields or annotations you want to flatten."
     },
     {
-      "name": "Let it lock the fields",
-      "text": "There are no options. Every form field is set to read-only; the fields and their values stay in the file, and links and layers are left as they are."
+      "name": "Let it flatten fields and comments",
+      "text": "There are no options on the page: every form field and every visible annotation, such as a comment, highlight or stamp, is drawn into the page content. Links stay clickable, and layers are left as they are. Through the API, scope=forms or scope=annotations flattens only one of the two."
     },
     {
       "name": "Download the flattened PDF",
-      "text": "Click Flatten and download. The values show as before, but a PDF reader will not let anyone edit the fields; because the fields are still in the file, a PDF editor can clear the read-only setting."
+      "text": "Click Flatten and download. The pages look as they did, but the fields and comments are now part of them: the form can no longer be filled in, and a comment can no longer be moved, edited or deleted in a PDF reader. A sticky note keeps its icon, but its text no longer opens."
     }
   ],
   "faq": [
     {
       "q": "What does flattening a PDF mean?",
-      "a": "Flattening usually means turning form fields and annotations into ordinary page content. This tool currently does part of that: it makes form fields read-only rather than merging them into the page, and it does not flatten comments, highlights or layers."
+      "a": "Flattening converts interactive elements like form fields and annotations into static page content. The visual appearance stays the same, but the fields can no longer be filled in and the comments can no longer be edited. Layers are left as they are, and links stay clickable."
     },
     {
       "q": "When should I flatten a PDF?",
-      "a": "Before sending a filled form, so the recipient's reader will not let them change the answers."
+      "a": "Before sending a filled form, so the recipient's reader will not let them change the answers; before printing, so comments and field values print as they appear on screen; or when a recipient's PDF viewer does not show comments or filled fields correctly."
     },
     {
       "q": "Does flattening reduce file size?",
-      "a": "Sometimes, slightly: the file is rewritten with unused objects removed and its streams compressed. The form fields themselves stay in the file."
+      "a": "Sometimes, slightly. The form field and annotation data is removed, and the file is rewritten with unused objects dropped and its streams compressed, but the effect depends on the document."
     }
   ]
 }
