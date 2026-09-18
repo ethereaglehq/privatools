@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select a PDF up to 500 MB. Documents created digitally, with real text rather than scanned images, convert best."
+      "text": "Drop or select a PDF up to about 250 MB. Documents created digitally, with real text rather than scanned images, convert best."
     },
     {
       "name": "Convert to Word",
-      "text": "Run the conversion. The text is read page by page and rebuilt as Word paragraphs, keeping font names, text colours and paragraph spacing where the PDF provides them."
+      "text": "Run the conversion. The text is read page by page and each line becomes a Word paragraph, keeping font names, sizes, text colours, bold and italics where the PDF provides them."
     },
     {
       "name": "Download and review the .docx",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "Will the Word file look exactly like the PDF?",
-      "a": "Close for straightforward documents, not identical for complex ones. A PDF describes where text sits on a page, not how it flows, so the converter has to reconstruct paragraphs. Multi-column layouts, text boxes and intricate tables usually need some tidying afterwards."
+      "a": "No. A PDF describes where text sits on a page, not how it flows, and this converter does not rebuild paragraphs: each line becomes its own Word paragraph with fixed spacing. Tables arrive as separate lines of text, and columns are lost: text follows the order it is stored in the PDF, which is not always reading order. Expect some tidying afterwards."
     },
     {
-      "q": "Why is my converted document empty or full of images?",
-      "a": "The PDF is probably a scan: a picture of text with no text layer to read. Run OCR PDF first to add recognisable text, then convert that version."
+      "q": "Why did my PDF not convert, or come out as pictures?",
+      "a": "The PDF is probably a scan: a picture of text with no text layer to read. A PDF with no text at all is not converted, and the page only offers to retry it; scanned pages in a PDF that has some text come through as pictures. Run OCR PDF with its Searchable PDF output first, then convert that version."
     },
     {
       "q": "What is preserved?",
-      "a": "The text itself, with font names, colours and paragraph spacing where the PDF records them. Embedded images are included too, placed at a standard width rather than their original position. Treat the result as an editable starting point rather than a pixel-perfect copy."
+      "a": "The text itself, with font names, sizes, colours, bold and italics where the PDF records them; paragraph spacing is not kept. Embedded images are included too, except formats Word cannot read such as JPEG 2000, placed at a standard width rather than their original position. Treat the result as an editable starting point rather than a pixel-perfect copy."
     },
     {
       "q": "Why did my large PDF fail?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "Can I convert a password-protected PDF?",
-      "a": "Not while it is locked. Use Unlock PDF with the password you have, then convert the unlocked copy."
+      "a": "Not if it needs a password to open. Use Unlock PDF with the password you have, then convert the unlocked copy."
     },
     {
       "q": "How often can I use it?",

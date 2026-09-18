@@ -13,13 +13,13 @@ from __future__ import annotations
 TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── PDF manipulation ──────────────────────────────────────────────
     "merge-pdf": [
-        {"name": "Add the PDFs", "text": "Drop or select two or more PDF files, up to 500 MB each and up to 100 files at a time. The whole upload also has to fit within the same overall request limit, so several very large files may need to be merged in stages."},
+        {"name": "Add the PDFs", "text": "Drop or select two or more PDF files, up to 100 at a time. They are uploaded together in one request, so their combined size has to stay under 500 MB."},
         {"name": "Put them in order", "text": "Drag the file cards into the order the files should appear in the merged PDF."},
         {"name": "Choose the pages from each file", "text": "Select thumbnails, or type ranges for each file in the merge settings. Leave a file's field blank to include every page; 1-3,5 or 2-end includes just those pages, in the order you type them."},
         {"name": "Merge and download", "text": "Click merge. The server joins the files in the order shown and returns a single PDF."},
     ],
     "split-pdf": [
-        {"name": "Add the PDF", "text": "Drop or select the PDF you want to divide, up to 500 MB."},
+        {"name": "Add the PDF", "text": "Drop or select the PDF you want to divide, up to about 250 MB."},
         {"name": "Choose how to split", "text": "By page ranges (the default) pulls the pages you list into one new PDF. Every page gives each page its own file. Every N pages cuts the document into equal chunks of the size you set."},
         {"name": "Enter pages or a chunk size", "text": "For page ranges, type something like 1-3, 5, 7-end. For every N pages, enter the number of pages per part; the last part holds whatever remains."},
         {"name": "Split and download", "text": "Run the split. Page ranges return a single PDF; the other two modes return a ZIP with one PDF per part."},
@@ -39,7 +39,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Open the PDF", "text": "Drop or select a PDF up to 500 MB. Each page is shown in the editor, ready for you to add to it."},
         {"name": "Choose a tool", "text": "Pick text, highlight, freehand pen, rectangle, circle, line, arrow, whiteout or image from the toolbar."},
         {"name": "Add your changes", "text": "Click to place text, drag to draw shapes, or cover an area with whiteout. Adjust or remove items before you save."},
-        {"name": "Save the edited PDF", "text": "Save and download. Your additions are drawn onto the pages, so they look the same in every PDF reader."},
+        {"name": "Save the edited PDF", "text": "Click Apply changes, then download. Your additions are drawn into the page content rather than added as comments, so PDF readers show them as part of the page."},
     ],
     "sign-pdf": [
         {"name": "Add the PDF", "text": "Drop or select the document you need to sign, up to 500 MB."},
@@ -54,8 +54,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the encrypted PDF", "text": "Click Protect. The output uses AES-256 encryption and requires your password to open in any PDF reader."},
     ],
     "unlock-pdf": [
-        {"name": "Add the locked PDFs", "text": "Drop or select one or more password-protected PDFs, up to 100 at a time and 500 MB each."},
-        {"name": "Enter the password", "text": "Type the existing password. It must be correct: this tool removes protection you already have the key to, it does not guess or crack passwords."},
+        {"name": "Add the locked PDFs", "text": "Drop or select one or more password-protected PDFs, up to 100 at a time. They are uploaded together in one request, so their combined size has to stay under 500 MB."},
+        {"name": "Enter the password", "text": "Type the existing password. This tool removes protection you already have the key to; it does not guess or crack passwords, so a PDF that needs a password to open cannot be unlocked without the right one."},
         {"name": "Unlock and download", "text": "Run it. The result opens without a password, and restrictions such as no-print or no-copy are removed as well."},
     ],
     "rotate-pdf": [
@@ -157,8 +157,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert and download", "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation."},
     ],
     "pdf-to-word": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB. Documents created digitally, with real text rather than scanned images, convert best."},
-        {"name": "Convert to Word", "text": "Run the conversion. The text is read page by page and rebuilt as Word paragraphs, keeping font names, text colours and paragraph spacing where the PDF provides them."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB. Documents created digitally, with real text rather than scanned images, convert best."},
+        {"name": "Convert to Word", "text": "Run the conversion. The text is read page by page and each line becomes a Word paragraph, keeping font names, sizes, text colours, bold and italics where the PDF provides them."},
         {"name": "Download and review the .docx", "text": "Open the result in Word or another editor and check the layout, especially tables, columns and headers, before relying on it."},
     ],
     "pdf-to-excel": [
@@ -260,7 +260,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "chat-with-pdf": [
         {"name": "Open your PDF", "text": "Select a text-based PDF. Its text is extracted in your browser; a scanned PDF needs OCR PDF first, because there is no text to read."},
-        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. Supported options include Anthropic, OpenAI, Google Gemini, OpenRouter, Groq, Together AI, Mistral, DeepSeek, or a local or self-hosted OpenAI-compatible server."},
+        {"name": "Connect your AI provider", "text": "Choose a provider and paste your API key once. Supported options are Anthropic, OpenAI, Google Gemini, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. OpenRouter and Groq also appear in the list, but requests to them currently fail."},
         {"name": "Ask your question", "text": "Type a question about the document. The question and the document's text go from your browser directly to the provider you chose."},
         {"name": "Read and follow up", "text": "Read the answer and ask follow-ups. Check anything important against the document itself."},
     ],
@@ -279,8 +279,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Apply and download", "text": "Click the Redact button. The PDF and your approved strings are uploaded to the PrivaTools server, which removes the matching text with PyMuPDF redactions and returns the redacted PDF."},
     ],
     "split-in-half": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB, typically a scan where two book or magazine pages were captured on each sheet."},
-        {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its top half followed by its bottom half."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB, typically a scan where two book or magazine pages were captured on each sheet."},
+        {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its bottom half followed by its top half."},
         {"name": "Split and download", "text": "Run it and save the new PDF, which has twice as many pages as the original."},
     ],
     "pdf-to-svg": [
@@ -300,7 +300,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Linearize and download", "text": "Click Optimize. qpdf reorganizes the file structure so the first page renders before the whole document downloads — perfect for inline embeds and CDN-hosted PDFs."},
     ],
     "split-by-text": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB that has a text layer, such as a batch of invoices or statements exported from software."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB that has a text layer, such as a batch of invoices or statements exported from software."},
         {"name": "Enter the text that starts each part", "text": "Type a word or phrase that appears on the first page of every section, for example Invoice Number or Statement Date."},
         {"name": "Choose case matching", "text": "Matching ignores capitalisation by default. Turn on case-sensitive matching when the phrase also appears in lower case elsewhere and you want only the exact form."},
         {"name": "Split and download", "text": "Run it. A new part begins at each page where the text is found, and the parts arrive in a ZIP."},
@@ -580,7 +580,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the cleaned PDF", "text": "The visible page content is unchanged; comments, markup and links are gone, while form fields stay fillable."},
     ],
     "delete-pages": [
-        {"name": "Add the PDF", "text": "Drop or select the PDF you want to trim, up to 500 MB."},
+        {"name": "Add the PDF", "text": "Drop or select the PDF you want to trim, up to about 250 MB."},
         {"name": "List the pages to remove", "text": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page."},
         {"name": "Delete and download", "text": "Run it and save the new PDF, which contains every page you did not list, in the original order."},
     ],
@@ -606,7 +606,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download as ZIP", "text": "All extracted images are bundled into a ZIP archive, named by page and order."},
     ],
     "extract-pages": [
-        {"name": "Add the PDF", "text": "Drop or select the PDF that contains the pages you need, up to 500 MB."},
+        {"name": "Add the PDF", "text": "Drop or select the PDF that contains the pages you need, up to about 250 MB."},
         {"name": "List the pages to keep", "text": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page."},
         {"name": "Extract and download", "text": "Run it. The pages you listed are copied into one new PDF; the original is left untouched."},
     ],
@@ -667,7 +667,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "Click Convert. The output PDF matches the on-screen rendering closely."},
     ],
     "organize-pages": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB. A thumbnail of every page is generated so you can see what you are rearranging."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB. A thumbnail of every page is generated so you can see what you are rearranging."},
         {"name": "Reorder the pages", "text": "Drag thumbnails into a new position, or use the move left and move right buttons for precise single steps."},
         {"name": "Remove pages you do not need", "text": "Use the remove button on any thumbnail to leave that page out of the result."},
         {"name": "Save the new PDF", "text": "Apply the changes and download the PDF with the pages in the order you arranged."},
@@ -745,9 +745,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the QR", "text": "Click Generate QR code and download the result; PNG codes also show a preview. Codes use error correction level M, which tolerates about 15% damage, or level H, about 30%, when you add a centre logo."},
     ],
     "remove-blank-pages": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB. Scanned documents from a duplex scanner, which often contain empty reverse sides, are the typical case."},
-        {"name": "Set the sensitivity", "text": "The slider runs from 50 to 100 and starts at 85. Higher values only remove pages that are almost perfectly white; lower values also remove scanned blank pages that carry specks, show-through or scanner noise."},
-        {"name": "Remove and download", "text": "Run it and check the result. Every page judged blank is dropped and the rest keep their order."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB. Scanned documents from a duplex scanner, which often contain empty reverse sides, are the typical case."},
+        {"name": "Set the sensitivity", "text": "The slider runs from 50 to 100 and starts at 85. It sets how much of a page has to look near-white for the page to count as blank, so higher values remove fewer pages; lower values also catch blank pages with specks, show-through or scanner noise."},
+        {"name": "Remove and download", "text": "Run it and check the result. Every page judged blank is dropped and the rest keep their order; if every page looks blank, the file comes back with all its pages."},
     ],
     "repair-pdf": [
         {"name": "Upload the corrupt PDF", "text": "Drop a PDF up to 500 MB that won't open or shows errors in your viewer."},
@@ -760,7 +760,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the resized PDF", "text": "PrivaTools sets each page's size (its MediaBox) to the target and removes any crop box. The content is not scaled or moved: it stays anchored to the bottom-left corner."},
     ],
     "reverse-pdf": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB."},
         {"name": "Reverse the order", "text": "Run it. There are no options: the last page becomes the first and the first becomes the last."},
         {"name": "Download the result", "text": "Save the reversed PDF. The pages themselves are copied unchanged."},
     ],
@@ -780,9 +780,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the protected PDF", "text": "Anyone without the owner password is limited to the allowed operations. The PDF itself still opens without a password (use Protect PDF if you want a user password too)."},
     ],
     "split-by-bookmarks": [
-        {"name": "Add a PDF with bookmarks", "text": "Drop or select a PDF up to 500 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."},
+        {"name": "Add a PDF with bookmarks", "text": "Drop or select a PDF up to about 250 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."},
         {"name": "Split at each chapter", "text": "Run it. A new part starts at every top-level bookmark, so each chapter or section becomes its own PDF."},
-        {"name": "Download the ZIP", "text": "The parts arrive together in a ZIP. Check it against the bookmark panel in your PDF reader to confirm the sections are what you expected."},
+        {"name": "Download the ZIP", "text": "The parts arrive together in a ZIP. Check it against the bookmark panel in your PDF reader to confirm the sections are what you expected. If the whole document comes back as one part, its bookmarks are stored in a form this tool reads as page 1; add them again with the Bookmarks tool and split that file."},
     ],
     "stamp-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
@@ -1167,7 +1167,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
 # ---------------------------------------------------------------------------
 TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "merge-pdf": [
-        {"q": "How many PDFs can I merge at once?", "a": "Up to 100 files in one merge, each up to 500 MB. The combined upload is also capped at roughly 500 MB, so a handful of very large files may need to be merged in two passes — merge some, then merge that result with the rest."},
+        {"q": "How many PDFs can I merge at once?", "a": "Up to 100 files in one merge, with a combined size of up to 500 MB, because they are all uploaded in one request. Merging in stages gets past the file count but not the size: the last merge uploads everything again, so the finished PDF has to stay under the same limit."},
         {"q": "Can I change the order after adding files?", "a": "Yes. Drag the cards into the order you want before merging; the output follows it exactly. To reorder pages within a file, type them in the order you want in that file's page field, or use Organize Pages on the merged result."},
         {"q": "Can I merge only some pages from each file?", "a": "Yes. Each file has its own page field in the merge settings: leave it blank to include every page, or enter ranges such as 1-3,5 or 2-end. Pages are added in the order you type them, so you can also reorder pages within a file."},
         {"q": "Are bookmarks kept?", "a": "No. The merged PDF does not carry over the bookmarks (outline) of the individual files. Page content is copied unchanged, so the document reads the same, but if navigation matters, add a new outline afterwards with the Bookmarks tool."},
@@ -1179,7 +1179,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How do I write page ranges?", "a": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page. Page 0, pages beyond the end, and ranges written backwards are rejected with a message rather than guessed at."},
         {"q": "Why did I get one PDF instead of several?", "a": "Because page ranges collects everything you list into a single document. To get separate files, choose Every page or Every N pages, which return a ZIP."},
         {"q": "Is the original PDF changed?", "a": "No. The split writes new files from a copy, and the PDF on your device stays exactly as it was."},
-        {"q": "Can I split by bookmarks, file size or a word?", "a": "Yes, with the dedicated tools: Split by Bookmarks cuts at each chapter, Split by Size keeps every part under a size you choose, and Split by Text starts a new part wherever a phrase appears."},
+        {"q": "Can I split by bookmarks, file size or a word?", "a": "Yes, with the dedicated tools: Split by Bookmarks cuts at each chapter, Split by Size cuts by a maximum file size you set, and Split by Text starts a new part at each page where a phrase appears."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "split-by-size": [
@@ -1210,7 +1210,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "sign-pdf": [
         {"q": "Is this a legally binding digital signature?", "a": "It is an electronic signature in the everyday sense — an image of your signature placed on the document — not a certificate-based digital signature. Many routine agreements accept that; documents that require a qualified or certificate signature need a service that issues one."},
         {"q": "Can someone tell if the document was changed after I signed?", "a": "No. Because this is a visible signature rather than a cryptographic one, nothing in the file detects later edits. Keep your own copy of exactly what you signed."},
-        {"q": "Draw or upload — which is better?", "a": "Drawing is quick and fine for most uses. Uploading a scan or photo of your real signature, ideally on a clean white background, looks more natural on formal documents."},
+        {"q": "Draw or upload — which is better?", "a": "Drawing is quick and fine for most uses. Uploading a scan or photo of your real signature looks more natural on formal documents; use a PNG with a transparent background, because a white background is kept and covers any signature line underneath."},
         {"q": "Can I add initials or sign several pages?", "a": "Each run places one signature on the page you choose. Run it again on the output to add initials or sign additional pages."},
         {"q": "What is the difference between Sign PDF and eSign PDF?", "a": "Both place a visible signature. eSign PDF adds the option to type your name in a choice of script styles; Sign PDF is the direct draw-or-upload route."},
         {"q": "What happens to my document after I upload it?", "a": "It is uploaded over HTTPS and signed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the document and signature image and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
@@ -1225,11 +1225,11 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does a password stop someone from copying or printing the PDF?", "a": "An open password encrypts the file, so it cannot be read without the password. Restrictions such as no-print or no-copy work differently: PDF readers honour them voluntarily, and anyone who can open the file can strip them with other software. Set an open password when the content itself has to stay private."},
     ],
     "unlock-pdf": [
-        {"q": "Can it open a PDF if I have forgotten the password?", "a": "No. You need the correct password; the tool does not attempt to guess or break encryption. If the password is lost, the original creator of the document is the only route back."},
+        {"q": "Can it open a PDF if I have forgotten the password?", "a": "No. You need the correct password; the tool does not attempt to guess or break encryption. If the password is lost, ask whoever protected the document."},
         {"q": "What does unlocking remove?", "a": "The password needed to open the file and the permission restrictions attached to it, such as limits on printing, copying text or editing. The content itself is unchanged."},
-        {"q": "I entered the password and it says it did not match.", "a": "Check capitalisation, keyboard layout and any trailing spaces; PDF passwords are case-sensitive. If the document was protected by someone else, confirm with them which password opens it."},
+        {"q": "I entered the password and it says the PDF is password-protected.", "a": "That is the message shown when the password is wrong, or when a file in the batch is not protected at all. Check capitalisation and keyboard layout; PDF passwords are case-sensitive, and spaces at the start or end are ignored, so a password that begins or ends with a space will not work here. If the document was protected by someone else, confirm with them which password opens it."},
         {"q": "Can I unlock several PDFs at once?", "a": "Yes, up to 100 files in one request, provided they all use the same password."},
-        {"q": "How is my password handled?", "a": "It is sent over HTTPS together with the file and used only for that request to decrypt the PDF. It is not saved to an account or kept for later use."},
+        {"q": "How is my password handled?", "a": "It is sent over HTTPS together with the file and used only for that request to decrypt the PDF; the server does not keep it or save it to an account. If you choose, the page saves a password you typed in this browser, encrypted and on this device only, and tries saved passwords on the next locked PDF before asking."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and decrypted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "rotate-pdf": [
@@ -1340,11 +1340,11 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I convert JSON arrays into tables?", "a": "No. Arrays of objects are printed as indented JSON like the rest of the file, not as a table. For a table, convert the array to CSV with the CSV ↔ JSON Converter and then use CSV to PDF."},
     ],
     "pdf-to-word": [
-        {"q": "Will the Word file look exactly like the PDF?", "a": "Close for straightforward documents, not identical for complex ones. A PDF describes where text sits on a page, not how it flows, so the converter has to reconstruct paragraphs. Multi-column layouts, text boxes and intricate tables usually need some tidying afterwards."},
-        {"q": "Why is my converted document empty or full of images?", "a": "The PDF is probably a scan: a picture of text with no text layer to read. Run OCR PDF first to add recognisable text, then convert that version."},
-        {"q": "What is preserved?", "a": "The text itself, with font names, colours and paragraph spacing where the PDF records them. Embedded images are included too, placed at a standard width rather than their original position. Treat the result as an editable starting point rather than a pixel-perfect copy."},
+        {"q": "Will the Word file look exactly like the PDF?", "a": "No. A PDF describes where text sits on a page, not how it flows, and this converter does not rebuild paragraphs: each line becomes its own Word paragraph with fixed spacing. Tables arrive as separate lines of text, and columns are lost: text follows the order it is stored in the PDF, which is not always reading order. Expect some tidying afterwards."},
+        {"q": "Why did my PDF not convert, or come out as pictures?", "a": "The PDF is probably a scan: a picture of text with no text layer to read. A PDF with no text at all is not converted, and the page only offers to retry it; scanned pages in a PDF that has some text come through as pictures. Run OCR PDF with its Searchable PDF output first, then convert that version."},
+        {"q": "What is preserved?", "a": "The text itself, with font names, sizes, colours, bold and italics where the PDF records them; paragraph spacing is not kept. Embedded images are included too, except formats Word cannot read such as JPEG 2000, placed at a standard width rather than their original position. Treat the result as an editable starting point rather than a pixel-perfect copy."},
         {"q": "Why did my large PDF fail?", "a": "Conversion has a time budget, and very long or complex documents can exceed it. Split the PDF into smaller parts with Split PDF, convert each, and combine the text in Word."},
-        {"q": "Can I convert a password-protected PDF?", "a": "Not while it is locked. Use Unlock PDF with the password you have, then convert the unlocked copy."},
+        {"q": "Can I convert a password-protected PDF?", "a": "Not if it needs a password to open. Use Unlock PDF with the password you have, then convert the unlocked copy."},
         {"q": "How often can I use it?", "a": "Conversion is one of the heavier jobs on the server, so it has a fair-use rate limit per visitor. Space out a large batch rather than submitting many files in quick succession."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the generated .docx and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
@@ -1467,12 +1467,12 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How accurate is it?", "a": "Good on clear speech, weaker on crosstalk, heavy accents, poor microphones and specialist vocabulary. Treat the transcript as a draft and check names and numbers before relying on it."},
     ],
     "chat-with-pdf": [
-        {"q": "What leaves my device when I ask a question?", "a": "The document's extracted text and your question are sent from your browser straight to the AI provider you selected, using your key. They do not pass through PrivaTools, but that provider's terms and retention settings apply, so check them before sending confidential material."},
+        {"q": "What leaves my device when I ask a question?", "a": "The document's extracted text, your question and the last few messages of the conversation are sent from your browser straight to the AI provider you selected, using your key. They do not pass through PrivaTools, but that provider's terms and retention settings apply, so check them before sending confidential material. Unless you turn analytics off on the Privacy page, Google Analytics also receives an event saying the tool was used and whether it worked, never the text."},
         {"q": "Do I need an API key?", "a": "Yes. The answers come from your provider's model, and your provider bills your account. A local server such as one running an open model on your own machine works too, through the OpenAI-compatible option."},
         {"q": "How is my API key stored?", "a": "By default it is saved encrypted in this browser's storage, or you can keep it for the session only. It is used from your browser for provider requests and is not sent to PrivaTools. Clearing it here does not revoke it with the provider."},
         {"q": "Can I trust the answers?", "a": "Treat them as a fast guide, not a source. Language models can misread tables, miss context or state things the document does not say. Verify figures and quotations against the PDF."},
         {"q": "Why does it say my PDF has no text?", "a": "Because it is probably a scan — images of pages with no text layer. Run OCR PDF to add one, then open the result here."},
-        {"q": "Does it work on very long documents?", "a": "Long documents send a lot of text with each request, which costs more and can exceed what some models accept at once. Choose a model with a large context, or extract the relevant pages first."},
+        {"q": "Does it work on very long documents?", "a": "Only the first 100,000 characters of the extracted text are sent with each question, and the model is told when the document has been cut short. Long documents also cost more per question. To ask about a later part, extract the relevant pages first with Extract Pages and open that file here."},
     ],
     "summarize-pdf": [
         {"q": "Is my PDF uploaded to PrivaTools?", "a": "No. The text is extracted in your browser, and with the default 'On this device' engine the summary is produced there too. What does get downloaded is the model: about 250 MB, fetched once from a public model host (Hugging Face) and then cached in this browser. If you switch to 'My own API key', the extracted text goes from your browser directly to the provider you chose, not through PrivaTools."},
@@ -1495,8 +1495,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "split-in-half": [
         {"q": "What is this for?", "a": "Scans of open books and magazines, where each scanned sheet holds two pages side by side. Cutting them apart gives a document that reads one page at a time, which suits phones, e-readers and OCR."},
         {"q": "Which direction should I choose?", "a": "Vertical for a two-page spread scanned side by side, which is the usual case. Horizontal for sheets where the two halves are stacked, such as some forms or tickets printed two to a page."},
-        {"q": "Does it cut exactly down the middle?", "a": "Yes, it splits each page into two equal halves. If the spread was scanned off-centre, a little of one page may appear on the other; crop the scan first if the gutter is far from the middle."},
-        {"q": "What order do the new pages come in?", "a": "Left then right for a vertical cut, top then bottom for a horizontal one, for each original page in turn — so a correctly scanned book reads in order."},
+        {"q": "Does it cut exactly down the middle?", "a": "Yes, it splits each page into two equal halves of the full page. If the spread was scanned off-centre, a little of one page may appear on the other. Cropping first does not help: the cut ignores any crop set with Crop PDF or Auto Crop, and the cropped-off edges come back."},
+        {"q": "What order do the new pages come in?", "a": "Left then right for a vertical cut, for each original page in turn — so a correctly scanned book reads in order. A horizontal cut puts each page's bottom half first; for top-then-bottom order, run Reverse PDF before and after splitting."},
         {"q": "Does it reduce image quality?", "a": "No resampling is involved in the cut itself; each half shows the same content at the same resolution as the original page."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
@@ -1525,7 +1525,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Why does it find nothing in my scanned PDF?", "a": "A scan is a picture of text with no text layer to search. Run OCR PDF first to add one, then split the result."},
         {"q": "Is the search case-sensitive?", "a": "Not by default: Invoice, INVOICE and invoice all match. Switch on case-sensitive matching when only one form should trigger a split."},
         {"q": "My phrase appears several times on some pages.", "a": "That only starts one part per page, but a phrase that also appears in running headers or on continuation pages will create extra splits. Use a phrase unique to the start of each section."},
-        {"q": "What happens to the pages before the first match?", "a": "They are kept as the first part, so nothing is lost. If your phrase appears nowhere in the document, the tool stops and tells you rather than returning a single unchanged file."},
+        {"q": "What happens to the pages before the first match?", "a": "They are kept as the first part, so nothing is lost. If your phrase appears nowhere in the document, no file comes back and the page shows a general Processing failed message, so check the spelling and that the PDF has a text layer."},
         {"q": "What is this typically used for?", "a": "Splitting a single export that holds many documents — invoices, payslips, statements or letters — back into one file per document."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
@@ -1866,9 +1866,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does this remove signatures?", "a": "No. Signature fields are form fields and are kept, but the file is rewritten, which breaks any digital signature in it."},
     ],
     "delete-pages": [
-        {"q": "Can I undo a deletion?", "a": "The deleted pages are not in the new file, but your original PDF is untouched, so you can always start again from it. Keep the original until you have checked the result."},
+        {"q": "Can I undo a deletion?", "a": "The deleted pages no longer appear in the new file, and your original PDF is untouched, so you can always start again from it. Keep the original until you have checked the result."},
         {"q": "How do I delete a range of pages?", "a": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page."},
-        {"q": "Is this the same as Extract Pages?", "a": "It is the reverse. Delete Pages removes the pages you list; Extract Pages keeps only the pages you list. Both produce a new PDF and leave the original alone."},
+        {"q": "Is this the same as Extract Pages?", "a": "It is the reverse. Delete Pages removes the pages you list; Extract Pages keeps only the pages you list. Both produce a new PDF and leave the original alone. For pages with sensitive content, use Extract Pages on the pages you want to keep: Delete Pages works on a copy of the whole file, so a deleted page that a bookmark, a link or accessibility tagging points to stays inside it, out of sight."},
         {"q": "Can I remove blank pages automatically?", "a": "Yes — Remove Blank Pages detects empty and near-empty pages for you, which is quicker than listing them by hand after a scan."},
         {"q": "Will the remaining pages lose quality?", "a": "No. The pages you keep are copied as they are, so text stays selectable and images are not recompressed."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and processed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
@@ -1897,10 +1897,10 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does it work on scanned PDFs?", "a": "Yes — each page of a scanned PDF is one big image. The tool extracts that page-image directly."},
     ],
     "extract-pages": [
-        {"q": "How is this different from Delete Pages?", "a": "They are mirror images. Extract Pages keeps only the pages you list; Delete Pages keeps everything except the pages you list. Pick whichever list is shorter to type."},
+        {"q": "How is this different from Delete Pages?", "a": "They select opposite pages. Extract Pages keeps only the pages you list, in the order you type them; Delete Pages keeps everything except the pages you list, in the original order. The files differ too: Extract Pages builds a new PDF without the original's bookmarks, which Delete Pages keeps."},
         {"q": "Can I get each extracted page as a separate file?", "a": "Not here — the extracted pages come back together in one PDF. Split PDF's Every page mode produces one file per page."},
         {"q": "What range syntax is accepted?", "a": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page. Words such as odd or even are not understood."},
-        {"q": "Why was my page list rejected?", "a": "Usually because it refers to a page the document does not have, includes page 0, or has a range written backwards, such as 9-4. The message tells you which part is wrong."},
+        {"q": "Why was my page list rejected?", "a": "Usually because it refers to a page the document does not have, includes page 0, or has a range written backwards, such as 9-4. The message says what is wrong."},
         {"q": "Does it affect the quality of the pages?", "a": "No. Pages are copied as they are rather than re-rendered, so text stays selectable and images are not recompressed."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and processed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
@@ -2047,10 +2047,10 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What's the maximum data I can encode?", "a": "About 2,200 characters of ordinary text, such as a long URL, or about 5,300 digits, at the error correction level M the tool uses. Adding a centre logo switches to level H and roughly halves that. Longer input cannot be encoded."},
     ],
     "remove-blank-pages": [
-        {"q": "How does it decide a page is blank?", "a": "Each page is rendered at a low resolution and the proportion of near-white pixels is measured. A page that is white enough for the sensitivity you chose is treated as blank. Pages carrying text are normally kept."},
-        {"q": "My scanned blank pages were not removed.", "a": "Scanners rarely produce pure white: dust, texture and faint show-through from the other side all count as content. Lower the sensitivity a step or two and run it again until the empty sides disappear."},
-        {"q": "Could it remove a page I want to keep?", "a": "At low settings, a page with only a few faint marks can be judged blank. Check the result before discarding the original, and raise the sensitivity if anything important went missing."},
-        {"q": "Why does a higher number remove fewer pages?", "a": "Because the number is how strict the tool is about whiteness: at 100 a page has to be essentially pure white to count as blank. Lowering it lets more imperfect pages qualify."},
+        {"q": "How does it decide a page is blank?", "a": "Pages with a text layer are always kept. Every other page is rendered at a low resolution and checked at points about 3 mm apart, and only points very close to pure white count as white. A page where the share of white points reaches the sensitivity you chose is treated as blank."},
+        {"q": "My scanned blank pages were not removed.", "a": "Scanners rarely produce pure white: dust, texture and faint show-through from the other side all count as content. Lower the sensitivity a step or two and run it again. Pages that scanned as light grey or tinted paper may not count as blank at any setting, and if every page qualifies as blank, none are removed."},
+        {"q": "Could it remove a page I want to keep?", "a": "Yes. A scan has no text layer, so its pages are judged only by how white they look: even at the default 85, a scanned page with a few lines of text, a signature or a small chart can count as blank. Check the result before discarding the original, and raise the sensitivity if anything important went missing, or run OCR PDF with its Searchable PDF output first, since pages with a text layer are always kept."},
+        {"q": "Why does a higher number remove fewer pages?", "a": "Because the number is how strict the tool is about whiteness: at 100 every point it checks has to be near-white for the page to count as blank. Lowering it lets more imperfect pages qualify."},
         {"q": "Can I choose which blank pages to keep?", "a": "Not in this tool — it removes every page it judges blank. To keep a deliberate blank page, remove the others here and put it back with Merge PDF, or delete pages by number with Delete Pages instead."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and checked on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
@@ -2067,9 +2067,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "reverse-pdf": [
         {"q": "Why would I reverse a PDF?", "a": "Most often because a scanner or printer produced the pages last-to-first. Reversing fixes the whole document in one step rather than dragging every page into place."},
         {"q": "Can I reverse only part of a document?", "a": "No, the whole file is reversed. For a partial change, use Organize Pages, or split the section out, reverse it and merge it back."},
-        {"q": "Does it change the pages themselves?", "a": "No. Only the order changes; text, images and page sizes are copied as they are."},
+        {"q": "Does it change the pages themselves?", "a": "No. Text, images and page sizes are copied as they are. Bookmarks and links that jump to another page stop working after the reversal, though; add bookmarks again with the Bookmarks tool if you need them."},
         {"q": "I scanned odd and even pages separately. Will this help?", "a": "Partly. Reverse the stack that came out backwards, then interleave the two files with Alternate Mix, which is built for exactly that single-sided-scanner workflow."},
-        {"q": "Can I reverse several PDFs at once?", "a": "One file at a time. Run it again for each document."},
+        {"q": "Can I reverse several PDFs at once?", "a": "Yes. Add up to 25 PDFs and each one is reversed in turn as its own file; download them one by one or together as a ZIP."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and reordered on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "rtf-to-pdf": [
@@ -2089,9 +2089,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "split-by-bookmarks": [
         {"q": "Which bookmarks does it split on?", "a": "The top-level ones. Nested sub-bookmarks stay inside their parent's part rather than producing a file of their own, which keeps a chapter together with its sections."},
-        {"q": "What if my PDF has no bookmarks?", "a": "The tool stops with a message saying there are no bookmarks to split on. Use Split PDF to split by page numbers instead, or Split by Text if each section starts with a recognisable heading."},
+        {"q": "What if my PDF has no bookmarks?", "a": "No parts are made, and the page marks the file as failed with a general Processing failed message rather than saying why. Use Split PDF to split by page numbers instead, or Split by Text if each section starts with a recognisable heading."},
         {"q": "How can I tell whether my PDF has bookmarks?", "a": "Open the bookmarks or outline panel in your PDF reader. If it is empty, or lists only the document title, there is nothing for this tool to use."},
-        {"q": "Does it change the pages?", "a": "No. Pages are copied into the new files as they are; only the division into files is new."},
+        {"q": "Does it change the pages?", "a": "No. Pages are copied into the new files as they are; only the division into files is new. Pages before the first bookmark, such as a cover without a bookmark of its own, are left out of every part."},
         {"q": "Can I choose which chapters to export?", "a": "The tool produces every part. Keep the ones you need from the ZIP, or use Extract Pages when you only want a single chapter's page range."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],

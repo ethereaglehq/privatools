@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select the PDF you want to trim, up to 500 MB."
+      "text": "Drop or select the PDF you want to trim, up to about 250 MB."
     },
     {
       "name": "List the pages to remove",
@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Can I undo a deletion?",
-      "a": "The deleted pages are not in the new file, but your original PDF is untouched, so you can always start again from it. Keep the original until you have checked the result."
+      "a": "The deleted pages no longer appear in the new file, and your original PDF is untouched, so you can always start again from it. Keep the original until you have checked the result."
     },
     {
       "q": "How do I delete a range of pages?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Is this the same as Extract Pages?",
-      "a": "It is the reverse. Delete Pages removes the pages you list; Extract Pages keeps only the pages you list. Both produce a new PDF and leave the original alone."
+      "a": "It is the reverse. Delete Pages removes the pages you list; Extract Pages keeps only the pages you list. Both produce a new PDF and leave the original alone. For pages with sensitive content, use Extract Pages on the pages you want to keep: Delete Pages works on a copy of the whole file, so a deleted page that a bookmark, a link or accessibility tagging points to stays inside it, out of sight."
     },
     {
       "q": "Can I remove blank pages automatically?",

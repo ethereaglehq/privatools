@@ -2,33 +2,33 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select a PDF up to 500 MB. Scanned documents from a duplex scanner, which often contain empty reverse sides, are the typical case."
+      "text": "Drop or select a PDF up to about 250 MB. Scanned documents from a duplex scanner, which often contain empty reverse sides, are the typical case."
     },
     {
       "name": "Set the sensitivity",
-      "text": "The slider runs from 50 to 100 and starts at 85. Higher values only remove pages that are almost perfectly white; lower values also remove scanned blank pages that carry specks, show-through or scanner noise."
+      "text": "The slider runs from 50 to 100 and starts at 85. It sets how much of a page has to look near-white for the page to count as blank, so higher values remove fewer pages; lower values also catch blank pages with specks, show-through or scanner noise."
     },
     {
       "name": "Remove and download",
-      "text": "Run it and check the result. Every page judged blank is dropped and the rest keep their order."
+      "text": "Run it and check the result. Every page judged blank is dropped and the rest keep their order; if every page looks blank, the file comes back with all its pages."
     }
   ],
   "faq": [
     {
       "q": "How does it decide a page is blank?",
-      "a": "Each page is rendered at a low resolution and the proportion of near-white pixels is measured. A page that is white enough for the sensitivity you chose is treated as blank. Pages carrying text are normally kept."
+      "a": "Pages with a text layer are always kept. Every other page is rendered at a low resolution and checked at points about 3 mm apart, and only points very close to pure white count as white. A page where the share of white points reaches the sensitivity you chose is treated as blank."
     },
     {
       "q": "My scanned blank pages were not removed.",
-      "a": "Scanners rarely produce pure white: dust, texture and faint show-through from the other side all count as content. Lower the sensitivity a step or two and run it again until the empty sides disappear."
+      "a": "Scanners rarely produce pure white: dust, texture and faint show-through from the other side all count as content. Lower the sensitivity a step or two and run it again. Pages that scanned as light grey or tinted paper may not count as blank at any setting, and if every page qualifies as blank, none are removed."
     },
     {
       "q": "Could it remove a page I want to keep?",
-      "a": "At low settings, a page with only a few faint marks can be judged blank. Check the result before discarding the original, and raise the sensitivity if anything important went missing."
+      "a": "Yes. A scan has no text layer, so its pages are judged only by how white they look: even at the default 85, a scanned page with a few lines of text, a signature or a small chart can count as blank. Check the result before discarding the original, and raise the sensitivity if anything important went missing, or run OCR PDF with its Searchable PDF output first, since pages with a text layer are always kept."
     },
     {
       "q": "Why does a higher number remove fewer pages?",
-      "a": "Because the number is how strict the tool is about whiteness: at 100 a page has to be essentially pure white to count as blank. Lowering it lets more imperfect pages qualify."
+      "a": "Because the number is how strict the tool is about whiteness: at 100 every point it checks has to be near-white for the page to count as blank. Lowering it lets more imperfect pages qualify."
     },
     {
       "q": "Can I choose which blank pages to keep?",

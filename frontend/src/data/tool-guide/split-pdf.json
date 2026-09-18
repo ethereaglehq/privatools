@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select the PDF you want to divide, up to 500 MB."
+      "text": "Drop or select the PDF you want to divide, up to about 250 MB."
     },
     {
       "name": "Choose how to split",
@@ -36,7 +36,7 @@
     },
     {
       "q": "Can I split by bookmarks, file size or a word?",
-      "a": "Yes, with the dedicated tools: Split by Bookmarks cuts at each chapter, Split by Size keeps every part under a size you choose, and Split by Text starts a new part wherever a phrase appears."
+      "a": "Yes, with the dedicated tools: Split by Bookmarks cuts at each chapter, Split by Size cuts by a maximum file size you set, and Split by Text starts a new part at each page where a phrase appears."
     },
     {
       "q": "What happens to my PDF after I upload it?",

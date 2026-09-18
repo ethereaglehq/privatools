@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select a PDF up to 500 MB."
+      "text": "Drop or select a PDF up to about 250 MB."
     },
     {
       "name": "Reverse the order",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Does it change the pages themselves?",
-      "a": "No. Only the order changes; text, images and page sizes are copied as they are."
+      "a": "No. Text, images and page sizes are copied as they are. Bookmarks and links that jump to another page stop working after the reversal, though; add bookmarks again with the Bookmarks tool if you need them."
     },
     {
       "q": "I scanned odd and even pages separately. Will this help?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "Can I reverse several PDFs at once?",
-      "a": "One file at a time. Run it again for each document."
+      "a": "Yes. Add up to 25 PDFs and each one is reversed in turn as its own file; download them one by one or together as a ZIP."
     },
     {
       "q": "What happens to my PDF after I upload it?",

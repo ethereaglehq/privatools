@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select a PDF up to 500 MB that has a text layer, such as a batch of invoices or statements exported from software."
+      "text": "Drop or select a PDF up to about 250 MB that has a text layer, such as a batch of invoices or statements exported from software."
     },
     {
       "name": "Enter the text that starts each part",
@@ -36,7 +36,7 @@
     },
     {
       "q": "What happens to the pages before the first match?",
-      "a": "They are kept as the first part, so nothing is lost. If your phrase appears nowhere in the document, the tool stops and tells you rather than returning a single unchanged file."
+      "a": "They are kept as the first part, so nothing is lost. If your phrase appears nowhere in the document, no file comes back and the page shows a general Processing failed message, so check the spelling and that the PDF has a text layer."
     },
     {
       "q": "What is this typically used for?",

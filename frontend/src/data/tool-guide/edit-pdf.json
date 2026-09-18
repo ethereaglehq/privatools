@@ -14,7 +14,7 @@
     },
     {
       "name": "Save the edited PDF",
-      "text": "Save and download. Your additions are drawn onto the pages, so they look the same in every PDF reader."
+      "text": "Click Apply changes, then download. Your additions are drawn into the page content rather than added as comments, so PDF readers show them as part of the page."
     }
   ],
   "faq": [

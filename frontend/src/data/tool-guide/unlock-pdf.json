@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Add the locked PDFs",
-      "text": "Drop or select one or more password-protected PDFs, up to 100 at a time and 500 MB each."
+      "text": "Drop or select one or more password-protected PDFs, up to 100 at a time. They are uploaded together in one request, so their combined size has to stay under 500 MB."
     },
     {
       "name": "Enter the password",
-      "text": "Type the existing password. It must be correct: this tool removes protection you already have the key to, it does not guess or crack passwords."
+      "text": "Type the existing password. This tool removes protection you already have the key to; it does not guess or crack passwords, so a PDF that needs a password to open cannot be unlocked without the right one."
     },
     {
       "name": "Unlock and download",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "Can it open a PDF if I have forgotten the password?",
-      "a": "No. You need the correct password; the tool does not attempt to guess or break encryption. If the password is lost, the original creator of the document is the only route back."
+      "a": "No. You need the correct password; the tool does not attempt to guess or break encryption. If the password is lost, ask whoever protected the document."
     },
     {
       "q": "What does unlocking remove?",
       "a": "The password needed to open the file and the permission restrictions attached to it, such as limits on printing, copying text or editing. The content itself is unchanged."
     },
     {
-      "q": "I entered the password and it says it did not match.",
-      "a": "Check capitalisation, keyboard layout and any trailing spaces; PDF passwords are case-sensitive. If the document was protected by someone else, confirm with them which password opens it."
+      "q": "I entered the password and it says the PDF is password-protected.",
+      "a": "That is the message shown when the password is wrong, or when a file in the batch is not protected at all. Check capitalisation and keyboard layout; PDF passwords are case-sensitive, and spaces at the start or end are ignored, so a password that begins or ends with a space will not work here. If the document was protected by someone else, confirm with them which password opens it."
     },
     {
       "q": "Can I unlock several PDFs at once?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "How is my password handled?",
-      "a": "It is sent over HTTPS together with the file and used only for that request to decrypt the PDF. It is not saved to an account or kept for later use."
+      "a": "It is sent over HTTPS together with the file and used only for that request to decrypt the PDF; the server does not keep it or save it to an account. If you choose, the page saves a password you typed in this browser, encrypted and on this device only, and tries saved passwords on the next locked PDF before asking."
     },
     {
       "q": "What happens to my PDF after I upload it?",
