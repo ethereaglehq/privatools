@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Are annotations flattened?",
-      "a": "No. They stay as separate annotations, so anyone with a PDF editor can move, change or delete them."
+      "a": "No. They stay as separate annotations, so anyone with a PDF editor can move, change or delete them. To bake them permanently into the page, run the Flatten tool afterwards."
     },
     {
       "q": "Can I attach sticky-note comments?",

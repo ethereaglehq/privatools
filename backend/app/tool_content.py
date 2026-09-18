@@ -83,9 +83,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Apply redactions and download", "text": "Click Redact. The underlying content is permanently destroyed — it cannot be recovered, even by removing the black boxes."},
     ],
     "flatten-pdf": [
-        {"name": "Upload the PDF", "text": "Select one or more filled PDF forms, up to 500 MB each. A PDF that contains comments, highlights or other annotations currently fails with an error."},
-        {"name": "Let it lock the fields", "text": "There are no options. Every form field is set to read-only; the fields and their values stay in the file, and links and layers are left as they are."},
-        {"name": "Download the flattened PDF", "text": "Click Flatten and download. The values show as before, but a PDF reader will not let anyone edit the fields; because the fields are still in the file, a PDF editor can clear the read-only setting."},
+        {"name": "Upload the PDF", "text": "Select one or more PDFs, up to 500 MB each, with form fields or annotations you want to flatten."},
+        {"name": "Let it flatten fields and comments", "text": "There are no options on the page: every form field and every visible annotation, such as a comment, highlight or stamp, is drawn into the page content. Links stay clickable, and layers are left as they are. Through the API, scope=forms or scope=annotations flattens only one of the two."},
+        {"name": "Download the flattened PDF", "text": "Click Flatten and download. The pages look as they did, but the fields and comments are now part of them: the form can no longer be filled in, and a comment can no longer be moved, edited or deleted in a PDF reader. A sticky note keeps its icon, but its text no longer opens."},
     ],
     "bookmarks": [
         {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Existing bookmarks are not loaded, and saving replaces them, so include any you want to keep."},
@@ -94,8 +94,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "form-creator": [
         {"name": "Upload a PDF", "text": "Upload the PDF you want to add form fields to. The fields are placed on top of its existing pages, and its bookmarks, links and comments are kept."},
-        {"name": "Add form fields", "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. Give each field a name and choose its type: text, checkbox, dropdown, list or signature."},
-        {"name": "Configure form properties", "text": "Set default values, mark fields as required, allow several lines in a text field, pre-tick checkboxes, and type the options for dropdowns and lists, separated by commas."},
+        {"name": "Add form fields", "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. Give each field a name and choose its type: text, checkbox, radio buttons, dropdown, list or signature."},
+        {"name": "Configure form properties", "text": "Set default values, mark fields as required, allow several lines in a text field, pre-tick checkboxes, and type the options for radio buttons, dropdowns and lists, separated by commas. A radio field gets one button per option inside its box, each labelled with its option; the labels are set in Helvetica, so accented Western European letters print, but other characters, such as the euro sign, curly quotes or Cyrillic, show as dots."},
         {"name": "Export the fillable PDF", "text": "Click Generate fillable PDF. The download contains standard AcroForm fields, the interactive form format PDF readers use; test it in the reader your recipients use."},
     ],
     "extract-tables": [
@@ -612,7 +612,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "fill-form": [
         {"name": "Upload a fillable PDF form", "text": "Drop a PDF with AcroForm fields up to 500 MB. The tool detects form fields automatically."},
-        {"name": "Fill in the values", "text": "Click Detect form fields. Each field is listed with its name and type: type into text fields, tick checkboxes and choose dropdown options from their list. Signature fields cannot be filled here; use E-Sign PDF for a visible signature."},
+        {"name": "Fill in the values", "text": "Click Detect form fields. Each field is listed with its name and type: type into text fields, tick checkboxes and choose radio button and dropdown options from their lists. Signature fields cannot be filled here; use E-Sign PDF for a visible signature."},
         {"name": "Download the filled form", "text": "Click Fill. The PDF is returned with values populated. Field structure is preserved so the form can be filled again later."},
     ],
     "gif-to-pdf": [
@@ -1267,9 +1267,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to the original, unredacted PDF I upload?", "a": "It is uploaded over HTTPS and held in isolated temporary per-request storage while the redactions are applied. Response cleanup removes both the original and the redacted output after the result is sent, and a background sweep clears anything left behind by an interrupted request. The redaction code is open source under the MIT licence, so it can be reviewed, or self-hosted if the original must not leave your network."},
     ],
     "flatten-pdf": [
-        {"q": "What does flattening a PDF mean?", "a": "Flattening usually means turning form fields and annotations into ordinary page content. This tool currently does part of that: it makes form fields read-only rather than merging them into the page, and it does not flatten comments, highlights or layers."},
-        {"q": "When should I flatten a PDF?", "a": "Before sending a filled form, so the recipient's reader will not let them change the answers."},
-        {"q": "Does flattening reduce file size?", "a": "Sometimes, slightly: the file is rewritten with unused objects removed and its streams compressed. The form fields themselves stay in the file."},
+        {"q": "What does flattening a PDF mean?", "a": "Flattening converts interactive elements like form fields and annotations into static page content. The visual appearance stays the same, but the fields can no longer be filled in and the comments can no longer be edited. Layers are left as they are, and links stay clickable."},
+        {"q": "When should I flatten a PDF?", "a": "Before sending a filled form, so the recipient's reader will not let them change the answers; before printing, so comments and field values print as they appear on screen; or when a recipient's PDF viewer does not show comments or filled fields correctly."},
+        {"q": "Does flattening reduce file size?", "a": "Sometimes, slightly. The form field and annotation data is removed, and the file is rewritten with unused objects dropped and its streams compressed, but the effect depends on the document."},
     ],
     "bookmarks": [
         {"q": "Can I create a multi-level bookmark tree?", "a": "No. Every bookmark is saved at the top level, in the order listed; nested entries are not supported."},
@@ -1277,7 +1277,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I import a bookmark structure from a text file?", "a": "There is no file import, but the JSON view accepts a pasted array of entries, each with a title and a page, so a list prepared elsewhere goes in at once."},
     ],
     "form-creator": [
-        {"q": "What field types can I add?", "a": "Single-line and multi-line text fields, checkboxes, dropdowns, list boxes, and empty signature fields. There are no date pickers, and the Radio type in the list currently fails with an error."},
+        {"q": "What field types can I add?", "a": "Single-line and multi-line text fields, checkboxes, radio buttons, dropdowns, list boxes, and empty signature fields. There are no date pickers."},
         {"q": "Will the form work in Adobe Reader?", "a": "It should. The fields are standard AcroForm fields, the form format that Adobe Reader and other common PDF viewers support, and the file asks viewers to draw the fields' appearance themselves. Open the finished form in the reader your recipients use before sending it."},
         {"q": "Can I set fields as required?", "a": "Yes. Tick Required on a field to set the PDF required flag; how it is enforced depends on the PDF reader and on how the form is submitted. Validation rules such as numeric-only or email format are not available."},
     ],
@@ -1823,7 +1823,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does this preserve bookmarks?", "a": "No. Bookmarks from the originals are dropped because they would point to incorrect pages after interleaving."},
     ],
     "annotate-pdf": [
-        {"q": "Are annotations flattened?", "a": "No. They stay as separate annotations, so anyone with a PDF editor can move, change or delete them."},
+        {"q": "Are annotations flattened?", "a": "No. They stay as separate annotations, so anyone with a PDF editor can move, change or delete them. To bake them permanently into the page, run the Flatten tool afterwards."},
         {"q": "Can I attach sticky-note comments?", "a": "Yes. Choose Sticky note and type its text; readers display it as an icon that opens a popup with the text on click. No author name is set."},
         {"q": "Do annotations survive PDF/A conversion?", "a": "They survive PrivaTools' PDF to PDF/A, which re-saves the file with a PDF/A-2b label and leaves annotations, notes included, in place."},
     ],
@@ -1906,7 +1906,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "fill-form": [
         {"q": "How do I know what the form field names are?", "a": "You do not need to. Detect form fields lists every field with its name, type and current value, ready to fill, without changing anything. Developers can get the same list from the /api/fill-form/fields endpoint."},
-        {"q": "Can I flatten the filled form?", "a": "Partly. The Flatten tool marks the filled fields read-only so PDF viewers stop offering to edit them, but the fields stay in the file as form fields and their values are not baked into the page content."},
+        {"q": "Can I flatten the filled form?", "a": "Yes — run the Flatten tool afterwards to bake the values into the page content, so they can no longer be edited as form fields."},
         {"q": "Does this work on signed forms?", "a": "Filling a signed form invalidates the signature. Sign last, after filling."},
     ],
     "gif-to-pdf": [
@@ -2079,7 +2079,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "sanitize-pdf": [
         {"q": "What is sanitization protecting against?", "a": "In general, malicious PDFs that abuse embedded scripts or attachments. This tool does not remove those: in a test, a document-level JavaScript action, a link that launches a program and an embedded file all survived. Use it to clear identifying document info, not to neutralise a suspicious file."},
-        {"q": "Does this remove form fields?", "a": "No — form fields are kept, along with any actions attached to them."},
+        {"q": "Does this remove form fields?", "a": "No — form fields are kept, along with any actions attached to them. To remove them, run the Flatten tool, which draws the fields into the page content and drops their actions."},
         {"q": "Are hyperlinks removed?", "a": "No. All links are kept, including links that launch another program or use a javascript: address."},
     ],
     "set-permissions": [

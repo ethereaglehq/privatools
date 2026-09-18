@@ -169,9 +169,9 @@ Remove watermark from PDF online for free. Detects text watermarks — diagonal 
 
 URL: https://privatools.me/tool/flatten-pdf
 
-Make the fields of a filled form read-only
+Flatten forms and annotations into PDF content
 
-Flatten PDF online — lock a filled form so its fields can no longer be edited in a PDF reader. Every form field is set to read-only and keeps its value; comments, highlights and layers are not flattened, and PDFs that contain comments or highlights cannot be processed at the moment. Free tool.
+Flatten PDF online — permanently merge interactive form fields and annotations into static page content. Essential for submitting filled forms, preventing further edits in a PDF reader, and ensuring consistent display. Links stay clickable and layers are left as they are. Free tool.
 
 ### Deskew PDF
 
@@ -753,9 +753,9 @@ Add clickable links to PDF pages online — PrivaTools finds every web address i
 
 URL: https://privatools.me/tool/form-creator
 
-Add text fields, checkboxes, dropdowns, and lists to PDFs
+Add text fields, checkboxes, radios, and dropdowns to PDFs
 
-Create fillable PDF forms online for free — add text fields, checkboxes, dropdowns, list boxes, and signature fields to any PDF. Build professional forms without Adobe Acrobat. Free form builder.
+Create fillable PDF forms online for free — add text fields, checkboxes, radio buttons, dropdowns, list boxes, and signature fields to any PDF. Build professional forms without Adobe Acrobat. Free form builder.
 
 ### Transparent Background
 
