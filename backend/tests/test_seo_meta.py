@@ -249,6 +249,76 @@ def test_server_side_storage_claims_match_temp_file_architecture():
     assert "isolated temporary storage" in combined
 
 
+# The steps and questions render to visitors under every tool, so they may only
+# promise what the privacy policy promises: temporary per-request storage,
+# response cleanup plus a background sweep, and file-size, resource and rate
+# limits. Each pattern below is a sentence that shipped and was not true.
+GUIDE_OVERCLAIMS = {
+    "retention absolute": r"never (?:logged|stored|kept|inspected|persisted|indexed|written|retained|saved)",
+    "no-logs claim": r"\bno logs?\b|nothing is logged|no log captures",
+    "permanent-storage or backup promise": r"permanent storage|logs, or backups",
+    "per-request container claim": r"docker container",
+    "instant deletion": (
+        r"\bunlink|(?:deleted|removed|discarded|erased)[^.]{0,50}\b(?:immediately|instantly|the moment|"
+        r"within seconds|within minutes|seconds later|as soon as|right after)\b"
+    ),
+    "no-quota claim": (
+        r"no (?:daily|weekly|monthly|per-day|per-month)[^.]{0,40}(?:limit|quota|cap)|\bunlimited\b|"
+        r"no file size limits?"
+    ),
+    "invented throughput": r"\broutinely\b",
+    "security grade": r"bank-grade|military-grade",
+}
+
+# Server tools whose guide legitimately describes a browser-side engine or step.
+_HYBRID_GUIDES = {"smart-redact", "remove-background", "ocr-pdf", "image-ocr"}
+_BROWSER_ONLY_CLAIM = re.compile(
+    r"(?:runs|happens|works|processed|converted) (?:entirely |100% |fully )?in your browser|"
+    r"never leaves your (?:device|machine|browser|computer)|(?:is|are) never uploaded|nothing is uploaded",
+    re.I,
+)
+
+
+def _client_only_slugs() -> set[str]:
+    data_dir = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "src", "data")
+    slugs: set[str] = set()
+    for name in ("tools.ts", "non-pdf-tools.ts"):
+        with open(os.path.join(data_dir, name), encoding="utf-8") as handle:
+            source = handle.read()
+        for entry in re.finditer(r'\{\s*slug:\s*"([^"]+)"(.*?)\n\s*\},?\s*\n', source, re.S):
+            if re.search(r"clientOnly:\s*true", entry.group(2)):
+                slugs.add(entry.group(1))
+    return slugs
+
+
+def _guide_sentences():
+    for kind, table in (("howto", TOOL_HOWTO), ("faq", TOOL_FAQ)):
+        for slug, entries in table.items():
+            for index, entry in enumerate(entries):
+                yield slug, f"{kind}[{index}]", " ".join(entry.values())
+
+
+def test_tool_guides_do_not_overclaim_retention_or_limits():
+    offenders = [
+        f"{slug} {where}: {label}"
+        for slug, where, text in _guide_sentences()
+        for label, pattern in GUIDE_OVERCLAIMS.items()
+        if re.search(pattern, text, re.I)
+    ]
+    assert offenders == []
+
+
+def test_server_tool_guides_do_not_claim_browser_only_processing():
+    client_only = _client_only_slugs()
+    assert len(client_only) >= 20, "parsed too few clientOnly tools — registry parser is wrong"
+    offenders = [
+        f"{slug} {where}"
+        for slug, where, text in _guide_sentences()
+        if slug not in client_only and slug not in _HYBRID_GUIDES and _BROWSER_ONLY_CLAIM.search(text)
+    ]
+    assert offenders == []
+
+
 def test_generated_blog_content_refreshes_by_mtime(tmp_path, monkeypatch):
     blog_json = tmp_path / "blog-content.json"
     html = "<html><head></head><body><div id='root'></div></body></html>"
