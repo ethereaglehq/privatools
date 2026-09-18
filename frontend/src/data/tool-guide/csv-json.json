@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Paste your CSV or JSON",
-      "text": "Or upload a file. Auto-detects the format."
+      "text": "Choose CSV to JSON or JSON to CSV, then paste your data. The CSV delimiter (comma, semicolon, tab or pipe) is detected for you."
     },
     {
       "name": "Click Convert",
@@ -20,7 +20,7 @@
     },
     {
       "q": "What about nested JSON?",
-      "a": "Nested objects are flattened to dot-notation columns (user.name, user.email) for CSV output. Reverse direction reconstructs the nesting."
+      "a": "Nested objects and arrays go into a single cell as JSON text; they are not split into dot-notation columns (JSON to CSV Schema does that). CSV to JSON keeps every value as a string and does not rebuild nesting."
     },
     {
       "q": "Will my data be uploaded?",

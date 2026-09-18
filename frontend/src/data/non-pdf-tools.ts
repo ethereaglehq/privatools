@@ -300,9 +300,9 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "extract-archive", icon: Archive, name: "Extract ZIP / TAR",
     description: "Extract ZIP and TAR archives privately",
-    longDescription: "Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents in an isolated container. Download extracted files individually or as a new ZIP. Up to 500 MB per file, no sign-up.",
+    longDescription: "Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents in an isolated container. Download the extracted files together as a new ZIP. Up to 500 MB per file, no sign-up.",
     seoTitle: "Extract ZIP and TAR Files Online – No Sign-Up Needed",
-    metaDescription: "Upload a ZIP, TAR, or TAR.GZ archive and pull out its contents to download. Get files individually or repackaged as a new ZIP, with no account required.",
+    metaDescription: "Upload a ZIP, TAR, or TAR.GZ archive and pull out its contents, listed by name and repackaged as a new ZIP to download, with no account required.",
     synonyms: "unzip extract zip tar gz files",
     popularity: 110,
     category: "archive", accepts: ".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz", outputLabel: "extracted files",
@@ -311,7 +311,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "create-zip", icon: Lock, name: "Create ZIP Archive",
     description: "Bundle multiple files into a ZIP archive",
-    longDescription: "Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB per file, no sign-up.",
+    longDescription: "Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB in total, no sign-up.",
     seoTitle: "Create a ZIP Archive Online Free – Bundle Any Files",
     metaDescription: "Select multiple files and package them into a standard ZIP archive with fast compression. Free to use, with no sign-up and no third-party uploads.",
     synonyms: "zip archive compress files into one",
@@ -324,9 +324,9 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "csv-json", icon: ArrowLeftRight, name: "CSV ↔ JSON Converter",
     description: "Swap between CSV and JSON data formats instantly",
-    longDescription: "Convert CSV to JSON and JSON to CSV online for free — paste or upload data and instantly swap between formats. Perfect for data transformation, API testing, and spreadsheet-to-JSON conversion. Browser-only, no upload.",
+    longDescription: "Convert CSV to JSON and JSON to CSV online for free — paste your data and instantly swap between formats. Perfect for data transformation, API testing, and spreadsheet-to-JSON conversion. Browser-only, no upload.",
     seoTitle: "Convert CSV to JSON Online Free – Swap Formats Instantly",
-    metaDescription: "Paste data or choose a file to swap instantly between CSV and JSON formats. Handy for API testing or spreadsheet conversions, running entirely in your browser.",
+    metaDescription: "Paste data to swap instantly between CSV and JSON formats, then copy or download it. Handy for API testing or spreadsheet conversions, entirely in your browser.",
     synonyms: "csv to json convert format",
     popularity: 84,
     category: "document-office", clientOnly: true, accepts: ".csv,.json", outputLabel: "converted file",
@@ -335,7 +335,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "markdown-html", icon: Code2, name: "Markdown Editor & HTML",
     description: "Convert Markdown writing into web-ready HTML",
-    longDescription: "Convert Markdown to HTML online for free — paste or upload .md files and get clean, semantic HTML output with live preview and syntax highlighting. Perfect for blog posts, documentation, and README files.",
+    longDescription: "Convert Markdown to HTML online for free — paste or upload .md files and get clean, semantic HTML output with a live preview. Perfect for blog posts, documentation, and README files.",
     seoTitle: "Convert Markdown to HTML Online – Live Preview Included",
     metaDescription: "Paste Markdown or choose a file to get clean, semantic HTML output with a live preview as you type. It runs in your browser, ideal for README files.",
     synonyms: "md html convert preview rendering",
@@ -434,7 +434,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "url-to-pdf", icon: Link, name: "URL to PDF",
     description: "Save any webpage as a PDF document",
-    longDescription: "Save webpage as PDF online for free — enter any URL and convert the web page to a high-quality PDF document. Rendered on your server using WeasyPrint. Note: results may vary for JavaScript-heavy sites.",
+    longDescription: "Save webpage as PDF online for free — enter any URL and convert the web page to a high-quality PDF document. Rendered on the PrivaTools server using WeasyPrint. Note: results may vary for JavaScript-heavy sites.",
     seoTitle: "Convert a Webpage to PDF Online – Just Paste the URL",
     metaDescription: "Enter any web address to render it as a PDF document on the server. Free to use and no sign-up needed, though results can vary for JavaScript-heavy sites.",
     synonyms: "save webpage to pdf url print",

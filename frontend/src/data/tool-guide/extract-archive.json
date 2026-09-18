@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the extracted folder as a ZIP",
-      "text": "Or download individual files from the result preview."
+      "text": "The result lists each file's name and size, then everything downloads together as one ZIP."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "What if the archive contains many small files?",
-      "a": "Up to 1000 files per archive. For larger, split before zipping."
+      "a": "Up to 5,000 files and 2 GB of extracted data per archive. The page lists the first 1,000 entries, but the download contains everything."
     }
   ]
 }

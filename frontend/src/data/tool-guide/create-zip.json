@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload files",
-      "text": "Drop multiple files of any type, up to 500 MB per file."
+      "text": "Drop multiple files of any type, up to 500 MB in total."
     },
     {
       "name": "Choose compression level",
-      "text": "Use Store for speed, Balanced for everyday ZIPs, or Maximum for the smallest output."
+      "text": "Slide from 0 (Store, no compression) through Fast and Balanced (the default, level 6) to Smallest size at 9."
     },
     {
       "name": "Download the ZIP",
@@ -20,11 +20,11 @@
     },
     {
       "q": "Will it preserve folder structure?",
-      "a": "Uploaded files are placed at the root of the archive. To preserve a folder structure, upload them folder-by-folder using the multi-folder option."
+      "a": "No. Every file is placed at the root of the archive, and a file whose name is already taken gets a numbered suffix. There is no folder option; to keep a folder structure, zip the folder on your own device."
     },
     {
       "q": "What compression level should I choose?",
-      "a": "Balanced is best for most files. Store is fastest for already-compressed files like JPG, MP4, and PDF. Maximum can shrink text-heavy files more but takes longer."
+      "a": "Balanced is best for most files. Store is fastest for already-compressed files like JPG, MP4, and PDF. Smallest size can shrink text-heavy files more but takes longer."
     }
   ]
 }

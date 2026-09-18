@@ -840,19 +840,19 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Copy the value you need", "text": "Use the Copy button on any row. Runs entirely in your browser — no network roundtrip."},
     ],
     "create-zip": [
-        {"name": "Upload files", "text": "Drop multiple files of any type, up to 500 MB per file."},
-        {"name": "Choose compression level", "text": "Use Store for speed, Balanced for everyday ZIPs, or Maximum for the smallest output."},
+        {"name": "Upload files", "text": "Drop multiple files of any type, up to 500 MB in total."},
+        {"name": "Choose compression level", "text": "Slide from 0 (Store, no compression) through Fast and Balanced (the default, level 6) to Smallest size at 9."},
         {"name": "Download the ZIP", "text": "All files are bundled into a single .zip with their original filenames and extensions."},
     ],
     "csv-json": [
-        {"name": "Paste your CSV or JSON", "text": "Or upload a file. Auto-detects the format."},
+        {"name": "Paste your CSV or JSON", "text": "Choose CSV to JSON or JSON to CSV, then paste your data. The CSV delimiter (comma, semicolon, tab or pipe) is detected for you."},
         {"name": "Click Convert", "text": "CSV → JSON: each row becomes an object using the first row as keys. JSON → CSV: array of objects → rows; keys → header."},
         {"name": "Copy or download the result", "text": "Runs entirely in your browser. Your data never leaves your device."},
     ],
     "extract-archive": [
         {"name": "Upload an archive", "text": "Drop a .zip, .tar, .tar.gz, .tar.bz2, or .tar.xz archive up to 500 MB."},
         {"name": "PrivaTools extracts and returns each file", "text": "All files inside are extracted and bundled into a folder-style download."},
-        {"name": "Download the extracted folder as a ZIP", "text": "Or download individual files from the result preview."},
+        {"name": "Download the extracted folder as a ZIP", "text": "The result lists each file's name and size, then everything downloads together as one ZIP."},
     ],
     "extract-audio": [
         {"name": "Upload a video file", "text": "Drop an MP4/MOV/MKV/WebM file up to 200 MB."},
@@ -860,9 +860,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the audio track", "text": "FFmpeg extracts the audio stream and re-encodes it to the chosen format, even when the video already carries that format."},
     ],
     "generate-barcode": [
-        {"name": "Enter the data to encode", "text": "The string or number you want to encode. Format limits vary (e.g. EAN-13 needs exactly 12-13 digits)."},
-        {"name": "Choose barcode type", "text": "Code 128 (most flexible), Code 39, EAN-13 (retail), UPC-A (US retail), QR code (also available via the QR tool)."},
-        {"name": "Download as PNG", "text": "Configurable size; ready for printing on labels or embedding in documents."},
+        {"name": "Enter the data to encode", "text": "The string or number you want to encode, up to 200 characters. Format limits vary (e.g. EAN-13 takes 12 digits and the check digit is added for you)."},
+        {"name": "Choose barcode type", "text": "Code 128 (most flexible), Code 39, EAN-13 (retail), EAN-8 (small packs), UPC-A (US retail), ISBN-13 (books) or QR code (also available via the QR tool)."},
+        {"name": "Download as PNG", "text": "The image comes out at a fixed size, ready for printing on labels or embedding in documents; there is no size setting."},
     ],
     "generate-favicon": [
         {"name": "Upload a square image", "text": "PNG, JPG, WebP or BMP. PrivaTools resizes it to favicon dimensions automatically; a rectangular image is centred on a transparent square instead of being stretched."},
@@ -915,8 +915,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Build and download", "text": "Create the collage and save the single combined image."},
     ],
     "markdown-html": [
-        {"name": "Paste Markdown or HTML", "text": "Auto-detects direction. Markdown → HTML for publishing; HTML → Markdown for content extraction."},
-        {"name": "Click Convert", "text": "Standard CommonMark spec for Markdown. HTML converts to GitHub-flavored Markdown."},
+        {"name": "Write or open Markdown", "text": "Type, paste or open a .md file (up to 2 MB). The conversion runs one way: Markdown to HTML."},
+        {"name": "Watch the preview", "text": "The HTML and the preview update as you type. It covers headings, paragraphs, bold, italic, inline code, fenced code, links, lists, blockquotes and horizontal rules."},
         {"name": "Copy the result", "text": "Runs entirely in your browser."},
     ],
     "merge-images": [
@@ -1747,7 +1747,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "semver-bumper": [
         {"q": "Does it handle prerelease versions?", "a": "Yes. Versions like 1.2.3-beta.1 are accepted, and the prerelease bump increments the trailing number when present."},
         {"q": "Does it edit package.json?", "a": "No. It only calculates version strings so you can copy the value into your release workflow."},
-        {"q": "What rules does it follow?", "a": "Patch increments the third number, minor increments the second and resets patch, major increments the first and resets minor and patch."},
+        {"q": "What rules does it follow?", "a": "Patch increments the third number, minor increments the second and resets patch, major increments the first and resets minor and patch. A prerelease is released instead of bumped: patch turns 1.2.3-beta.1 into 1.2.3. Build metadata is dropped."},
     ],
     "env-validator": [
         {"q": "Does this replace secret scanning?", "a": "No. It is a fast syntax and hygiene check. Use dedicated secret scanning before committing any real credentials."},
@@ -2152,18 +2152,18 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "create-zip": [
         {"q": "Can I password-protect the ZIP?", "a": "Not yet. Create ZIP produces standard, unencrypted ZIP archives; password-protected archives are not supported."},
-        {"q": "Will it preserve folder structure?", "a": "Uploaded files are placed at the root of the archive. To preserve a folder structure, upload them folder-by-folder using the multi-folder option."},
-        {"q": "What compression level should I choose?", "a": "Balanced is best for most files. Store is fastest for already-compressed files like JPG, MP4, and PDF. Maximum can shrink text-heavy files more but takes longer."},
+        {"q": "Will it preserve folder structure?", "a": "No. Every file is placed at the root of the archive, and a file whose name is already taken gets a numbered suffix. There is no folder option; to keep a folder structure, zip the folder on your own device."},
+        {"q": "What compression level should I choose?", "a": "Balanced is best for most files. Store is fastest for already-compressed files like JPG, MP4, and PDF. Smallest size can shrink text-heavy files more but takes longer."},
     ],
     "csv-json": [
         {"q": "How does CSV escaping work?", "a": "Standard RFC 4180: commas in values must be quoted; quotes inside values are doubled (\"\"). PrivaTools handles both."},
-        {"q": "What about nested JSON?", "a": "Nested objects are flattened to dot-notation columns (user.name, user.email) for CSV output. Reverse direction reconstructs the nesting."},
+        {"q": "What about nested JSON?", "a": "Nested objects and arrays go into a single cell as JSON text; they are not split into dot-notation columns (JSON to CSV Schema does that). CSV to JSON keeps every value as a string and does not rebuild nesting."},
         {"q": "Will my data be uploaded?", "a": "No — pure-browser conversion. No data leaves your machine."},
     ],
     "extract-archive": [
         {"q": "What about password-protected archives?", "a": "Password-protected archives are not supported yet. Extract Archive handles unencrypted ZIP and TAR-family archives."},
         {"q": "Does it support RAR / 7z?", "a": "No. Extract Archive supports ZIP and TAR-family archives (.tar, .tar.gz, .tar.bz2, .tar.xz). RAR and 7z are not supported."},
-        {"q": "What if the archive contains many small files?", "a": "Up to 1000 files per archive. For larger, split before zipping."},
+        {"q": "What if the archive contains many small files?", "a": "Up to 5,000 files and 2 GB of extracted data per archive. The page lists the first 1,000 entries, but the download contains everything."},
     ],
     "extract-audio": [
         {"q": "Will quality be preserved?", "a": "WAV and FLAC store the decoded audio without further loss. MP3, AAC and OGG are re-encoded at the encoders' default settings, about 128 kbps for stereo MP3 and AAC, and there is no bitrate setting here."},
@@ -2172,8 +2172,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "generate-barcode": [
         {"q": "What barcode type for a URL?", "a": "Use QR code — barcodes like Code 128 work for text but are much wider for the same content."},
-        {"q": "Will it scan reliably?", "a": "Yes — barcodes are rendered at the standard 2D module size. Printed at 100% on a regular printer, any standard scanner reads them."},
-        {"q": "Can I include a check digit?", "a": "EAN-13 and UPC-A auto-calculate the check digit. Code 128 has a built-in checksum. Code 39 supports optional checksums."},
+        {"q": "Will it scan reliably?", "a": "Usually. Linear barcodes are drawn at the python-barcode library's default size, and QR codes use 10-pixel modules with a four-module quiet zone. Test a printout with the scanner you will use, especially if you shrink it."},
+        {"q": "Can I include a check digit?", "a": "EAN-13, EAN-8, UPC-A and ISBN-13 auto-calculate the check digit. Code 128 has a built-in checksum. Code 39 always gets a mod-43 check character added."},
     ],
     "generate-favicon": [
         {"q": "Which sizes are in the icon?", "a": "16×16, 32×32 and 48×48, packed into one .ico file so the browser can pick the size it needs, such as 16×16 for a tab. Larger icons for phone home screens or installed web apps, such as 192×192 or 512×512, are not included; make those as separate PNG files."},
@@ -2234,9 +2234,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my images after I upload them?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."},
     ],
     "markdown-html": [
-        {"q": "What about extensions like tables and code blocks?", "a": "GitHub-flavored Markdown extensions are supported in both directions: tables, fenced code, strikethrough, task lists."},
-        {"q": "Will inline CSS be preserved?", "a": "Conversion is opinionated — visible content keeps semantics, but custom CSS is stripped. For a faithful HTML→PDF, use the Markdown-to-PDF tool instead."},
-        {"q": "Is the conversion lossless?", "a": "HTML → Markdown can lose nesting fidelity (deeply-nested divs flatten). Markdown → HTML is exact."},
+        {"q": "What about extensions like tables and code blocks?", "a": "Fenced code blocks work. Tables, strikethrough and task lists are not converted and stay as plain text, nested lists are flattened, and images appear as links."},
+        {"q": "Will inline CSS be preserved?", "a": "No. Raw HTML in the Markdown, inline styles included, is escaped and shown as text rather than rendered."},
+        {"q": "Is the conversion lossless?", "a": "Not for every document: the converter handles the core Markdown subset listed above, so the extensions it skips come through as plain text. There is no HTML-to-Markdown direction."},
     ],
     "merge-images": [
         {"q": "Will images be cropped?", "a": "No — they're scaled to a common dimension (width for vertical, height for horizontal). Every image is brought up to the height of the tallest (side by side) or the width of the widest (top to bottom), so smaller images are enlarged and none are shrunk."},

@@ -1067,7 +1067,7 @@ URL: https://privatools.me/tools/extract-archive
 
 Extract ZIP and TAR archives privately
 
-Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents in an isolated container. Download extracted files individually or as a new ZIP. Up to 500 MB per file, no sign-up.
+Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents in an isolated container. Download the extracted files together as a new ZIP. Up to 500 MB per file, no sign-up.
 
 ### Create ZIP Archive
 
@@ -1075,7 +1075,7 @@ URL: https://privatools.me/tools/create-zip
 
 Bundle multiple files into a ZIP archive
 
-Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB per file, no sign-up.
+Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB in total, no sign-up.
 
 ### CSV ↔ JSON Converter
 
@@ -1083,7 +1083,7 @@ URL: https://privatools.me/tools/csv-json
 
 Swap between CSV and JSON data formats instantly
 
-Convert CSV to JSON and JSON to CSV online for free — paste or upload data and instantly swap between formats. Perfect for data transformation, API testing, and spreadsheet-to-JSON conversion. Browser-only, no upload.
+Convert CSV to JSON and JSON to CSV online for free — paste your data and instantly swap between formats. Perfect for data transformation, API testing, and spreadsheet-to-JSON conversion. Browser-only, no upload.
 
 ### Markdown Editor & HTML
 
@@ -1091,7 +1091,7 @@ URL: https://privatools.me/tools/markdown-html
 
 Convert Markdown writing into web-ready HTML
 
-Convert Markdown to HTML online for free — paste or upload .md files and get clean, semantic HTML output with live preview and syntax highlighting. Perfect for blog posts, documentation, and README files.
+Convert Markdown to HTML online for free — paste or upload .md files and get clean, semantic HTML output with a live preview. Perfect for blog posts, documentation, and README files.
 
 ### HEIC to JPG
 
@@ -1163,7 +1163,7 @@ URL: https://privatools.me/tools/url-to-pdf
 
 Save any webpage as a PDF document
 
-Save webpage as PDF online for free — enter any URL and convert the web page to a high-quality PDF document. Rendered on your server using WeasyPrint. Note: results may vary for JavaScript-heavy sites.
+Save webpage as PDF online for free — enter any URL and convert the web page to a high-quality PDF document. Rendered on the PrivaTools server using WeasyPrint. Note: results may vary for JavaScript-heavy sites.
 
 ### Password Generator
 

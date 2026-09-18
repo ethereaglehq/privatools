@@ -1,12 +1,12 @@
 {
   "howto": [
     {
-      "name": "Paste Markdown or HTML",
-      "text": "Auto-detects direction. Markdown → HTML for publishing; HTML → Markdown for content extraction."
+      "name": "Write or open Markdown",
+      "text": "Type, paste or open a .md file (up to 2 MB). The conversion runs one way: Markdown to HTML."
     },
     {
-      "name": "Click Convert",
-      "text": "Standard CommonMark spec for Markdown. HTML converts to GitHub-flavored Markdown."
+      "name": "Watch the preview",
+      "text": "The HTML and the preview update as you type. It covers headings, paragraphs, bold, italic, inline code, fenced code, links, lists, blockquotes and horizontal rules."
     },
     {
       "name": "Copy the result",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "What about extensions like tables and code blocks?",
-      "a": "GitHub-flavored Markdown extensions are supported in both directions: tables, fenced code, strikethrough, task lists."
+      "a": "Fenced code blocks work. Tables, strikethrough and task lists are not converted and stay as plain text, nested lists are flattened, and images appear as links."
     },
     {
       "q": "Will inline CSS be preserved?",
-      "a": "Conversion is opinionated — visible content keeps semantics, but custom CSS is stripped. For a faithful HTML→PDF, use the Markdown-to-PDF tool instead."
+      "a": "No. Raw HTML in the Markdown, inline styles included, is escaped and shown as text rather than rendered."
     },
     {
       "q": "Is the conversion lossless?",
-      "a": "HTML → Markdown can lose nesting fidelity (deeply-nested divs flatten). Markdown → HTML is exact."
+      "a": "Not for every document: the converter handles the core Markdown subset listed above, so the extensions it skips come through as plain text. There is no HTML-to-Markdown direction."
     }
   ]
 }
