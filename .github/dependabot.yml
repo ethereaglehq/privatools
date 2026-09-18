@@ -41,6 +41,14 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "tailwind-merge"
         update-types: ["version-update:semver-major"]
+      # pdf.js 6 removes APIs the PDF tools call, such as
+      # PDFDocumentProxy.destroy and the isEvalSupported option, so #234 failed
+      # the type-check with 16 errors. Moving to it touches every tool that
+      # renders or reads PDFs in the browser and needs those tools checked in a
+      # real browser, so a dedicated task does it; delete this entry when it
+      # starts. Minor and patch releases of 5.x still arrive.
+      - dependency-name: "pdfjs-dist"
+        update-types: ["version-update:semver-major"]
 
   # The root requirements*.in files, compiled by `uv pip compile` into the
   # hashed requirements*.txt locks that the image and CI install. The pip
