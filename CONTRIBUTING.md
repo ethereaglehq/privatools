@@ -160,3 +160,6 @@ Pushing a tag runs `release.yml`: the whole `test.yml` suite, then an arm64
 image that is pushed to GHCR, scanned and signed with cosign, and finally a
 GitHub Release. Merging to `main` does not deploy on
 its own — a maintainer cuts a release tag when a set of changes is ready.
+Deploys start the new release beside the running one, so for about a minute
+both share the accounts database. Keep schema migrations additive and
+compatible with the previous release.

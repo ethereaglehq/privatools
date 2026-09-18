@@ -97,6 +97,41 @@ processing files in `app-temp`. Backup tooling and its timer are installed.
 Preserve both durable data and a usable rollback image during cleanup. Check
 live timer and backup state before maintenance.
 
+**Deploys are zero-downtime (2026-09-18).** `deploy/oracle-vm/rollout.sh`
+(installed as `privatools-rollout`) starts the new release as a second compose
+project, `privatools-interim`, on `127.0.0.1:8001`. It moves traffic there only
+after `/readyz` reports the build and `scripts/ci/probe-image.py --running`
+passes. It lets the old container drain, recreates `privatools-privatools-1` on
+8000, then switches back. The steady state never changes: the backup script, the
+CI probe and the runbooks all address that container and port. Replacing the
+container with a bare `docker compose up` brings back the old outage; it is
+only for rolling back to a release older than the drainable supervisor. A failed
+release never takes traffic, so there is nothing to roll back;
+`privatools-rollout --rollback` is itself zero-downtime. Details, evidence and
+the cut-over runbook are in `deploy/README.md`.
+
+- **Old and new code share the SQLite database for the overlap** (about a
+  minute), and the new container applies its migrations on start. Migrations must
+  be additive, with the previous release still working on the new schema. Never
+  add a column to a table written with a positional
+  `INSERT ... VALUES` (`api_async_worker`, `api_async_ingest`,
+  `api_async_submit_window`, `api_v1_leases`, `api_v1_rate_buckets`): the running
+  release's inserts would fail.
+- **Exactly one job supervisor holds `jobs/worker.lock`.** A second one waits as
+  a standby; it must never exit, because the launcher stops the whole container
+  when a child exits. SIGUSR1 to the container (the launcher relays it) drains:
+  the supervisor finishes its job, then releases the lock. SIGUSR2 resumes.
+  Readiness counts this container's live standby through a state file in its
+  private `/tmp`, because the shared heartbeat names the old build until the
+  handover.
+- **The only root step is the nginx switch.** It runs through
+  `sudo -n /usr/local/sbin/privatools-nginx-upstream set 8000|8001`, which runs
+  `nginx -t` and restores the old upstream on failure. The deploy unit must not
+  set `NoNewPrivileges`.
+- **Installed scripts are copies.** A deploy resets the checkout, not
+  `/usr/local/bin`. Reinstall with `install-auto-deploy.sh`, which never starts a
+  deploy unless given `--start`.
+
 The API remains free with bounded fair usage on this server. Async job results
 expire within one hour and can be explicitly deleted immediately.
 
