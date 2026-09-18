@@ -2,18 +2,32 @@
 
 Run: python -m backend.app.api_v1.jobs.worker
 Health: python -m backend.app.api_v1.jobs.worker --healthcheck
+Deploy view: python -m backend.app.api_v1.jobs.worker --status
 SIGTERM stops claims, terminates/reaps the active process group, and exits. Its
 durable claim is eligible for bounded recovery on the next supervisor start.
+
+Exactly one supervisor is active: it holds an exclusive flock on
+jobs/worker.lock in the shared data volume. During a zero-downtime deploy two
+containers run side by side, so a supervisor that finds the lock taken waits
+as a standby instead of exiting. The deploy hands the queue over with
+SIGUSR1 (drain): the active supervisor finishes its current job, stops
+claiming and releases the lock, then waits as a passive standby that retakes
+the lock only if no supervisor has heartbeated for lease_seconds. SIGUSR2
+(resume) makes a passive standby eager again. The handover interrupts no job
+and cannot run one twice, because only the lock holder claims.
 """
 from __future__ import annotations
 
 import argparse
+from collections.abc import Callable
 import fcntl
 import json
 import os
 from pathlib import Path
 import signal
 import shutil
+import socket
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -50,7 +64,9 @@ def child_environment(scratch: Path) -> dict[str,str]:
     return env
 
 
-def run_job(row: dict, stop: threading.Event) -> None:
+def run_job(row: dict, stop: threading.Event, *, accepting: Callable[[], bool] = lambda: True,
+            tick: Callable[[], None] = lambda: None) -> None:
+    """Run one claimed job to its end. Only stop interrupts it; a drain does not."""
     identifier,token = row["id"],row["claim"]
     directory = storage.job_dir(identifier).resolve()
     scratch = directory/token
@@ -74,7 +90,8 @@ def run_job(row: dict, stop: threading.Event) -> None:
             if not storage.renew(identifier,token):
                 error = "job_canceled"
                 break
-            storage.heartbeat()
+            storage.heartbeat(accepting=accepting())
+            tick()
             if time.monotonic()>=deadline:
                 error = "job_timeout"
                 break
@@ -131,46 +148,192 @@ def execute_child(request_file: Path) -> int:
     return 0
 
 
+class StateReporter:
+    """Tell this container's web workers what its supervisor is doing.
+
+    Written to a per-container tmpfs path (config.worker_state_path) about
+    once a second and on every role change. Readiness treats a fresh file from
+    a living supervisor of this build as a working job worker, including a
+    standby that waits for another container to hand over the lock.
+    """
+
+    def __init__(self, path: Path | None = None) -> None:
+        self.path = path or config.worker_state_path()
+        self.last: tuple[str, bool, float] = ("", False, 0.0)
+
+    def __call__(self, role: str, *, passive: bool = False) -> None:
+        now = time.time()
+        if self.last[:2] == (role, passive) and now - self.last[2] < 1:
+            return
+        state = {"role": role, "passive": passive, "pid": os.getpid(), "host": socket.gethostname(),
+                 "build_sha": config.build_sha(), "updated": now}
+        temporary = self.path.with_name(f"{self.path.name}.{os.getpid()}.tmp")
+        try:
+            temporary.write_text(json.dumps(state), encoding="utf-8")
+            os.replace(temporary, self.path)
+        except OSError:
+            # Readiness then falls back to the shared heartbeat alone.
+            return
+        self.last = (role, passive, now)
+
+    def clear(self) -> None:
+        try:
+            if json.loads(self.path.read_text(encoding="utf-8")).get("pid") == os.getpid():
+                self.path.unlink()
+        except (OSError, ValueError, AttributeError):
+            pass
+
+
+def status() -> dict:
+    """What a deploy needs to hand the queue over; counts only, never job contents."""
+    now = time.time()
+    result: dict = {"enabled": config.enabled(), "build_sha": config.build_sha(), "local": None,
+                    "active": None, "running_jobs": None, "queued_jobs": None}
+    try:
+        state = json.loads(config.worker_state_path().read_text(encoding="utf-8"))
+        result["local"] = {"role": state.get("role"), "passive": bool(state.get("passive")),
+                           "age": round(now - float(state["updated"]), 3),
+                           "alive": storage.local_worker(now) is not None}
+    except (OSError, ValueError, TypeError, KeyError):
+        pass
+    database = storage.store.DB_PATH
+    if not result["enabled"] or not database.exists():
+        return result
+    try:
+        # Read-only: a status probe must never create or change the database.
+        conn = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=10)
+        conn.row_factory = sqlite3.Row
+        try:
+            row = conn.execute("SELECT * FROM api_async_worker WHERE id=1").fetchone()
+            if row:
+                result["active"] = {"build_sha": row["build_sha"], "accepting": bool(row["accepting"]),
+                                    "age": round(now - row["heartbeat"], 3)}
+            result["running_jobs"] = conn.execute(
+                "SELECT COUNT(*) FROM api_async_jobs WHERE state='running' AND claim IS NOT NULL").fetchone()[0]
+            result["queued_jobs"] = conn.execute(
+                "SELECT COUNT(*) FROM api_async_jobs WHERE state='queued'").fetchone()[0]
+        finally:
+            conn.close()
+    except sqlite3.Error:
+        pass
+    return result
+
+
+class Control:
+    """Signal-driven intent, read by the supervisor loop between steps."""
+
+    def __init__(self) -> None:
+        self.stop = threading.Event()
+        self.wake = threading.Event()
+        self.drain = False
+        self.passive = False
+
+    def request_stop(self, *_args) -> None:
+        self.stop.set()
+        self.wake.set()
+
+    def request_drain(self, *_args) -> None:
+        self.drain = True
+        self.passive = True
+        self.wake.set()
+
+    def request_resume(self, *_args) -> None:
+        self.passive = False
+        self.wake.set()
+
+    def pause(self, seconds: float) -> None:
+        self.wake.wait(seconds)
+        self.wake.clear()
+
+
+def acquire(lock, control: Control, report: StateReporter) -> bool:
+    """Wait as a standby until this supervisor holds the singleton lock.
+
+    An eager standby (a fresh start, or after SIGUSR2) takes the lock as soon
+    as it is free. A passive one (after SIGUSR1) leaves it to its successor and
+    retakes it only when no supervisor has heartbeated for lease_seconds, so a
+    handover whose successor never arrives heals itself. The flock, not the
+    heartbeat, decides ownership. Returns False when asked to stop first.
+    """
+    while not control.stop.is_set():
+        take = not control.passive
+        if not take:
+            try:
+                age = storage.heartbeat_age()
+            except sqlite3.Error:
+                age = 0.0
+            take = age is None or age > config.LIMITS.lease_seconds
+        if take:
+            try:
+                fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+                # Holding the lock again (a resume or a self-heal) cancels
+                # any drain that arrived while this supervisor stood by.
+                control.passive = control.drain = False
+                return True
+            except BlockingIOError:
+                pass
+        report("standby", passive=control.passive)
+        control.pause(0.5)
+    return False
+
+
+def serve(control: Control, report: StateReporter) -> None:
+    """Claim and run jobs until stopped or drained. A drain waits for the current job."""
+    while not control.stop.is_set() and not control.drain:
+        storage.recover_and_sweep()
+        storage.heartbeat()
+        report("active")
+        row = storage.claim()
+        if row:
+            run_job(row, control.stop, accepting=lambda: not control.drain,
+                    tick=lambda: report("draining" if control.drain else "active"))
+        else:
+            control.pause(1)
+
+
+def run_supervisor(control: Control, report: StateReporter) -> None:
+    """Stand by, serve while holding the singleton lock, and stand by again after a drain."""
+    with (config.root()/"worker.lock").open("a") as lock:
+        # A web maintenance sweep may briefly own this lock while no
+        # supervisor exists, and during a deploy the other container's
+        # supervisor owns it until it has drained: wait as a standby.
+        while acquire(lock, control, report):
+            try:
+                serve(control, report)
+            finally:
+                # accepting=0 is written before the lock is free, so no
+                # reader sees a released queue still advertised as served.
+                storage.heartbeat(accepting=False)
+                fcntl.flock(lock,fcntl.LOCK_UN)
+                control.drain = False
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--healthcheck",action="store_true")
+    parser.add_argument("--status",action="store_true")
     parser.add_argument("--execute",type=Path)
     args = parser.parse_args()
     if args.execute:
         return execute_child(args.execute)
     if args.healthcheck:
         return 0 if storage.capability()["available"] else 1
+    if args.status:
+        print(json.dumps(status(),sort_keys=True))
+        return 0
     if not config.enabled():
         return 0
     storage.init_schema()
-    stop = threading.Event()
+    control = Control()
     for sig in (signal.SIGTERM,signal.SIGINT):
-        signal.signal(sig,lambda _sig,_frame:stop.set())
-    with (config.root()/"worker.lock").open("a") as lock:
-        # Web retention maintenance may briefly own this same lock while no
-        # supervisor exists. Wait for that sweep instead of failing startup.
-        lock_deadline = time.monotonic()+config.LIMITS.lease_seconds
-        while not stop.is_set():
-            try:
-                fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
-                break
-            except BlockingIOError:
-                if time.monotonic()>=lock_deadline:
-                    return 1
-                stop.wait(0.05)
-        else:
-            return 0
-        try:
-            while not stop.is_set():
-                storage.recover_and_sweep()
-                storage.heartbeat()
-                row = storage.claim()
-                if row:
-                    run_job(row,stop)
-                else:
-                    stop.wait(1)
-        finally:
-            storage.heartbeat(accepting=False)
+        signal.signal(sig,control.request_stop)
+    signal.signal(signal.SIGUSR1,control.request_drain)
+    signal.signal(signal.SIGUSR2,control.request_resume)
+    report = StateReporter()
+    try:
+        run_supervisor(control, report)
+    finally:
+        report.clear()
     return 0
 
 

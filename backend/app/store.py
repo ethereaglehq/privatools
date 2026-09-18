@@ -92,6 +92,13 @@ def write() -> Iterator[sqlite3.Connection]:
 #
 # Migrations are a plain ordered list. Each entry runs once and is recorded in
 # `schema_version`. Never edit an entry that has shipped — append a new one.
+#
+# A deploy starts the new release beside the running one, so the previous
+# release runs against the migrated schema for about a minute (and again after
+# any rollback; deploy/README.md, "Zero-downtime deploys"). Keep each migration
+# additive and compatible with the release before it. Never add a column to a
+# table that code writes with a positional INSERT ... VALUES: api_async_worker,
+# api_async_ingest, api_async_submit_window, api_v1_leases, api_v1_rate_buckets.
 
 MIGRATIONS: list[tuple[int, str]] = [
     (

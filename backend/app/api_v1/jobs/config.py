@@ -46,3 +46,14 @@ def root() -> Path:
 
 def build_sha() -> str:
     return os.environ.get("PRIVATOOLS_BUILD_SHA", "unknown")
+
+
+def worker_state_path() -> Path:
+    """Where this container's supervisor reports its role to its own web workers.
+
+    It must be private to one container, never on a shared volume: during a
+    deploy two containers share app-data and app-temp, and each web process
+    has to see its own supervisor, not the other container's. Compose mounts
+    /tmp as a per-container tmpfs, which is exactly that scope.
+    """
+    return Path(os.environ.get("API_V1_JOBS_WORKER_STATE", "/tmp/privatools-job-worker.json"))

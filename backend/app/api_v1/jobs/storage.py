@@ -11,6 +11,7 @@ import json
 import os
 import re
 import shutil
+import socket
 import sqlite3
 import time
 import uuid
@@ -101,6 +102,43 @@ def heartbeat(*, accepting: bool = True, now: float | None = None) -> None:
                      (now or time.time(), config.build_sha(), int(accepting)))
 
 
+def local_worker(now: float | None = None) -> dict | None:
+    """This container's own supervisor, if it is alive and runs this build.
+
+    The supervisor rewrites a small state file in the container's private /tmp
+    about once a second, whether it is the active worker or a standby waiting
+    for the singleton lock. A standby counts as ready: during a deploy the new
+    container's supervisor waits for the old one to finish its current job and
+    hand over the lock, so the heartbeat row still names the old build.
+    Queued jobs are durable, and this build's supervisor claims them as soon
+    as the old one has drained, so accepting work here is safe.
+    """
+    try:
+        state = json.loads(config.worker_state_path().read_text(encoding="utf-8"))
+        pid = int(state["pid"])
+        updated = float(state["updated"])
+    except (OSError, ValueError, TypeError, KeyError):
+        return None
+    if (state.get("host") != socket.gethostname() or state.get("build_sha") != config.build_sha()
+            or state.get("role") not in ("active", "draining", "standby") or pid <= 0
+            or (now or time.time()) - updated > config.LIMITS.lease_seconds):
+        return None
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return None
+    except PermissionError:
+        pass
+    return state
+
+
+def heartbeat_age(now: float | None = None) -> float | None:
+    """Seconds since any supervisor last wrote the shared heartbeat, or None."""
+    with connection() as conn:
+        row = conn.execute("SELECT heartbeat FROM api_async_worker WHERE id=1").fetchone()
+    return None if row is None else (now or time.time()) - row["heartbeat"]
+
+
 def capability() -> dict:
     result = {"enabled": config.enabled(), "available": False, "operations": [],
               "result_retention_seconds": config.LIMITS.result_seconds}
@@ -112,6 +150,8 @@ def capability() -> dict:
         result["available"] = bool(row and row["accepting"] and
                                    row["build_sha"] == config.build_sha() and
                                    time.time() - row["heartbeat"] <= config.LIMITS.lease_seconds)
+        if not result["available"]:
+            result["available"] = local_worker() is not None
         if result["available"]:
             result["operations"] = list(ADAPTERS)
     except (sqlite3.Error, OSError):
