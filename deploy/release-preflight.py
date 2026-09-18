@@ -17,7 +17,12 @@ def check_command(name, command, cwd=ROOT):
 
 
 def zero_downtime_checks():
-    """What rollout.sh needs on the VM, read-only (deploy/README.md, Zero-downtime deploys)."""
+    """What rollout.sh needs on the VM (deploy/README.md, Zero-downtime deploys).
+
+    Read-only, runs as the deploy user from a `git archive` export, needs no
+    checkout or compose file, and never runs nginx or Docker.
+    """
+    import os
     import re
     import socket
     checks = []
@@ -29,8 +34,20 @@ def zero_downtime_checks():
     text = site.read_text() if site.is_file() else ''
     checks.append({'check': 'nginx site proxies only through privatools_app',
                    'status': 'pass' if 'proxy_pass http://privatools_app;' in text and 'proxy_pass http://127.0.0.1:' not in text else 'fail'})
+    pid = Path('/run/nginx.pid')
+    readable = pid.is_file() and pid.read_text().strip().isdigit()
+    checks.append({'check': 'nginx master PID file readable (reload verification)', 'status': 'pass' if readable else 'fail'})
     helper = '/usr/local/sbin/privatools-nginx-upstream'
     checks.append(check_command('sudo -n allows the upstream switch', ['sudo', '-n', '-l', helper, 'set', '8001']))
+    checks.append(check_command("the rollout's check through nginx answers (curl --resolve privatools.me:443:127.0.0.1)",
+                                ['curl', '-fsS', '--max-time', '10', '--resolve', 'privatools.me:443:127.0.0.1',
+                                 'https://privatools.me/readyz']))
+    lock = Path('/tmp/privatools-auto-deploy.lock')
+    owner_ok = not lock.exists() or lock.stat().st_uid == os.getuid()
+    checks.append({'check': 'deploy lock owned by the deploy user, or absent', 'status': 'pass' if owner_ok else 'fail'})
+    regular = Path('/proc/sys/fs/protected_regular')
+    checks.append({'check': 'fs.protected_regular (informational)', 'status': 'info',
+                   'value': regular.read_text().strip() if regular.is_file() else 'unknown'})
     with socket.socket() as probe:
         probe.settimeout(2)
         taken = probe.connect_ex(('127.0.0.1', 8001)) == 0
@@ -81,7 +98,12 @@ def run(host=False):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--host', action='store_true', help='Also check the installed Docker daemon and nginx configuration; still read-only.')
+    parser.add_argument('--zero-downtime', action='store_true',
+                        help="Only the rollout's prerequisites on the VM; runs from an export, as the deploy user.")
     options = parser.parse_args()
-    report = run(options.host)
+    if options.zero_downtime:
+        report = {'mode': 'zero-downtime-read-only', 'checks': zero_downtime_checks()}
+    else:
+        report = run(options.host)
     print(json.dumps(report, indent=2))
     raise SystemExit(1 if any(c['status'] == 'fail' for c in report['checks']) else 0)
