@@ -5,12 +5,12 @@
       "text": "Drop or select .heic or .heif files, the format iPhones save by default, up to 500 MB each. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."
     },
     {
-      "name": "Convert to JPG",
-      "text": "Click convert. Each photo is decoded and written as a JPEG at quality 90, which keeps photographic detail while producing a file most people would not distinguish from the original."
+      "name": "Choose the quality",
+      "text": "Pick High (95) for the most detail, Standard (85, the default) for a good balance, or Compressed (70) for noticeably smaller files."
     },
     {
-      "name": "Download the JPGs",
-      "text": "A single photo downloads on its own; a batch is offered as one ZIP. The JPGs open in any application, including the older software that refuses HEIC."
+      "name": "Convert and download",
+      "text": "Run the conversion. A single photo downloads on its own; a batch is offered as one ZIP, and the JPGs open in any application, including older software that refuses HEIC."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "How much quality is lost?",
-      "a": "Very little at the quality setting used here, though the conversion is lossy and one-way: the JPEG is re-encoded from the decoded photo rather than copied. Keep the HEIC originals if they are your only copy."
+      "a": "Very little at Standard or High. Compressed trades some fine detail for a smaller file. The conversion is lossy and one-way — the JPEG is re-encoded from the decoded photo — so keep the HEIC originals if they are your only copy."
     },
     {
       "q": "Why is the JPG bigger than the HEIC?",

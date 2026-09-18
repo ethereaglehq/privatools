@@ -14,8 +14,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── PDF manipulation ──────────────────────────────────────────────
     "merge-pdf": [
         {"name": "Add the PDFs", "text": "Drop or select two or more PDF files, up to 500 MB each and up to 100 files at a time. The whole upload also has to fit within the same overall request limit, so several very large files may need to be merged in stages."},
-        {"name": "Put them in order", "text": "Drag the file cards into the order the pages should appear. Each file's pages stay together and in their original sequence."},
-        {"name": "Check the previews", "text": "Thumbnails help you confirm you have the right documents. Previews are skipped for very large selections to keep the page responsive, but those files still merge normally."},
+        {"name": "Put them in order", "text": "Drag the file cards into the order the files should appear in the merged PDF."},
+        {"name": "Choose the pages from each file", "text": "Select thumbnails, or type ranges for each file in the merge settings. Leave a file's field blank to include every page; 1-3,5 or 2-end includes just those pages, in the order you type them."},
         {"name": "Merge and download", "text": "Click merge. The server joins the files in the order shown and returns a single PDF."},
     ],
     "split-pdf": [
@@ -181,8 +181,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── Image tools ───────────────────────────────────────────────────
     "heic-to-jpg": [
         {"name": "Add your HEIC photos", "text": "Drop or select .heic or .heif files, the format iPhones save by default, up to 500 MB each. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."},
-        {"name": "Convert to JPG", "text": "Click convert. Each photo is decoded and written as a JPEG at quality 90, which keeps photographic detail while producing a file most people would not distinguish from the original."},
-        {"name": "Download the JPGs", "text": "A single photo downloads on its own; a batch is offered as one ZIP. The JPGs open in any application, including the older software that refuses HEIC."},
+        {"name": "Choose the quality", "text": "Pick High (95) for the most detail, Standard (85, the default) for a good balance, or Compressed (70) for noticeably smaller files."},
+        {"name": "Convert and download", "text": "Run the conversion. A single photo downloads on its own; a batch is offered as one ZIP, and the JPGs open in any application, including older software that refuses HEIC."},
     ],
     "remove-exif": [
         {"name": "Add the images to clean", "text": "Drop or select up to 100 pictures at once. JPG, PNG, WebP, BMP and TIFF are all handled, and each keeps its original format."},
@@ -1167,9 +1167,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
 TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "merge-pdf": [
         {"q": "How many PDFs can I merge at once?", "a": "Up to 100 files in one merge, each up to 500 MB. The combined upload is also capped at roughly 500 MB, so a handful of very large files may need to be merged in two passes — merge some, then merge that result with the rest."},
-        {"q": "Can I change the order after adding files?", "a": "Yes. Drag the cards into the order you want before merging; the output follows it exactly. To reorder individual pages rather than whole files, merge first and then use Organize Pages on the result."},
-        {"q": "Can I merge only some pages from each file?", "a": "Not in the merge itself — every page of every file is included. Use Extract Pages on each file first to keep only the pages you need, then merge those."},
-        {"q": "Does merging change how the pages look?", "a": "No. Pages are copied into the new document as they are, including text, images and links drawn on the page, so the merged file reads exactly like the originals placed end to end."},
+        {"q": "Can I change the order after adding files?", "a": "Yes. Drag the cards into the order you want before merging; the output follows it exactly. To reorder pages within a file, type them in the order you want in that file's page field, or use Organize Pages on the merged result."},
+        {"q": "Can I merge only some pages from each file?", "a": "Yes. Each file has its own page field in the merge settings: leave it blank to include every page, or enter ranges such as 1-3,5 or 2-end. Pages are added in the order you type them, so you can also reorder pages within a file."},
+        {"q": "Are bookmarks kept?", "a": "No. The merged PDF does not carry over the bookmarks (outline) of the individual files. Page content is copied unchanged, so the document reads the same, but if navigation matters, add a new outline afterwards with the Bookmarks tool."},
         {"q": "Can I merge password-protected PDFs?", "a": "A file that needs a password to open has to be unlocked first, because the merge has to read its pages. Use Unlock PDF with the password you already have, then merge the unlocked copy."},
         {"q": "What happens to my files after I upload them?", "a": "It is uploaded over HTTPS and merged on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDFs and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
@@ -1369,7 +1369,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "heic-to-jpg": [
         {"q": "Why will nothing open my HEIC files?", "a": "HEIC is Apple's high-efficiency photo format. It halves the storage a photo needs, but support outside Apple's ecosystem is patchy, so Windows applications, older editors and many web upload forms simply reject the file. A JPG copy sidesteps all of that."},
-        {"q": "How much quality is lost?", "a": "Very little at the quality setting used here, though the conversion is lossy and one-way: the JPEG is re-encoded from the decoded photo rather than copied. Keep the HEIC originals if they are your only copy."},
+        {"q": "How much quality is lost?", "a": "Very little at Standard or High. Compressed trades some fine detail for a smaller file. The conversion is lossy and one-way — the JPEG is re-encoded from the decoded photo — so keep the HEIC originals if they are your only copy."},
         {"q": "Why is the JPG bigger than the HEIC?", "a": "Because HEIC compresses far more efficiently than JPEG. Roughly doubling in size when you convert is normal and is the price of the compatibility you are buying."},
         {"q": "Are the GPS coordinates and camera details kept?", "a": "No. The JPEG is written without copying the EXIF block across, so location, camera model and capture time do not travel with the converted file. That is helpful before publishing a photo; run View EXIF on the original first if you need to read that data."},
         {"q": "Can I convert a whole camera roll?", "a": "Yes. Add the photos together; they are converted a few at a time and the batch comes back as a single ZIP. Each photo is still its own upload, so the 500 MB limit applies per file."},

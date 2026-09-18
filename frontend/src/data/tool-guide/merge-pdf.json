@@ -6,11 +6,11 @@
     },
     {
       "name": "Put them in order",
-      "text": "Drag the file cards into the order the pages should appear. Each file's pages stay together and in their original sequence."
+      "text": "Drag the file cards into the order the files should appear in the merged PDF."
     },
     {
-      "name": "Check the previews",
-      "text": "Thumbnails help you confirm you have the right documents. Previews are skipped for very large selections to keep the page responsive, but those files still merge normally."
+      "name": "Choose the pages from each file",
+      "text": "Select thumbnails, or type ranges for each file in the merge settings. Leave a file's field blank to include every page; 1-3,5 or 2-end includes just those pages, in the order you type them."
     },
     {
       "name": "Merge and download",
@@ -24,15 +24,15 @@
     },
     {
       "q": "Can I change the order after adding files?",
-      "a": "Yes. Drag the cards into the order you want before merging; the output follows it exactly. To reorder individual pages rather than whole files, merge first and then use Organize Pages on the result."
+      "a": "Yes. Drag the cards into the order you want before merging; the output follows it exactly. To reorder pages within a file, type them in the order you want in that file's page field, or use Organize Pages on the merged result."
     },
     {
       "q": "Can I merge only some pages from each file?",
-      "a": "Not in the merge itself — every page of every file is included. Use Extract Pages on each file first to keep only the pages you need, then merge those."
+      "a": "Yes. Each file has its own page field in the merge settings: leave it blank to include every page, or enter ranges such as 1-3,5 or 2-end. Pages are added in the order you type them, so you can also reorder pages within a file."
     },
     {
-      "q": "Does merging change how the pages look?",
-      "a": "No. Pages are copied into the new document as they are, including text, images and links drawn on the page, so the merged file reads exactly like the originals placed end to end."
+      "q": "Are bookmarks kept?",
+      "a": "No. The merged PDF does not carry over the bookmarks (outline) of the individual files. Page content is copied unchanged, so the document reads the same, but if navigation matters, add a new outline afterwards with the Bookmarks tool."
     },
     {
       "q": "Can I merge password-protected PDFs?",
