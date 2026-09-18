@@ -2,31 +2,29 @@
 
 Concrete steps to raise PrivaTools' visibility in AI answers (ChatGPT, Claude,
 Perplexity, Gemini, AI Overviews). The **in-repo** citability work is already
-shipped (citable homepage facts block, knowledge-graph–anchored `knowsAbout`,
-SSR ≥800-word tool pages, JSON-LD, llms.txt). The items below need an external
+shipped (knowledge-graph–anchored `knowsAbout`, server-rendered tool pages that
+match the visible guide, JSON-LD, llms.txt). The items below need an external
 account, so they're handed off here rather than done in code.
 
 ## 1. Activate Cloudflare (free tier) — perf + makes the CDN claim true
 
-Today the live `cf-cache-status`/`server` headers come straight from nginx; the
-"edge CDN / Brotli at the edge" framing is aspirational until this is done.
+**Done.** Checked from outside on 18 September 2026: `privatools.me` and `www`
+answer with `server: cloudflare`, `api.privatools.me` resolves straight to the
+VM, and a hashed asset returns `cf-cache-status: HIT` with Brotli after a
+warm-up. The domain's nameservers are Cloudflare's
+(`oaklyn`/`rudy.ns.cloudflare.com`).
 
-**Done:** the `privatools.me` zone is added in Cloudflare (free) and the domain's
-nameservers are pointed to Cloudflare (`oaklyn`/`rudy.ns.cloudflare.com`). DNS
-records are imported **grey-clouded** (DNS-only) — so the site/email work
-unchanged while the proxy is enabled deliberately.
-
-> **Do NOT just orange-cloud the apex.** Cloudflare's free/pro plans cap a
+> **Do NOT proxy the api host.** Cloudflare's free/pro plans cap a
 > **proxied** request body at **100 MB**, but PrivaTools accepts **500 MB**, so
-> proxying the apex as-is silently 413s every large `/api` upload. The fix is the
-> **api-subdomain split**: the SPA's `/api` traffic moves to a grey-clouded
+> proxying `/api` uploads silently 413s every large one. That is why the
+> **api-subdomain split** exists: the SPA's `/api` traffic goes to a grey-clouded
 > `api.privatools.me` (direct to the VM, uncapped, off Cloudflare), while the
-> apex/`www` are proxied for static. The code is shipped and flag-gated on
-> `PUBLIC_API_BASE_URL`. Follow **[deploy/api-subdomain-split.md](../../deploy/api-subdomain-split.md)**
-> for the exact ordered activation (add grey `api` record → cert → nginx vhost →
-> flip the backend flag → orange-cloud apex/`www`).
+> apex/`www` are proxied for static. It is controlled by
+> `PUBLIC_API_BASE_URL`; **[deploy/api-subdomain-split.md](../../deploy/api-subdomain-split.md)**
+> records the ordered activation and the rollback.
 
-Remaining Cloudflare-dashboard toggles (after the split is live):
+Cloudflare-dashboard settings to keep (confirm them in the dashboard; only the
+cache status and Brotli are visible from outside):
 
 - **SSL/TLS** mode → **Full (strict)** (the VM has a real Let's Encrypt cert).
 - **Speed** → enable **Brotli**; leave **Auto Minify** off (Vite pre-minifies); **Early Hints** on.
@@ -35,9 +33,8 @@ Remaining Cloudflare-dashboard toggles (after the split is live):
   cache for `/api/*`**.
 - Verify: `curl -sI https://privatools.me/assets/<hashed>.js | grep -i cf-cache-status` returns `HIT` after a warm-up.
 
-Outcome: real edge caching + Brotli for static assets, lower global LCP, the
-perf/CDN claims become accurate — and large uploads keep working via the direct
-api host.
+Outcome: real edge caching + Brotli for static assets and lower global LCP,
+while large uploads keep working via the direct api host.
 
 ## 2. Mint a Wikidata Q-number — entity disambiguation for AI
 
@@ -70,7 +67,8 @@ widget or an external review aggregator) to back it.
 
 ## Quick wins already shipped (for reference)
 
-- Citable "PrivaTools at a glance" facts block on the homepage SSR (statistic-dense, self-contained — optimal for AI extraction).
+- The homepage's server-rendered body says where files are processed (browser, temporary server processing, optional AI providers) and carries a visible FAQ that matches its FAQPage JSON-LD. (The earlier "PrivaTools at a glance" facts block was removed in v2.2.0.)
 - `knowsAbout` topics upgraded to knowledge-graph `Thing` entities with Wikipedia `sameAs`.
-- Per-tool SSR ≥800 words with TL;DR, HowTo + FAQ JSON-LD, and a "Last reviewed" date.
+- Server-rendered tool pages carry exactly what visitors see: summary, intro, "How to use" steps, the full FAQ, "Mentioned in our guides" links, related tools and the "Last reviewed" line, with HowTo and FAQPage JSON-LD. `backend/tests/test_top50_seo.py` holds the 50 most popular tools to at least 150 words and those blocks.
+- Each tool has a hand-written search title and meta description, and its `lastReviewed` date drives the sitemap `lastmod`, the visible review line and JSON-LD `dateModified`.
 - `llms.txt` + `llms-full.txt` regenerated from the registry on every build.

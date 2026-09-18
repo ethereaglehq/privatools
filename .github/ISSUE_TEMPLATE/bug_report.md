@@ -5,8 +5,10 @@ title: "[Bug] "
 labels: bug
 ---
 
+<!-- Security vulnerability? Do not open a public issue. Report it privately as described in SECURITY.md. -->
+
 **Tool Name**
-Which tool is affected? (e.g. Compress PDF, Image Converter)
+Which tool is affected? (e.g. Compress PDF, Image Format Converter)
 
 **Steps to Reproduce**
 1. Go to '...'
@@ -27,3 +29,4 @@ What actually happened?
 **Environment**
 - Browser:
 - OS:
+- Style (Air or Play) and appearance (light, dark or device):

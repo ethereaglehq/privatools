@@ -1,5 +1,7 @@
 # Sitemap priority and review dates Implementation Plan
 
+> **Status, 18 September 2026:** implemented in v2.6.0 by #172; the checkboxes were never ticked. Every sitemap URL carries a priority and the dead constants in `backend/app/routes/sitemap.py` are gone. The CI check that #172 left as a follow-up shipped in v2.6.1 (#175): `frontend/scripts/check-review-dates.mjs` fails a pull request that changes a tool's copy without moving its `lastReviewed`, or that moves more than 25 dates at once.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** The served sitemap carries `priority` and a real per-tool `lastmod`; the visible review line and JSON-LD `dateModified` use the same date; dead sitemap constants are gone.

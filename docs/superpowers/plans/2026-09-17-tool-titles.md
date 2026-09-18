@@ -1,5 +1,7 @@
 # Tool titles, H1 and descriptions Implementation Plan
 
+> **Status, 18 September 2026:** implemented in v2.6.0 by #171; the checkboxes were never ticked. Task 2's `scripts/seo/merge-tool-copy.py` remains as a one-shot script. In v2.6.1 #179 replaced the hand-kept `_PDF_TOOLS`/`_NONPDF_TOOLS` copy behind Task 4's server fallback with tables read from the committed tool manifest.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Every tool page gets one hand-written search title and meta description, stored in the registries and used by the server head, the server H1, the visible H1 and the browser tab.

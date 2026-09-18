@@ -1,5 +1,12 @@
 # api-subdomain split — activation runbook
 
+> **Status: active in production** (checked 18 September 2026). `privatools.me`
+> and `www` are served through Cloudflare, `api.privatools.me` resolves
+> directly to the VM, and the homepage carries
+> `<meta name="privatools:api-base" content="https://api.privatools.me">`.
+> The steps below record how it was activated; keep them for rollback and for
+> rebuilding the host.
+
 **Goal:** put `privatools.me` + `www` behind Cloudflare's proxy (edge cache,
 Brotli, DDoS protection — makes the "edge CDN" claim true) **without** breaking
 large uploads. Cloudflare's free/pro plans cap a proxied request body at

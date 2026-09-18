@@ -10,6 +10,8 @@ Please report suspected vulnerabilities by email:
 - Subject prefix: `[Security]`
 - Public policy page: https://privatools.me/security
 
+You can also report privately through GitHub: **Security → Report a vulnerability** on the repository ([direct link](https://github.com/ethereaglehq/privatools/security/advisories/new)).
+
 Include enough detail for us to reproduce the issue safely:
 
 - Affected URL, route, or package
@@ -25,6 +27,7 @@ Do not publicly disclose a vulnerability before we have had a reasonable chance 
 In scope:
 
 - https://privatools.me
+- https://api.privatools.me, which serves the same backend's `/api/` routes directly
 - Public frontend and backend code in the PrivaTools repository
 - File-processing routes, temporary-file cleanup, security headers, and browser-side privacy boundaries
 

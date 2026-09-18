@@ -1,3 +1,5 @@
+> Historical GEO analysis snapshot from 1 September 2026, taken against a local pre-release build. Robots rules, structured data (speakable and Review markup are gone), the sitemap, tool pages and the mobile navigation have changed since; this is not current status. Use the [GEO runbook](../seo/geo-runbook.md) for current work.
+
 # GEO Analysis — privatools.me (pre-release build)
 
 *Produced by executing the installed `seo-geo` skill (claude-seo v2.2.5) against the

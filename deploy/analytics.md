@@ -4,7 +4,7 @@ The frontend uses the Google browser tag for sessions, first visits and foregrou
 
 ## Usage events
 
-`tool_run` fires once per run from the shared engines (`GenericUI`, `SimpleConvertUI`, `useMultiFileProcessor`), once per Batch page run and once per Pipeline step, plus a direct `emitToolRun` call in tools that keep their own processing loop. Tool code dispatches the `privatools:tool-run` DOM event through `frontend/src/lib/toolRun.ts`; the beacon in `frontend/src/lib/analyticsBeacon.ts` decides whether anything is sent.
+`tool_run` fires once per run from the shared engines (`GenericUI`, `SimpleConvertUI`, `useMultiFileProcessor`, `useMediaJob`), once per Batch page run and once per Pipeline step, plus a direct `emitToolRun` call in tools that keep their own processing loop. Tool code dispatches the `privatools:tool-run` DOM event through `frontend/src/lib/toolRun.ts`; the beacon in `frontend/src/lib/analyticsBeacon.ts` decides whether anything is sent.
 
 | Parameter | Values |
 | --- | --- |
@@ -18,7 +18,7 @@ Register `tool_slug`, `tool_category`, `run_mode` and `outcome` as event-scoped 
 
 The previous first-party Measurement Protocol browser sender is removed. Its backend endpoint remains for cached older clients; reserved `user_engagement` is translated to `foreground_time`, unknown events are dropped, and no time/session values are invented. Do not run a second browser pageview sender alongside the tag.
 
-## Required Google settings before enabling
+## Google settings the tag depends on
 
 The following changes were saved on September 14, 2026 in the existing PrivaTools property `530357002`, web stream `14273376292`, measurement ID `G-B3VWQ44MX1`. They preserve the owner's latest choices:
 
@@ -41,7 +41,7 @@ Collection is on by default for every visitor. There is no consent prompt, no re
 
 This section describes reports from before 17 September 2026, when the browser tag was opt-in and almost nothing was collected.
 
-The supplied Tag diagnostics screenshot says the browser tag has not been detected for 48 hours. This is compatible with an older Measurement Protocol-only sender: server events can arrive without the browser tag being detected. It does not by itself identify the deployed fault. The replacement is not deployed yet; a public script-configuration pass or local mocked test cannot clear that warning. After activation, verify actual network delivery and GA Realtime/Tag Assistant with the correct property, then allow diagnostics time to refresh.
+The supplied Tag diagnostics screenshot says the browser tag has not been detected for 48 hours. This is compatible with an older Measurement Protocol-only sender: server events can arrive without the browser tag being detected. It does not by itself identify the deployed fault. A public script-configuration pass or local mocked test cannot clear that warning; verify actual network delivery and GA Realtime/Tag Assistant with the correct property, then allow diagnostics time to refresh.
 
 Views count page-view events; Event count includes all event types. A row with equal views and events is consistent with collecting only pageviews for that row, but the screenshot alone does not show active event filters. Active users are users, whereas bounce rate is the share of sessions that were not engaged. They have different denominators. Average engagement time does not prove the bounce rate is correct or incorrect.
 
