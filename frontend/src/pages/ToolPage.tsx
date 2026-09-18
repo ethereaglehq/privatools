@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useRef, useState, Suspense, lazy, type ComponentType } from "react";
 import { toolBySlug, tools, categoryMeta, type Category } from "@/data/tools";
-import { postsForTool } from "@/data/blog";
+import { useToolBlogLinks } from "@/lib/tool-blog-links";
 import { formatReviewedDate, getToolLastReviewed } from "@/data/tool-review-dates";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -402,6 +402,9 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
 export default function ToolPage() {
   const { slug } = useParams<{ slug: string }>();
   const tool = slug ? toolBySlug[slug] : null;
+  // This module loads on every tool page (withRealTools mounts ToolUI from
+  // it), so it reads the generated index, never data/blog.
+  const guideLinks = useToolBlogLinks(slug);
   const { addEntry } = useHistory();
   const { toggle, isFavorite } = useFavorites();
   // Bumped by the per-tool ErrorBoundary's onReset to force a remount of
@@ -609,11 +612,8 @@ export default function ToolPage() {
               // Posts that mention this tool in their relatedTools array.
               // Falls back to the hand-curated TOOL_BLOG_LINKS for any tool
               // that doesn't yet have any blog post linking back to it.
-              const derived = postsForTool(slug, 4);
               const fallback = TOOL_BLOG_LINKS[slug] || [];
-              const posts = derived.length > 0
-                ? derived.map(p => ({ slug: p.slug, title: p.title }))
-                : fallback;
+              const posts = guideLinks.length > 0 ? guideLinks : fallback;
               if (posts.length === 0) return null;
               return (
                 <div className="rounded-xl border border-border bg-card p-5">

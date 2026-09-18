@@ -1,25 +1,19 @@
 import { useEffect, useState } from "react";
 import { ArrowUpRight } from "lucide-react";
 import type { ToolGuide as ToolGuideData } from "@/lib/tool-guide";
-
-type GuideLink = { slug: string; title: string };
+import { useToolBlogLinks } from "@/lib/tool-blog-links";
 
 /** Steps, questions and related reading under the tool. Same text the server sends to crawlers. */
 export function ToolGuide({ slug, name }: { slug: string; name: string }) {
     const [guide, setGuide] = useState<ToolGuideData | null>(null);
-    const [links, setLinks] = useState<GuideLink[]>([]);
+    const links = useToolBlogLinks(slug);
     useEffect(() => {
         let active = true;
-        setGuide(null); setLinks([]);
+        setGuide(null);
         // Dynamic: lib/tool-guide.ts globs all 221 tools' JSON (~24 KB) so it
         // can lazy-load any one of them — that map must never sit in the
         // entry chunk, so it's imported here instead of at module scope.
         import("@/lib/tool-guide").then(({ loadToolGuide }) => loadToolGuide(slug)).then(data => { if (active) setGuide(data); }).catch(() => {});
-        // scripts/gen-llms.mjs writes this index from blog.ts: the newest four
-        // posts per tool, a few kilobytes. The blog module itself is every
-        // article's HTML, so it is never imported here.
-        // Related reading is optional — if the chunk fails to load, the guide still renders without it.
-        import("@/data/tool-blog-links.json").then(({ default: index }) => { if (active) setLinks((index as Record<string, GuideLink[]>)[slug] ?? []); }).catch(() => {});
         return () => { active = false; };
     }, [slug]);
     if (!guide || (guide.howto.length === 0 && guide.faq.length === 0)) return null;

@@ -1,13 +1,10 @@
 import { usesClerkAccounts } from '@/lib/auth-mode';
-import { BlogIndexContent } from '@/pages/BlogPage';
-import { BlogArticleContent } from '@/pages/BlogPostPage';
 import { searchToolList } from '@/lib/tool-search';
 import { useMemo, useState, type CSSProperties } from 'react';
 import type { LucideIcon } from 'lucide-react';
-import { ArrowLeft, ArrowRight, ArrowUpRight, BookOpen, Check, Code2, Feather, FileText, Heart, LifeBuoy, LockKeyhole, Mail, Search, ShieldCheck, SlidersHorizontal, Sparkles, X } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, Check, Code2, Feather, FileText, Heart, LifeBuoy, LockKeyhole, Mail, Search, ShieldCheck, SlidersHorizontal, Sparkles, X } from 'lucide-react';
 import { tools } from '@/data/tools';
 import { nonPdfTools } from '@/data/non-pdf-tools';
-import { blogPosts, type BlogPost } from '@/data/blog';
 import { StudioPage, StudioHeader, StudioAction, StudioEmpty } from './Studio';
 import './content.css';
 
@@ -17,7 +14,6 @@ const families = [
 ];
 const hues = ['pdf','image','media','code'];
 const toolHref = (slug:string)=>allTools.find(t=>t.slug===slug)?.href || '/tools';
-const date = (value:string)=>new Date(value+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
 
 function FileObject({kind='PDF',icon:Icon=FileText}:{kind?:string;icon?:LucideIcon}) {
  return <div className="pt-content-object" aria-hidden="true"><span className="pt-object-back"/><span className="pt-object-paper"><Icon size={34} strokeWidth={1.25}/><i/><i/><b>{kind}</b></span><span className="pt-object-seal"><Check size={18}/></span></div>;
@@ -65,8 +61,3 @@ export function SupportStudio() {
 }
 
 export function MissingStudio(){return <StudioPage className="pt-missing-page"><FileObject kind="404" icon={Search}/><StudioHeader kicker="A small detour" title="This page wandered off." description="The address may have changed, but your next tool is easy to find." actions={<><StudioAction href="/tools">Explore the tools</StudioAction><StudioAction href="/" variant="secondary">Back home</StudioAction></>}/></StudioPage>}
-
-export function GuidesStudio({slug,tag,onTag}:{slug?:string;tag:string;onTag:(v:string)=>void}){
- return slug ? <BlogArticleContent key={slug} slug={slug}/> : <BlogIndexContent tag={tag} onTagChange={onTag}/>;
-}
-function GuideCard({post,featured}:{post:BlogPost;featured:boolean}){return <a className="pt-guide-card" data-featured={featured} href={`/blog/${post.slug}`}><div className="pt-guide-card-art" aria-hidden="true"><BookOpen strokeWidth={1} size={featured?78:45}/><span>{post.tags[0]}</span></div><div className="pt-guide-card-content"><span className="pt-guide-card-meta">{date(post.publishedAt)} · {post.readTime}</span><h2>{post.title}</h2><p>{post.description}</p><span className="pt-guide-read">Read the guide <ArrowRight size={17}/></span></div></a>}
