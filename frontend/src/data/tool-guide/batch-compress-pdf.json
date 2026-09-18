@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload multiple PDFs",
-      "text": "Drag up to 50 PDF files. Up to 500 MB per file."
+      "text": "Drag 2 to 50 PDF files. They go up in one request, so together they can be up to 500 MB."
     },
     {
-      "name": "Pick compression level",
-      "text": "Light (modest reduction, best quality), Recommended (balanced — default), Extreme (smallest files, some image-quality loss)."
+      "name": "Know what it does",
+      "text": "There is no level to pick. Each PDF is rewritten without unused objects and with its streams compressed. Images are not downsampled or re-encoded, so photo-heavy files shrink little; use Compress PDF for image compression levels."
     },
     {
       "name": "Compress and download as ZIP",
-      "text": "Click Compress. Files are processed in parallel across 4 workers. Results are bundled into a ZIP with a savings summary."
+      "text": "Click Compress. Files are processed in parallel, up to four at a time, and the results come back in one ZIP, in upload order."
     }
   ],
   "faq": [
     {
       "q": "How many PDFs can I upload?",
-      "a": "Up to 50 files per batch, up to 500 MB per file."
+      "a": "Between 2 and 50 files per batch. They are sent in one upload, so together they must fit within 500 MB."
     },
     {
       "q": "Are they compressed in parallel?",
-      "a": "Yes — the backend runs 4 worker processes simultaneously, so 4 files compress at once. Total time scales nearly linearly with file count divided by 4."
+      "a": "Yes. The server compresses up to four files at once in a shared pool of worker threads, so a large batch still takes longer than a single file."
     },
     {
-      "q": "What's the difference between Light, Recommended, and Extreme?",
-      "a": "Light shrinks structure only (5–30% reduction, no visible quality loss). Recommended (default) resamples images at 150 DPI (40–70% reduction). Extreme drops to 96 DPI and lower JPEG quality (60–90% reduction)."
+      "q": "How much smaller will my files get?",
+      "a": "It depends on how much waste a file carries. Batch Compress removes unused objects and compresses streams, but it does not touch images: in a test, a PDF made of one JPEG photo shrank by less than 0.1 %. For image compression, use Compress PDF, which offers Light, Recommended and Extreme levels."
     }
   ]
 }

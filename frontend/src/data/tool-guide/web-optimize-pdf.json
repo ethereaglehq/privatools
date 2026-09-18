@@ -16,11 +16,11 @@
     },
     {
       "q": "Does it change file size?",
-      "a": "Usually slightly smaller, sometimes slightly larger — the rearrangement adds a small overhead but qpdf also re-streams and recompresses where it can."
+      "a": "Expect a small change, often an increase: linearization adds hint tables for the viewer and reorders the objects. Two small test files each grew by about 9 %."
     },
     {
       "q": "Do I need this for a PDF served from my own server?",
-      "a": "Only if you're serving large PDFs and want the inline-viewer experience to feel fast. For small (<2 MB) PDFs the difference is invisible."
+      "a": "Mainly for large PDFs viewed inline in a browser, where the first page can appear before the download finishes. A small PDF downloads quickly either way."
     }
   ]
 }

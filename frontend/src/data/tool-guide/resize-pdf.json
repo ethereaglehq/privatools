@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload your PDF",
-      "text": "Drop a PDF up to 500 MB."
+      "text": "Drop one or more PDFs, up to 500 MB each."
     },
     {
       "name": "Choose target page size",
-      "text": "A4, Letter, Legal, Tabloid, or custom dimensions in millimeters/inches."
+      "text": "A4, Letter, A3, Legal, or Custom, where you enter the width and height in points (72 points = 1 inch), from 72 to 14400."
     },
     {
       "name": "Download the resized PDF",
-      "text": "PrivaTools scales each page's MediaBox to the target. Content is preserved at relative position; aspect ratio is maintained."
+      "text": "PrivaTools sets each page's size (its MediaBox) to the target and removes any crop box. The content is not scaled or moved: it stays anchored to the bottom-left corner."
     }
   ],
   "faq": [
     {
       "q": "Will my content be cropped if I resize to a smaller page?",
-      "a": "No — content scales proportionally. If you want to crop instead, use the Crop tool."
+      "a": "Yes. The content is not scaled, so anything beyond the new width or height, measured from the bottom-left corner, is cut off: resizing an A4 page to Letter loses about the top 50 points. If you want to choose what to trim, use the Crop tool."
     },
     {
       "q": "Difference between Resize and Crop?",
-      "a": "Resize changes the page dimensions (scales content). Crop changes the visible region without scaling."
+      "a": "Resize changes the page dimensions without scaling the content. Crop keeps the page and hides its margins by setting a smaller visible area; the hidden parts stay in the file."
     },
     {
       "q": "Does this affect text quality?",
-      "a": "Text is vector-based in PDFs, so it scales perfectly. Only embedded raster images can lose quality on extreme upscale."
+      "a": "No. Nothing is scaled or re-rendered; only the page size changes, so text and images stay exactly as they were."
     }
   ]
 }

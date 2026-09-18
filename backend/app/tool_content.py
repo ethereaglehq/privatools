@@ -59,8 +59,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Unlock and download", "text": "Run it. The result opens without a password, and restrictions such as no-print or no-copy are removed as well."},
     ],
     "rotate-pdf": [
-        {"name": "Drop your PDF", "text": "Select a PDF up to 500 MB. Thumbnail previews of every page load automatically so you can see what needs rotating."},
-        {"name": "Select pages to rotate", "text": "Click individual page thumbnails to target specific pages, or 'Select all' for whole-document rotation. Mix-and-match is supported (different angles per page)."},
+        {"name": "Drop your PDF", "text": "Select one or more PDFs, up to 500 MB each. The same rotation is applied to each file."},
+        {"name": "Select pages to rotate", "text": "Keep All pages, or choose Specific pages and type them, such as 1,3,5-8. One run applies one angle; to turn different pages by different amounts, run it again on the result."},
         {"name": "Choose the rotation angle", "text": "Pick 90° clockwise, 180° (upside-down), or 270° clockwise (equivalent to 90° counter-clockwise). PDF only allows 90° increments."},
         {"name": "Apply and download", "text": "Click Rotate. The server applies the rotation permanently (not just a viewer toggle) and returns the updated PDF — orientation sticks in every reader."},
     ],
@@ -83,9 +83,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Apply redactions and download", "text": "Click Redact. The underlying content is permanently destroyed — it cannot be recovered, even by removing the black boxes."},
     ],
     "flatten-pdf": [
-        {"name": "Upload the PDF", "text": "Select a PDF that contains form fields, annotations, or layers you want to flatten."},
-        {"name": "Choose flattening options", "text": "Decide whether to flatten form fields only, annotations only, or everything. Flattening converts interactive elements into static page content."},
-        {"name": "Download the flattened PDF", "text": "Click Flatten. The result is a clean PDF where all content is baked into the pages, preventing further edits."},
+        {"name": "Upload the PDF", "text": "Select one or more filled PDF forms, up to 500 MB each. A PDF that contains comments, highlights or other annotations currently fails with an error."},
+        {"name": "Let it lock the fields", "text": "There are no options. Every form field is set to read-only; the fields and their values stay in the file, and links and layers are left as they are."},
+        {"name": "Download the flattened PDF", "text": "Click Flatten and download. The values show as before, but a PDF reader will not let anyone edit the fields; because the fields are still in the file, a PDF editor can clear the read-only setting."},
     ],
     "bookmarks": [
         {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Existing bookmarks are not loaded, and saving replaces them, so include any you want to keep."},
@@ -327,9 +327,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Copy what you need", "text": "Click Copy on any row. Useful for filling Cron entries, debugging API timestamps, or formatting logs."},
     ],
     "batch-compress-pdf": [
-        {"name": "Upload multiple PDFs", "text": "Drag up to 50 PDF files. Up to 500 MB per file."},
-        {"name": "Pick compression level", "text": "Light (modest reduction, best quality), Recommended (balanced — default), Extreme (smallest files, some image-quality loss)."},
-        {"name": "Compress and download as ZIP", "text": "Click Compress. Files are processed in parallel across 4 workers. Results are bundled into a ZIP with a savings summary."},
+        {"name": "Upload multiple PDFs", "text": "Drag 2 to 50 PDF files. They go up in one request, so together they can be up to 500 MB."},
+        {"name": "Know what it does", "text": "There is no level to pick. Each PDF is rewritten without unused objects and with its streams compressed. Images are not downsampled or re-encoded, so photo-heavy files shrink little; use Compress PDF for image compression levels."},
+        {"name": "Compress and download as ZIP", "text": "Click Compress. Files are processed in parallel, up to four at a time, and the results come back in one ZIP, in upload order."},
     ],
     "pdf-page-counter": [
         {"name": "Upload up to 100 PDFs", "text": "Drag up to 100 PDF files. The tool reads only metadata, not content — page counts come back almost instantly."},
@@ -545,9 +545,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Save and download", "text": "Click Save. Annotations are added as standard PDF annotation objects — they appear in every PDF reader and can be edited later."},
     ],
     "auto-crop": [
-        {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB. Best for scanned documents with consistent margins."},
-        {"name": "Let auto-detection scan", "text": "PrivaTools analyses the bounding box of actual content on each page using PyMuPDF — ignoring whitespace, page numbers in margins, and scan-edge artifacts."},
-        {"name": "Download the cropped PDF", "text": "Click Auto Crop. Each page's MediaBox is shrunk to the detected content bounding box, eliminating dead margins."},
+        {"name": "Upload the PDF", "text": "Drop one or more PDFs, up to 500 MB each. It works on pages with real text: a scanned page is one full-page image, so it is left as it is."},
+        {"name": "Let auto-detection scan", "text": "PrivaTools finds the area covered by the text and images on each page using PyMuPDF. Everything counts, including a page number in the margin, while vector drawings such as lines and boxes are not detected and can be trimmed away."},
+        {"name": "Download the cropped PDF", "text": "Click Auto Crop. Each page's visible area (its CropBox) is set to that box plus a 20-point margin; the rest of the page stays in the file, hidden."},
     ],
     "bates-numbering": [
         {"name": "Upload the PDF (or batch)", "text": "Drop one PDF, or up to 100 PDFs that make up one production. Several files are numbered as one continuous run, file after file, and come back as a ZIP with a bates-manifest.json listing each file's range. The whole upload can be up to 500 MB."},
@@ -571,8 +571,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "crop-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Set crop margins", "text": "Specify top / bottom / left / right margins to remove, in PDF points (1 pt = 1/72 inch)."},
-        {"name": "Download the cropped PDF", "text": "Click Crop. Each page's MediaBox + CropBox is shrunk by the specified margins."},
+        {"name": "Set crop margins", "text": "Draw the area to keep on the page preview, or type the top / bottom / left / right margins to remove, in PDF points (1 pt = 1/72 inch). The same margins apply to every page."},
+        {"name": "Download the cropped PDF", "text": "Click Crop. Each page's CropBox, the area a reader shows, is set inside those margins; the MediaBox is left unchanged."},
     ],
     "delete-annotations": [
         {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB."},
@@ -586,8 +586,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "deskew-pdf": [
         {"name": "Upload a scanned PDF", "text": "Drop a scanned PDF up to 500 MB. Works best on documents where text lines are visible."},
-        {"name": "PrivaTools detects skew per page", "text": "The algorithm analyses the text line angle on each page and computes the rotation needed to straighten it."},
-        {"name": "Download the deskewed PDF", "text": "Each page is rotated by its detected angle (typically -5° to +5°) and the corners are cropped to fit. Result: text rows are perfectly horizontal."},
+        {"name": "PrivaTools detects skew per page", "text": "The algorithm tries rotations of up to about 6° either way, in half-degree steps, on a low-resolution copy of each page and picks the angle at which the lines of text run straightest."},
+        {"name": "Download the deskewed PDF", "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise; the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."},
     ],
     "esign-pdf": [
         {"name": "Add the PDF", "text": "Drop or select the document to sign, up to 500 MB."},
@@ -622,8 +622,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "grayscale-pdf": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Convert all content to grayscale", "text": "PrivaTools renders each page at the source DPI, converts to single-channel grayscale, and re-embeds. Text, images, and vector content all become greyscale."},
-        {"name": "Download the grayscale PDF", "text": "File size typically drops 30–50% because color channels are eliminated."},
+        {"name": "Convert all content to grayscale", "text": "PrivaTools converts every embedded image to grayscale, re-saved as JPEG. If any text or vector drawing is still in color after that, every page of the document is re-rendered as a 200 DPI grayscale image. Either way, everything ends up greyscale."},
+        {"name": "Download the grayscale PDF", "text": "The size change depends on the file: in tests, a PDF of black text and a photo shrank by about a third, while a text PDF with one red heading grew many times over once its pages became images."},
     ],
     "header-footer": [
         {"name": "Upload your PDF", "text": "Drop one or more PDFs, up to 500 MB each. The same header and footer go on all of them."},
@@ -637,7 +637,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "invert-colors": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. 150 DPI is the default; 300 for archival, 96 for web previews."},
+        {"name": "Choose DPI for rendering", "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI)."},
         {"name": "Download the inverted PDF", "text": "Each page is rendered, inverted (white↔black, colors mapped to complements), and re-embedded."},
     ],
     "jpg-to-pdf": [
@@ -751,13 +751,13 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "repair-pdf": [
         {"name": "Upload the corrupt PDF", "text": "Drop a PDF up to 500 MB that won't open or shows errors in your viewer."},
-        {"name": "PrivaTools rebuilds the file structure", "text": "Uses pikepdf to parse the PDF tolerantly, recover damaged cross-reference tables, and rewrite the file with a clean structure."},
-        {"name": "Download the repaired PDF", "text": "Most viewer-breaking issues (broken xref, missing trailer, corrupted streams) are fixable."},
+        {"name": "PrivaTools rebuilds the file structure", "text": "Uses pikepdf to parse the PDF tolerantly, recover damaged cross-reference tables, and rewrite the file with a clean structure; if that fails, it retries with MuPDF."},
+        {"name": "Download the repaired PDF", "text": "Structural damage such as a broken cross-reference table or a missing trailer is usually fixable. Damaged data inside a page's content is copied as it is, and a file cut off too early may not be recoverable at all."},
     ],
     "resize-pdf": [
-        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Choose target page size", "text": "A4, Letter, Legal, Tabloid, or custom dimensions in millimeters/inches."},
-        {"name": "Download the resized PDF", "text": "PrivaTools scales each page's MediaBox to the target. Content is preserved at relative position; aspect ratio is maintained."},
+        {"name": "Upload your PDF", "text": "Drop one or more PDFs, up to 500 MB each."},
+        {"name": "Choose target page size", "text": "A4, Letter, A3, Legal, or Custom, where you enter the width and height in points (72 points = 1 inch), from 72 to 14400."},
+        {"name": "Download the resized PDF", "text": "PrivaTools sets each page's size (its MediaBox) to the target and removes any crop box. The content is not scaled or moved: it stays anchored to the bottom-left corner."},
     ],
     "reverse-pdf": [
         {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB."},
@@ -1232,7 +1232,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and decrypted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "rotate-pdf": [
-        {"q": "Can I rotate individual pages instead of the entire PDF?", "a": "Yes. Click individual page thumbnails to select specific pages, then apply the rotation angle only to those pages. Mix-and-match is supported: rotate page 3 by 90°, page 7 by 180°, leave the rest untouched."},
+        {"q": "Can I rotate individual pages instead of the entire PDF?", "a": "Yes. Choose Specific pages and type the page numbers or ranges, such as 1,3,5-8; the other pages are left untouched. Each run uses one angle, so rotate page 3 by 90° in one run and page 7 by 180° in the next."},
         {"q": "Does rotation affect text searchability?", "a": "No. The text layer is preserved exactly. Rotation only changes the visual display orientation of each page; the underlying text glyphs, search index, and bookmark positions are kept intact."},
         {"q": "What rotation angles are supported?", "a": "90° clockwise, 180° (upside-down), and 270° clockwise (equivalent to 90° counter-clockwise). PDF only allows rotations in 90° increments per the spec — arbitrary angles aren't supported."},
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and rotated in isolated temporary per-request storage on the PrivaTools server. Response cleanup removes the job's temporary files after the result is sent, and a background sweep clears anything left behind by an interrupted request. Nothing is added to an account or file library."},
@@ -1266,9 +1266,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to the original, unredacted PDF I upload?", "a": "It is uploaded over HTTPS and held in isolated temporary per-request storage while the redactions are applied. Response cleanup removes both the original and the redacted output after the result is sent, and a background sweep clears anything left behind by an interrupted request. The redaction code is open source under the MIT licence, so it can be reviewed, or self-hosted if the original must not leave your network."},
     ],
     "flatten-pdf": [
-        {"q": "What does flattening a PDF mean?", "a": "Flattening converts interactive elements like form fields, annotations, and layers into static page content. The visual appearance stays the same but the elements can no longer be edited."},
-        {"q": "When should I flatten a PDF?", "a": "Flatten before sharing filled forms (to prevent edits), before printing (to avoid rendering issues), or when a recipient's PDF viewer does not display annotations correctly."},
-        {"q": "Does flattening reduce file size?", "a": "Sometimes. Removing form field metadata and annotation data can slightly reduce file size, but the effect depends on the document."},
+        {"q": "What does flattening a PDF mean?", "a": "Flattening usually means turning form fields and annotations into ordinary page content. This tool currently does part of that: it makes form fields read-only rather than merging them into the page, and it does not flatten comments, highlights or layers."},
+        {"q": "When should I flatten a PDF?", "a": "Before sending a filled form, so the recipient's reader will not let them change the answers."},
+        {"q": "Does flattening reduce file size?", "a": "Sometimes, slightly: the file is rewritten with unused objects removed and its streams compressed. The form fields themselves stay in the file."},
     ],
     "bookmarks": [
         {"q": "Can I create a multi-level bookmark tree?", "a": "No. Every bookmark is saved at the top level, in the order listed; nested entries are not supported."},
@@ -1516,8 +1516,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "web-optimize-pdf": [
         {"q": "What does linearization actually do?", "a": "It reorganizes the PDF byte layout so the first page's objects come first in the file. A byte-range-aware viewer can then start rendering the first page while the rest still downloads."},
-        {"q": "Does it change file size?", "a": "Usually slightly smaller, sometimes slightly larger — the rearrangement adds a small overhead but qpdf also re-streams and recompresses where it can."},
-        {"q": "Do I need this for a PDF served from my own server?", "a": "Only if you're serving large PDFs and want the inline-viewer experience to feel fast. For small (<2 MB) PDFs the difference is invisible."},
+        {"q": "Does it change file size?", "a": "Expect a small change, often an increase: linearization adds hint tables for the viewer and reorders the objects. Two small test files each grew by about 9 %."},
+        {"q": "Do I need this for a PDF served from my own server?", "a": "Mainly for large PDFs viewed inline in a browser, where the first page can appear before the download finishes. A small PDF downloads quickly either way."},
     ],
     "split-by-text": [
         {"q": "Where exactly does each split happen?", "a": "At every page that contains your text: that page starts a new part. Choose a phrase that appears once, on the first page of each section, so the parts line up with the documents you expect."},
@@ -1555,9 +1555,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I generate a future timestamp?", "a": "Yes. Type or paste any past or future ISO date and you'll get the corresponding epoch. The relative phrase will say 'in X days' for the future."},
     ],
     "batch-compress-pdf": [
-        {"q": "How many PDFs can I upload?", "a": "Up to 50 files per batch, up to 500 MB per file."},
-        {"q": "Are they compressed in parallel?", "a": "Yes — the backend runs 4 worker processes simultaneously, so 4 files compress at once. Total time scales nearly linearly with file count divided by 4."},
-        {"q": "What's the difference between Light, Recommended, and Extreme?", "a": "Light shrinks structure only (5–30% reduction, no visible quality loss). Recommended (default) resamples images at 150 DPI (40–70% reduction). Extreme drops to 96 DPI and lower JPEG quality (60–90% reduction)."},
+        {"q": "How many PDFs can I upload?", "a": "Between 2 and 50 files per batch. They are sent in one upload, so together they must fit within 500 MB."},
+        {"q": "Are they compressed in parallel?", "a": "Yes. The server compresses up to four files at once in a shared pool of worker threads, so a large batch still takes longer than a single file."},
+        {"q": "How much smaller will my files get?", "a": "It depends on how much waste a file carries. Batch Compress removes unused objects and compresses streams, but it does not touch images: in a test, a PDF made of one JPEG photo shrank by less than 0.1 %. For image compression, use Compress PDF, which offers Light, Recommended and Extreme levels."},
     ],
     "pdf-page-counter": [
         {"q": "How is this faster than opening each PDF?", "a": "The tool reads only the PDF's page metadata, not the page content. For 100 PDFs the total scan time is typically under a second."},
@@ -1827,9 +1827,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Do annotations survive PDF/A conversion?", "a": "They survive PrivaTools' PDF to PDF/A, which re-saves the file with a PDF/A-2b label and leaves annotations, notes included, in place."},
     ],
     "auto-crop": [
-        {"q": "Will this make text run off the page?", "a": "No — the algorithm leaves a small safety margin around detected content. If a page has no content (blank), the original MediaBox is kept."},
+        {"q": "Will this make text run off the page?", "a": "Not text or images: a 20-point margin is kept around them. Vector graphics such as lines, boxes and charts drawn as shapes are not detected, so they can end up outside the new area. A page with no text or images is left as it is."},
         {"q": "What if my PDF has different page sizes after scanning?", "a": "Auto-crop computes the bounding box per-page, so pages are independently cropped to their own content."},
-        {"q": "Will this affect printing?", "a": "After auto-crop, printing produces a smaller paper size. If you need the same paper size with less margin, use the Resize tool afterwards."},
+        {"q": "Will this affect printing?", "a": "The pages become smaller than the paper, so choose how your print dialog should place them, for example Fit to page. Do not run Resize afterwards: it removes the crop box and brings the whole page back."},
     ],
     "bates-numbering": [
         {"q": "What's Bates numbering used for?", "a": "Sequential page identification across legal discovery documents. Each page in a production gets a unique identifier so attorneys can reference exact pages."},
@@ -1856,8 +1856,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "crop-pdf": [
         {"q": "Difference between Crop and Auto-Crop?", "a": "Crop uses your manual margins (same on every page). Auto-Crop detects each page's actual content bounding box automatically."},
-        {"q": "Will the cropped content be deleted from the file?", "a": "No — only the visible region changes. The full page content is still in the file. To permanently remove the cropped data, run Flatten or Sanitize afterwards."},
-        {"q": "How do I undo a crop?", "a": "Re-open the PDF in PrivaTools Crop with negative margins to expand the box, or run Flatten which bakes the current crop in."},
+        {"q": "Will the cropped content be deleted from the file?", "a": "No — only the visible region changes. The full page content is still in the file, so the trimmed parts can be shown again. If what you are trimming is sensitive, remove it with Redact PDF first."},
+        {"q": "How do I undo a crop?", "a": "Keep your original: cropping writes a new PDF and leaves your upload unchanged. The Crop tool cannot widen the box again, since negative margins are rejected, but Resize with Custom set to the original page size in points removes the crop box and shows the full page again."},
     ],
     "delete-annotations": [
         {"q": "Will this remove form fields too?", "a": "Yes — form fields are a type of annotation. To preserve form structure but clear values, use the Fill Form tool with empty values instead."},
@@ -1873,9 +1873,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my PDF after I upload it?", "a": "It is uploaded over HTTPS and processed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "deskew-pdf": [
-        {"q": "My scans look fine — should I run deskew?", "a": "If the text appears tilted by more than ~0.5°, deskew helps OCR accuracy noticeably. For perfectly straight scans it's a no-op."},
-        {"q": "Will deskew add white margins?", "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills the margins with the surrounding background color (usually white)."},
-        {"q": "Should I deskew before or after OCR?", "a": "Always before. OCR engines are much more accurate on straight-line text."},
+        {"q": "My scans look fine — should I run deskew?", "a": "It does no harm: pages whose detected tilt is 0.3° or less are left exactly as they were. A tilted page is replaced by a rotated image, so any text layer on that page is lost."},
+        {"q": "Will deskew add white margins?", "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills it with white and scales the result to fit the original page size."},
+        {"q": "Should I deskew before or after OCR?", "a": "Before. A straightened page is replaced by an image without a text layer, so OCR has to run on the deskewed file anyway."},
     ],
     "esign-pdf": [
         {"q": "Is this a certificate-based digital signature?", "a": "No. It places a visible image of your signature on the page. That suits informal agreements and forms that accept an electronic signature, but it is not the cryptographic, certificate-backed kind some regulated processes require."},
@@ -1914,8 +1914,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can the GIF stay as a GIF inside the PDF?", "a": "PDF doesn't natively support GIF — the image is re-encoded as JPEG or Flate during embedding."},
     ],
     "grayscale-pdf": [
-        {"q": "Will text still be searchable?", "a": "Yes — the text layer is preserved. Only the rendered visuals change to grayscale."},
-        {"q": "Why convert to grayscale?", "a": "Cheaper printing on black-and-white printers, smaller file size, accessibility for color-blind readers, archival storage."},
+        {"q": "Will text still be searchable?", "a": "Only if all the text and drawings were already black or gray: then only the images change and the text layer is kept. If anything is in color, every page becomes an image and the text is no longer searchable; run OCR PDF afterwards to add a text layer back."},
+        {"q": "Why convert to grayscale?", "a": "Cheaper printing on black-and-white printers, a predictable look on monochrome devices, and archival storage."},
         {"q": "How does this differ from black-and-white?", "a": "Grayscale preserves shading (256 grey levels). True black-and-white (1-bit) is harsher but smaller — not currently offered as a separate option."},
     ],
     "header-footer": [
@@ -2059,9 +2059,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can it merge two damaged PDFs?", "a": "Repair each separately first, then use Merge."},
     ],
     "resize-pdf": [
-        {"q": "Will my content be cropped if I resize to a smaller page?", "a": "No — content scales proportionally. If you want to crop instead, use the Crop tool."},
-        {"q": "Difference between Resize and Crop?", "a": "Resize changes the page dimensions (scales content). Crop changes the visible region without scaling."},
-        {"q": "Does this affect text quality?", "a": "Text is vector-based in PDFs, so it scales perfectly. Only embedded raster images can lose quality on extreme upscale."},
+        {"q": "Will my content be cropped if I resize to a smaller page?", "a": "Yes. The content is not scaled, so anything beyond the new width or height, measured from the bottom-left corner, is cut off: resizing an A4 page to Letter loses about the top 50 points. If you want to choose what to trim, use the Crop tool."},
+        {"q": "Difference between Resize and Crop?", "a": "Resize changes the page dimensions without scaling the content. Crop keeps the page and hides its margins by setting a smaller visible area; the hidden parts stay in the file."},
+        {"q": "Does this affect text quality?", "a": "No. Nothing is scaled or re-rendered; only the page size changes, so text and images stay exactly as they were."},
     ],
     "reverse-pdf": [
         {"q": "Why would I reverse a PDF?", "a": "Most often because a scanner or printer produced the pages last-to-first. Reversing fixes the whole document in one step rather than dragging every page into place."},

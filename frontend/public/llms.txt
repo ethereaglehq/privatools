@@ -46,7 +46,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Bookmarks](https://privatools.me/tool/bookmarks): Add bookmarks to navigate large files
 - [Compress PDF](https://privatools.me/tool/compress-pdf): Reduce the file size of your PDF
 - [Remove Watermark](https://privatools.me/tool/remove-watermark): Find and remove visible watermarks from a PDF
-- [Flatten PDF](https://privatools.me/tool/flatten-pdf): Flatten forms and annotations into PDF content
+- [Flatten PDF](https://privatools.me/tool/flatten-pdf): Make the fields of a filled form read-only
 - [Deskew PDF](https://privatools.me/tool/deskew-pdf): Straighten scanned pages that are slightly tilted
 - [Repair PDF](https://privatools.me/tool/repair-pdf): Attempt to fix corrupted PDF files
 - [Resize PDF](https://privatools.me/tool/resize-pdf): Change the physical dimensions of the pages

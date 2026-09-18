@@ -169,9 +169,9 @@ Remove watermark from PDF online for free. Detects text watermarks — diagonal 
 
 URL: https://privatools.me/tool/flatten-pdf
 
-Flatten forms and annotations into PDF content
+Make the fields of a filled form read-only
 
-Flatten PDF online — permanently merge interactive form fields, annotations, and layers into static page content. Essential for submitting filled forms, preventing further edits, and ensuring consistent display. Free tool.
+Flatten PDF online — lock a filled form so its fields can no longer be edited in a PDF reader. Every form field is set to read-only and keeps its value; comments, highlights and layers are not flattened, and PDFs that contain comments or highlights cannot be processed at the moment. Free tool.
 
 ### Deskew PDF
 
@@ -179,7 +179,7 @@ URL: https://privatools.me/tool/deskew-pdf
 
 Straighten scanned pages that are slightly tilted
 
-Deskew scanned PDF pages online for free. Automatically detect and correct the tilt angle of scanned documents so text appears perfectly straight and readable. Ideal for fixing wonky scans. No installation required.
+Deskew scanned PDF pages online for free. Automatically detect and correct the tilt angle of scanned documents so the lines of text run straight. Ideal for fixing wonky scans. No installation required.
 
 ### Repair PDF
 
@@ -187,7 +187,7 @@ URL: https://privatools.me/tool/repair-pdf
 
 Attempt to fix corrupted PDF files
 
-Repair corrupted PDF files online for free. Fix damaged, broken, or unreadable PDFs that won't open in standard PDF readers. Recover content from corrupted documents. No software download needed.
+Repair corrupted PDF files online for free. Rebuild damaged or broken PDFs that won't open in standard PDF readers and recover the content that is still intact. No software download needed.
 
 ### Resize PDF
 
@@ -195,7 +195,7 @@ URL: https://privatools.me/tool/resize-pdf
 
 Change the physical dimensions of the pages
 
-Resize PDF pages online — change page dimensions to A4, Letter, Legal, or custom sizes. Scale content to fit new page sizes while maintaining aspect ratio. Free PDF page resizer with no watermarks.
+Resize PDF pages online — change page dimensions to A4, Letter, A3, Legal, or a custom size in points. The content is not scaled: it keeps its size and its place at the bottom-left of the page, so a larger page adds space at the top and right, and a smaller one cuts off what falls outside it. Free PDF page resizer with no watermarks.
 
 ### Rotate PDF
 
@@ -203,7 +203,7 @@ URL: https://privatools.me/tool/rotate-pdf
 
 Rotate all or specific pages in the PDF
 
-Rotate PDF pages online for free — rotate individual pages or all pages by 90°, 180°, or 270°. Fix sideways or upside-down scanned documents instantly. Preview each page before saving. No sign-up required.
+Rotate PDF pages online for free — rotate individual pages or all pages by 90°, 180°, or 270°. Fix sideways or upside-down scanned documents instantly. Rotate every page or just the pages you list. No sign-up required.
 
 ### Grayscale PDF
 
@@ -211,7 +211,7 @@ URL: https://privatools.me/tool/grayscale-pdf
 
 Convert a colorful PDF to black and white
 
-Convert PDF to grayscale online for free — turn color PDFs into black and white. Save ink when printing, reduce file size, or prepare documents for monochrome printing. Multiple conversion modes available.
+Convert PDF to grayscale online for free — turn color PDFs into black and white. Save ink when printing or prepare documents for monochrome printing. Photos are converted in place, so black text stays sharp and searchable; if any text or drawing is in color, every page is turned into a grayscale image instead.
 
 ### Crop PDF
 
@@ -771,7 +771,7 @@ URL: https://privatools.me/tool/invert-colors
 
 Invert PDF colors for a dark mode reading experience
 
-Invert PDF colors online for free — flip the color scheme for dark mode reading. Multiple modes: full inversion, text-only, and warm night tint. Reduce eye strain when reading PDFs at night.
+Invert PDF colors online for free — flip the color scheme for dark mode reading. Every page is rendered as an image and fully inverted, so white backgrounds turn black; the Night mode option currently gives the same full inversion. Handy for reading PDFs at night.
 
 ### Translate PDF
 
@@ -843,7 +843,7 @@ URL: https://privatools.me/tool/batch-compress-pdf
 
 Compress multiple PDFs at once in parallel
 
-Batch compress PDFs online for free — upload up to 50 PDF files and compress them all in parallel. Choose light, balanced, or extreme compression. Download all results as a single ZIP. Powered by 4-core parallel processing for speed.
+Batch compress PDFs online for free — upload up to 50 PDF files and compress them all in parallel, up to four at a time. Each file is rewritten without unused objects and with its streams compressed; images are left untouched, so quality does not change. Download all results as a single ZIP.
 
 ### PDF Page Counter
 

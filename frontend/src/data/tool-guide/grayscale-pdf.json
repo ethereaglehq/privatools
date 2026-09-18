@@ -6,21 +6,21 @@
     },
     {
       "name": "Convert all content to grayscale",
-      "text": "PrivaTools renders each page at the source DPI, converts to single-channel grayscale, and re-embeds. Text, images, and vector content all become greyscale."
+      "text": "PrivaTools converts every embedded image to grayscale, re-saved as JPEG. If any text or vector drawing is still in color after that, every page of the document is re-rendered as a 200 DPI grayscale image. Either way, everything ends up greyscale."
     },
     {
       "name": "Download the grayscale PDF",
-      "text": "File size typically drops 30–50% because color channels are eliminated."
+      "text": "The size change depends on the file: in tests, a PDF of black text and a photo shrank by about a third, while a text PDF with one red heading grew many times over once its pages became images."
     }
   ],
   "faq": [
     {
       "q": "Will text still be searchable?",
-      "a": "Yes — the text layer is preserved. Only the rendered visuals change to grayscale."
+      "a": "Only if all the text and drawings were already black or gray: then only the images change and the text layer is kept. If anything is in color, every page becomes an image and the text is no longer searchable; run OCR PDF afterwards to add a text layer back."
     },
     {
       "q": "Why convert to grayscale?",
-      "a": "Cheaper printing on black-and-white printers, smaller file size, accessibility for color-blind readers, archival storage."
+      "a": "Cheaper printing on black-and-white printers, a predictable look on monochrome devices, and archival storage."
     },
     {
       "q": "How does this differ from black-and-white?",
