@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 import pytest
 
-from backend.app import store
+from backend.app import job_handover, store
 from backend.app.api_v1 import quota
 from backend.app.api_v1.body_accounting import V1AccountingMiddleware
 from backend.app.api_v1.jobs import config, storage
@@ -401,7 +401,7 @@ def test_cross_process_duplicate_acceptance_charges_once(jobs,sample_pdf):
     inputs = [{"name":"0.pdf","sha256":hashlib.sha256(sample_pdf).hexdigest(),"bytes":len(sample_pdf)}]
     code = """import json,sys
 from pathlib import Path
-from backend.app import store
+from backend.app import job_handover, store
 from backend.app.api_v1.jobs import storage
 store.DATA_DIR=Path(sys.argv[1]); store.DB_PATH=store.DATA_DIR/'privatools.db'
 row,state,replayed=storage.accept(sys.argv[2],sys.argv[3],sys.argv[4],'process-race','grayscale',{},json.loads(sys.argv[5]),321)
@@ -649,12 +649,13 @@ def write_state(role,*,since_age=0.0,**changes):
 
 
 def test_standby_counts_as_ready_only_within_the_queue_deadline(jobs,monkeypatch):
-    # A standby that never gets the lock would otherwise report ready forever
-    # and accept jobs that expire in the queue. Past queue_seconds it is honest
-    # to refuse: /readyz turns 503 and submissions get jobs_unavailable, while
-    # pages keep serving (exiting would stop the whole container instead).
+    # A standby that never gets the lock while no supervisor serves the queue
+    # would otherwise report ready forever and accept jobs that expire there.
+    # Past queue_seconds it is honest to refuse: /readyz turns 503 and
+    # submissions get jobs_unavailable, while pages keep serving (exiting would
+    # stop the whole container instead).
     monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","old-build")
-    storage.heartbeat()
+    storage.heartbeat(accepting=False)          # the holder stopped claiming
     monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
     write_state("standby",since_age=config.LIMITS.queue_seconds-5)
     assert storage.capability()["available"]
@@ -664,6 +665,25 @@ def test_standby_counts_as_ready_only_within_the_queue_deadline(jobs,monkeypatch
     for role in ("active","draining"):
         write_state(role,since_age=config.LIMITS.queue_seconds*4)
         assert storage.capability()["available"],role
+
+
+def test_standby_stays_ready_while_another_supervisor_serves_the_queue(jobs,monkeypatch):
+    # The first deploy after the cut-over can keep the new container a
+    # standby for longer than queue_seconds: a long drain, then the old
+    # supervisor stops only once idle. Meanwhile that supervisor claims every
+    # job this container accepts, so readiness must not lapse while it serves.
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","old-build")
+    storage.heartbeat()                         # fresh and still claiming
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+    write_state("standby",since_age=config.LIMITS.queue_seconds*2)
+    assert storage.capability()["available"]
+    assert job_handover.status(storage.store.DB_PATH)["local"]["ready"]
+    # Once nobody heartbeats, the bound applies again.
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","old-build")
+    storage.heartbeat(now=time.time()-config.LIMITS.lease_seconds-5)
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+    assert not storage.capability()["available"]
+    assert not job_handover.status(storage.store.DB_PATH)["local"]["ready"]
 
 
 def test_status_command_is_cheap_and_imports_no_web_stack(jobs,sample_pdf):

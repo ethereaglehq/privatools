@@ -121,20 +121,29 @@ def live_state(now: float | None = None) -> dict | None:
     return state
 
 
-def ready_state(now: float | None = None) -> dict | None:
-    """live_state, except a standby that has waited more than QUEUE_SECONDS.
+def ready_state(now: float | None = None, *, queue_served: bool = False) -> dict | None:
+    """live_state, except a standby that has waited more than QUEUE_SECONDS unserved.
 
     A standby counts as ready so that a deploy's new container passes its
-    readiness gate while the old container still owns the queue. The bound
-    keeps that from lasting forever: a standby that never gets the lock turns
-    /readyz to 503 and job submissions to jobs_unavailable. Pages keep serving,
+    readiness gate while the old container still owns the queue. While another
+    supervisor visibly serves the queue (queue_served: a fresh heartbeat that
+    still accepts work), every job this container accepts will run, so a
+    standby stays ready however long it waits, as in the first deploy after
+    the cut-over. Otherwise it counts for at most QUEUE_SECONDS, the age at
+    which a queued job fails: a standby that never gets the lock turns /readyz
+    to 503 and job submissions to jobs_unavailable. Pages keep serving,
     because exiting would make the launcher stop the whole container.
     """
     state = live_state(now)
     now = time.time() if now is None else now
-    if state and state["role"] == "standby" and now - state["since"] > QUEUE_SECONDS:
+    if state and state["role"] == "standby" and not queue_served and now - state["since"] > QUEUE_SECONDS:
         return None
     return state
+
+
+def queue_served(row: dict | sqlite3.Row | None, now: float) -> bool:
+    """Some supervisor, of any build, heartbeats and still claims jobs."""
+    return bool(row and row["accepting"] and now - row["heartbeat"] <= LEASE_SECONDS)
 
 
 def status(database: Path | None = None) -> dict:
@@ -142,32 +151,34 @@ def status(database: Path | None = None) -> dict:
     now = time.time()
     result: dict = {"enabled": enabled(), "build_sha": build_sha(), "local": None,
                     "active": None, "running_jobs": None, "queued_jobs": None}
+    served = False
+    database = database or database_path()
+    if result["enabled"] and database.exists():
+        try:
+            # Read-only: a status probe must never create or change the database.
+            conn = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=10)
+            conn.row_factory = sqlite3.Row
+            try:
+                row = conn.execute("SELECT * FROM api_async_worker WHERE id=1").fetchone()
+                if row:
+                    result["active"] = {"build_sha": row["build_sha"], "accepting": bool(row["accepting"]),
+                                        "age": round(now - row["heartbeat"], 3)}
+                    served = queue_served(row, now)
+                result["running_jobs"] = conn.execute(
+                    "SELECT COUNT(*) FROM api_async_jobs WHERE state='running' AND claim IS NOT NULL").fetchone()[0]
+                result["queued_jobs"] = conn.execute(
+                    "SELECT COUNT(*) FROM api_async_jobs WHERE state='queued'").fetchone()[0]
+            finally:
+                conn.close()
+        except sqlite3.Error:
+            pass
     state = read_state()
     if state:
         result["local"] = {"role": state.get("role"), "passive": bool(state.get("passive")),
                            "age": round(now - state["updated"], 3),
                            "role_age": round(now - state["since"], 3),
-                           "alive": live_state(now) is not None, "ready": ready_state(now) is not None}
-    database = database or database_path()
-    if not result["enabled"] or not database.exists():
-        return result
-    try:
-        # Read-only: a status probe must never create or change the database.
-        conn = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=10)
-        conn.row_factory = sqlite3.Row
-        try:
-            row = conn.execute("SELECT * FROM api_async_worker WHERE id=1").fetchone()
-            if row:
-                result["active"] = {"build_sha": row["build_sha"], "accepting": bool(row["accepting"]),
-                                    "age": round(now - row["heartbeat"], 3)}
-            result["running_jobs"] = conn.execute(
-                "SELECT COUNT(*) FROM api_async_jobs WHERE state='running' AND claim IS NOT NULL").fetchone()[0]
-            result["queued_jobs"] = conn.execute(
-                "SELECT COUNT(*) FROM api_async_jobs WHERE state='queued'").fetchone()[0]
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        pass
+                           "alive": live_state(now) is not None,
+                           "ready": ready_state(now, queue_served=served) is not None}
     return result
 
 
