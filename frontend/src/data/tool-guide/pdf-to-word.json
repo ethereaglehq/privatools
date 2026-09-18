@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Will the Word file look exactly like the PDF?",
-      "a": "No. A PDF describes where text sits on a page, not how it flows, and this converter does not rebuild paragraphs: each line becomes its own Word paragraph with fixed spacing. Tables arrive as separate lines of text and multi-column pages as one column after another, so expect some tidying afterwards."
+      "a": "No. A PDF describes where text sits on a page, not how it flows, and this converter does not rebuild paragraphs: each line becomes its own Word paragraph with fixed spacing. Tables arrive as separate lines of text, and columns are lost: text follows the order it is stored in the PDF, which is not always reading order. Expect some tidying afterwards."
     },
     {
       "q": "Why did my PDF not convert, or come out as pictures?",
