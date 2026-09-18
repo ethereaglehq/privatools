@@ -22,12 +22,27 @@ const REGISTRIES = [
 
 export const hasBulkMarker = texts => texts.some(text => Boolean(text) && BULK_MARKER_LINE.test(text));
 
+const dayBefore = day => new Date(Date.parse(`${day}T00:00:00Z`) - 86_400_000).toISOString().slice(0, 10);
+
+// The local calendar day: what a commit made now would carry as its author day.
+function today() {
+  const now = new Date();
+  return [now.getFullYear(), now.getMonth() + 1, now.getDate()].map(part => String(part).padStart(2, '0')).join('-');
+}
+
 // Tools are matched on `path`, since nothing stops both registries using one
 // slug. A date only "moves" when the base already had one: a new tool, or the
 // field arriving on an old one, is a first date rather than a bump.
-export function compareReviewDates(base, head, { bulkAllowed = false } = {}) {
+//
+// `cutoff` is the day the change began. Changed copy may keep a date from the
+// day before it onwards (a day of slack for time zones): that date already
+// falls inside the change, and a second correction on the day of the first has
+// no later day to move to. Without a cutoff, every unmoved date is stale.
+export function compareReviewDates(base, head, { bulkAllowed = false, cutoff } = {}) {
+  const earliest = cutoff && dayBefore(cutoff);
   const before = new Map(base.map(tool => [tool.path, tool]));
   const stale = [];
+  const current = [];
   const moved = [];
   const firstDated = [];
   let compared = 0;
@@ -40,14 +55,15 @@ export function compareReviewDates(base, head, { bulkAllowed = false } = {}) {
     if (tool.lastReviewed !== old.lastReviewed) {
       if (old.lastReviewed) moved.push(tool.path);
     } else if (fields.length) {
-      stale.push({ path: tool.path, fields });
+      if (earliest && tool.lastReviewed >= earliest) current.push(tool.path);
+      else stale.push({ path: tool.path, fields });
     }
   }
   const errors = stale.map(({ path, fields }) => `${path}: ${fields.join(', ')} changed but lastReviewed did not. Set it to the day this copy was reviewed.`);
   if (moved.length > BULK_LIMIT && !bulkAllowed) {
     errors.push(`lastReviewed moved on ${moved.length} tools in one change (limit ${BULK_LIMIT}). Move a date only when that tool's own copy changed. If every one of these pages really was re-read, put ${BULK_MARKER} on its own line in a commit message, or at the start of the PR title before the next push.`);
   }
-  return { compared, stale, moved, firstDated, errors };
+  return { compared, stale, current, moved, firstDated, errors };
 }
 
 const git = (root, ...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024, stdio: ['ignore', 'pipe', 'pipe'] });
@@ -67,7 +83,12 @@ export function checkRepo({ root, baseRef, prTitle }) {
   const baseTools = read((file, variable) => parseContentArray(git(root, 'show', `${base}:${file}`), variable, ['icon']));
   const headTools = read((file, variable) => readContentArray(join(root, file), variable, ['icon']));
   const bulkAllowed = hasBulkMarker([prTitle, git(root, 'log', '--format=%B', `${base}..HEAD`)]);
-  return { ...compareReviewDates(baseTools, headTools, { bulkAllowed }), base, bulkAllowed };
+  // The change began on the author day of its oldest commit that touches a
+  // registry: a rebase keeps it, and a re-run on a later day reads the same
+  // one. Edits not yet committed begin today.
+  const authorDays = git(root, 'log', '--format=%as', `${base}..HEAD`, '--', ...REGISTRIES.map(({ file }) => file)).split('\n').filter(Boolean).sort();
+  const cutoff = authorDays[0] ?? today();
+  return { ...compareReviewDates(baseTools, headTools, { bulkAllowed, cutoff }), base, bulkAllowed, cutoff };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -76,9 +97,9 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
   const baseRef = process.argv[2] || (process.env.GITHUB_BASE_REF ? `origin/${process.env.GITHUB_BASE_REF}` : 'origin/main');
   try {
     const root = git(process.cwd(), 'rev-parse', '--show-toplevel').trim();
-    const { compared, stale, moved, firstDated, errors, base, bulkAllowed } = checkRepo({ root, baseRef, prTitle: process.env.PR_TITLE });
+    const { compared, stale, current, moved, firstDated, errors, base, bulkAllowed, cutoff } = checkRepo({ root, baseRef, prTitle: process.env.PR_TITLE });
     for (const error of errors) console.error(`[review-dates] ${error}`);
-    console.log(`[review-dates] ${compared} tools compared with ${baseRef} (${base.slice(0, 7)}): ${moved.length} dates moved${bulkAllowed ? ` under ${BULK_MARKER}` : ''}, ${firstDated.length} dated for the first time, ${stale.length} with changed copy and an unchanged date`);
+    console.log(`[review-dates] ${compared} tools compared with ${baseRef} (${base.slice(0, 7)}), change began ${cutoff}: ${moved.length} dates moved${bulkAllowed ? ` under ${BULK_MARKER}` : ''}, ${firstDated.length} dated for the first time, ${current.length} with changed copy already dated inside the change, ${stale.length} with changed copy and an older date`);
     if (errors.length) process.exitCode = 1;
   } catch (error) {
     console.error(`[review-dates] ${error.message}`);

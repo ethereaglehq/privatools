@@ -75,8 +75,22 @@ npm run check:review-dates -- HEAD    # only what is not committed yet
 `frontend/scripts/check-review-dates.mjs` compares both tool registries in the
 working tree with the commit where the branch left its base. It fails when a
 tool's `seoTitle`, `metaDescription`, `longDescription` or `description`
-changed and its `lastReviewed` did not, and when more than 25 existing dates
-moved in one change. A new tool's first date is not a move. A genuine bulk
+changed while its `lastReviewed` stayed at a date from before the change, and
+when more than 25 existing dates moved in one change.
+
+An unchanged date is already inside the change when it falls on or after the
+day before the change began, that one day allowing for time zones. The change
+begins on the author date of the oldest commit in the branch (`base..HEAD`)
+that touches either registry file; uncommitted edits, with no such commit yet,
+begin today. So copy corrected twice in one day, or opened the day another copy
+change merged, passes with the date it already has, which could not move
+anyway. Author dates survive a rebase, and a re-run on a later day reads the
+same commits rather than the clock, so it gives the same answer. The summary
+line counts these tools as "already dated inside the change". The limit: a
+long-lived branch can pass with a date a few days old, because everything back
+to the day before its first registry commit counts as inside it.
+
+A new tool's first date is not a move. A genuine bulk
 review passes with `[bulk-review]` on its own line: the first non-space text of
 the PR title or of any line in a commit message on the branch, with or without
 more text after it. CI reads the title when a run starts, so push after

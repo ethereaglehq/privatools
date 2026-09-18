@@ -81,6 +81,40 @@ test('accepts a date that moves on its own, without any copy change', () => {
   assert.deepEqual(result.errors, []);
 });
 
+// ── Copy corrected again inside the same change ──────────────────────────────
+
+// A date already inside the change cannot usefully move: a second correction on
+// the day of the first has no later day to move to. `cutoff` is the day the
+// change began; a day's slack before it covers the author's time zone.
+const correctedAgain = (lastReviewed, cutoff) => compareReviewDates(
+  [pdf('merge-pdf', { lastReviewed })],
+  [pdf('merge-pdf', { longDescription: 'Corrected again.', lastReviewed })],
+  { cutoff },
+);
+
+test('accepts changed copy whose unchanged date is the cutoff day', () => {
+  const result = correctedAgain('2026-09-18', '2026-09-18');
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.current, ['/tool/merge-pdf']);
+});
+
+test('accepts changed copy whose unchanged date is the day before the cutoff', () => {
+  const result = correctedAgain('2026-09-17', '2026-09-18');
+  assert.deepEqual(result.errors, []);
+  assert.deepEqual(result.current, ['/tool/merge-pdf']);
+});
+
+test('fails changed copy whose unchanged date is two days before the cutoff, with the existing message', () => {
+  const result = correctedAgain('2026-09-16', '2026-09-18');
+  assert.deepEqual(result.current, []);
+  assert.deepEqual(result.errors, ['/tool/merge-pdf: longDescription changed but lastReviewed did not. Set it to the day this copy was reviewed.']);
+});
+
+test('counts the day before the cutoff across a year boundary', () => {
+  assert.deepEqual(correctedAgain('2025-12-31', '2026-01-01').errors, []);
+  assert.equal(correctedAgain('2025-12-30', '2026-01-01').errors.length, 1);
+});
+
 test('allows 25 moved dates in one change', () => {
   const result = compareReviewDates(many(25), many(25, { lastReviewed: '2026-09-18' }));
   assert.equal(result.moved.length, 25);
@@ -154,18 +188,22 @@ function writeRegistries(root, pdfTools, otherTools) {
   writeFileSync(join(dir, 'non-pdf-tools.ts'), registrySource('_nonPdfToolsRaw', otherTools));
 }
 
-function commit(root, message) {
+// An author day is set at noon UTC, so the author's own day is unambiguous. The
+// committer date stays the real time, as after a rebase, so a check that read
+// the committer date instead would be caught.
+function commit(root, message, authorDay) {
   git(root, 'add', '-A');
-  git(root, 'commit', '-q', '-m', message);
+  const env = authorDay ? { ...process.env, GIT_AUTHOR_DATE: `${authorDay}T12:00:00+00:00` } : process.env;
+  execFileSync('git', [...GIT_OPTIONS, 'commit', '-q', '-m', message], { cwd: root, env });
 }
 
 // Leaves the repository on a `feature` branch cut from the first commit on `main`.
-function makeRepo(t, pdfTools, otherTools, baseMessage = 'Add the registries') {
+function makeRepo(t, pdfTools, otherTools, baseMessage = 'Add the registries', baseDay) {
   const root = mkdtempSync(join(tmpdir(), 'review-dates-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   git(root, 'init', '-q', '-b', 'main');
   writeRegistries(root, pdfTools, otherTools);
-  commit(root, baseMessage);
+  commit(root, baseMessage, baseDay);
   git(root, 'checkout', '-q', '-b', 'feature');
   return root;
 }
@@ -252,6 +290,56 @@ test('passes on the base branch itself, where there is nothing to compare', t =>
   assert.equal(result.compared, 30);
   assert.deepEqual(result.moved, []);
   assert.deepEqual(result.errors, []);
+});
+
+// ── When the change began ────────────────────────────────────────────────────
+
+// Commit dates rather than the clock, so a re-run on a later day agrees. The
+// committer date here is today's, which would make both tools stale.
+test('dates the change from the author date of its oldest registry commit, not from today', t => {
+  const root = makeRepo(t, [tool('merge-pdf', { lastReviewed: '2026-01-09' }), tool('split-pdf', { lastReviewed: '2026-01-08' })], []);
+  writeRegistries(root, [tool('merge-pdf', { seoTitle: 'Corrected', lastReviewed: '2026-01-09' }), tool('split-pdf', { seoTitle: 'Corrected', lastReviewed: '2026-01-08' })], []);
+  commit(root, 'Correct two titles', '2026-01-10');
+  assert.deepEqual(checkRepo({ root, baseRef: 'main' }).stale, [{ path: '/tool/split-pdf', fields: ['seoTitle'] }]);
+});
+
+test('dates the change from its oldest registry commit, not its newest', t => {
+  const root = makeRepo(t, [tool('merge-pdf', { lastReviewed: '2026-01-09' })], []);
+  writeRegistries(root, [tool('merge-pdf', { seoTitle: 'Corrected', lastReviewed: '2026-01-09' })], []);
+  commit(root, 'Correct the title', '2026-01-10');
+  writeRegistries(root, [tool('merge-pdf', { seoTitle: 'Corrected', description: 'Corrected', lastReviewed: '2026-01-09' })], []);
+  commit(root, 'Correct the line', '2026-01-20');
+  assert.deepEqual(checkRepo({ root, baseRef: 'main' }).errors, []);
+});
+
+test('does not date the change from commits that leave the registries alone', t => {
+  const root = makeRepo(t, [tool('merge-pdf', { lastReviewed: '2026-01-05' })], []);
+  writeFileSync(join(root, 'README.md'), 'notes\n');
+  commit(root, 'Add notes', '2026-01-01');
+  writeRegistries(root, [tool('merge-pdf', { seoTitle: 'Corrected', lastReviewed: '2026-01-05' })], []);
+  commit(root, 'Correct the title', '2026-01-10');
+  assert.deepEqual(checkRepo({ root, baseRef: 'main' }).stale, [{ path: '/tool/merge-pdf', fields: ['seoTitle'] }]);
+});
+
+test('does not date the change from registry commits already in the base', t => {
+  const root = makeRepo(t, [tool('merge-pdf', { lastReviewed: '2025-12-01' })], [], 'Add the registries', '2025-06-01');
+  writeRegistries(root, [tool('merge-pdf', { seoTitle: 'Corrected', lastReviewed: '2025-12-01' })], []);
+  commit(root, 'Correct the title', '2026-01-10');
+  assert.deepEqual(checkRepo({ root, baseRef: 'main' }).stale, [{ path: '/tool/merge-pdf', fields: ['seoTitle'] }]);
+});
+
+// Uncommitted edits have no author date yet, so they begin today. Both days come
+// from the local clock here; if midnight falls between this reading and the
+// check's own, today still passes and two days ago still fails.
+test('dates uncommitted edits from today', t => {
+  const day = offset => {
+    const date = new Date();
+    date.setDate(date.getDate() + offset);
+    return [date.getFullYear(), date.getMonth() + 1, date.getDate()].map(part => String(part).padStart(2, '0')).join('-');
+  };
+  const root = makeRepo(t, [tool('merge-pdf', { lastReviewed: day(0) }), tool('split-pdf', { lastReviewed: day(-2) })], []);
+  writeRegistries(root, [tool('merge-pdf', { seoTitle: 'Corrected', lastReviewed: day(0) }), tool('split-pdf', { seoTitle: 'Corrected', lastReviewed: day(-2) })], []);
+  assert.deepEqual(checkRepo({ root, baseRef: 'main' }).stale, [{ path: '/tool/split-pdf', fields: ['seoTitle'] }]);
 });
 
 test('refuses to pass when the base ref is unknown, and says to fetch it', t => {
