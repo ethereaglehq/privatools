@@ -3,7 +3,7 @@ import { DocumentStudio } from "@/skins/experience/DocumentStudio";
 /** Terms of service: original policy content in the shared Air/Play document reader. */
 import { Link } from "react-router-dom";
 
-import { FileText, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail, Github } from "lucide-react";
+import { FileText, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail } from "lucide-react";
 
 
 

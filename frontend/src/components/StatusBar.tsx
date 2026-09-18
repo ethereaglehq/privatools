@@ -8,7 +8,8 @@
  */
 import { memo, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { Command, Lock, Github, Shield } from "lucide-react";
+import { Command, Lock, Shield } from "lucide-react";
+import { Github } from "@/components/icons/github";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 

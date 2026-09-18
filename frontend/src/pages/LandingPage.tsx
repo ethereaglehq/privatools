@@ -10,7 +10,8 @@
  * stale relative to the catalog.
  */
 import { Link } from "react-router-dom";
-import { Github, ArrowRight, Lock, Zap, Code2, Heart, Shield, Globe, FileCheck, ServerOff, Package, Check } from "lucide-react";
+import { ArrowRight, Lock, Zap, Code2, Heart, Shield, Globe, FileCheck, ServerOff, Package, Check } from "lucide-react";
+import { Github } from "@/components/icons/github";
 import { tools, categoryMeta } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { cn } from "@/lib/utils";
