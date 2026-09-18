@@ -31,9 +31,16 @@ docker compose up --build
 ```bash
 cd frontend
 npm ci
-npm run dev      # dev server
-npm run build    # production build (also regenerates llms.txt + sitemap)
+npm run dev       # dev server
+npm run gen:llms  # regenerate the committed content files in public/
+npm run build     # production build (also runs gen:llms)
 ```
+
+`gen:llms` writes the crawler indexes (`llms.txt`, `llms-full.txt`), sitemap,
+feed and content JSON in `frontend/public/` from `frontend/src/data/`, and
+those files are committed. After changing a registry or other content there,
+run it and commit what it changes: CI regenerates the files and fails the PR
+when the committed copies differ.
 
 ### Backend (FastAPI)
 

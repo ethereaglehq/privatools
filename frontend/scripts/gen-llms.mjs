@@ -1,5 +1,7 @@
 // One source feeds visible pages, server-rendered articles, sitemap, RSS, and
 // the optional LLM reference. llms.txt is a convenience, not a ranking signal.
+// The outputs are committed and CI fails when a fresh run differs from them,
+// so keep them deterministic: dates come from the content, never the clock.
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';

@@ -38,6 +38,11 @@ indexes, bundles the application and injects integrity metadata. Check generated
 changes before committing. Use the npm version pinned in CI when regenerating
 `package-lock.json`.
 
+`npm run gen:llms` regenerates just the committed content files: the crawler
+indexes, sitemap, feed and content JSON in `public/`. CI runs it and fails when
+the result differs from what is committed, so run it after changing `src/data/`
+and commit the output with the change.
+
 ## Source layout
 
 | Path | Purpose |

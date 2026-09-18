@@ -96,6 +96,24 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+      # gen-llms writes committed files from src/data/: the llms, sitemap, feed
+      # and content JSON files in public/. CI only regenerated them inside
+      # `npm run build` and never compared the result with the commit, so a
+      # registry edit committed without `npm run gen:llms` passed while the
+      # copies this job's tests read were stale. Nothing else has written to
+      # frontend/ since the checkout, and no output is dated from the clock,
+      # so any change here is real.
+      - name: Check generated content is current
+        working-directory: frontend
+        run: |
+          npm run gen:llms
+          stale=$(git status --porcelain -- .)
+          if [ -n "$stale" ]; then
+            echo '::error::Generated content files are out of date. Run "npm run gen:llms" in frontend/ and commit the result.'
+            git status --short -- .
+            git diff -- .
+            exit 1
+          fi
       - name: Check frontend and content
         working-directory: frontend
         run: |
