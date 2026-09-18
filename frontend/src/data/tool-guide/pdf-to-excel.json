@@ -2,33 +2,33 @@
   "howto": [
     {
       "name": "Drop your PDF",
-      "text": "Select a PDF up to 500 MB that contains tables or tabular data. Scanned PDFs need OCR first via the OCR PDF tool."
+      "text": "Select one or more PDFs up to 500 MB each that contain tables or tabular data. A scanned PDF needs OCR first via the OCR PDF tool, and even then gives its text rather than rebuilt tables."
     },
     {
-      "name": "Choose pages to scan",
-      "text": "Pick specific pages with tables, or let the tool auto-detect tables across the whole document using Camelot and Tabula libraries."
+      "name": "Convert",
+      "text": "Click Convert. Every page is checked with PyMuPDF table detection, which finds tables drawn with ruled lines. There is no page selection or detection setting."
     },
     {
-      "name": "Tune detection (optional)",
-      "text": "For borderless or unusual tables, switch detection mode (lattice for ruled tables, stream for whitespace-separated). Default auto-selects the best."
+      "name": "Check each sheet",
+      "text": "The workbook has one sheet per page, named Page 1, Page 2 and so on. A page with tables gets only its table rows, with a blank row between tables; a page without a table gets its text, one line per row in column A."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. Each detected table becomes a separate sheet in the resulting .xlsx file, with rows and columns preserved. Multiple tables across pages are combined into one workbook."
+      "name": "Download the workbook",
+      "text": "The .xlsx file downloads automatically, with the rows and columns of each detected table kept. Several PDFs download together as a ZIP. Cell values arrive as text, so convert number columns before doing sums."
     }
   ],
   "faq": [
     {
       "q": "Does it convert the entire PDF or just tables?",
-      "a": "The tool focuses on extracting tabular data. Each detected table becomes a separate sheet in the Excel file. Non-table text (paragraphs, headers, footers) is not included — use PDF to Word or PDF to Text for that."
+      "a": "It works page by page, with one sheet per page. On a page where a table is found, only the table rows are kept and the rest of that page's text is left out. A page without a table has its text copied, one line per row. For the full text, use PDF to Word or PDF to Text."
     },
     {
       "q": "Can I choose which tables to extract?",
-      "a": "Yes. Select specific pages, or let the tool auto-detect all tables across the document. Auto-detect uses Camelot and Tabula libraries which identify ruled lines and text-alignment patterns."
+      "a": "No. Every page is processed and every detected table is kept. To convert only some pages, pull them into a smaller PDF with Extract Pages first, then convert that."
     },
     {
       "q": "What if my PDF has no visible table borders?",
-      "a": "The tool can detect tables based on text alignment even without ruled borders, but results are more reliable on clearly bordered tables. For borderless tables with very irregular spacing, manual page selection plus column-position hints in the advanced settings give better accuracy."
+      "a": "Then the table is usually not detected. Detection looks for the ruled lines drawn around and between cells, so a table laid out with spacing alone comes through as plain text, often one value per row in column A, and needs rearranging in the spreadsheet."
     },
     {
       "q": "What happens to a confidential financial PDF after I upload it?",
@@ -40,7 +40,7 @@
     },
     {
       "q": "Does it work on scanned PDFs?",
-      "a": "Scanned PDFs need OCR first. Run the OCR PDF tool (you can pick the language and deskew the pages), then convert the OCR'd PDF to Excel. The text layer added by OCR is what the table detector reads."
+      "a": "Only partly. A scan has no text, so on its own it gives an error. Run the OCR PDF tool first (you can pick the language) and the recognized text comes through, but tables are not rebuilt: the detector needs ruled lines drawn in the PDF, and a scan is a picture, so expect one value per row in column A."
     },
     {
       "q": "Can I batch-convert multiple PDFs to Excel?",
@@ -48,7 +48,7 @@
     },
     {
       "q": "Which tables convert most reliably?",
-      "a": "Tables with clear ruled lines and one value per cell. Merged cells, tables that break across pages and borderless layouts with irregular spacing are the hardest cases and usually need tidying in the spreadsheet afterwards."
+      "a": "Tables with clear ruled lines and one value per cell. Borderless tables are usually not detected at all, and merged cells or a table that breaks across pages (each page lands on its own sheet) usually need tidying in the spreadsheet afterwards."
     }
   ]
 }

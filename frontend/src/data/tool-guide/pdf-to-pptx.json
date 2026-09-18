@@ -6,17 +6,17 @@
     },
     {
       "name": "PrivaTools creates one slide per page",
-      "text": "Each page is rendered to an image and placed as the slide background. Text is also extracted as separate slide text boxes for editability."
+      "text": "Each page is rendered at 200 DPI and placed as one picture, centered and scaled to fit a 4:3 slide (10 x 7.5 in). No text boxes are created, so the text is part of the picture."
     },
     {
       "name": "Download the .pptx file",
-      "text": "Open in PowerPoint / Keynote / Google Slides for further editing."
+      "text": "Open in PowerPoint / Keynote / Google Slides to present it, or to add your own titles, notes and slides around the page pictures."
     }
   ],
   "faq": [
     {
       "q": "Will the text be editable in PowerPoint?",
-      "a": "The extracted text overlay is editable. The underlying page image stays as a backdrop. For pixel-perfect editing, you may need to remove the backdrop and rebuild from the text."
+      "a": "No. Each slide holds a single picture of the page and no text boxes, so the text cannot be edited. Use PDF to Word for editable text, or copy it out with PDF to Text."
     },
     {
       "q": "What about embedded charts and graphics?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Can I get one slide per section instead of per page?",
-      "a": "Not directly — use Extract Pages to isolate the sections first, then convert."
+      "a": "No, it is always one slide per page. To make a deck from a single section, pull those pages into a smaller PDF with Extract Pages first, then convert that."
     }
   ]
 }

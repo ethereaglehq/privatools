@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload a PDF",
-      "text": "Drop a PDF up to 500 MB. Works best on text-heavy PDFs with a clear structure."
+      "text": "Drop a PDF up to 500 MB. Works best on simple, text-heavy PDFs."
     },
     {
-      "name": "PrivaTools extracts text and reflows it",
-      "text": "Headings, paragraphs, lists, and embedded images are identified and converted into EPUB chapter structure."
+      "name": "PrivaTools copies the text and images",
+      "text": "Each page is exported with PyMuPDF: every line of text keeps its font size, bold, italics and color, and images are embedded. All pages go into a single section; headings, lists and chapters are not detected."
     },
     {
       "name": "Download the EPUB",
-      "text": "Open in any e-reader (Kindle, Apple Books, calibre) for a reflowable reading experience."
+      "text": "Each page keeps the width of the PDF page instead of reflowing to the screen, and the file lacks the navigation document the EPUB 3 standard requires, so check it in your e-book app before relying on it."
     }
   ],
   "faq": [
     {
       "q": "How accurate is the EPUB compared to the PDF?",
-      "a": "Text and basic structure transfer well. Complex multi-column layouts, footnotes, and figure captions may need cleanup in calibre."
+      "a": "The text comes across line by line, in the order it is stored in the PDF, with its font sizes, bold, italics and colors. Headings, lists and chapters are not detected, and multi-column layouts, footnotes, and figure captions may need cleanup in an e-book editor such as calibre."
     },
     {
       "q": "Does it preserve images?",
-      "a": "Yes — embedded images are included as EPUB resources at original resolution."
+      "a": "Yes — images are embedded inside the page as inline data, at the resolution stored in the PDF, rather than as separate image files in the EPUB."
     },
     {
       "q": "Will the table of contents work?",
-      "a": "If the PDF has bookmarks, they become the EPUB's TOC. Without bookmarks, the TOC is built from detected headings."
+      "a": "No table of contents is created, even when the PDF has bookmarks: the whole document is a single section of the book."
     }
   ]
 }

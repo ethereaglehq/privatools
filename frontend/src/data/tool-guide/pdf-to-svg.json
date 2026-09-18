@@ -6,7 +6,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The tool extracts vector graphics page-by-page using PyMuPDF and packages the SVGs into a ZIP."
+      "text": "Click Convert. Each page is converted to SVG with PyMuPDF. A multi-page PDF comes back as a ZIP with one SVG per page; a one-page PDF as a single SVG, which currently downloads with a .zip name, so rename it to .svg."
     }
   ],
   "faq": [
@@ -16,11 +16,11 @@
     },
     {
       "q": "How many SVG files come back?",
-      "a": "One per page, packaged into a ZIP."
+      "a": "One per page. A multi-page PDF comes back as a ZIP of SVGs; a one-page PDF as a single SVG file, which currently downloads with a .zip name, so rename it to .svg."
     },
     {
       "q": "Can I edit the SVGs after?",
-      "a": "Yes. Open in any vector editor (Illustrator, Inkscape, Figma). Text and paths are editable."
+      "a": "Yes. Open them in any vector editor (Illustrator, Inkscape, Figma) to edit shapes and paths. Text is converted to outlines, so it keeps its exact look but cannot be edited as text, and links are not kept."
     }
   ]
 }

@@ -5,12 +5,12 @@
       "text": "Drop a PDF up to 500 MB."
     },
     {
-      "name": "Choose DPI",
-      "text": "Higher DPI = sharper PNG. 96 for screen, 150 default, 300 for print archival."
+      "name": "Convert",
+      "text": "Click Convert. Every page is rendered at 150 DPI; there is no resolution setting on this page. For 72 or 300 DPI, use PDF to Image instead."
     },
     {
       "name": "Download a ZIP of PNGs",
-      "text": "Each page becomes one PNG file with lossless compression. PNG preserves transparency if present."
+      "text": "Each page becomes one PNG file with lossless compression, and a multi-page PDF downloads as a ZIP. Pages are rendered onto a white background, so the PNGs have no transparency."
     }
   ],
   "faq": [
@@ -20,11 +20,11 @@
     },
     {
       "q": "How big are the PNGs?",
-      "a": "Roughly 200-500 KB per page at 150 DPI for typical text content; up to 2-3 MB at 300 DPI."
+      "a": "It depends on the page. At the 150 DPI this tool uses, a page with a few lines of text can be under 30 KB, a page packed with small text is about 500 KB, and a full-page photo can run to several megabytes."
     },
     {
       "q": "Does this preserve PDF transparency?",
-      "a": "PDF transparency layers flatten during rasterization but the result PNG has alpha if the PDF page had transparent regions over the page background."
+      "a": "No. Pages are rendered onto a white background and saved without an alpha channel, so transparent areas come out white."
     }
   ]
 }

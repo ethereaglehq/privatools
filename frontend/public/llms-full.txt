@@ -371,7 +371,7 @@ URL: https://privatools.me/tool/pdf-to-excel
 
 Best-effort table/text extraction into a spreadsheet
 
-Convert PDF to Excel online for free — extract tables and data from PDF documents into editable XLSX spreadsheets. Best-effort extraction works great for invoices, financial reports, and tabular data.
+Convert PDF to Excel online for free — extract tables and data from PDF documents into editable XLSX spreadsheets, with one sheet per page. Best-effort extraction works best on tables drawn with ruled lines; a page without a table keeps its text instead.
 
 ### PDF to Image
 
@@ -379,7 +379,7 @@ URL: https://privatools.me/tool/pdf-to-image
 
 Convert each PDF page into an image file
 
-Convert PDF to images online for free — render each page as a high-resolution JPG or PNG image. Choose DPI (up to 300), color mode, and output format. Perfect for thumbnails, previews, and social media.
+Convert PDF to images online for free — render each page as a high-resolution JPG or PNG image. Choose 72, 150 or 300 DPI and the output format. Perfect for thumbnails, previews, and social media.
 
 ### PDF to Long Image
 
@@ -395,7 +395,7 @@ URL: https://privatools.me/tool/pdf-to-tiff
 
 Convert PDF into a multi-page TIFF image
 
-Convert PDF to TIFF online for free — export your PDF as a single multi-page TIFF image, ideal for archival, fax, healthcare, and legal workflows that require TIFF. All pages bundle into one .tif file with deflate compression.
+Convert PDF to TIFF online for free — export your PDF as a single multi-page TIFF image, ideal for archival and document workflows that require TIFF. Pages are rendered in color at 200 DPI and bundle into one .tif file with deflate compression.
 
 ### PDF to BMP
 
@@ -427,15 +427,15 @@ URL: https://privatools.me/tool/pdf-to-jpg
 
 Render PDF pages as JPG photos
 
-Convert PDF to JPG online for free — render each PDF page as a high-quality JPG image. Choose DPI (up to 300) for the resolution. Perfect for thumbnails, social media previews, or photo-style sharing.
+Convert PDF to JPG online for free — render each PDF page as a high-quality JPG image. Each page comes out at 150 DPI, one JPG per page. Perfect for thumbnails, social media previews, or photo-style sharing.
 
 ### PDF to PNG
 
 URL: https://privatools.me/tool/pdf-to-png
 
-Render PDF pages as PNG images (transparency-friendly)
+Render PDF pages as lossless PNG images
 
-Convert PDF to PNG online for free — render each PDF page as a PNG image. PNGs preserve sharp edges and transparency, making them ideal for screenshots, charts, and design exports.
+Convert PDF to PNG online for free — render each PDF page as a PNG image at 150 DPI. PNG is lossless, so text and line art keep their sharp edges, making it ideal for screenshots, charts, and design exports. Pages are rendered on a white background.
 
 ### PDF to PowerPoint
 
@@ -555,7 +555,7 @@ URL: https://privatools.me/tool/pdf-to-epub
 
 Convert a PDF into the EPUB format for e-readers
 
-Convert PDF to EPUB online for free — transform PDF documents into reflowable e-book format compatible with Kindle, Kobo, Apple Books, and all modern e-reader devices. Read your PDFs anywhere.
+Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters or table of contents, and bookmarks are not carried over.
 
 ### Markdown / Config to PDF
 
@@ -627,7 +627,7 @@ URL: https://privatools.me/tool/extract-tables
 
 Extract tables from PDF pages to CSV
 
-Extract tables from PDF to CSV online for free. Automatically detect and extract tabular data from invoices, reports, and financial statements into clean, editable CSV spreadsheet format.
+Extract tables from PDF to CSV online for free. Automatically detect tables drawn with ruled lines in invoices, reports, and financial statements and extract them into one editable CSV file.
 
 ### PDF to Markdown
 
@@ -875,7 +875,7 @@ URL: https://privatools.me/tool/pdf-to-html
 
 Convert PDF to a web-viewable HTML file
 
-Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web.
+Convert PDF to HTML online for free — turn a PDF into a single HTML file that keeps the text and images, with each line's font, size, and color as inline styles. Useful for web archiving and republishing offline PDFs on the web.
 
 ### PDF to RTF
 
@@ -883,7 +883,7 @@ URL: https://privatools.me/tool/pdf-to-rtf
 
 Extract PDF text into a Rich Text Format file
 
-Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text.
+Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and other word processors. Preserves page breaks and Unicode text; formatting and images are not carried over.
 
 ### Image Compressor
 

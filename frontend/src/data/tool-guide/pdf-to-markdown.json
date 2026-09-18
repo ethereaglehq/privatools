@@ -6,7 +6,7 @@
     },
     {
       "name": "PrivaTools extracts and structures text",
-      "text": "Headings, paragraphs, lists, code blocks, and tables are identified by typographic cues (font size, weight, indentation)."
+      "text": "Headings are detected by font size and bold text is marked with double asterisks. Each line of the PDF becomes its own paragraph and pages are separated by a horizontal rule; images, lists, tables and code blocks are not detected."
     },
     {
       "name": "Download the .md file",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "How accurate is the structural detection?",
-      "a": "Headings work well when source fonts are larger. Tables transfer if cells are clearly separated. Code-block detection is a heuristic — manual review recommended."
+      "a": "Headings work well when source fonts are larger: text of 20 pt or more becomes a level-1 heading, 16 pt a level-2 heading, and bold text of 13 pt or more a level-3 heading. Tables, lists and code blocks are not detected, and table cells come out as separate lines, so review the result."
     },
     {
       "q": "What about images?",
-      "a": "Images are extracted to a sibling folder and referenced by Markdown image syntax."
+      "a": "Images are skipped, so the Markdown file holds text only. Use Extract Images to save the pictures from the PDF separately."
     },
     {
       "q": "Will hyperlinks be preserved?",
-      "a": "Yes — PDF hyperlinks become Markdown links."
+      "a": "No. Only the visible text is kept: a web address printed on the page stays as plain text, but the target of a clickable link is dropped."
     }
   ]
 }

@@ -79,7 +79,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [PDF to GIF](https://privatools.me/tool/pdf-to-gif): Render PDF pages as GIF images
 - [PDF to SVG](https://privatools.me/tool/pdf-to-svg): Convert PDF pages into editable SVG vectors
 - [PDF to JPG](https://privatools.me/tool/pdf-to-jpg): Render PDF pages as JPG photos
-- [PDF to PNG](https://privatools.me/tool/pdf-to-png): Render PDF pages as PNG images (transparency-friendly)
+- [PDF to PNG](https://privatools.me/tool/pdf-to-png): Render PDF pages as lossless PNG images
 - [PDF to PowerPoint](https://privatools.me/tool/pdf-to-pptx): Convert each PDF page into a PowerPoint slide image
 - [PDF to Text](https://privatools.me/tool/pdf-to-text): Extract all text from a PDF file
 - [PDF to Word](https://privatools.me/tool/pdf-to-word): Convert PDF content to an editable Word draft
