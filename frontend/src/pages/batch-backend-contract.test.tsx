@@ -54,7 +54,7 @@ describe("batch processing contract", () => {
         const download = await screen.findByRole("link", { name: "Download" });
         expect(postFormData).not.toHaveBeenCalled();
         expect(download).toHaveAttribute("download", "weekend.vtt");
-        expect(captureBlob.mock.calls.at(-1)?.[0]).toMatchObject({ type: "text/vtt" });
+        expect(captureBlob.mock.lastCall?.[0]).toMatchObject({ type: "text/vtt" });
         captureBlob.mockRestore();
     });
     it("shows malformed subtitles as an actionable per-file error", async () => {
