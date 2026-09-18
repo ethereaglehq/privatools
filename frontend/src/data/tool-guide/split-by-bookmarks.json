@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add a PDF with bookmarks",
-      "text": "Drop or select a PDF up to 500 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."
+      "text": "Drop or select a PDF up to about 250 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."
     },
     {
       "name": "Split at each chapter",
@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the ZIP",
-      "text": "The parts arrive together in a ZIP. Check it against the bookmark panel in your PDF reader to confirm the sections are what you expected."
+      "text": "The parts arrive together in a ZIP. Check it against the bookmark panel in your PDF reader to confirm the sections are what you expected. If the whole document comes back as one part, its bookmarks are stored in a form this tool reads as page 1; add them again with the Bookmarks tool and split that file."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "What if my PDF has no bookmarks?",
-      "a": "The tool stops with a message saying there are no bookmarks to split on. Use Split PDF to split by page numbers instead, or Split by Text if each section starts with a recognisable heading."
+      "a": "No parts are made, and the page marks the file as failed with a general Processing failed message rather than saying why. Use Split PDF to split by page numbers instead, or Split by Text if each section starts with a recognisable heading."
     },
     {
       "q": "How can I tell whether my PDF has bookmarks?",
@@ -28,7 +28,7 @@
     },
     {
       "q": "Does it change the pages?",
-      "a": "No. Pages are copied into the new files as they are; only the division into files is new."
+      "a": "No. Pages are copied into the new files as they are; only the division into files is new. Pages before the first bookmark, such as a cover without a bookmark of its own, are left out of every part."
     },
     {
       "q": "Can I choose which chapters to export?",

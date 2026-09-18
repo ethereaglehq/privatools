@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDFs",
-      "text": "Drop or select two or more PDF files, up to 500 MB each and up to 100 files at a time. The whole upload also has to fit within the same overall request limit, so several very large files may need to be merged in stages."
+      "text": "Drop or select two or more PDF files, up to 100 at a time. They are uploaded together in one request, so their combined size has to stay under 500 MB."
     },
     {
       "name": "Put them in order",
@@ -20,7 +20,7 @@
   "faq": [
     {
       "q": "How many PDFs can I merge at once?",
-      "a": "Up to 100 files in one merge, each up to 500 MB. The combined upload is also capped at roughly 500 MB, so a handful of very large files may need to be merged in two passes — merge some, then merge that result with the rest."
+      "a": "Up to 100 files in one merge, with a combined size of up to 500 MB, because they are all uploaded in one request. Merging in stages gets past the file count but not the size: the last merge uploads everything again, so the finished PDF has to stay under the same limit."
     },
     {
       "q": "Can I change the order after adding files?",

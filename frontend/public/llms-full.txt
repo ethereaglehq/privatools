@@ -35,7 +35,7 @@ URL: https://privatools.me/tool/merge-pdf
 
 Combine multiple PDFs into one
 
-Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. Up to 500 MB per file, no sign-up, no watermarks. Files are processed in temporary storage and cleaned up after the response.
+Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag files into order and choose which pages of each to include, by thumbnail or page range. Up to 100 files and 500 MB in total, no sign-up, no watermarks. Files are processed in temporary storage and cleaned up after the response.
 
 ### Split PDF
 
@@ -43,7 +43,7 @@ URL: https://privatools.me/tool/split-pdf
 
 Split by selecting specific page ranges
 
-Split PDF online for free — divide a PDF into separate files by page range. Extract specific pages or split every page into individual PDFs. No installation, no registration required. Files are processed in temporary storage and cleaned up after the response.
+Split PDF online for free — pull the page ranges you choose into a new PDF, split every page into its own file, or cut the document into equal parts. No installation, no registration required. Files are processed in temporary storage and cleaned up after the response.
 
 ### Split by Bookmarks
 
@@ -51,7 +51,7 @@ URL: https://privatools.me/tool/split-by-bookmarks
 
 Split at pages where bookmarks point to
 
-Split PDF by bookmarks or chapters automatically. Detect table of contents entries and create separate PDFs for each section. Ideal for splitting textbooks, manuals, and reports. Free, private, no sign-up.
+Split PDF by bookmarks or chapters automatically. Each top-level bookmark marks where a part starts, and every section becomes a separate PDF. Ideal for splitting textbooks, manuals, and reports. Free, private, no sign-up.
 
 ### Split by Size
 
@@ -65,17 +65,17 @@ Split large PDFs into smaller files by maximum file size. Perfect for email atta
 
 URL: https://privatools.me/tool/split-in-half
 
-Split each page in half — for two-up scans & booklets
+Split each page in half — for two-up scans & book spreads
 
-Split each PDF page in half down the middle (or across the middle) — perfect for un-imposing scanned booklets, two-up scans, and side-by-side documents that need to be one page per side. Choose vertical (left+right) or horizontal (top+bottom).
+Split each PDF page in half down the middle (or across the middle) — perfect for scanned book spreads, two-up scans, and side-by-side documents that need to be one page per side. Choose vertical (left+right) or horizontal (top+bottom).
 
 ### Organize Pages
 
 URL: https://privatools.me/tool/organize-pages
 
-Reorder, delete, or rotate pages visually
+Reorder or delete pages visually
 
-Rearrange PDF pages online — drag and drop page thumbnails to reorder, delete, rotate, or duplicate pages visually. Free PDF page organizer with no watermarks. Preview every page before saving.
+Rearrange PDF pages online — drag and drop page thumbnails to reorder them and remove the pages you do not need. Free PDF page organizer with no watermarks. Preview every page before saving.
 
 ### Delete Pages
 
@@ -83,7 +83,7 @@ URL: https://privatools.me/tool/delete-pages
 
 Remove specific pages from a PDF
 
-Remove pages from PDF online for free. Select specific pages or ranges to permanently delete. Preview thumbnails and choose exactly which pages to remove. No sign-up, no watermarks; files are cleaned up after processing.
+Remove pages from PDF online for free. Select specific pages or ranges to delete. Preview thumbnails and choose exactly which pages to remove. No sign-up, no watermarks; files are cleaned up after processing.
 
 ### Extract Pages
 
@@ -97,9 +97,9 @@ Extract pages from PDF online — save specific pages as a new PDF file. Select 
 
 URL: https://privatools.me/tool/edit-pdf
 
-Edit text and images directly inside the PDF
+Add text, shapes, highlights and images to a PDF
 
-Edit PDF online for free — modify text, images, and content directly inside your PDF. Add new text blocks, replace images, and make changes without converting to Word first. Full-featured PDF editor with no watermarks.
+Edit PDF online for free — add text, freehand ink, highlights, shapes, arrows, whiteout and images to your pages without converting to Word first. Existing text and images stay as they are; the editor adds new content on top. No watermarks are added.
 
 ### Sign PDF
 
@@ -459,7 +459,7 @@ URL: https://privatools.me/tool/pdf-to-word
 
 Convert PDF content to an editable Word draft
 
-Convert PDF to Word online for free. Extract text, paragraphs, and images into an editable DOCX document. Complex layouts can require manual cleanup after conversion. Files use temporary server processing; upload and capacity limits apply.
+Convert PDF to Word online for free. Extract the text line by line, with its fonts, sizes and colours, plus images, into an editable DOCX document. Paragraphs, spacing and tables are not rebuilt, so expect some cleanup after conversion. Files use temporary server processing; upload and capacity limits apply.
 
 ### Alternate Mix
 
@@ -539,7 +539,7 @@ URL: https://privatools.me/tool/remove-blank-pages
 
 Scan and delete entirely blank or near-blank pages
 
-Remove blank pages from PDF online for free. Automatically scan and delete entirely blank or near-blank pages from scanned documents. Clean up your PDFs by removing empty fillers and scan artifacts.
+Remove blank pages from PDF online for free. Automatically scan and delete entirely blank or near-blank pages from scanned documents. Clean up your PDFs by removing empty filler pages left over from scanning.
 
 ### Auto-Crop PDF (Remove Margins)
 
@@ -683,7 +683,7 @@ URL: https://privatools.me/tool/chat-with-pdf
 
 Ask questions about a PDF — answered with your own AI key
 
-Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, OpenRouter, Groq, Mistral, or your own self-hosted endpoint), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions keep the conversation's context.
+Chat with a PDF online — free and private. The text is extracted by pdf.js inside your browser and each question goes straight from your browser to the AI provider you choose (Anthropic, OpenAI, Gemini, Mistral, DeepSeek, Together AI, or a model server on your own computer), using your own API key. The document never touches PrivaTools servers, so there is nothing for us to see, store, or train on. Ask for summaries, deadlines, obligations, definitions, or anything else the document can answer; follow-up questions send the last four exchanges along for context.
 
 ### Add Shapes to PDF
 
@@ -867,7 +867,7 @@ URL: https://privatools.me/tool/split-by-text
 
 Split a PDF every time a keyword appears
 
-Split PDF by text or keyword online for free — divide a document at every page that contains a search phrase. Perfect for batch-split-statements, contracts, invoices, or any PDF with section headings. Case-sensitive optional.
+Split PDF by text or keyword online for free — divide a document at every page that contains a search phrase. Perfect for batches of statements, contracts, invoices, or any PDF with section headings. Case-sensitive optional.
 
 ### PDF to HTML
 

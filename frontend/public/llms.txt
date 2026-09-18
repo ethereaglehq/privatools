@@ -33,11 +33,11 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Split PDF](https://privatools.me/tool/split-pdf): Split by selecting specific page ranges
 - [Split by Bookmarks](https://privatools.me/tool/split-by-bookmarks): Split at pages where bookmarks point to
 - [Split by Size](https://privatools.me/tool/split-by-size): Split into parts based on a max file size
-- [Split in Half](https://privatools.me/tool/split-in-half): Split each page in half — for two-up scans & booklets
-- [Organize Pages](https://privatools.me/tool/organize-pages): Reorder, delete, or rotate pages visually
+- [Split in Half](https://privatools.me/tool/split-in-half): Split each page in half — for two-up scans & book spreads
+- [Organize Pages](https://privatools.me/tool/organize-pages): Reorder or delete pages visually
 - [Delete Pages](https://privatools.me/tool/delete-pages): Remove specific pages from a PDF
 - [Extract Pages](https://privatools.me/tool/extract-pages): Extract specified pages to a new document
-- [Edit PDF](https://privatools.me/tool/edit-pdf): Edit text and images directly inside the PDF
+- [Edit PDF](https://privatools.me/tool/edit-pdf): Add text, shapes, highlights and images to a PDF
 - [Sign PDF](https://privatools.me/tool/sign-pdf): Add a visual signature image to a PDF
 - [Watermark](https://privatools.me/tool/watermark): Add text or image watermark over PDF pages
 - [Header & Footer](https://privatools.me/tool/header-footer): Add a header and footer to every page

@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select the PDF that contains the pages you need, up to 500 MB."
+      "text": "Drop or select the PDF that contains the pages you need, up to about 250 MB."
     },
     {
       "name": "List the pages to keep",
@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "How is this different from Delete Pages?",
-      "a": "They are mirror images. Extract Pages keeps only the pages you list; Delete Pages keeps everything except the pages you list. Pick whichever list is shorter to type."
+      "a": "They select opposite pages. Extract Pages keeps only the pages you list, in the order you type them; Delete Pages keeps everything except the pages you list, in the original order. The files differ too: Extract Pages builds a new PDF without the original's bookmarks, which Delete Pages keeps."
     },
     {
       "q": "Can I get each extracted page as a separate file?",
@@ -28,7 +28,7 @@
     },
     {
       "q": "Why was my page list rejected?",
-      "a": "Usually because it refers to a page the document does not have, includes page 0, or has a range written backwards, such as 9-4. The message tells you which part is wrong."
+      "a": "Usually because it refers to a page the document does not have, includes page 0, or has a range written backwards, such as 9-4. The message says what is wrong."
     },
     {
       "q": "Does it affect the quality of the pages?",

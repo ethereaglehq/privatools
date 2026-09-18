@@ -6,7 +6,7 @@
     },
     {
       "name": "Connect your AI provider",
-      "text": "Choose a provider and paste your API key once. Supported options include Anthropic, OpenAI, Google Gemini, OpenRouter, Groq, Together AI, Mistral, DeepSeek, or a local or self-hosted OpenAI-compatible server."
+      "text": "Choose a provider and paste your API key once. Supported options are Anthropic, OpenAI, Google Gemini, Together AI, Mistral, DeepSeek and an OpenAI-compatible server running on your own computer. OpenRouter and Groq also appear in the list, but requests to them currently fail."
     },
     {
       "name": "Ask your question",
@@ -20,7 +20,7 @@
   "faq": [
     {
       "q": "What leaves my device when I ask a question?",
-      "a": "The document's extracted text and your question are sent from your browser straight to the AI provider you selected, using your key. They do not pass through PrivaTools, but that provider's terms and retention settings apply, so check them before sending confidential material."
+      "a": "The document's extracted text, your question and the last few messages of the conversation are sent from your browser straight to the AI provider you selected, using your key. They do not pass through PrivaTools, but that provider's terms and retention settings apply, so check them before sending confidential material. Unless you turn analytics off on the Privacy page, Google Analytics also receives an event saying the tool was used and whether it worked, never the text."
     },
     {
       "q": "Do I need an API key?",
@@ -40,7 +40,7 @@
     },
     {
       "q": "Does it work on very long documents?",
-      "a": "Long documents send a lot of text with each request, which costs more and can exceed what some models accept at once. Choose a model with a large context, or extract the relevant pages first."
+      "a": "Only the first 100,000 characters of the extracted text are sent with each question, and the model is told when the document has been cut short. Long documents also cost more per question. To ask about a later part, extract the relevant pages first with Extract Pages and open that file here."
     }
   ]
 }
