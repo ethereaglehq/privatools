@@ -6,7 +6,7 @@
     },
     {
       "name": "Set an owner password and permissions",
-      "text": "Choose which operations are allowed for users without the owner password: print, copy text, modify, annotate."
+      "text": "Choose which operations are allowed for users without the owner password: print, copy text, modify, annotate. If you leave the owner password blank, a random one is used, so nobody can later use it to change the permissions."
     },
     {
       "name": "Download the protected PDF",
@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "What's the difference between owner password and user password?",
-      "a": "User password = required to OPEN. Owner password = required to override permissions (print, edit). Use Protect PDF for both; this tool sets only the owner password + permission flags."
+      "a": "User password = required to OPEN. Owner password = required to override permissions (print, edit). This tool sets only the owner password + permission flags, so the file still opens without a password. Protect PDF adds an open password, but its owner password is generated at random and never shown."
     },
     {
       "q": "How strong is the protection?",

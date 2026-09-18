@@ -5,26 +5,26 @@
       "text": "Drop a PDF with one or more digital signatures."
     },
     {
-      "name": "PrivaTools verifies each signature",
-      "text": "Checks that the signed content hasn't been modified since signing, the certificate chain is intact, and the signing date is consistent."
+      "name": "PrivaTools looks for signature fields",
+      "text": "It scans each page's form fields for signature fields. It does not check certificates, trust chains or whether the content changed since signing, and at present it misses signature fields, so a signed PDF comes back with none found."
     },
     {
-      "name": "Read the report",
-      "text": "For each signature: signer name, signing time, certificate authority, validity status (valid / modified / expired / untrusted CA)."
+      "name": "Read the result",
+      "text": "Any fields found are listed with the status detected, beside a note that cryptographic verification is not supported. For a real check, open the file in a PDF reader that validates signatures."
     }
   ],
   "faq": [
     {
       "q": "Does this require uploading my certificates?",
-      "a": "No — verification uses the certificates embedded in the PDF itself, plus the system's trusted CA store."
+      "a": "No. No certificates are read or checked at all, neither yours nor the ones embedded in the PDF."
     },
     {
       "q": "What if a signature is invalid?",
-      "a": "The report says exactly why: content modified, certificate expired, untrusted issuer, or signature format unsupported. The PDF itself isn't rejected — just the signature."
+      "a": "This tool cannot tell you: it does not validate signatures. Use a PDF reader that validates signatures to see why one fails."
     },
     {
       "q": "Can I verify multiple signatures?",
-      "a": "Yes — PDFs can have multiple signatures (e.g. one per signing party). All are verified independently."
+      "a": "PDFs can have multiple signatures (e.g. one per signing party), but this tool verifies none of them, and at present it does not recognise signature fields, so the list comes back empty."
     }
   ]
 }

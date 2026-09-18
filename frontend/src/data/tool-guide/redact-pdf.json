@@ -6,11 +6,11 @@
     },
     {
       "name": "Mark areas to redact",
-      "text": "Draw rectangles over text, images, or regions on each page. You can also search for a word or phrase to auto-select all occurrences."
+      "text": "Draw rectangles over text, images, or regions on the page preview, or add a box and type its position. Pick the box colour (black by default) and, if you need them, an exemption code set whose code is printed inside each box. To find every occurrence of a word automatically, use Smart Redact."
     },
     {
       "name": "Preview the redactions",
-      "text": "Toggle the preview to verify that the correct areas are blacked out before committing."
+      "text": "The page preview shows every box in place; step through the pages to check them before committing."
     },
     {
       "name": "Apply redactions and download",
@@ -20,11 +20,11 @@
   "faq": [
     {
       "q": "Is redaction permanent and truly irreversible?",
-      "a": "Yes. The underlying text glyphs and image pixels under each redaction rectangle are destroyed before the new PDF is written. The original bytes are not preserved in the file. No forensic tool can recover them — there is nothing left to recover."
+      "a": "Yes for what is under the boxes. The text glyphs and image pixels under each redaction rectangle are removed before the new PDF is written, and the file is rewritten without the old objects, so there is nothing under the box to recover. The same words elsewhere in the file are not touched: a bookmark title, a comment or the document metadata that repeats them survives, so check those too."
     },
     {
       "q": "Can I search and redact every occurrence of a name or number?",
-      "a": "Yes. Use the search-and-redact mode to type a phrase (case-sensitive optional) and the tool marks every occurrence across the whole document. Review the matches, then apply the redactions in one batch."
+      "a": "Not in Redact PDF, which works with the boxes you draw. Smart Redact finds candidates such as emails, phone numbers and names across the whole document, and removes every match you approve in one batch."
     },
     {
       "q": "What's the difference between redacting and drawing a black box?",
@@ -36,7 +36,7 @@
     },
     {
       "q": "Is metadata also redacted?",
-      "a": "By default the rectangles destroy on-page text and images. Author name, title, software, and other XMP/Info metadata are NOT automatically stripped — use the Strip Metadata tool afterward (or use Smart Redact which redacts both). For maximum safety: redact, then strip metadata, then sanitize."
+      "a": "By default the rectangles destroy on-page text and images. Author name, title, software, and other XMP/Info metadata are NOT automatically stripped — use the Strip Metadata tool afterward. Smart Redact leaves metadata alone too."
     },
     {
       "q": "What happens to the original, unredacted PDF I upload?",

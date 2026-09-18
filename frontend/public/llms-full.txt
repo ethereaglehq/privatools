@@ -227,7 +227,7 @@ URL: https://privatools.me/tool/protect-pdf
 
 Encrypt a PDF with a password or set permissions
 
-Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set open passwords, permission passwords, and control printing, copying, and editing access. No sign-up needed.
+Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set an open password and control printing, copying, and editing access. No sign-up needed.
 
 ### Unlock PDF
 
@@ -243,7 +243,7 @@ URL: https://privatools.me/tool/redact-pdf
 
 Permanently black out sensitive content
 
-Redact PDF online for free — permanently black out sensitive information including names, addresses, SSNs, and confidential text. WARNING: Redaction is irreversible — content is fully erased from the file, not just hidden.
+Redact PDF online for free — permanently black out sensitive information including names, addresses, SSNs, and confidential text. WARNING: Redaction is irreversible — the text and image pixels under each box are erased from the file, not just hidden.
 
 ### Strip Metadata
 
@@ -251,7 +251,7 @@ URL: https://privatools.me/tool/strip-metadata
 
 Remove embedded metadata for privacy
 
-Remove metadata from PDF online — strip author name, creation date, GPS coordinates, software info, and all hidden metadata for maximum privacy before sharing documents. Free, instant, no sign-up.
+Remove metadata from PDF online — strip author name, creation date, GPS coordinates, software info, and the rest of the document's Info and XMP metadata before sharing documents. Metadata inside embedded images is not removed. Free, instant, no sign-up.
 
 ### Delete Annotations
 
@@ -267,7 +267,7 @@ URL: https://privatools.me/tool/metadata
 
 View and edit document metadata
 
-View and edit PDF metadata online for free — read and modify Title, Author, Subject, Keywords, Creator, and Producer fields. See exactly what information is embedded in your PDF before sharing.
+View and edit PDF metadata online for free — read the Title, Author, Subject, Keywords, Creator, Producer and date fields, and change the first four. See exactly what information is embedded in your PDF before sharing.
 
 ### HTML to PDF
 
@@ -795,7 +795,7 @@ URL: https://privatools.me/tool/accessibility-check
 
 Audit a PDF against PDF/UA and WCAG
 
-Check PDF accessibility online for free — audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks; standard upload and rate limits apply.
+Check PDF accessibility online for free — audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Checks tagging, document language, heading order, image alt text, table headers, form-field labels, fonts and links, and lists what must be checked by hand, such as reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks; standard upload and rate limits apply.
 
 ### PDF/A Validator
 
@@ -803,23 +803,23 @@ URL: https://privatools.me/tool/pdfa-validator
 
 Run basic PDF/A indicator checks
 
-Validate PDF/A compliance online for free. Run basic PDF/A indicator checks and metadata warnings. Lightweight heuristic check to verify your documents meet archival standards before submission.
+Check PDF/A indicators online for free. Run basic checks for a PDF/A label, title and author metadata, and encryption. A lightweight heuristic, not a full conformance test: it cannot confirm that a document meets archival standards.
 
 ### Verify Digital Signature
 
 URL: https://privatools.me/tool/verify-signature
 
-Inspect signature fields in a PDF
+Look for signature fields in a PDF
 
-Verify PDF digital signatures online — inspect signature fields and certificate information in signed PDF documents. Check if your PDFs were properly signed. Free verification tool.
+Check a PDF for signature fields online. The tool does not verify signatures: it reads no certificate information and cannot tell whether a signed document was changed, and at present it reports no signature fields even when a PDF has them. Confirm signatures in your PDF reader's signature panel. Free tool.
 
 ### Sanitize Document
 
 URL: https://privatools.me/tool/sanitize-pdf
 
-Aggressively clean hidden data, JS, and layers
+Clear the document info fields of a PDF
 
-Sanitize PDF online — aggressively remove all hidden data, JavaScript, embedded files, form fields, layers, and metadata for maximum security before sharing. Essential for high-security document workflows.
+Sanitize PDF online — clear the document information fields (title, author, dates, software), remove multimedia screen annotations, and rewrite the file without unused objects. It does not remove JavaScript, embedded files, form fields, layers, links or XMP metadata, so do not rely on it alone for high-security document workflows.
 
 ### Reverse PDF
 

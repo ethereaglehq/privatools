@@ -2,15 +2,15 @@
   "howto": [
     {
       "name": "Upload a PDF",
-      "text": "Drop a PDF up to 500 MB to check whether it conforms to PDF/A archive standards."
+      "text": "Drop a PDF up to 500 MB to check it for basic PDF/A indicators."
     },
     {
       "name": "PrivaTools runs a conformance check",
-      "text": "Tests against PDF/A-1, PDF/A-2, and PDF/A-3 requirements: embedded fonts, color profiles, no JavaScript, no encryption, no external references."
+      "text": "It looks for a PDF/A identifier in the XMP metadata, checks that a title and an author are set, and flags encryption. Fonts, colour profiles, JavaScript and external references are not examined."
     },
     {
       "name": "Read the validation report",
-      "text": "Either 'compliant' with the highest PDF/A level achieved, or a list of specific violations preventing compliance."
+      "text": "It shows whether a PDF/A label was found and lists any warnings. A pass means those basic checks passed, not that the file conforms to PDF/A."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "If it's not PDF/A, can I convert it?",
-      "a": "Yes — use the PDF to PDF/A tool which fixes the most common issues automatically (font embedding, color profile attachment)."
+      "a": "The PDF to PDF/A tool re-saves the file and adds a PDF/A-2b label, which this check then detects. It does not embed fonts or add a colour profile, so the result is not guaranteed to conform."
     }
   ]
 }

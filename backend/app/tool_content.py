@@ -50,7 +50,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "protect-pdf": [
         {"name": "Drop your PDF", "text": "Select a PDF up to 500 MB that you want to password-protect. The file is uploaded over HTTPS and processed in isolated temporary per-request storage."},
         {"name": "Choose your password", "text": "Enter a strong password (12+ characters, mixed case, numbers, symbols recommended). Save it in a password manager — there is no recovery."},
-        {"name": "Set permission restrictions", "text": "Optionally restrict printing, text copying, form filling, content modification, and page extraction independently. Defaults to 'all allowed once unlocked'."},
+        {"name": "Set permission restrictions", "text": "Optionally change the three switches: Print (on by default), Extract for copying text and images (off by default), and Modify for editing, comments, form filling and page assembly (off by default)."},
         {"name": "Download the encrypted PDF", "text": "Click Protect. The output uses AES-256 encryption and requires your password to open in any PDF reader."},
     ],
     "unlock-pdf": [
@@ -78,8 +78,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "redact-pdf": [
         {"name": "Upload the PDF", "text": "Select the document containing sensitive information you need to permanently remove."},
-        {"name": "Mark areas to redact", "text": "Draw rectangles over text, images, or regions on each page. You can also search for a word or phrase to auto-select all occurrences."},
-        {"name": "Preview the redactions", "text": "Toggle the preview to verify that the correct areas are blacked out before committing."},
+        {"name": "Mark areas to redact", "text": "Draw rectangles over text, images, or regions on the page preview, or add a box and type its position. Pick the box colour (black by default) and, if you need them, an exemption code set whose code is printed inside each box. To find every occurrence of a word automatically, use Smart Redact."},
+        {"name": "Preview the redactions", "text": "The page preview shows every box in place; step through the pages to check them before committing."},
         {"name": "Apply redactions and download", "text": "Click Redact. The underlying content is permanently destroyed — it cannot be recovered, even by removing the black boxes."},
     ],
     "flatten-pdf": [
@@ -576,8 +576,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "delete-annotations": [
         {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Strip annotations", "text": "Click Delete. PrivaTools removes every annotation object (highlights, comments, sticky notes, form fields, links)."},
-        {"name": "Download the cleaned PDF", "text": "The visible page content is unchanged; all interactive annotations are gone."},
+        {"name": "Strip annotations", "text": "Click Delete. PrivaTools removes every annotation except form fields: highlights, comments, sticky notes, drawings, stamps and links."},
+        {"name": "Download the cleaned PDF", "text": "The visible page content is unchanged; comments, markup and links are gone, while form fields stay fillable."},
     ],
     "delete-pages": [
         {"name": "Add the PDF", "text": "Drop or select the PDF you want to trim, up to 500 MB."},
@@ -653,8 +653,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "metadata": [
         {"name": "Upload the PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "View the metadata", "text": "PrivaTools displays the document's Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, and any custom XMP fields."},
-        {"name": "Decide what to do next", "text": "If you want to strip the metadata, use Strip Metadata. To set new values, use Update Metadata."},
+        {"name": "View the metadata", "text": "PrivaTools displays the document's Title, Author, Subject, Keywords, Producer, Creator, Creation Date and Modified Date, as stored in its Info dictionary, plus the page count."},
+        {"name": "Decide what to do next", "text": "To change the Title, Author, Subject or Keywords, switch to Edit in this tool; clearing a field removes it. To remove all metadata, use Strip Metadata."},
     ],
     "nup": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
@@ -725,9 +725,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the TIFF", "text": "PrivaTools produces a single multi-page TIFF (one image per PDF page) or a ZIP of individual TIFFs."},
     ],
     "pdfa-validator": [
-        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB to check whether it conforms to PDF/A archive standards."},
-        {"name": "PrivaTools runs a conformance check", "text": "Tests against PDF/A-1, PDF/A-2, and PDF/A-3 requirements: embedded fonts, color profiles, no JavaScript, no encryption, no external references."},
-        {"name": "Read the validation report", "text": "Either 'compliant' with the highest PDF/A level achieved, or a list of specific violations preventing compliance."},
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB to check it for basic PDF/A indicators."},
+        {"name": "PrivaTools runs a conformance check", "text": "It looks for a PDF/A identifier in the XMP metadata, checks that a title and an author are set, and flags encryption. Fonts, colour profiles, JavaScript and external references are not examined."},
+        {"name": "Read the validation report", "text": "It shows whether a PDF/A label was found and lists any warnings. A pass means those basic checks passed, not that the file conforms to PDF/A."},
     ],
     "png-to-pdf": [
         {"name": "Upload PNG images", "text": "Drop one or many .png files up to 500 MB total."},
@@ -771,12 +771,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "sanitize-pdf": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB containing potentially risky elements."},
-        {"name": "PrivaTools removes risky content", "text": "Strips embedded JavaScript, executable links to external apps, embedded files marked for auto-launch, and hidden 'flash' (deprecated SWF) content."},
-        {"name": "Download the sanitized PDF", "text": "Visible content is preserved; security-risky elements are gone."},
+        {"name": "PrivaTools clears what it can", "text": "It empties the document information fields (title, author, dates, producer) and deletes screen (multimedia) annotations. JavaScript, embedded files, links, layers, form fields and XMP metadata are left in the file."},
+        {"name": "Download the sanitized PDF", "text": "Visible content is preserved, and the file is rewritten without unused objects."},
     ],
     "set-permissions": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Set an owner password and permissions", "text": "Choose which operations are allowed for users without the owner password: print, copy text, modify, annotate."},
+        {"name": "Set an owner password and permissions", "text": "Choose which operations are allowed for users without the owner password: print, copy text, modify, annotate. If you leave the owner password blank, a random one is used, so nobody can later use it to change the permissions."},
         {"name": "Download the protected PDF", "text": "Anyone without the owner password is limited to the allowed operations. The PDF itself still opens without a password (use Protect PDF if you want a user password too)."},
     ],
     "split-by-bookmarks": [
@@ -791,7 +791,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "strip-metadata": [
         {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."},
-        {"name": "PrivaTools removes all metadata", "text": "Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, all XMP fields, and any custom-defined metadata."},
+        {"name": "PrivaTools removes all metadata", "text": "Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, all XMP fields, and any custom-defined metadata. The cleaned XMP keeps just two entries that the PDF library writes itself: a pikepdf producer tag and the time of processing."},
         {"name": "Download the clean PDF (or ZIP)", "text": "Single file → single PDF; multiple files → ZIP. Visible content is unchanged."},
     ],
     "svg-to-pdf": [
@@ -811,8 +811,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "verify-signature": [
         {"name": "Upload a signed PDF", "text": "Drop a PDF with one or more digital signatures."},
-        {"name": "PrivaTools verifies each signature", "text": "Checks that the signed content hasn't been modified since signing, the certificate chain is intact, and the signing date is consistent."},
-        {"name": "Read the report", "text": "For each signature: signer name, signing time, certificate authority, validity status (valid / modified / expired / untrusted CA)."},
+        {"name": "PrivaTools looks for signature fields", "text": "It scans each page's form fields for signature fields. It does not check certificates, trust chains or whether the content changed since signing, and at present it misses signature fields, so a signed PDF comes back with none found."},
+        {"name": "Read the result", "text": "Any fields found are listed with the status detected, beside a note that cryptographic verification is not supported. For a real check, open the file in a PDF reader that validates signatures."},
     ],
     "webp-to-pdf": [
         {"name": "Upload WebP images", "text": "Drop one or many .webp files up to 500 MB total."},
@@ -1134,7 +1134,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "bates-remove": [
         {"name": 'Upload the stamped PDF', "text": 'Select a PDF that carries Bates numbering applied by PrivaTools or another tool.'},
-        {"name": 'Describe the stamp', "text": 'Give the prefix, digit count and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone.'},
+        {"name": 'Describe the stamp', "text": 'Give the prefix and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone. The digit count matters only when both are blank: then anything in the top or bottom inch that looks like letters followed by at least that many digits is removed.'},
         {"name": "Download the clean PDF", "text": "The matching stamps are removed and the rest of the page is untouched. You download a new PDF; the original on your device is not changed."},
     ],
     "accessibility-check": [
@@ -1215,8 +1215,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my document after I upload it?", "a": "It is uploaded over HTTPS and signed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the document and signature image and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "protect-pdf": [
-        {"q": "What encryption does PrivaTools use?", "a": "PDFs are encrypted with AES-256 (the same standard used by banks and governments) by default. AES-128 is available for backward compatibility with older PDF readers, though AES-256 is supported by every reader from the last decade. RC4 is explicitly NOT offered — it's been broken since the 2000s."},
-        {"q": "Can I allow printing but block copying text?", "a": "Yes. You can set granular permissions independently: allow or deny printing (with optional 'low-resolution print only'), text copying, form filling, content modification, page extraction, and accessibility/screen-reader access."},
+        {"q": "What encryption does PrivaTools use?", "a": "PDFs are encrypted with AES-256, the strongest method the PDF standard defines. There is no choice of algorithm: AES-128 and the broken RC4 are not offered."},
+        {"q": "Can I allow printing but block copying text?", "a": "Yes. Leave Print on and Extract off: readers that honour the permissions will print but not let text be copied. There are three switches, Print, Extract (copying text and images) and Modify (editing, comments, form filling and page assembly); access for screen readers is always left allowed."},
         {"q": "What happens if I forget the password?", "a": "PrivaTools does not store your password. If you lose it, there is no way to recover it — AES-256 has no backdoor. Save your password in a password manager like 1Password, Bitwarden, or your browser's built-in store before you encrypt."},
         {"q": "What happens to my PDF and password after I upload them?", "a": "Both are sent over HTTPS and used for that one request. The PDF is processed in isolated temporary per-request storage; response cleanup removes the job's temporary files after the encrypted copy is sent, and a background sweep clears anything left behind by an interrupted request. The password is not saved, which is also why nobody can recover it for you."},
         {"q": "What's the file size limit?", "a": "Up to 500 MB per file on the hosted site. Resource and fair-use rate limits also apply, as they do on every tool, so an unusually large or complex PDF can time out."},
@@ -1258,11 +1258,11 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I OCR a scanned PDF in a language I don't have the keyboard for?", "a": "Yes. OCR needs the right language to be available to the engine, not a keyboard. Once the text is recognised you can copy it, or use Translate PDF to translate the searchable result."},
     ],
     "redact-pdf": [
-        {"q": "Is redaction permanent and truly irreversible?", "a": "Yes. The underlying text glyphs and image pixels under each redaction rectangle are destroyed before the new PDF is written. The original bytes are not preserved in the file. No forensic tool can recover them — there is nothing left to recover."},
-        {"q": "Can I search and redact every occurrence of a name or number?", "a": "Yes. Use the search-and-redact mode to type a phrase (case-sensitive optional) and the tool marks every occurrence across the whole document. Review the matches, then apply the redactions in one batch."},
+        {"q": "Is redaction permanent and truly irreversible?", "a": "Yes for what is under the boxes. The text glyphs and image pixels under each redaction rectangle are removed before the new PDF is written, and the file is rewritten without the old objects, so there is nothing under the box to recover. The same words elsewhere in the file are not touched: a bookmark title, a comment or the document metadata that repeats them survives, so check those too."},
+        {"q": "Can I search and redact every occurrence of a name or number?", "a": "Not in Redact PDF, which works with the boxes you draw. Smart Redact finds candidates such as emails, phone numbers and names across the whole document, and removes every match you approve in one batch."},
         {"q": "What's the difference between redacting and drawing a black box?", "a": "Drawing a black annotation rectangle, as a comment or markup tool does, covers the text visually but leaves it in the file underneath — anyone can move or delete the annotation and recover the secret. True redaction removes the text and image data and rewrites the file. PrivaTools uses true redaction, not annotation."},
         {"q": "Will the redacted PDF still be searchable for non-redacted text?", "a": "Yes. Only the content under the redaction rectangles is destroyed. Text outside the rectangles, along with bookmarks, hyperlinks, and the text-search layer, are preserved intact."},
-        {"q": "Is metadata also redacted?", "a": "By default the rectangles destroy on-page text and images. Author name, title, software, and other XMP/Info metadata are NOT automatically stripped — use the Strip Metadata tool afterward (or use Smart Redact which redacts both). For maximum safety: redact, then strip metadata, then sanitize."},
+        {"q": "Is metadata also redacted?", "a": "By default the rectangles destroy on-page text and images. Author name, title, software, and other XMP/Info metadata are NOT automatically stripped — use the Strip Metadata tool afterward. Smart Redact leaves metadata alone too."},
         {"q": "What happens to the original, unredacted PDF I upload?", "a": "It is uploaded over HTTPS and held in isolated temporary per-request storage while the redactions are applied. Response cleanup removes both the original and the redacted output after the result is sent, and a background sweep clears anything left behind by an interrupted request. The redaction code is open source under the MIT licence, so it can be reviewed, or self-hosted if the original must not leave your network."},
     ],
     "flatten-pdf": [
@@ -1486,7 +1486,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What does it detect?", "a": "Pattern matching finds email addresses, phone numbers, SSN-style numbers (3-2-4 digits), runs of 13 to 19 digits that look like card numbers, and numeric dates. The entity model adds people, organisations, locations and other named entities. It does not look for postal addresses, IP addresses or custom identifiers, so check the document for those yourself."},
         {"q": "Which parts run in my browser and which on the server?", "a": "Text extraction, pattern matching and the default entity model all run in your browser, so nothing is uploaded while you scan and review. When you apply, the PDF and the strings you approved are sent over HTTPS to the PrivaTools server, which writes the redactions in isolated temporary per-request storage; response cleanup removes the job's temporary files after the result is sent."},
         {"q": "What is sent if I use my own AI key?", "a": "The extracted text of the PDF goes from your browser directly to the provider you chose, using your key, so that provider's terms apply. Values the pattern pass already found, such as emails, phone numbers, SSNs and card numbers, are masked before the text is sent. Applying the redactions still happens on the PrivaTools server."},
-        {"q": "Is the redaction reversible?", "a": "No. The server applies PyMuPDF redactions, which remove the matched text from the page content instead of drawing a box over it, and the file is rewritten without the removed objects. Document metadata is separate: run Strip Metadata afterwards if the author or title fields are sensitive."},
+        {"q": "Is the redaction reversible?", "a": "No. The server applies PyMuPDF redactions, which remove the matched text from the page content instead of drawing a box over it, and the file is rewritten without the removed objects. Document metadata is separate: run Strip Metadata afterwards if the author or title fields are sensitive. Bookmark titles and comments that repeat a redacted string are not changed either."},
         {"q": "How is this different from Redact PDF?", "a": "Redact PDF has you mark each area by hand. Smart Redact proposes candidates for you to approve, which is faster on long documents but only as good as the detection: patterns are dependable for well-formed emails and numbers, while names rely on the model and should always be reviewed."},
         {"q": "Will it catch everything?", "a": "No automatic detector does. The on-device entity model is English-trained and misses unusual names and initials, the patterns only match common formats, and text inside images is invisible to it. Treat the list as a first pass, then search the redacted PDF for names and numbers you know should be gone."},
         {"q": "What's the file size limit?", "a": "The server step accepts PDFs up to 500 MB. Detection runs in your browser, so very long documents are limited by your device's memory and take longer to scan. Fair-use rate limits apply to the server step."},
@@ -1860,9 +1860,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How do I undo a crop?", "a": "Keep your original: cropping writes a new PDF and leaves your upload unchanged. The Crop tool cannot widen the box again, since negative margins are rejected, but Resize with Custom set to the original page size in points removes the crop box and shows the full page again."},
     ],
     "delete-annotations": [
-        {"q": "Will this remove form fields too?", "a": "Yes — form fields are a type of annotation. To preserve form structure but clear values, use the Fill Form tool with empty values instead."},
-        {"q": "Are hyperlinks deleted?", "a": "Yes — hyperlinks are link annotations. Use this to make a PDF completely 'read-only' as a static document."},
-        {"q": "Does this remove signatures?", "a": "Yes, signature annotations are removed too — which invalidates the cryptographic signature."},
+        {"q": "Will this remove form fields too?", "a": "No. Form fields are technically annotations too, but they are kept, so a fillable form stays fillable."},
+        {"q": "Are hyperlinks deleted?", "a": "Yes — hyperlinks are link annotations, so they are removed along with the comments and markup. Form fields remain, so the result is not completely static."},
+        {"q": "Does this remove signatures?", "a": "No. Signature fields are form fields and are kept, but the file is rewritten, which breaks any digital signature in it."},
     ],
     "delete-pages": [
         {"q": "Can I undo a deletion?", "a": "The deleted pages are not in the new file, but your original PDF is untouched, so you can always start again from it. Keep the original until you have checked the result."},
@@ -1948,9 +1948,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does it handle code-block syntax highlighting?", "a": "Yes — fenced code blocks with language hints get tokenized and colored (Python, JS, SQL, Bash, etc.)."},
     ],
     "metadata": [
-        {"q": "What metadata does a typical PDF carry?", "a": "At minimum: producer (the software that created it) and creation date. Often also: author name, original filename, software version. Scanned PDFs may carry scanner model + driver."},
+        {"q": "What metadata does a typical PDF carry?", "a": "Usually: producer (the software that created it) and creation date. Often also: author name, original filename, software version. Scanned PDFs may carry scanner model + driver."},
         {"q": "Why does this matter for privacy?", "a": "Producer + Creator + Author fields can identify the person or machine that created a document — useful in forensics, problematic for whistleblowers."},
-        {"q": "Is XMP metadata shown too?", "a": "Yes — both the Info dictionary (old format) and XMP stream (new format) are inspected."},
+        {"q": "Is XMP metadata shown too?", "a": "No. Only the Info dictionary (old format) is shown; the XMP stream (new format) is not read. When you edit, the new values are written to both."},
     ],
     "nup": [
         {"q": "Why is this called 'N-up'?", "a": "Print-industry terminology: '2-up' = 2 pages per sheet, '4-up' = 4 per sheet, etc. Saves paper and ink for review prints."},
@@ -2028,7 +2028,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "pdfa-validator": [
         {"q": "What is PDF/A and why does it matter?", "a": "PDF/A is an ISO standard for long-term archival. It requires self-contained PDFs (all fonts embedded, no external scripts, no encryption) so the document will render identically in 50 years."},
         {"q": "What's the difference between PDF/A-1, A-2, A-3?", "a": "A-1 is the strictest (no transparency, no XFA forms). A-2 adds transparency, JPEG 2000, and PDF attachments. A-3 allows arbitrary file attachments — useful for invoice + machine-readable data bundles."},
-        {"q": "If it's not PDF/A, can I convert it?", "a": "Yes — use the PDF to PDF/A tool which fixes the most common issues automatically (font embedding, color profile attachment)."},
+        {"q": "If it's not PDF/A, can I convert it?", "a": "The PDF to PDF/A tool re-saves the file and adds a PDF/A-2b label, which this check then detects. It does not embed fonts or add a colour profile, so the result is not guaranteed to conform."},
     ],
     "png-to-pdf": [
         {"q": "Will the PDF be larger than the PNGs?", "a": "Roughly the same — PNGs are already losslessly compressed, and PDF embeds them with minimal overhead."},
@@ -2077,12 +2077,12 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How does this differ from DOCX-to-PDF?", "a": "RTF is an older Microsoft format. DOCX is a newer ZIP-based format. Both convert similarly but DOCX preserves more layout fidelity."},
     ],
     "sanitize-pdf": [
-        {"q": "What is sanitization protecting against?", "a": "Malicious PDFs that exploit reader vulnerabilities through embedded scripts or auto-launching attachments. Most modern readers are hardened against these, but defense in depth is wise."},
-        {"q": "Does this remove form fields?", "a": "No — form fields are kept (just JavaScript actions on them are stripped). Use Flatten or Delete Annotations to remove form structure."},
-        {"q": "Are hyperlinks removed?", "a": "Plain http/https links are kept. Links using non-web URI schemes (file:, mailto: with auto-execute, etc.) are stripped."},
+        {"q": "What is sanitization protecting against?", "a": "In general, malicious PDFs that abuse embedded scripts or attachments. This tool does not remove those: in a test, a document-level JavaScript action, a link that launches a program and an embedded file all survived. Use it to clear identifying document info, not to neutralise a suspicious file."},
+        {"q": "Does this remove form fields?", "a": "No — form fields are kept, along with any actions attached to them."},
+        {"q": "Are hyperlinks removed?", "a": "No. All links are kept, including links that launch another program or use a javascript: address."},
     ],
     "set-permissions": [
-        {"q": "What's the difference between owner password and user password?", "a": "User password = required to OPEN. Owner password = required to override permissions (print, edit). Use Protect PDF for both; this tool sets only the owner password + permission flags."},
+        {"q": "What's the difference between owner password and user password?", "a": "User password = required to OPEN. Owner password = required to override permissions (print, edit). This tool sets only the owner password + permission flags, so the file still opens without a password. Protect PDF adds an open password, but its owner password is generated at random and never shown."},
         {"q": "How strong is the protection?", "a": "It's enforced by readers as a courtesy — Adobe Acrobat respects it strictly, some open-source readers ignore it. For real security, encrypt with a user password."},
         {"q": "Can users still copy text?", "a": "Only if allow_copy is true. If false, the reader disables text selection. Note: screenshots still work (no PDF protection can prevent that)."},
     ],
@@ -2101,8 +2101,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "strip-metadata": [
         {"q": "Why strip metadata?", "a": "Author / producer / original-filename fields can identify who created or owns a document — a privacy concern for whistleblowers, journalists, or before public release."},
-        {"q": "What about embedded images' EXIF?", "a": "Image-level EXIF inside PDF embedded images is also stripped. The image pixel data is unchanged."},
-        {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes informational fields. Sanitize removes security-risky elements (JavaScript, auto-launch attachments)."},
+        {"q": "What about embedded images' EXIF?", "a": "It is not removed. EXIF inside images embedded in the PDF is left as it is: in a test, the camera make stored in an embedded JPEG was still in the output. Only the document's own Info and XMP metadata is cleared."},
+        {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and multimedia screen annotations; it leaves JavaScript, embedded files and XMP in place."},
     ],
     "svg-to-pdf": [
         {"q": "Will my SVG stay as vector inside the PDF?", "a": "Yes — PDF natively supports vector content, so paths, text, and gradients remain editable at any zoom level."},
@@ -2120,9 +2120,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I use this on photos?", "a": "It works best on text/diagram documents with clean backgrounds. Photos with light skies become weirdly transparent — use Remove Background (rembg) for photos."},
     ],
     "verify-signature": [
-        {"q": "Does this require uploading my certificates?", "a": "No — verification uses the certificates embedded in the PDF itself, plus the system's trusted CA store."},
-        {"q": "What if a signature is invalid?", "a": "The report says exactly why: content modified, certificate expired, untrusted issuer, or signature format unsupported. The PDF itself isn't rejected — just the signature."},
-        {"q": "Can I verify multiple signatures?", "a": "Yes — PDFs can have multiple signatures (e.g. one per signing party). All are verified independently."},
+        {"q": "Does this require uploading my certificates?", "a": "No. No certificates are read or checked at all, neither yours nor the ones embedded in the PDF."},
+        {"q": "What if a signature is invalid?", "a": "This tool cannot tell you: it does not validate signatures. Use a PDF reader that validates signatures to see why one fails."},
+        {"q": "Can I verify multiple signatures?", "a": "PDFs can have multiple signatures (e.g. one per signing party), but this tool verifies none of them, and at present it does not recognise signature fields, so the list comes back empty."},
     ],
     "webp-to-pdf": [
         {"q": "Will the PDF be much smaller than from JPG?", "a": "Slightly smaller — WebP-derived JPEGs inside PDF are similar to direct JPGs. The main benefit was at upload time (smaller WebP files)."},
@@ -2330,7 +2330,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "bates-remove": [
         {"q": 'Will this remove numbering added by another program?', "a": 'Usually, if the stamps were added as text and you can describe their shape: prefix, digit count, suffix. Numbers burned into a scanned image are part of the picture and cannot be lifted this way.'},
-        {"q": 'Why do I have to type the prefix and digits?', "a": 'So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. Describing the format is what keeps the removal surgical.'},
+        {"q": 'Why type the prefix and digits?', "a": 'So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. With a prefix or suffix, only text with exactly that around a number is removed; with both blank, anything in the top or bottom inch shaped like letters and at least the given number of digits goes.'},
         {"q": "Does removing Bates numbers change the rest of the page?", "a": "No. Only the matching stamp objects are removed; the remaining text, images and layout are untouched. The result is a new PDF, so the file on your device stays as it was."},
         {"q": 'Can I renumber after removing?', "a": 'Yes. Strip the old stamps here, then use Bates Numbering to apply a fresh sequence with whatever prefix and starting number you need.'},
         {"q": "Is it free and account-free?", "a": "Yes. No account and no watermark, the same as every other tool on the site. Fair-use rate limits apply."},
