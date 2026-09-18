@@ -558,91 +558,22 @@ def _tool_to_blogs() -> dict[str, list[dict]]:
 
 
 # ---------------------------------------------------------------------------
-# Tool popularity ranks  (slug → rank; lower = more searched/used).
-# Mirrors frontend/src/data/{tools,non-pdf-tools}.ts. Used to sort SSR output
-# so crawlers see the same most-popular-first ordering React renders. Missing
-# slugs default to 999 (end of list).
+# Tool popularity  (lower = more searched/used) lives in the registries,
+# frontend/src/data/{tools,non-pdf-tools}.ts, and reaches the server through
+# the build manifest. There is deliberately no copy of the ranks here: the
+# one this module used to keep had drifted on more than half the catalogue.
 # ---------------------------------------------------------------------------
-_POPULARITY: dict[str, int] = {
-    # ── PDF: organize ──────────────────────────────────────────────────
-    "merge-pdf": 10, "split-pdf": 11, "extract-pages": 12, "delete-pages": 13,
-    "organize-pages": 14, "remove-blank-pages": 15, "reverse-pdf": 16,
-    "split-by-bookmarks": 17, "split-by-size": 18, "split-by-text": 19,
-    "split-in-half": 20, "booklet-pdf": 21,
-    # ── PDF: edit ──────────────────────────────────────────────────────
-    "edit-pdf": 30, "sign-pdf": 31, "esign-pdf": 32, "watermark": 33,
-    "annotate-pdf": 34, "highlight-pdf": 35, "page-numbers": 36,
-    "header-footer": 37, "add-hyperlinks": 38, "stamp-pdf": 39,
-    "whiteout-pdf": 40, "bookmarks": 41, "add-shapes": 42,
-    "bates-numbering": 43, "transparent-background": 44, "add-attachment": 45,
-    # ── PDF: optimize ──────────────────────────────────────────────────
-    "compress-pdf": 50, "resize-pdf": 51, "rotate-pdf": 52, "crop-pdf": 53,
-    "auto-crop": 54, "grayscale-pdf": 55, "deskew-pdf": 56, "repair-pdf": 57,
-    "flatten-pdf": 58, "web-optimize-pdf": 59, "batch-compress-pdf": 60,
-    "invert-colors": 61,
-    # ── PDF: security ──────────────────────────────────────────────────
-    "unlock-pdf": 70, "protect-pdf": 71, "redact-pdf": 72, "smart-redact": 73,
-    "strip-metadata": 74, "metadata": 75, "delete-annotations": 76,
-    "set-permissions": 77, "sanitize-pdf": 78, "verify-signature": 79,
-    "pdfa-validator": 80,
-    # ── PDF: to-pdf ────────────────────────────────────────────────────
-    "word-to-pdf": 100, "jpg-to-pdf": 101, "image-to-pdf": 102,
-    "png-to-pdf": 103, "excel-to-pdf": 104, "pptx-to-pdf-convert": 105,
-    "html-to-pdf": 106, "office-to-pdf": 107, "heic-to-pdf": 108,
-    "webp-to-pdf": 109, "tiff-to-pdf": 110, "svg-to-pdf": 111,
-    "bmp-to-pdf": 112, "gif-to-pdf": 113, "txt-to-pdf": 114,
-    "markdown-to-pdf": 115, "csv-to-pdf": 116, "epub-to-pdf": 117,
-    "rtf-to-pdf": 118, "odt-to-pdf": 119, "json-to-pdf": 120, "xml-to-pdf": 121,
-    # ── PDF: from-pdf ──────────────────────────────────────────────────
-    "pdf-to-word": 130, "pdf-to-jpg": 131, "pdf-to-image": 132,
-    "pdf-to-excel": 133, "pdf-to-png": 134, "pdf-to-pptx": 135,
-    "pdf-to-text": 136, "pdf-to-html": 137, "pdf-to-markdown": 138,
-    "extract-tables": 139, "pdf-to-rtf": 140, "pdf-to-epub": 141,
-    "pdf-to-tiff": 142, "pdf-to-svg": 143, "pdf-to-bmp": 144, "pdf-to-gif": 145,
-    "pdf-to-long-image": 146,
-    # ── PDF: advanced ──────────────────────────────────────────────────
-    "ocr-pdf": 160, "compare-pdf": 161, "fill-form": 162, "extract-images": 163,
-    "summarize-pdf": 164, "chat-with-pdf": 164, "qr-code": 165, "pdf-page-counter": 166,
-    "nup": 167, "overlay": 168, "alternate-mix": 169, "form-creator": 170,
-    "pdf-to-pdfa": 171,
-    # ── non-PDF: image ─────────────────────────────────────────────────
-    "image-compressor": 210, "image-converter": 211, "resize-crop-image": 212,
-    "remove-background": 213, "image-upscaler": 214, "image-watermark": 215,
-    "heic-to-jpg": 216, "webp-to-jpg": 217, "png-to-jpg": 218, "jpg-to-png": 219,
-    "webp-to-png": 220, "svg-to-png": 221, "tiff-to-jpg": 222, "tiff-to-png": 223,
-    "bmp-to-jpg": 224, "bmp-to-png": 225, "heic-to-png": 226, "jpg-to-webp": 227,
-    "png-to-webp": 228, "gif-to-jpg": 229, "gif-to-png": 230, "remove-exif": 231,
-    "view-exif": 232, "make-collage": 233, "merge-images": 234, "image-ocr": 235,
-    "generate-favicon": 236, "qr-reader": 237, "video-to-gif": 238,
-    # ── non-PDF: video-audio ───────────────────────────────────────────
-    "mp4-to-mp3": 250, "compress-video": 251, "video-converter": 252,
-    "mov-to-mp4": 253, "trim-media": 254, "audio-converter": 255, "transcribe-audio": 255,
-    "extract-audio": 256, "m4a-to-mp3": 257, "avi-to-mp4": 258,
-    "webm-to-mp4": 259, "mp4-to-webm": 260, "gif-to-mp4": 261,
-    "video-to-pdf": 262, "video-resizer": 263, "video-thumbnail": 264,
-    "add-subtitles": 265, "video-merge": 266, "audio-merge": 267,
-    "subtitle-converter": 268,
-    # ── non-PDF: developer ─────────────────────────────────────────────
-    "base64": 280, "json-xml-formatter": 281, "hash-generator": 282,
-    "text-diff": 283, "csv-json": 284, "yaml-to-json": 285, "json-to-yaml": 286,
-    "markdown-html": 287, "url-encoder": 288, "case-converter": 289,
-    "jwt-decoder": 290, "regex-tester": 291, "timestamp-converter": 292,
-    "password-generator": 293, "uuid-generator": 294, "color-converter": 295,
-    "word-counter": 296, "lorem-ipsum": 297, "generate-barcode": 298,
-    "url-to-pdf": 299,
-    # ── non-PDF: archive ───────────────────────────────────────────────
-    "extract-archive": 310, "create-zip": 311,
-    # ── Phase 7 (competitor-gap, v1.5.0) — image + video/audio gaps ────
-    "image-palette": 39, "pixelate-image": 40,
-    "rotate-image": 41, "flip-image": 42,
-    "mute-video": 53, "video-speed": 55, "audio-trim": 56,
-    "reverse-video": 65,
-}
-
-
 def _by_popularity(items):
-    """Sort an iterable of (slug, ...) tuples by popularity rank."""
-    return sorted(items, key=lambda kv: _POPULARITY.get(kv[0], 999))
+    """Sort (slug, ...) tuples the way the client sorts its registries.
+
+    Manifest `popularity` ascending, unranked slugs last, equal ranks left in
+    the order given — callers pass manifest order, so this matches a stable JS
+    sort over the registry and crawlers see the ordering React renders.
+    Without a build manifest nothing is ranked, and the registry tables' own
+    order stands.
+    """
+    manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns()) or {}
+    return sorted(items, key=lambda kv: (manifest.get(kv[0]) or {}).get("popularity", 999))
 
 
 def _tool_registry_short_description(slug: str) -> str | None:
@@ -664,9 +595,10 @@ def _related_tools(slug: str, registry: dict, prefix: str) -> list[tuple[str, st
     ascending (manifest iteration order breaks ties, same as a stable JS sort
     over `ALL_TOOLS`), excluding the tool itself, first three. Reads the same
     build-owned manifest the client's registry is generated from, so this
-    can't drift from what the workspace's afterword actually shows. Falls
-    back to the legacy `_by_popularity` table only when that manifest
-    artifact itself is missing (dev without a build).
+    can't drift from what the workspace's afterword actually shows. When
+    that manifest artifact itself is missing (dev without a build) there is
+    no category or popularity to read, so it falls back to the first three
+    other tools in the registry table.
     """
     manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
     if manifest is not None:
@@ -675,51 +607,40 @@ def _related_tools(slug: str, registry: dict, prefix: str) -> list[tuple[str, st
             (s, row) for s, row in manifest.items()
             if s != slug and s in registry and (category is None or row.get("category") == category)
         ]
-        candidates.sort(key=lambda item: item[1].get("popularity", 999))
-        return [(s, row.get("name") or row["title"], f"/{prefix}/{s}") for s, row in candidates[:3]]
+        return [(s, row.get("name") or row["title"], f"/{prefix}/{s}") for s, row in _by_popularity(candidates)[:3]]
     category = _tool_category(slug)
     candidates = [(s, name) for s, (name, _) in registry.items()
                   if s != slug and (category is None or _tool_category(s) == category)]
     return [(s, name, f"/{prefix}/{s}") for s, name in _by_popularity(candidates)[:3]]
 
 
-_NONPDF_DOCUMENT_DATA_TOOLS = {"csv-json", "markdown-html"}
-_NONPDF_PHASE7_IMAGE_TOOLS = {"image-palette", "pixelate-image", "rotate-image", "flip-image"}
-_NONPDF_PHASE7_VIDEO_AUDIO_TOOLS = {"mute-video", "reverse-video", "video-speed", "audio-trim"}
+# Registry category (`Category` in tools.ts, `NonPdfCategory` in
+# non-pdf-tools.ts) → the subcategory label search and answer engines read.
+_APPLICATION_SUBCATEGORIES = {
+    "organize": "PDF organization tools",
+    "edit": "PDF editing tools",
+    "optimize": "PDF optimization tools",
+    "security": "PDF security tools",
+    "to-pdf": "Convert to PDF tools",
+    "from-pdf": "Convert from PDF tools",
+    "advanced": "Advanced PDF tools",
+    "document-office": "Document and data tools",
+    "archive": "Archive tools",
+    "image": "Image tools",
+    "video-audio": "Video and audio tools",
+    "developer": "Developer tools",
+}
 
 
 def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
-    """Return a precise SoftwareApplication subcategory for SEO/answer engines."""
-    rank = _POPULARITY.get(slug, 999)
+    """Return a precise SoftwareApplication subcategory for SEO/answer engines.
 
-    if is_pdf_tool:
-        if 10 <= rank <= 21:
-            return "PDF organization tools"
-        if 30 <= rank <= 45:
-            return "PDF editing tools"
-        if 50 <= rank <= 61:
-            return "PDF optimization tools"
-        if 70 <= rank <= 80:
-            return "PDF security tools"
-        if 100 <= rank <= 121:
-            return "Convert to PDF tools"
-        if 130 <= rank <= 145:
-            return "Convert from PDF tools"
-        if 160 <= rank <= 171:
-            return "Advanced PDF tools"
-        return "PDF tools"
-
-    if slug in _NONPDF_DOCUMENT_DATA_TOOLS:
-        return "Document and data tools"
-    if 310 <= rank <= 311:
-        return "Archive tools"
-    if 210 <= rank <= 238 or slug in _NONPDF_PHASE7_IMAGE_TOOLS:
-        return "Image tools"
-    if 250 <= rank <= 268 or slug in _NONPDF_PHASE7_VIDEO_AUDIO_TOOLS:
-        return "Video and audio tools"
-    if 280 <= rank <= 299:
-        return "Developer tools"
-    return "File tools"
+    The label follows the tool's registry category, read from the build
+    manifest. Without a manifest (dev without a build) there is no category,
+    only the registry table the slug came from, hence the generic fallback.
+    """
+    generic = "PDF tools" if is_pdf_tool else "File tools"
+    return _APPLICATION_SUBCATEGORIES.get(_tool_category(slug) or "", generic)
 
 
 # ---------------------------------------------------------------------------
