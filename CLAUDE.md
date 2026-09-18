@@ -340,6 +340,9 @@ CSP-walker and guide-export tests catch most misses.
     the browser needs a browser check (#236). 5.x minors are held too: 5.6.83
     up to 6.2.108 carry GHSA-hq66-cqwq-w95j, so stay on 5.5.207 and go
     straight to 6.2.108 or later.
+  - **TypeScript 6 and 7** (`typescript`): typescript-eslint 8.70 supports only
+    TypeScript below 6.1, and 7 is the native Go compiler, so the compiler,
+    typescript-eslint and the CI type-check move together in one task (#260).
   - **The `python` base image** ignores minor and major updates: moving Python
     is a migration, because the locks are compiled for 3.12. Without the rule
     Dependabot targeted only the newest tag and proposed no digest refresh at

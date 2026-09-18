@@ -77,6 +77,15 @@ updates:
       # straight to 6.2.108 or later.
       - dependency-name: "pdfjs-dist"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # TypeScript 7 is the native compiler, a platform change rather than a
+      # version bump: tsc becomes a per-platform Go binary, and every tool that
+      # loads TypeScript has to support it first. typescript-eslint 8.70
+      # supports only TypeScript >=4.8.4 <6.1.0, so #259 failed npm ci with
+      # ERESOLVE in every frontend job. TypeScript 6 is a major too. A dedicated
+      # task moves the compiler, typescript-eslint and the CI type-check
+      # together; delete this entry when it starts.
+      - dependency-name: "typescript"
+        update-types: ["version-update:semver-major"]
 
   # The root requirements*.in files, compiled by `uv pip compile` into the
   # hashed requirements*.txt locks that the image and CI install. The pip
