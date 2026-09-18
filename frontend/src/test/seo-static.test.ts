@@ -65,6 +65,19 @@ describe("static SEO files", () => {
         expect(priority["/about"]).toBe(0.4);
     });
 
+    it("keeps each tool's sitemap lastmod aligned with its own manifest review date", () => {
+        const sitemap = readFileSync(join(root, "public/sitemap.xml"), "utf8");
+        const manifest = JSON.parse(readFileSync(join(root, "public/tool-content.json"), "utf8")) as Array<{ path: string; lastReviewed: string }>;
+        const lastmodByPath = Object.fromEntries(
+            [...sitemap.matchAll(/<url><loc>https:\/\/privatools\.me([^<]*)<\/loc><lastmod>([^<]+)<\/lastmod>/g)]
+                .map(([, path, lastmod]) => [path, lastmod]),
+        );
+        expect(manifest.length).toBeGreaterThan(0);
+        for (const tool of manifest) {
+            expect(lastmodByPath[tool.path]).toBe(tool.lastReviewed);
+        }
+    });
+
     it("does not overclaim that every tool is browser-only", () => {
         const indexHtml = readFileSync(join(root, "index.html"), "utf8");
         const manifest = JSON.parse(readFileSync(join(root, "public/manifest.json"), "utf8")) as { description: string };

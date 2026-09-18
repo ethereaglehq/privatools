@@ -1,6 +1,7 @@
 """Published frontend content is authoritative for metadata, SSR and discovery."""
 import json
 import os
+import re
 from xml.etree import ElementTree
 
 import pytest
@@ -200,3 +201,35 @@ def test_fallback_sitemap_emits_priority_from_the_manifest(tmp_path, monkeypatch
     assert "<loc>https://privatools.me/tool/merge-pdf</loc><lastmod>" in body
     assert body.count("<priority>") == body.count("<url>")
     assert "<loc>https://privatools.me</loc><lastmod>2026-09-14</lastmod><priority>1.0</priority>" in body
+    # Priority comes from the manifest's own per-tool value (sitemap-priority.json's
+    # highPriorityTools for merge-pdf, the 0.6 default for reverse-pdf) — not a
+    # blanket tool-path constant. The lastmod literal is deliberately not pinned.
+    assert re.search(
+        r"<loc>https://privatools\.me/tool/merge-pdf</loc><lastmod>[^<]*</lastmod><priority>0\.8</priority>",
+        body,
+    )
+    assert re.search(
+        r"<loc>https://privatools\.me/tool/reverse-pdf</loc><lastmod>[^<]*</lastmod><priority>0\.6</priority>",
+        body,
+    )
+
+
+def test_fallback_sitemap_shows_each_tools_own_review_date(tmp_path, monkeypatch):
+    """Two tools with different manifest lastReviewed values must each keep
+    their own date in the fallback sitemap — not a shared/static one."""
+    manifest = {
+        "merge-pdf": {"slug": "merge-pdf", "name": "Merge PDF", "path": "/tool/merge-pdf",
+                      "description": "Combine PDFs", "lastReviewed": "2026-08-02"},
+        "split-pdf": {"slug": "split-pdf", "name": "Split PDF", "path": "/tool/split-pdf",
+                      "description": "Split PDFs", "lastReviewed": "2026-09-01"},
+    }
+    path = tmp_path / "tool-content.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(seo, "_TOOL_JSON", path)
+    seo._load_manifest.cache_clear()
+    monkeypatch.setattr(sitemap, "GENERATED_SITEMAP", tmp_path / "missing-sitemap.xml")
+    sitemap._render_sitemap.cache_clear()
+
+    body = sitemap._build_sitemap_xml().decode("utf-8")
+    assert "<loc>https://privatools.me/tool/merge-pdf</loc><lastmod>2026-08-02</lastmod>" in body
+    assert "<loc>https://privatools.me/tool/split-pdf</loc><lastmod>2026-09-01</lastmod>" in body
