@@ -55,7 +55,7 @@ elif name == 'curl':
 elif name == 'rollout':
     # The zero-downtime replacement (rollout.sh) has its own tests; here it
     # only reports the outcome auto-deploy must act on.
-    sys.exit({'rejected': 1, 'refused': 2, 'degraded': 3}.get(mode, 0))
+    sys.exit({'rejected': 1, 'refused': 2, 'degraded': 3, 'critical': 4}.get(mode, 0))
 '''
 
 
@@ -170,6 +170,22 @@ def test_host_failure_backs_off_and_retries_instead_of_blaming_the_release(tmp_p
     assert third.returncode == 0, third.stdout + third.stderr
     assert len(rollouts(calls)) == 1
     assert not (tmp_path / '.privatools-auto-deploy.retry').exists()
+
+
+@pytest.mark.parametrize('mode', ['degraded', 'critical'])
+def test_a_degraded_or_critical_rollout_is_not_rerun_every_minute(tmp_path, mode):
+    # Rerunning it each minute would pull, verify and start the rollout for
+    # nothing: the degraded state has its own 10-minute backoff, and exit 4
+    # needs a human.
+    result, _ = run_deploy(tmp_path, mode)
+    assert result.returncode == 1
+    assert (tmp_path / '.privatools-auto-deploy.retry').read_text().strip() == NEW
+    assert not (tmp_path / '.privatools-auto-deploy.failed').exists()
+
+    again, calls = run_deploy(tmp_path, mode)
+    assert again.returncode == 0 and 'backing off' in again.stdout
+    assert not rollouts(calls)
+    assert not [c for c in calls if c['name'] == 'cosign' or c['args'][:1] == ['pull']]
 
 
 def test_manual_deploy_refuses_root_and_runs_the_rollout_as_the_deploy_user(tmp_path):

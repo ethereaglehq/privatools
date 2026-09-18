@@ -29,10 +29,11 @@ STATE_FILE="${STATE_FILE:-${REPO_DIR}/.privatools-auto-deploy.sha}"
 # replaced the running one. We refuse to retry it every cycle (thrash);
 # cleared on the next success.
 FAILED_FILE="${FAILED_FILE:-${REPO_DIR}/.privatools-auto-deploy.failed}"
-# A target sha whose last attempt hit a host problem (rollout exit 2: nginx,
-# Docker, memory, a job that would not finish). Not the release's fault, so it
-# is retried, but only after DEPLOY_RETRY_BACKOFF seconds: each attempt boots
-# a container on a shared VM.
+# A target sha whose last attempt did not finish and was not the release's
+# fault: a host problem (rollout exit 2: nginx, Docker, memory, a job that would
+# not finish), the degraded state (3) or something needing a human (4). It is
+# retried, but only after DEPLOY_RETRY_BACKOFF seconds: each attempt pulls,
+# verifies and may boot a container on a shared VM.
 RETRY_FILE="${RETRY_FILE:-${REPO_DIR}/.privatools-auto-deploy.retry}"
 DEPLOY_RETRY_BACKOFF="${DEPLOY_RETRY_BACKOFF:-600}"
 
@@ -200,10 +201,10 @@ if [[ "$current_sha" == "$target_sha" && -f "$FAILED_FILE" \
     exit 0
 fi
 
-# The last attempt at this target hit a host problem: retry it, but not yet.
+# The last attempt at this target did not finish: retry it, but not yet.
 if [[ -f "$RETRY_FILE" && "$(tr -d '[:space:]' < "$RETRY_FILE")" == "$target_sha" ]] \
     && (( $(date +%s) - $(stat -c %Y "$RETRY_FILE") < DEPLOY_RETRY_BACKOFF )); then
-    log "the last attempt at ${target_sha:0:12} hit a host problem; backing off for up to ${DEPLOY_RETRY_BACKOFF}s before retrying"
+    log "the last attempt at ${target_sha:0:12} did not finish (see its log); backing off for up to ${DEPLOY_RETRY_BACKOFF}s before retrying"
     exit 0
 fi
 
@@ -333,10 +334,12 @@ case "$rollout_status" in
         log "the rollout hit a host problem or refused to start (see above); the previous release serves; retrying after ${DEPLOY_RETRY_BACKOFF}s"
         ;;
     3)
-        log "DEGRADED: ${target_sha:0:12} serves from the interim container; the next cycles retry the canonical container"
+        printf '%s\n' "$target_sha" > "$RETRY_FILE"
+        log "DEGRADED: ${target_sha:0:12} serves from the interim container; retrying the canonical container after ${DEPLOY_RETRY_BACKOFF}s"
         ;;
     *)
-        log "CRITICAL: rollout exited ${rollout_status}; check nginx and the containers now"
+        printf '%s\n' "$target_sha" > "$RETRY_FILE"
+        log "CRITICAL: rollout exited ${rollout_status}; check nginx and the containers now (next attempt after ${DEPLOY_RETRY_BACKOFF}s)"
         ;;
 esac
 ping_deploy fail
