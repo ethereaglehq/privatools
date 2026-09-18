@@ -112,9 +112,10 @@ def test_backend_has_no_tools_the_frontend_cannot_render():
 
 @pytest.mark.parametrize(("filename", "table"), [("tools.ts", _PDF_TOOLS), ("non-pdf-tools.ts", _NONPDF_TOOLS)])
 def test_fallback_serves_the_registry_names_and_long_descriptions(filename, table):
-    """Without a build manifest, the fallback tables are the SSR copy and the
-    JSON-LD. A hand-kept copy of the registry text had drifted on most tools
-    and still carried claims the registries had corrected."""
+    """When the tool manifest cannot be loaded, the fallback tables are the SSR
+    copy and the JSON-LD, and the tool counts always come from them. A
+    hand-kept copy of the registry text had drifted on most tools and still
+    carried claims the registries had corrected."""
     registry = _frontend_copy(filename)
     drifted = sorted(slug for slug, entry in registry.items() if table.get(slug) != entry)
     assert not drifted, (

@@ -152,10 +152,12 @@ load-bearing.
   manifest, so nothing in `sitemap.py` is edited per slug. `seo_meta.py`'s
   fallback tool tables are read from the committed
   `frontend/public/tool-content.json` that run writes; never hand-copy
-  registry text into Python (a hand copy drifted on most tools).
-  `test_tool_registry_parity.py` compares them with the registry source, but
-  CI's build regenerates that file before pytest, so only a run without a
-  build catches a stale commit. The count tests
+  registry text into Python (a hand copy drifted on most tools). Without a
+  build, `seo_meta` reads that committed copy as its tool manifest, so a
+  worktree runs the tool-manifest tests too; the blog-link test still needs
+  `npm run build`. `test_tool_registry_parity.py` compares the tables with the
+  registry source, but CI's build regenerates that file before pytest, so
+  only a run without a build catches a stale commit. The count tests
   enforce most of it; the CSP walker and guide export tests catch the rest.
   Every tool also needs a `seoTitle` (40–60 chars, query-first, no brand,
   unique) and a `metaDescription` (120–160 chars, ends with a period,

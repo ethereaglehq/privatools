@@ -391,6 +391,13 @@ _CONTENT_DIR = _Path(os.environ.get("FRONTEND_PATH", str(_Path(__file__).parent.
 _BLOG_JSON = _CONTENT_DIR / "blog-content.json"
 _COMPARE_JSON = _CONTENT_DIR / "compare-content.json"
 _TOOL_JSON = _CONTENT_DIR / "tool-content.json"
+# gen-llms.mjs writes the tool manifest into the source tree, where it is
+# committed, and the build copies it into dist. A checkout without a build
+# reads the committed copy, so category, popularity, search copy and review
+# dates match a build instead of dropping to the no-manifest fallbacks.
+_SOURCE_TOOL_JSON = _Path(__file__).parent.parent.parent / "frontend" / "public" / "tool-content.json"
+if not _TOOL_JSON.exists() and _SOURCE_TOOL_JSON.exists():
+    _TOOL_JSON = _SOURCE_TOOL_JSON
 
 
 def _mtime(path: _Path) -> int:
@@ -729,17 +736,15 @@ def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
 # ---------------------------------------------------------------------------
 # Fallback tool tables  (slug → (name, long_description))
 #
-# `_tool_registries()` serves these when the build manifest cannot be loaded,
-# as in a checkout without a frontend build. They hold no text of their own:
-# gen-llms.mjs writes the registries (frontend/src/data/{tools,non-pdf-tools}.ts)
-# to frontend/public/tool-content.json, which is committed, and that file is
-# read here. The hand-written copy it replaces had drifted on most tools and
-# still carried claims the registries had corrected. The image ships the build
-# but not frontend/public, so there the build manifest is read instead.
+# `_tool_registries()` serves these when the tool manifest cannot be loaded,
+# and the tool counts below are taken from them at import. They hold no text
+# of their own: gen-llms.mjs writes the registries
+# (frontend/src/data/{tools,non-pdf-tools}.ts) to the committed
+# frontend/public/tool-content.json, and that file is read here. The
+# hand-written copy it replaces had drifted on most tools and still carried
+# claims the registries had corrected. The image ships the build but not
+# frontend/public, so there the build manifest is read instead.
 # ---------------------------------------------------------------------------
-_SOURCE_TOOL_JSON = _Path(__file__).parent.parent.parent / "frontend" / "public" / "tool-content.json"
-
-
 def _fallback_tool_tables(*paths: _Path) -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str, str]]]:
     """The tables of the first readable tool manifest in `paths`.
 

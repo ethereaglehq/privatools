@@ -2,6 +2,9 @@
 import json
 import os
 import re
+import subprocess
+import sys
+from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
@@ -9,7 +12,8 @@ import pytest
 from backend.app import seo_meta as seo
 from backend.app.routes import sitemap
 
-SHELL = '<html><head><title>Old</title><meta name="robots" content="index,follow"><meta name="description" content="old"></head><body><div id="root"></div></body></html>'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SHELL ='<html><head><title>Old</title><meta name="robots" content="index,follow"><meta name="description" content="old"></head><body><div id="root"></div></body></html>'
 
 
 @pytest.fixture
@@ -156,6 +160,29 @@ def test_fallback_tables_refuse_to_start_without_any_tool_manifest(tmp_path):
     """Empty tables would advertise zero tools and 404 every tool page."""
     with pytest.raises(RuntimeError, match='npm run gen:llms'):
         seo._fallback_tool_tables(tmp_path / 'public' / 'tool-content.json', tmp_path / 'dist' / 'tool-content.json')
+
+
+def fresh_tool_manifest_reads(build_dir):
+    """What a freshly imported seo_meta reads when the build directory is `build_dir`."""
+    code = ("import json; from backend.app import seo_meta as s; "
+            "print(json.dumps({'path': str(s._TOOL_JSON), 'category': s._tool_category('merge-pdf')}))")
+    result = subprocess.run([sys.executable, '-c', code], cwd=REPO_ROOT, capture_output=True, text=True, check=True,
+                            env={**os.environ, 'FRONTEND_PATH': str(build_dir)})
+    return json.loads(result.stdout.splitlines()[-1])
+
+
+def test_a_checkout_without_a_build_reads_the_committed_tool_manifest(tmp_path):
+    """Fresh worktrees have no frontend/dist. The committed copy is the same
+    manifest, so category, popularity, search copy and review dates read as
+    they would with a build instead of dropping to the no-manifest fallbacks."""
+    committed = REPO_ROOT / 'frontend' / 'public' / 'tool-content.json'
+    merge = next(row for row in json.loads(committed.read_text(encoding='utf-8')) if row['slug'] == 'merge-pdf')
+    assert fresh_tool_manifest_reads(tmp_path) == {'path': str(committed), 'category': merge['category']}
+
+
+def test_a_build_manifest_wins_over_the_committed_copy(tmp_path):
+    build = tool_manifest(tmp_path / 'tool-content.json', [{**MERGE_ROW, 'category': 'from-the-build'}])
+    assert fresh_tool_manifest_reads(tmp_path) == {'path': str(build), 'category': 'from-the-build'}
 
 
 def test_sitemap_dates_do_not_change_with_request_day_and_private_pages_are_absent(manifests):
