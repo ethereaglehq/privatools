@@ -24,7 +24,7 @@
     },
     {
       "q": "Is it processed privately?",
-      "a": "Yes — local conversion on the PrivaTools backend, with input and output deleted immediately after the response."
+      "a": "The WebP is uploaded to the PrivaTools server and converted with local image libraries, not a third-party API. Response cleanup removes the input and the TIFF from temporary storage after the result is sent."
     }
   ]
 }

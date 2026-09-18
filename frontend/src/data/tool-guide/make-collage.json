@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload 2+ images",
-      "text": "Drop multiple JPG/PNG/WebP images, up to 500 MB total."
+      "name": "Add your images",
+      "text": "Drop or select the pictures for the collage. They fill the grid left to right, top to bottom."
     },
     {
-      "name": "Set columns + spacing + background",
-      "text": "Columns: how wide the collage is. Spacing: gap between images. Background color: visible in the spacing."
+      "name": "Arrange the tiles",
+      "text": "Drag the thumbnails to change their order. What you see in the preview is the order the finished collage uses."
     },
     {
-      "name": "Download the collage",
-      "text": "PrivaTools arranges the images in a grid and outputs one JPG file."
+      "name": "Choose the grid",
+      "text": "By default the tool finds a balanced, roughly square grid for the number of images, up to six columns. Switch that off to set the columns yourself, anywhere from 1 to 10."
+    },
+    {
+      "name": "Adjust spacing and background",
+      "text": "Spacing between the tiles runs from 0 to 200 pixels and starts at 10. The background colour shows through that gap and around the edges, and starts as white."
+    },
+    {
+      "name": "Build and download",
+      "text": "Create the collage and save the single combined image."
     }
   ],
   "faq": [
     {
-      "q": "Will images be resized?",
-      "a": "Each image is scaled to fit its grid cell while preserving aspect ratio. To force same aspect ratio, crop them first with Resize Crop Image."
+      "q": "How are the images arranged?",
+      "a": "In a grid, filled left to right and top to bottom. The automatic setting picks a near-square layout; set the columns yourself for a different shape — one column for a vertical strip, or a high number for a wide banner."
     },
     {
-      "q": "Can I rearrange the images?",
-      "a": "Drag in the upload area to reorder. They fill left-to-right, top-to-bottom."
+      "q": "Do the pictures need to be the same size?",
+      "a": "No, but a set of similar shapes produces a tidier grid. Mixing portrait and landscape shots leaves uneven tiles, so resizing them to a common size first with Resize and Crop Image gives a cleaner result."
     },
     {
-      "q": "What's the max grid size?",
-      "a": "Tested up to 100 images. Output JPEG can be up to 30,000 pixels wide before browser limits."
+      "q": "What does the spacing setting do?",
+      "a": "It sets the gap between tiles in pixels, from none at all up to 200. Zero produces a seamless block; a wider gap with a contrasting background colour gives the framed, scrapbook look."
+    },
+    {
+      "q": "Can I change the background colour?",
+      "a": "Yes. It defaults to white and shows in the gaps and borders. Black or a brand colour makes a set of photographs look deliberate rather than accidental."
+    },
+    {
+      "q": "Can I rearrange the tiles?",
+      "a": "Yes. Drag the thumbnails in the preview to reorder them before you build the collage; the finished image follows that order."
+    },
+    {
+      "q": "What do I get back?",
+      "a": "A single image containing the whole grid, which you can then treat like any other picture — compress it, resize it, or add a watermark."
+    },
+    {
+      "q": "What happens to my images after I upload them?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

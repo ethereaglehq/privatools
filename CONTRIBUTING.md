@@ -77,8 +77,10 @@ cd frontend && npm run test && npx tsc --noEmit -p tsconfig.app.json
 - Every new feature or bug fix needs a test. New tools need a backend test
   under `backend/tests/` and must be registered in the frontend tool registry
   (`frontend/src/data/`), the endpoint map (`frontend/src/lib/tool-endpoints.ts`),
-  and the backend SEO metadata (`backend/app/seo_meta.py` + the sitemap list in
-  `backend/app/routes/sitemap.py`). The suite enforces these consistency rules.
+  and the guide content (`backend/app/tool_content.py`). Then run
+  `npm run gen:llms` in `frontend/`: the backend's SEO metadata and sitemap
+  read the tool manifest it writes, so neither needs a per-tool entry.
+  The suite enforces these consistency rules.
 - Heavy/CPU work in a route handler must be offloaded with
   `await asyncio.to_thread(...)` (or `asyncio.create_subprocess_exec`) so it
   doesn't block the event loop.

@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload the Word document",
-      "text": "Select a .doc or .docx file up to 500 MB."
+      "name": "Add the Word document",
+      "text": "Drop or select a .docx file up to 500 MB. Older .doc files are not accepted here; Office to PDF handles a wider range of formats."
     },
     {
-      "name": "Conversion runs automatically",
-      "text": "LibreOffice converts the document server-side, preserving formatting, images, headers, footers, and table-of-contents links."
+      "name": "Convert to PDF",
+      "text": "Run the conversion. The document is laid out by LibreOffice on the server and exported as a PDF."
     },
     {
-      "name": "Download the PDF",
-      "text": "Click Convert and save the result. Hyperlinks and bookmarks from the original document are preserved."
+      "name": "Download and check the PDF",
+      "text": "Open the PDF and check fonts, page breaks and any tables, especially if the document uses unusual typefaces."
     }
   ],
   "faq": [
     {
-      "q": "Is formatting preserved during conversion?",
-      "a": "Yes. LibreOffice preserves fonts, styles, tables, images, headers, footers, and table-of-contents links. Minor differences may occur with uncommon fonts."
+      "q": "Will the PDF look exactly like my Word document?",
+      "a": "Usually very close. The layout is recalculated by LibreOffice rather than Microsoft Word, so complex documents can differ in small ways, most often in line breaks and page breaks."
     },
     {
-      "q": "Are .doc (legacy) files supported?",
-      "a": "Yes. Both the older .doc format and the modern .docx format are supported."
+      "q": "Why do the fonts look different?",
+      "a": "If the document uses a font the server does not have, a similar one is substituted, which can change spacing and page breaks. Embedding fonts when saving in Word, or using common fonts, gives the most faithful result."
     },
     {
-      "q": "What about tracked changes and comments?",
-      "a": "Tracked changes and comments visible in the document will appear in the PDF. Accept or reject changes in Word first if you want a clean output."
+      "q": "Which file types can I convert?",
+      "a": "This page takes .docx. For .doc, .odt, .rtf, spreadsheets or presentations, use Office to PDF, which accepts a wider set of formats."
+    },
+    {
+      "q": "Are comments and tracked changes included?",
+      "a": "Accept or reject tracked changes and remove comments before converting if you do not want them to appear. Converting exactly the version you intend to share avoids surprises."
+    },
+    {
+      "q": "Do links and headings carry over?",
+      "a": "Clickable links generally survive the export. Check the result if a table of contents or internal cross-references matter to you."
+    },
+    {
+      "q": "What happens to my document after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the document and the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

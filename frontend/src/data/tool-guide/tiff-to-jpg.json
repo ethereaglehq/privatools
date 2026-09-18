@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a TIFF",
-      "text": "Select a .tif or .tiff file from a scanner or photo library."
+      "name": "Add your TIFF images",
+      "text": "Drop or select .tif or .tiff files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The first page (for multi-page TIFFs) is re-encoded as a JPEG at quality 85."
+      "name": "Convert to JPG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to JPG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the JPG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new JPG rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert TIFF to JPG?",
-      "a": "TIFF files from scanners are often 10–50 MB each. JPG shrinks them to a few hundred KB, perfect for email and online sharing where quality at 85% is indistinguishable."
+      "a": "Because TIFF files are large and awkward to share. A scan or a print-ready image can be tens of megabytes; the JPG version is small enough to email or upload and opens on any device."
     },
     {
-      "q": "What about multi-page TIFFs?",
-      "a": "Only the first page is converted to JPG. To handle multi-page TIFFs, use our TIFF to PDF tool instead — it preserves all pages."
+      "q": "My TIFF has several pages. Why did I get one image?",
+      "a": "Only the first page is converted. A multi-page TIFF, which is what many scanners produce, holds a sequence of images, and JPG holds exactly one. If you need every page, convert the TIFF to PDF first and work from there."
     },
     {
-      "q": "Will I lose quality?",
-      "a": "Some, but at our default quality of 85, the difference is essentially invisible at typical viewing sizes."
+      "q": "How much quality is lost?",
+      "a": "JPEG is a lossy format, so the conversion re-encodes the picture and throws away a little detail. There is no quality slider on this page; JPEGs are written at the imaging library's default quality of 75. Going from a lossless TIFF to JPG is a real, one-way reduction, so keep the TIFF if it is your archival master."
+    },
+    {
+      "q": "What happens to transparency?",
+      "a": "JPEG has no transparency. The alpha channel is discarded rather than blended onto a white page, so anything that was see-through takes the colour stored underneath it, which is usually black. Convert to PNG, WebP or TIFF if you need transparency kept."
+    },
+    {
+      "q": "Will a CMYK print TIFF convert correctly?",
+      "a": "Colours may shift. JPG files for general use are RGB, and a print-oriented CMYK source has to be interpreted to get there, which is not colour-managed here. For prepress work, keep the original and convert in software that handles colour profiles."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

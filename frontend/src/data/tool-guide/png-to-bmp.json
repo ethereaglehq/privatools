@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Is PNG transparency kept in BMP?",
-      "a": "Standard BMP has no alpha channel, so transparent areas are flattened (to white by default). If you need to keep transparency, use PNG→TIFF instead."
+      "a": "No. The alpha channel is dropped rather than blended onto white, so transparent areas usually come out black in the BMP. If you need to keep transparency, use PNG to TIFF instead."
     },
     {
       "q": "Why convert to BMP?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Is the conversion private?",
-      "a": "Yes — local processing on the PrivaTools backend; files removed immediately after the response."
+      "a": "It runs on the PrivaTools server with local image libraries, not a third-party API. The files are temporary and are removed by response cleanup after the BMP is sent."
     }
   ]
 }

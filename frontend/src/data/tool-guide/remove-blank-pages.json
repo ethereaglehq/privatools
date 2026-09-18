@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a PDF",
-      "text": "Drop a PDF up to 500 MB. Best for scanned documents with intermittent blank pages."
+      "name": "Add the PDF",
+      "text": "Drop or select a PDF up to 500 MB. Scanned documents from a duplex scanner, which often contain empty reverse sides, are the typical case."
     },
     {
-      "name": "Set sensitivity",
-      "text": "1-99. Higher values delete only entirely-blank pages; lower values also delete pages with very little content (good for scanner artifacts)."
+      "name": "Set the sensitivity",
+      "text": "The slider runs from 50 to 100 and starts at 85. Higher values only remove pages that are almost perfectly white; lower values also remove scanned blank pages that carry specks, show-through or scanner noise."
     },
     {
-      "name": "Download the cleaned PDF",
-      "text": "PrivaTools removes pages whose content density is below the threshold."
+      "name": "Remove and download",
+      "text": "Run it and check the result. Every page judged blank is dropped and the rest keep their order."
     }
   ],
   "faq": [
     {
-      "q": "How does it detect 'blank'?",
-      "a": "Each page is rendered to a low-res raster and analysed for pixel density. Pages with less than (100 - sensitivity)% non-white pixels are marked for removal."
+      "q": "How does it decide a page is blank?",
+      "a": "Each page is rendered at a low resolution and the proportion of near-white pixels is measured. A page that is white enough for the sensitivity you chose is treated as blank. Pages carrying text are normally kept."
     },
     {
-      "q": "Will pages with only a page number get deleted?",
-      "a": "Depends on sensitivity. At sensitivity 95 (default), pages with isolated tiny content like page numbers are kept. At sensitivity 80, they may be removed."
+      "q": "My scanned blank pages were not removed.",
+      "a": "Scanners rarely produce pure white: dust, texture and faint show-through from the other side all count as content. Lower the sensitivity a step or two and run it again until the empty sides disappear."
     },
     {
-      "q": "What if a page has only a watermark?",
-      "a": "The watermark counts as content. Use sensitivity 99 to only remove pages with no content at all."
+      "q": "Could it remove a page I want to keep?",
+      "a": "At low settings, a page with only a few faint marks can be judged blank. Check the result before discarding the original, and raise the sensitivity if anything important went missing."
+    },
+    {
+      "q": "Why does a higher number remove fewer pages?",
+      "a": "Because the number is how strict the tool is about whiteness: at 100 a page has to be essentially pure white to count as blank. Lowering it lets more imperfect pages qualify."
+    },
+    {
+      "q": "Can I choose which blank pages to keep?",
+      "a": "Not in this tool — it removes every page it judges blank. To keep a deliberate blank page, remove the others here and put it back with Merge PDF, or delete pages by number with Delete Pages instead."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and checked on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

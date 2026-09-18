@@ -1,6 +1,7 @@
 import { gzipSync } from "node:zlib";
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { readContentArray } from "./content-data.mjs";
 
 const assetsDir = new URL("../dist/assets/", import.meta.url);
 const maxRawKiB = Number(process.env.MAX_JS_CHUNK_RAW_KIB ?? 1200);
@@ -67,6 +68,66 @@ if (entryChunkLeaksToolGuide) {
   );
 }
 
-if (offenders.length > 0 || entryChunkLeaksToolGuide) {
+// src/data/blog.ts is every article's HTML (~115 KiB). Only blog routes may
+// load it, through a dynamic import(). Every page fetches the entry script,
+// each chunk index.html module-preloads, and whatever those import statically
+// (resolveDependencies in vite.config.ts drops some preload tags, not the
+// imports), so none of them may contain it. Chunk names can change and the
+// data could be inlined anywhere, so match content: the longest plain run of
+// words in each post's body, which minification cannot rewrite.
+// HTML tag and attribute names are case-insensitive, so the patterns are too.
+const htmlTags = [...readFileSync(new URL("../index.html", assetsDir), "utf8").matchAll(/<(?:script|link)\b[^>]*>/gi)].map(([tag]) => tag);
+const assetOf = (tag) => tag.match(/\b(?:src|href)="\/assets\/([^"]+\.js)"/i)?.[1];
+const entryScripts = htmlTags.filter((tag) => /\btype="module"/i.test(tag)).map(assetOf).filter(Boolean);
+const preloaded = htmlTags.filter((tag) => /\brel="modulepreload"/i.test(tag)).map(assetOf).filter(Boolean);
+if (entryScripts.length === 0) {
+  console.error("\nNo module script in dist/index.html; the blog-data check cannot run meaningfully.");
+  process.exit(1);
+}
+// Static imports only, the pattern public/sw.js precaches with; import() never matches.
+const staticImports = (name) => [...readFileSync(join(assetsDir.pathname, name), "utf8")
+  .matchAll(/(?:\b(?:import|export)\s*[^;"'()]*?\bfrom\s*|\bimport\s*)["']\.\/([^"']+\.js)["']/g)].map((match) => match[1]);
+const eagerChunks = new Set();
+const importers = new Map();
+const eagerQueue = [...entryScripts, ...preloaded];
+while (eagerQueue.length) {
+  const name = eagerQueue.shift();
+  if (eagerChunks.has(name)) continue;
+  eagerChunks.add(name);
+  for (const dependency of staticImports(name)) {
+    importers.set(dependency, [...(importers.get(dependency) ?? []), name]);
+    eagerQueue.push(dependency);
+  }
+}
+const blogMarkers = readContentArray(new URL("../src/data/blog.ts", import.meta.url), "blogPosts")
+  .map((post) => (post.body.match(/[A-Za-z0-9 ]{40,}/g) ?? []).map((run) => run.trim()).sort((a, b) => b.length - a.length)[0])
+  .filter(Boolean);
+if (blogMarkers.length < 10) {
+  console.error(`\nOnly ${blogMarkers.length} blog posts yielded a text marker; the blog-data check cannot run meaningfully.`);
+  process.exit(1);
+}
+const eagerBlogChunks = [...eagerChunks].filter((name) => {
+  const source = readFileSync(join(assetsDir.pathname, name), "utf8");
+  return blogMarkers.some((marker) => source.includes(marker));
+});
+if (eagerBlogChunks.length > 0) {
+  console.error("\nBlog data (src/data/blog.ts) is in the chunks every page loads:");
+  for (const name of eagerBlogChunks) {
+    const how = [
+      entryScripts.includes(name) && "the entry script",
+      preloaded.includes(name) && "module-preloaded by index.html",
+      importers.has(name) && `statically imported by ${importers.get(name).join(", ")}`,
+    ].filter(Boolean);
+    console.error(`- ${name}: ${how.join("; ")}`);
+  }
+  console.error(
+    "Import it only on blog routes, through a dynamic import() — src/test/blog-module-boundary.test.ts " +
+    "prints the source-level import chain."
+  );
+} else {
+  console.log(`\nBlog data: absent from all ${eagerChunks.size} chunks loaded on every page (entry, preloads and their static imports).`);
+}
+
+if (offenders.length > 0 || entryChunkLeaksToolGuide || eagerBlogChunks.length > 0) {
   process.exit(1);
 }

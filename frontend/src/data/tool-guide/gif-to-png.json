@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a GIF",
-      "text": "Drop a GIF — single-frame GIFs convert cleanly with transparency preserved."
+      "name": "Add your GIF images",
+      "text": "Drop or select .gif files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The first frame becomes a lossless PNG, perfect for icons and animated avatars converted to stills."
+      "name": "Convert to PNG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to PNG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the PNG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new PNG rather than a renamed copy."
     }
   ],
   "faq": [
     {
-      "q": "What about animated GIFs?",
-      "a": "Only the first frame is converted to PNG. For animated GIFs, consider converting to a video format like MP4 or WebM using our GIF to MP4 tool."
+      "q": "Does this keep the animation?",
+      "a": "No. A plain PNG holds one frame, so only the first frame of an animated GIF is converted. Use GIF to MP4 if you want the animation in a modern format."
     },
     {
-      "q": "Will transparency be preserved?",
-      "a": "Yes — PNG fully supports transparency, so transparent areas of the GIF come through cleanly."
+      "q": "Why convert GIF to PNG?",
+      "a": "PNG handles far more colours than GIF's 256-colour limit and compresses flat graphics better, so a logo or diagram saved as a GIF is almost always better off as a PNG."
+    },
+    {
+      "q": "Will the extra colours come back?",
+      "a": "No. PNG can store millions of colours, but the GIF only contains the 256 it was reduced to, and the conversion copies what is there. The banding in a photographic GIF stays."
+    },
+    {
+      "q": "Is transparency preserved?",
+      "a": "Yes, where the GIF has it. GIF transparency is a single fully transparent colour rather than a soft alpha channel, so edges may look hard, but the see-through areas remain see-through in the PNG."
     },
     {
       "q": "Is the conversion lossless?",
-      "a": "Yes. Both GIF and PNG are lossless formats, so the first frame is reproduced pixel-perfectly."
+      "a": "Yes, in the sense that every pixel the GIF decodes to is preserved exactly. Quality already given up when the image was turned into a GIF cannot be recovered."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

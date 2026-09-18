@@ -1,50 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload the document",
-      "text": "Select the PDF you need to sign. The first page is displayed in the signing canvas."
+      "name": "Add the PDF",
+      "text": "Drop or select the document you need to sign, up to 500 MB."
     },
     {
       "name": "Create your signature",
-      "text": "Draw your signature with a mouse or finger, type it using a handwriting font, or upload a signature image."
+      "text": "Draw it with a mouse, trackpad or finger, or upload an image of your handwritten signature."
     },
     {
-      "name": "Place and resize the signature",
-      "text": "Drag the signature to the correct position on the page. Resize it to fit the signing area."
+      "name": "Place it on the page",
+      "text": "Choose the page and set the position and size. The fields give exact values, so a signature can line up precisely with a signature line."
     },
     {
-      "name": "Download the signed PDF",
-      "text": "Click Apply. The signature is embedded into the PDF and the file is ready to share."
+      "name": "Apply and download",
+      "text": "Apply the signature and save the signed PDF. The signature image becomes part of the page."
     }
   ],
   "faq": [
     {
-      "q": "Is this a legally binding electronic signature?",
-      "a": "PrivaTools creates a visual signature embedded in the PDF, plus an audit trail in the document metadata (signer name, timestamp). Whether it qualifies as legally binding depends on your jurisdiction — for most informal agreements, internal sign-offs, and consent forms in the US, EU, UK, India, and Australia, it is widely accepted under ESIGN and eIDAS frameworks. For court-grade qualified signatures, you need a certified eID provider."
+      "q": "Is this a legally binding digital signature?",
+      "a": "It is an electronic signature in the everyday sense — an image of your signature placed on the document — not a certificate-based digital signature. Many routine agreements accept that; documents that require a qualified or certificate signature need a service that issues one."
     },
     {
-      "q": "Can I sign multiple pages or multiple signatures on one page?",
-      "a": "Yes. After creating your signature, you can place it on any page by navigating through the document preview. Add as many signatures as needed (e.g. initial-each-page or multi-party contracts)."
+      "q": "Can someone tell if the document was changed after I signed?",
+      "a": "No. Because this is a visible signature rather than a cryptographic one, nothing in the file detects later edits. Keep your own copy of exactly what you signed."
     },
     {
-      "q": "Is my signature stored on the server?",
-      "a": "No. Your signature exists only in your browser session — drawn on a canvas, kept in memory while you place it. The server receives the signature image only for the brief moment it embeds it into the PDF, then unlinks both input and output within seconds of your download. The signature image is never kept after the response."
+      "q": "Draw or upload — which is better?",
+      "a": "Drawing is quick and fine for most uses. Uploading a scan or photo of your real signature, ideally on a clean white background, looks more natural on formal documents."
     },
     {
-      "q": "Is it safe to sign a sensitive contract here?",
-      "a": "Yes. The PDF and signature image are held in temporary per-request storage inside an isolated Docker container for the duration of the request only; both are unlinked the moment your download begins. Nothing is logged, indexed, or sent to a third-party API. The signing pipeline is open source on GitHub and you can self-host the entire stack."
+      "q": "Can I add initials or sign several pages?",
+      "a": "Each run places one signature on the page you choose. Run it again on the output to add initials or sign additional pages."
     },
     {
-      "q": "What's the file size limit?",
-      "a": "500 MB per file with no daily or monthly quota. There is no cap on the number of signatures you can place."
+      "q": "What is the difference between Sign PDF and eSign PDF?",
+      "a": "Both place a visible signature. eSign PDF adds the option to type your name in a choice of script styles; Sign PDF is the direct draw-or-upload route."
     },
     {
-      "q": "Do I need an account?",
-      "a": "No — no account, no email, no sign-up. Upload, draw, place, download. DocuSign and Adobe Sign both require accounts; we don't."
-    },
-    {
-      "q": "How is this different from DocuSign or Adobe Sign?",
-      "a": "Free with no daily limit and no account required. PrivaTools handles single-signer documents extremely well; for multi-party serial signing with email reminders and a portal-style workflow, DocuSign or Adobe Sign remain more featureful. We don't retain the file or have access to it after delivery."
+      "q": "What happens to my document after I upload it?",
+      "a": "It is uploaded over HTTPS and signed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the document and signature image and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

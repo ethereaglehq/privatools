@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a GIF",
-      "text": "Drop a GIF file. For animated GIFs, only the first frame is converted."
+      "name": "Add your GIF images",
+      "text": "Drop or select .gif files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. PrivaTools extracts the first frame, flattens transparency to white, and saves as JPEG."
+      "name": "Convert to JPG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to JPG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the JPG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new JPG rather than a renamed copy."
     }
   ],
   "faq": [
     {
-      "q": "What about animated GIFs?",
-      "a": "Only the first frame is converted. To extract every frame as JPGs, use a dedicated GIF frame extractor — coming soon to PrivaTools."
+      "q": "My GIF was animated and I only got one picture.",
+      "a": "That is how it works: JPG holds a single still image, so only the first frame of the animation is converted. To keep the movement, convert the GIF to a video with GIF to MP4 instead."
     },
     {
-      "q": "Will transparency be preserved?",
-      "a": "No — JPG doesn't support transparency. Transparent pixels in the source GIF become white in the JPG."
+      "q": "Why convert GIF to JPG?",
+      "a": "Usually to get a normal still photo out of a GIF, or to shrink a large one. GIF is limited to 256 colours and stores every frame as a separate image, which makes it a poor container for anything photographic."
     },
     {
-      "q": "Why convert GIF to JPG anyway?",
-      "a": "GIFs are limited to 256 colors and can be larger than JPGs of the same single frame. JPG is ideal when you only need a static still and want smaller file size."
+      "q": "Will the colours look right?",
+      "a": "The JPG can only contain the colours the GIF had. A photograph that was reduced to a 256-colour palette will still show banding after conversion — the conversion cannot restore shades that were not in the GIF to begin with."
+    },
+    {
+      "q": "What happens to a transparent GIF?",
+      "a": "JPEG has no transparency. A GIF marks one palette colour as see-through, and after conversion that colour simply shows, so transparent areas take on whatever colour the GIF assigned to them. Convert to PNG if you need the transparency kept."
+    },
+    {
+      "q": "Is the file smaller?",
+      "a": "For a single frame from an animation, usually much smaller, since you are discarding every other frame. For a one-frame GIF the difference depends on the picture. JPEG is a lossy format, so the conversion re-encodes the picture and throws away a little detail. There is no quality slider on this page; JPEGs are written at the imaging library's default quality of 75."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

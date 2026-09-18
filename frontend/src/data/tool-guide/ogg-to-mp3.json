@@ -24,7 +24,7 @@
     },
     {
       "q": "Is it processed privately?",
-      "a": "Yes — local FFmpeg conversion; files deleted immediately after the response."
+      "a": "The file is converted by FFmpeg on the PrivaTools server, not a third-party service, and the temporary input and output are removed by response cleanup after the result is sent."
     }
   ]
 }

@@ -24,7 +24,7 @@
     },
     {
       "q": "Is the conversion private?",
-      "a": "Yes — FFmpeg runs on the PrivaTools backend and the files are deleted immediately after the response."
+      "a": "FFmpeg runs on the PrivaTools server, not a third-party service. The WAV and the MP3 are temporary files that response cleanup removes after the result is sent."
     }
   ]
 }

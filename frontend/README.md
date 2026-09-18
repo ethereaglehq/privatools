@@ -29,6 +29,10 @@ npm run test:content
 npm run build:check
 ```
 
+Before opening a pull request, also run `npm run check:review-dates`, which
+compares each tool's `lastReviewed` with `origin/main` and is a required check
+on every PR. Run `git fetch origin` first; see `scripts/README.md`.
+
 The build prepares pinned browser model assets, regenerates the AI crawler
 indexes, bundles the application and injects integrity metadata. Check generated
 changes before committing. Use the npm version pinned in CI when regenerating

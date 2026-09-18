@@ -1,26 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload a PNG image",
-      "text": "Drop one or more PNG files — up to 200 MB total."
+      "name": "Add your PNG images",
+      "text": "Drop or select .png files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. Transparency is flattened to white and the result is saved as a JPEG at quality 85 — typically 70–90% smaller than the source PNG."
+      "name": "Convert to JPG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to JPG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the JPG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new JPG rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert PNG to JPG?",
-      "a": "JPG files are 70–90% smaller than equivalent PNGs for photographs — perfect when you need to email, upload, or post images without bandwidth penalties."
+      "a": "Mostly to make a photograph smaller. PNG stores photographic detail losslessly, which is wasteful for a camera image, and some upload forms and email systems only accept JPG. For screenshots and graphics with flat colour, PNG is usually the better format to keep."
     },
     {
-      "q": "What happens to transparency?",
-      "a": "JPG doesn't support transparency. Transparent pixels are flattened to white. If you need to preserve transparency, use PNG to WebP instead."
+      "q": "Why did my transparent background turn black?",
+      "a": "Because JPG cannot store transparency. The alpha channel is dropped rather than flattened onto white, so transparent pixels fall back to the colour recorded underneath them, which in most PNGs is black. If you need a white background, add one in an image editor before converting, or keep the PNG."
     },
     {
-      "q": "Will I lose quality?",
-      "a": "JPG is lossy, but at quality 85 (our default) the difference is essentially invisible. Re-saving the same JPG repeatedly does degrade — convert once, then keep the original PNG as a master."
+      "q": "How much smaller will the file be?",
+      "a": "For a photograph, usually several times smaller. For a screenshot, a logo or a diagram the saving is much less dramatic and the sharp edges pick up visible fringing, so those are better left as PNG."
+    },
+    {
+      "q": "Can I choose the JPEG quality?",
+      "a": "Not on this page. JPEG is a lossy format, so the conversion re-encodes the picture and throws away a little detail. There is no quality slider on this page; JPEGs are written at the imaging library's default quality of 75. If you want to control the trade-off, use Image Compressor, which exposes a quality setting."
+    },
+    {
+      "q": "Is any metadata carried over?",
+      "a": "No. The converter writes a fresh image and does not copy EXIF across, so camera model, capture time and any GPS coordinates are left behind. That is useful before publishing a photo, though it also means you should keep the original if you want that data."
+    },
+    {
+      "q": "Can I convert lots of PNGs in one go?",
+      "a": "Yes. Add them all and each is converted in turn as its own request. One file downloads directly; several are offered as a single ZIP. Conversion routes are rate limited, so a very large batch is paced rather than run all at once."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

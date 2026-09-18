@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a JPG image",
-      "text": "Drag or select one or more .jpg / .jpeg files."
+      "name": "Add your JPG images",
+      "text": "Drop or select .jpg or .jpeg files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. PrivaTools re-encodes the JPEG as a lossless PNG, preserving every pixel and supporting transparency in re-edits."
+      "name": "Convert to PNG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to PNG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the PNG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new PNG rather than a renamed copy."
     }
   ],
   "faq": [
     {
-      "q": "Why convert JPG to PNG?",
-      "a": "PNG is lossless — every pixel of the source is preserved. Use PNG when you plan to do further editing (each JPG save degrades the image) or when you need transparency in compositing."
+      "q": "Does converting JPG to PNG improve the picture?",
+      "a": "No, and this is the most common misunderstanding about the conversion. PNG stores the pixels the JPG decodes to without further loss, but the detail and the compression artefacts JPG already baked in stay exactly as they are. You get a larger file of the same image, not a better one."
     },
     {
-      "q": "Will the PNG be larger?",
-      "a": "Yes — typically 3–10× larger, because PNG is lossless while JPG is compressed. For photos, JPG is usually a better choice unless you specifically need lossless quality."
+      "q": "So when is it worth doing?",
+      "a": "When something downstream needs PNG: an editor that will not open JPG, a workflow that requires lossless input, or an image you are about to edit repeatedly and do not want to re-compress at every save."
     },
     {
-      "q": "Does it preserve metadata?",
-      "a": "Standard EXIF data is preserved when possible. Color profiles (sRGB, Adobe RGB) are written into the PNG header."
+      "q": "Will the PNG have a transparent background?",
+      "a": "No. A JPG has no transparency to recover, so the PNG gets a fully opaque copy of the image. Removing a background is a separate job — Remove Background does that."
+    },
+    {
+      "q": "Why is the PNG several times larger?",
+      "a": "Because lossless compression cannot match what JPG achieves by discarding detail. A photograph usually grows substantially. That is the expected cost of the format, not a fault in the conversion."
+    },
+    {
+      "q": "Is the camera metadata kept?",
+      "a": "No. The converter writes a fresh image and does not copy EXIF across, so camera model, capture time and any GPS coordinates are left behind. That is useful before publishing a photo, though it also means you should keep the original if you want that data."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

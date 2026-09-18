@@ -1,30 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload images",
-      "text": "Select one or more JPG, PNG, or WebP images containing EXIF metadata."
+      "name": "Add the images to clean",
+      "text": "Drop or select up to 100 pictures at once. JPG, PNG, WebP, BMP and TIFF are all handled, and each keeps its original format."
     },
     {
-      "name": "Preview metadata",
-      "text": "The tool displays found metadata: GPS coordinates, camera model, date taken, software, and more."
+      "name": "Strip the metadata",
+      "text": "Run it. The EXIF block is cleared and the image is written out again, which removes camera model, capture time and any GPS coordinates recorded by the device."
     },
     {
-      "name": "Strip metadata and download",
-      "text": "Click Remove. All EXIF, IPTC, and XMP metadata is permanently stripped. The pixel data is untouched."
+      "name": "Download the cleaned images",
+      "text": "One image comes back on its own, named with clean_ in front of the original name; several arrive as a ZIP that keeps each original filename."
     }
   ],
   "faq": [
     {
-      "q": "What metadata is removed?",
-      "a": "All EXIF, IPTC, and XMP metadata — including GPS coordinates, camera model, date/time, software used, and thumbnail previews."
+      "q": "Why does image metadata matter?",
+      "a": "A photo from a phone commonly records where and when it was taken and which device took it. Publish it unchanged and you publish that too. Stripping EXIF before something goes online is a small habit that prevents an avoidable disclosure."
     },
     {
-      "q": "Does removing EXIF data change image quality?",
-      "a": "No. Only the metadata bytes are removed. The actual image pixels are not re-encoded or modified in any way."
+      "q": "What exactly is removed?",
+      "a": "The EXIF block, which is where the camera, timestamp and GPS coordinates live. The colour profile is preserved where the output format supports it, so the picture does not shift in appearance after cleaning."
     },
     {
-      "q": "Why should I remove EXIF data?",
-      "a": "EXIF data can contain your GPS location, device identifiers, and timestamps. Removing it before sharing photos online protects your privacy."
+      "q": "Are the pixels affected?",
+      "a": "The image is written out again rather than edited in place, so a JPG passes through the encoder once more at the library's default quality. For most photos the difference is hard to see, but it is a new file, not a byte-for-byte copy — keep the original if it is your master."
+    },
+    {
+      "q": "Can I clean a whole folder at once?",
+      "a": "Yes, up to 100 images in a single request. More than one image comes back as a ZIP with the original filenames intact."
+    },
+    {
+      "q": "How do I check what my photo is carrying?",
+      "a": "Run View EXIF first. It reads the metadata and shows it, including GPS coordinates, so you can see what would have been published before you strip it."
+    },
+    {
+      "q": "Does this remove a watermark or hidden text in the picture?",
+      "a": "No. Anything drawn into the pixels is part of the image, not metadata. This tool only clears the data the camera and editing software attach alongside it."
+    },
+    {
+      "q": "What happens to my images after I upload them?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

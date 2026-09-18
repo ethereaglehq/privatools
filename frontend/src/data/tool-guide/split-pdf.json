@@ -1,42 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Select a PDF up to 500 MB. The page-count preview loads automatically."
+      "name": "Add the PDF",
+      "text": "Drop or select the PDF you want to divide, up to 500 MB."
     },
     {
-      "name": "Choose split mode",
-      "text": "Pick 'Fixed range' to split every N pages, 'Custom ranges' to specify exact page numbers (e.g. 1-3, 7-10), or 'Extract every page' to get individual pages."
+      "name": "Choose how to split",
+      "text": "By page ranges (the default) pulls the pages you list into one new PDF. Every page gives each page its own file. Every N pages cuts the document into equal chunks of the size you set."
+    },
+    {
+      "name": "Enter pages or a chunk size",
+      "text": "For page ranges, type something like 1-3, 5, 7-end. For every N pages, enter the number of pages per part; the last part holds whatever remains."
     },
     {
       "name": "Split and download",
-      "text": "Click Split. Each resulting PDF is packaged into a ZIP file for convenient downloading."
+      "text": "Run the split. Page ranges return a single PDF; the other two modes return a ZIP with one PDF per part."
     }
   ],
   "faq": [
     {
-      "q": "Can I split a PDF into individual pages?",
-      "a": "Yes — pick the 'Extract every page' option to get every page as a separate PDF file, all packaged into a ZIP download. There is no cap on the number of pages."
+      "q": "Which split mode should I use?",
+      "a": "Use page ranges to pull a specific set of pages into one file, Every page to break a document into single pages, and Every N pages to cut a long file into equal parts, for example separating a batch of two-page forms scanned together."
     },
     {
-      "q": "Can I extract non-consecutive pages like 1, 5, and 12?",
-      "a": "Yes. Switch to 'Custom ranges' and enter exact page numbers or ranges: e.g. `1, 5, 12` or `1-3, 12-15`. Each range becomes a separate PDF in the output ZIP."
+      "q": "How do I write page ranges?",
+      "a": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page. Page 0, pages beyond the end, and ranges written backwards are rejected with a message rather than guessed at."
     },
     {
-      "q": "What happens to bookmarks and hyperlinks when I split?",
-      "a": "Bookmarks inside the extracted page range are preserved with adjusted page numbers. Bookmarks pointing outside the range are dropped. Internal hyperlinks to pages outside the range are removed; external hyperlinks are kept intact."
+      "q": "Why did I get one PDF instead of several?",
+      "a": "Because page ranges collects everything you list into a single document. To get separate files, choose Every page or Every N pages, which return a ZIP."
     },
     {
-      "q": "Is the original PDF modified?",
-      "a": "No. The split is non-destructive — the original is read, the output is written to a fresh file, and the input file is deleted from the server within minutes of the response. Your original on your device is untouched."
+      "q": "Is the original PDF changed?",
+      "a": "No. The split writes new files from a copy, and the PDF on your device stays exactly as it was."
     },
     {
-      "q": "Is my PDF uploaded to the cloud?",
-      "a": "It is uploaded to PrivaTools' own isolated container for processing, held in temporary per-request storage, then unlinked immediately. It is never kept in permanent storage, never inspected, never shared with any third party. The split logic is open source on GitHub for verification."
+      "q": "Can I split by bookmarks, file size or a word?",
+      "a": "Yes, with the dedicated tools: Split by Bookmarks cuts at each chapter, Split by Size keeps every part under a size you choose, and Split by Text starts a new part wherever a phrase appears."
     },
     {
-      "q": "What's the difference between Split, Split by Size, and Split by Bookmarks?",
-      "a": "Split lets you pick page ranges manually. Split by Size keeps each chunk under a target file size (e.g. 10 MB for email). Split by Bookmarks auto-splits at every chapter using the PDF's existing outline tree."
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

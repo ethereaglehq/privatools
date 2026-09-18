@@ -24,7 +24,7 @@
     },
     {
       "q": "Are files retained?",
-      "a": "No. Uploads and outputs are temporary and removed right after the download."
+      "a": "No. Uploads and outputs are temporary files, removed by response cleanup after the download is sent."
     }
   ]
 }

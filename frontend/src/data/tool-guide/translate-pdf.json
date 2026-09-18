@@ -1,38 +1,46 @@
 {
   "howto": [
     {
-      "name": "Open the tool and pick your languages",
-      "text": "Choose a source and target language. The matching translation model downloads once into this browser the first time you use that pair."
+      "name": "Choose the PDF",
+      "text": "Select a text-based PDF. The text is extracted in your browser, so the file itself is not uploaded; a scanned PDF needs OCR PDF first."
     },
     {
-      "name": "Upload the PDF",
-      "text": "Select the PDF. The text is extracted in your browser; the file itself is never uploaded."
+      "name": "Pick a translator and languages",
+      "text": "'On this device' (the default) translates English to or from the listed languages with an OPUS-MT model of about 107 MB per language pair, downloaded once and cached. 'My own API key' sends the text to the AI provider you configured and offers more target languages."
     },
     {
-      "name": "Translate and download",
-      "text": "Translation runs on your device through the downloaded model, so the document never reaches a server — the reason this tool exists rather than pointing you at a cloud translator."
+      "name": "Translate and review",
+      "text": "Run the translation and read the result page by page. The on-device models translate text, not layout, so check names, numbers and long sentences."
+    },
+    {
+      "name": "Save the result",
+      "text": "Download the translation as a .txt file, which stays on your device. 'Save as PDF' is optional and sends the translated text, not your original PDF, to the PrivaTools server to be typeset."
     }
   ],
   "faq": [
     {
       "q": "Is my PDF uploaded anywhere?",
-      "a": "No. This is the one translation tool here that runs entirely in your browser. The text is extracted locally, the model runs on your device, and the document never reaches a server, ours or anyone else's."
+      "a": "The PDF itself is not. With the default 'On this device' engine, text extraction and translation both run in your browser. Two optional steps do send text out: 'My own API key' sends the extracted text directly to the AI provider you chose, and 'Save as PDF' sends the translated text to the PrivaTools server, where it is typeset in temporary per-request storage."
     },
     {
       "q": "Why does the first translation take a while?",
-      "a": "Because the model for that language pair downloads once, the first time you use it. After that it is cached in your browser and works on every later visit, including offline."
+      "a": "Because the model for that language pair, about 107 MB, downloads the first time you use it. After that it is cached in your browser and reused on later visits."
     },
     {
       "q": "How good is the translation?",
-      "a": "Good enough to read and understand a document. These are compact models chosen so they can run in a browser, so they will not match a large cloud translator on nuance or long, complex sentences. That is the deliberate trade: privacy over polish."
+      "a": "Good enough to read and understand a document. These are compact models chosen so they can run in a browser, so they will not match a large cloud translator on nuance or long, complex sentences. For better quality, 'My own API key' uses a model from your provider instead."
     },
     {
       "q": "Does it keep the original layout?",
-      "a": "Text is translated, not typeset. Expect the meaning to carry over and the formatting to be simplified, especially where translated text runs longer than the original."
+      "a": "No. Text is translated, not typeset: the result is plain text per page, and 'Save as PDF' produces a simple text PDF, not a copy of the original design."
     },
     {
       "q": "Which languages are supported?",
-      "a": "The common pairs, downloaded per direction as you pick them. Each pair is its own model, so translating English to French does not also fetch French to English."
+      "a": "On this device, English can be translated into 19 languages, and 24 languages can be translated into English; each direction is its own model, so English to French does not also fetch French to English. Pairs that do not involve English are not available on-device. 'My own API key' detects the source language itself and offers a wider list of targets."
+    },
+    {
+      "q": "Why is nothing translated from my scanned PDF?",
+      "a": "A scan has no text layer, so there is nothing to extract. Run OCR PDF first, then translate the result."
     }
   ]
 }

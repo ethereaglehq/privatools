@@ -2,6 +2,9 @@
 import json
 import os
 import re
+import subprocess
+import sys
+from pathlib import Path
 from xml.etree import ElementTree
 
 import pytest
@@ -9,7 +12,8 @@ import pytest
 from backend.app import seo_meta as seo
 from backend.app.routes import sitemap
 
-SHELL = '<html><head><title>Old</title><meta name="robots" content="index,follow"><meta name="description" content="old"></head><body><div id="root"></div></body></html>'
+REPO_ROOT = Path(__file__).resolve().parents[2]
+SHELL ='<html><head><title>Old</title><meta name="robots" content="index,follow"><meta name="description" content="old"></head><body><div id="root"></div></body></html>'
 
 
 @pytest.fixture
@@ -117,6 +121,68 @@ def test_tool_manifest_drives_routes_and_descriptions_without_stale_tables(manif
     assert not seo.path_is_known('/tool/split-pdf')
     assert seo.get_meta_for_path('/tool/merge-pdf')[1] == 'Review and combine selected PDFs.'
     assert '/tool/split-pdf' not in sitemap._build_sitemap_xml().decode()
+
+
+MERGE_ROW = {'slug': 'merge-pdf', 'name': 'Merge PDF', 'description': 'Combine PDFs',
+             'longDescription': 'Combine PDFs in the order you choose.', 'path': '/tool/merge-pdf'}
+COMPRESSOR_ROW = {'slug': 'image-compressor', 'name': 'Image Compressor', 'description': 'Shrink images',
+                  'longDescription': 'Shrink JPG, PNG and WebP files.', 'path': '/tools/image-compressor'}
+
+
+def tool_manifest(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(text if isinstance(text, str) else json.dumps(text), encoding='utf-8')
+    return path
+
+
+def test_fallback_tables_read_the_committed_manifest_before_the_build(tmp_path):
+    public = tool_manifest(tmp_path / 'public' / 'tool-content.json', [MERGE_ROW])
+    dist = tool_manifest(tmp_path / 'dist' / 'tool-content.json', [MERGE_ROW, COMPRESSOR_ROW])
+    assert seo._fallback_tool_tables(public, dist) == ({'merge-pdf': ('Merge PDF', 'Combine PDFs in the order you choose.')}, {})
+
+
+@pytest.mark.parametrize('public_text', [None, '{', [{**MERGE_ROW, 'path': '/elsewhere/merge-pdf'}]],
+                         ids=['absent', 'not-json', 'invalid-route'])
+def test_fallback_tables_fall_through_to_the_build_manifest(tmp_path, public_text):
+    """The image ships the build but not frontend/public, so there the build
+    manifest is the only copy of the registries to fall back to."""
+    public = tmp_path / 'public' / 'tool-content.json'
+    if public_text is not None:
+        tool_manifest(public, public_text)
+    dist = tool_manifest(tmp_path / 'dist' / 'tool-content.json', [MERGE_ROW, COMPRESSOR_ROW])
+    assert seo._fallback_tool_tables(public, dist) == (
+        {'merge-pdf': ('Merge PDF', 'Combine PDFs in the order you choose.')},
+        {'image-compressor': ('Image Compressor', 'Shrink JPG, PNG and WebP files.')},
+    )
+
+
+def test_fallback_tables_refuse_to_start_without_any_tool_manifest(tmp_path):
+    """Empty tables would advertise zero tools and 404 every tool page."""
+    with pytest.raises(RuntimeError, match='npm run gen:llms'):
+        seo._fallback_tool_tables(tmp_path / 'public' / 'tool-content.json', tmp_path / 'dist' / 'tool-content.json')
+
+
+def fresh_tool_manifest_reads(build_dir):
+    """What a freshly imported seo_meta reads when the build directory is `build_dir`."""
+    code = ("import json; from backend.app import seo_meta as s; "
+            "print(json.dumps({'path': str(s._TOOL_JSON), 'category': s._tool_category('merge-pdf')}))")
+    result = subprocess.run([sys.executable, '-c', code], cwd=REPO_ROOT, capture_output=True, text=True, check=True,
+                            env={**os.environ, 'FRONTEND_PATH': str(build_dir)})
+    return json.loads(result.stdout.splitlines()[-1])
+
+
+def test_a_checkout_without_a_build_reads_the_committed_tool_manifest(tmp_path):
+    """Fresh worktrees have no frontend/dist. The committed copy is the same
+    manifest, so category, popularity, search copy and review dates read as
+    they would with a build instead of dropping to the no-manifest fallbacks."""
+    committed = REPO_ROOT / 'frontend' / 'public' / 'tool-content.json'
+    merge = next(row for row in json.loads(committed.read_text(encoding='utf-8')) if row['slug'] == 'merge-pdf')
+    assert fresh_tool_manifest_reads(tmp_path) == {'path': str(committed), 'category': merge['category']}
+
+
+def test_a_build_manifest_wins_over_the_committed_copy(tmp_path):
+    build = tool_manifest(tmp_path / 'tool-content.json', [{**MERGE_ROW, 'category': 'from-the-build'}])
+    assert fresh_tool_manifest_reads(tmp_path) == {'path': str(build), 'category': 'from-the-build'}
 
 
 def test_sitemap_dates_do_not_change_with_request_day_and_private_pages_are_absent(manifests):

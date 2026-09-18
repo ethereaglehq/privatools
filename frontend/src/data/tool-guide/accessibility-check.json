@@ -28,7 +28,7 @@
     },
     {
       "q": "Is my document uploaded to be checked?",
-      "a": "It is processed in the same isolated temporary storage every server-side tool here uses, then deleted after the response. It is never kept, never inspected, and never used for training."
+      "a": "Yes. It is uploaded over HTTPS and checked in the same isolated temporary per-request storage every server tool here uses. Response cleanup removes the job's temporary files after the report is sent, and a background sweep clears anything left behind by an interrupted request. The document is not added to an account or used for model training."
     },
     {
       "q": "Can it fix the problems it finds?",

@@ -1,7 +1,7 @@
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useRef, useState, Suspense, lazy, type ComponentType } from "react";
 import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta, type NonPdfCategory } from "@/data/non-pdf-tools";
-import { postsForTool } from "@/data/blog";
+import { useToolBlogLinks } from "@/lib/tool-blog-links";
 import { formatReviewedDate, getToolLastReviewed } from "@/data/tool-review-dates";
 import { cn } from "@/lib/utils";
 import { toolSeo } from "@/lib/tool-seo";
@@ -363,6 +363,9 @@ export function ToolUI({ slug, toolName, outputLabel, accepts }: { slug: string;
 export default function NonPdfToolPage() {
   const { slug } = useParams<{ slug: string }>();
   const tool = slug ? nonPdfToolBySlug[slug] : null;
+  // This module loads on every tool page (withRealTools mounts ToolUI from
+  // it), so it reads the generated index, never data/blog.
+  const guideLinks = useToolBlogLinks(slug);
   const { addEntry } = useHistory();
   const { toggle, isFavorite } = useFavorites();
   // Bumped by the per-tool ErrorBoundary's onReset to force a remount of
@@ -574,7 +577,7 @@ export default function NonPdfToolPage() {
             )}
 
             {(() => {
-              const posts = slug ? postsForTool(slug, 4) : [];
+              const posts = guideLinks;
               if (posts.length === 0) return null;
               return (
                 <div className="rounded-xl border border-border bg-card p-5">

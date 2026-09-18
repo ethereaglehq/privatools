@@ -1,42 +1,46 @@
 {
   "howto": [
     {
-      "name": "Drop a recording",
-      "text": "MP3, WAV, M4A, OGG, FLAC or AAC — meetings, voice notes, interviews, lectures. Nothing uploads in the default mode."
+      "name": "Add a recording",
+      "text": "Select an audio file up to 500 MB, such as a voice memo, a meeting recording or an interview."
     },
     {
-      "name": "Pick where the AI runs",
-      "text": "On this device: OpenAI Whisper downloads once (~41 MB tiny / ~74 MB base) into your browser cache and transcribes locally, even offline. Or use your own OpenAI/Groq key for noticeably better accuracy — the audio goes straight from your browser to that provider."
+      "name": "Choose where it runs",
+      "text": "On this device uses Whisper in your browser: Tiny, about 41 MB, is faster, and Base, about 74 MB, is more accurate. The model downloads once and is cached. With your own API key, the audio goes to your chosen provider instead."
     },
     {
       "name": "Transcribe",
-      "text": "Click Transcribe. Local runs show live progress; a 10-minute recording takes a few minutes on a modern laptop with the tiny model."
+      "text": "Start the transcription. On-device speed depends on your computer, so a long recording can take a while."
     },
     {
-      "name": "Download text or subtitles",
-      "text": "Copy the transcript, download it as .txt, or export timestamped .srt subtitles ready for any video player."
+      "name": "Export the text",
+      "text": "Copy the transcript, download it as a .txt file, or download timed subtitles as .srt."
     }
   ],
   "faq": [
     {
-      "q": "Is my recording uploaded anywhere?",
-      "a": "Not in the default mode. Whisper runs inside your browser through WebAssembly — the model file downloads once from a public CDN and caches, then the audio is decoded and transcribed entirely in your tab. Verify in DevTools → Network: no request carries your recording. If you switch to your own API key, the audio goes directly from your browser to that provider (OpenAI or Groq), never through PrivaTools."
+      "q": "Is my recording uploaded?",
+      "a": "Not with the on-device engine: the audio is decoded and transcribed in your browser. What is downloaded is the Whisper model itself, fetched once from a public model host and cached. If you choose your own API key, the audio goes from your browser directly to that provider, not through PrivaTools."
     },
     {
-      "q": "How accurate is the in-browser model?",
-      "a": "Whisper tiny (~41 MB) is solid for clear speech and voice notes; base (~74 MB) is noticeably better for meetings. Both trail the full-size models behind provider APIs — for important interviews, your own OpenAI or Groq key gives near-human accuracy for fractions of a cent per minute."
+      "q": "Tiny or Base — which model should I use?",
+      "a": "Base is noticeably more accurate, particularly with accents, background noise and unusual words, at roughly twice the download and a slower run. Start with Base unless your device is slow or the recording is very clear."
     },
     {
-      "q": "Which languages work?",
-      "a": "Whisper is multilingual — it auto-detects the spoken language across ~100 languages, and both the local models and the provider APIs handle non-English speech."
+      "q": "Can I get subtitles?",
+      "a": "Yes. Download the .srt file, which carries the timings with each line and loads into video editors and players. Review it, since automatic timings and punctuation are rarely perfect."
     },
     {
-      "q": "Can I get subtitles for a video?",
-      "a": "Yes — the local engine returns timestamps, and the SRT export drops straight into any video player or editor. Extract the audio track first with the Extract Audio tool if you have a video file."
+      "q": "Which languages does it understand?",
+      "a": "Whisper is multilingual and detects the language itself. Accuracy is best for widely spoken languages and drops for less common ones, especially with the smaller Tiny model."
     },
     {
-      "q": "How long a recording can it handle?",
-      "a": "Locally: limited by your machine's memory and patience — hour-long recordings work but take a while on the tiny model. Provider APIs typically cap uploads around 25 MB, roughly 25 minutes of MP3; trim or split longer recordings first."
+      "q": "Why is transcription slow?",
+      "a": "The on-device engine runs on your own processor, so speed depends on your hardware and the recording length. A long meeting on a modest laptop takes time; your own API key moves the work to the provider."
+    },
+    {
+      "q": "How accurate is it?",
+      "a": "Good on clear speech, weaker on crosstalk, heavy accents, poor microphones and specialist vocabulary. Treat the transcript as a draft and check names and numbers before relying on it."
     }
   ]
 }

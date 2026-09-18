@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I get just keyframes (scene changes)?",
-      "a": "Evenly-spaced frames are the default. Smart scene-change detection is on the roadmap."
+      "a": "Frames are sampled at even intervals across the video. Picking frames at scene changes is not supported."
     },
     {
       "q": "What resolution are the frames?",

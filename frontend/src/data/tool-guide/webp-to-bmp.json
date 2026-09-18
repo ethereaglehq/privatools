@@ -24,7 +24,7 @@
     },
     {
       "q": "Are uploads retained?",
-      "a": "No. Files are temporary and deleted right after the download response."
+      "a": "No. Files are temporary and are removed by response cleanup after the download is sent; a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

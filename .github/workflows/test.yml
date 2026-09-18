@@ -82,6 +82,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          # The review-date check below runs `git show <base>:...` against the
+          # branch this PR targets and reads the PR's own commit messages.
+          # A depth-1 clone has neither, and that check fails rather than
+          # skipping, so it must not run on one.
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 26
@@ -115,10 +121,27 @@ jobs:
           npm run lint -- --max-warnings 0
           npm run test:content
           npm run test
+      # Only on a pull request: it compares this branch with the branch the PR
+      # targets, which is the change being reviewed. A push to main has no such
+      # pair, and the release gate calls this workflow on a tag.
+      - name: Check tool review dates
+        if: github.event_name == 'pull_request'
+        working-directory: frontend
+        env:
+          # Where the check looks for [bulk-review], besides the PR's commits.
+          # An environment variable, never interpolated into the run block: a
+          # PR title is text its author controls.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        # The base branch comes from GITHUB_BASE_REF, which the runner already
+        # sets on a pull request.
+        run: npm run check:review-dates
 
   image:
-    name: Image builds (docker)
+    name: Image builds and serves (docker)
     runs-on: ubuntu-latest
+    env:
+      # Local tag for the loaded image. Nothing is pushed.
+      PROBE_IMAGE: privatools:ci
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
       - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
@@ -130,15 +153,28 @@ jobs:
       # failure is a broken release rather than a red PR.
       #
       # Deliberately amd64-only and push-less: the point is "does this still
-      # build", not reproducing the signed multi-arch artifact. Emulated arm64
-      # would roughly triple the runtime for very little extra signal, since
-      # what breaks on a base-image bump is almost always the build steps
-      # rather than the architecture.
+      # build and serve", not reproducing the signed multi-arch artifact.
+      # Emulated arm64 would roughly triple the runtime for very little extra
+      # signal, since what breaks on a base-image bump is almost always the
+      # build steps rather than the architecture.
       - name: Build the image (no push)
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
         with:
           context: .
           push: false
+          # Into the runner's Docker, so the next step can run it.
+          load: true
+          tags: ${{ env.PROBE_IMAGE }}
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
+      # A clean build can still ship a broken image. Without tool-content.json
+      # the app boots on its hand-written fallback copy, which /readyz cannot
+      # see; if a missing manifest fails at import instead, the deploy's
+      # /readyz gate is the first thing to notice. This boots the image from
+      # docker-compose.yml with the deploy's own command (read-only root, /tmp
+      # tmpfs, both volumes) and checks what it serves. Release gates on this
+      # job through workflow_call.
+      - name: Boot the image as production does and probe it
+        timeout-minutes: 5
+        run: python3 scripts/ci/probe-image.py "$PROBE_IMAGE"

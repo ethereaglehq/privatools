@@ -31,20 +31,20 @@
       "a": "90° clockwise, 180° (upside-down), and 270° clockwise (equivalent to 90° counter-clockwise). PDF only allows rotations in 90° increments per the spec — arbitrary angles aren't supported."
     },
     {
-      "q": "Is it safe to rotate a confidential PDF?",
-      "a": "Yes. The PDF is held in temporary per-request storage inside an isolated Docker container for the rotation pass only — both input and output are unlinked the moment your download begins. Nothing is logged or kept. The rotation pipeline is open source on GitHub."
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and rotated in isolated temporary per-request storage on the PrivaTools server. Response cleanup removes the job's temporary files after the result is sent, and a background sweep clears anything left behind by an interrupted request. Nothing is added to an account or file library."
     },
     {
       "q": "What's the file size limit?",
-      "a": "500 MB per file with no daily or monthly quota. Rotation is near-instant: typically under 1 second for a 100-page PDF."
+      "a": "Up to 500 MB per file on the hosted site. Resource and fair-use rate limits apply, as they do on every tool."
     },
     {
       "q": "Does rotation preserve bookmarks, hyperlinks, and form fields?",
       "a": "Yes. All structural metadata — bookmarks, internal hyperlinks, external hyperlinks, form fields, and annotations — is preserved through rotation. Only the display orientation of the page content changes."
     },
     {
-      "q": "How is this different from rotating in Adobe Acrobat?",
-      "a": "Same outcome, but free with no daily limit and no Adobe subscription. The rotation is permanent (the file is reordered, not just a viewer toggle) so the rotated PDF stays rotated in every reader including phones."
+      "q": "Is the rotation saved in the file or only in my viewer?",
+      "a": "It is saved in the file. The new orientation is written into the PDF you download, so the pages stay rotated in every reader, including phone apps, instead of only in the viewer you happened to use."
     }
   ]
 }

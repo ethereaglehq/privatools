@@ -72,6 +72,20 @@ write('compare-content.json', JSON.stringify(comparisons, null, 2));
 for (const tool of tools) tool.priority = priorityFor(tool.path);
 write('tool-content.json', JSON.stringify(tools, null, 2));
 
+// "Mentioned in our guides" on a tool page: the newest four posts naming the
+// tool, the selection postsForTool(slug, 4) makes and backend/app/seo_meta.py
+// repeats for crawlers. Tool pages import this index, not the blog module,
+// which is over a hundred kilobytes of article HTML. blogPosts is already
+// newest-first and the sort is stable, so same-day posts keep blog.ts order
+// here exactly as they do there. Committed; src/test/tool-blog-links.test.ts
+// fails when it falls behind blog.ts.
+const toolBlogLinks = {};
+for (const post of blogPosts) for (const slug of new Set(post.relatedTools || [])) {
+  const links = toolBlogLinks[slug] ||= [];
+  if (links.length < 4) links.push({ slug: post.slug, title: post.title });
+}
+writeFileSync(join(root, 'src/data/tool-blog-links.json'), JSON.stringify(Object.fromEntries(Object.keys(toolBlogLinks).sort().map(slug => [slug, toolBlogLinks[slug]])), null, 2) + '\n');
+
 // Personal state and authentication routes deliberately stay out of discovery.
 const publicPages = ['', '/tools', '/about', '/trust', '/api', '/compare', '/pipeline', '/batch', '/blog', '/privacy', '/terms', '/security', '/support', '/status', '/ai'];
 const entries = [

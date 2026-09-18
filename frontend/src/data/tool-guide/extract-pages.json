@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload your PDF",
-      "text": "Drop a PDF up to 500 MB."
+      "name": "Add the PDF",
+      "text": "Drop or select the PDF that contains the pages you need, up to 500 MB."
     },
     {
-      "name": "Specify pages to keep",
-      "text": "Comma-separated list and/or ranges, e.g. '1, 3-5, 10'. Only those pages will be in the output."
+      "name": "List the pages to keep",
+      "text": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page."
     },
     {
-      "name": "Download the extract",
-      "text": "Click Extract. The output PDF contains only the specified pages in their original order."
+      "name": "Extract and download",
+      "text": "Run it. The pages you listed are copied into one new PDF; the original is left untouched."
     }
   ],
   "faq": [
     {
       "q": "How is this different from Delete Pages?",
-      "a": "Extract keeps the listed pages; Delete removes them. They're complementary — use whichever produces less typing."
+      "a": "They are mirror images. Extract Pages keeps only the pages you list; Delete Pages keeps everything except the pages you list. Pick whichever list is shorter to type."
     },
     {
-      "q": "Can I extract pages into separate files?",
-      "a": "For one-file-per-page splitting, use the Split PDF tool with 'individual' mode."
+      "q": "Can I get each extracted page as a separate file?",
+      "a": "Not here — the extracted pages come back together in one PDF. Split PDF's Every page mode produces one file per page."
     },
     {
-      "q": "Does this preserve bookmarks?",
-      "a": "Bookmarks pointing to kept pages are preserved; those pointing to dropped pages are removed."
+      "q": "What range syntax is accepted?",
+      "a": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page. Words such as odd or even are not understood."
+    },
+    {
+      "q": "Why was my page list rejected?",
+      "a": "Usually because it refers to a page the document does not have, includes page 0, or has a range written backwards, such as 9-4. The message tells you which part is wrong."
+    },
+    {
+      "q": "Does it affect the quality of the pages?",
+      "a": "No. Pages are copied as they are rather than re-rendered, so text stays selectable and images are not recompressed."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and processed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

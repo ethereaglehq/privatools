@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a PDF with bookmarks",
-      "text": "Drop a PDF whose Table of Contents uses bookmarks to mark chapters/sections."
+      "name": "Add a PDF with bookmarks",
+      "text": "Drop or select a PDF up to 500 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."
     },
     {
-      "name": "PrivaTools splits at every top-level bookmark",
-      "text": "Each section between consecutive bookmarks becomes its own PDF file."
+      "name": "Split at each chapter",
+      "text": "Run it. A new part starts at every top-level bookmark, so each chapter or section becomes its own PDF."
     },
     {
       "name": "Download the ZIP",
-      "text": "Each chapter is named after its bookmark text (sanitized for filesystem safety)."
+      "text": "The parts arrive together in a ZIP. Check it against the bookmark panel in your PDF reader to confirm the sections are what you expected."
     }
   ],
   "faq": [
     {
-      "q": "What if the PDF has no bookmarks?",
-      "a": "The tool returns an error. Use the regular Split tool or the new Split by Text tool which doesn't need bookmarks."
+      "q": "Which bookmarks does it split on?",
+      "a": "The top-level ones. Nested sub-bookmarks stay inside their parent's part rather than producing a file of their own, which keeps a chapter together with its sections."
     },
     {
-      "q": "Does it use nested sub-bookmarks?",
-      "a": "No — only top-level bookmarks define split points. Sub-sections stay within their parent chapter PDF."
+      "q": "What if my PDF has no bookmarks?",
+      "a": "The tool stops with a message saying there are no bookmarks to split on. Use Split PDF to split by page numbers instead, or Split by Text if each section starts with a recognisable heading."
     },
     {
-      "q": "Can I include the bookmark title as the PDF title?",
-      "a": "Each output PDF inherits its starting bookmark's title as the file name. The internal PDF Title metadata is set to match."
+      "q": "How can I tell whether my PDF has bookmarks?",
+      "a": "Open the bookmarks or outline panel in your PDF reader. If it is empty, or lists only the document title, there is nothing for this tool to use."
+    },
+    {
+      "q": "Does it change the pages?",
+      "a": "No. Pages are copied into the new files as they are; only the division into files is new."
+    },
+    {
+      "q": "Can I choose which chapters to export?",
+      "a": "The tool produces every part. Keep the ones you need from the ZIP, or use Extract Pages when you only want a single chapter's page range."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

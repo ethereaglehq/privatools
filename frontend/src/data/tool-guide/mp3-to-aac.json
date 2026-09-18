@@ -24,7 +24,7 @@
     },
     {
       "q": "Is it private?",
-      "a": "Yes — local FFmpeg conversion; files deleted immediately after the response."
+      "a": "The conversion is a local FFmpeg run on the PrivaTools server. Input and output are temporary files that response cleanup removes after the result is sent."
     }
   ]
 }

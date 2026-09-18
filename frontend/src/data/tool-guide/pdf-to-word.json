@@ -1,42 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Select a PDF up to 500 MB. Both text-based and scanned PDFs are supported (scanned PDFs go through OCR first)."
+      "name": "Add the PDF",
+      "text": "Drop or select a PDF up to 500 MB. Documents created digitally, with real text rather than scanned images, convert best."
     },
     {
       "name": "Convert to Word",
-      "text": "Click Convert. The server extracts text, images, and tables and reconstructs them in a .docx file preserving layout as closely as possible."
+      "text": "Run the conversion. The text is read page by page and rebuilt as Word paragraphs, keeping font names, text colours and paragraph spacing where the PDF provides them."
     },
     {
-      "name": "Download the Word document",
-      "text": "Save the .docx file. Open it in Microsoft Word, Google Docs, or LibreOffice for editing."
+      "name": "Download and review the .docx",
+      "text": "Open the result in Word or another editor and check the layout, especially tables, columns and headers, before relying on it."
     }
   ],
   "faq": [
     {
-      "q": "How accurate is the PDF to Word conversion?",
-      "a": "Text, paragraphs, images, headings, and simple tables convert with high fidelity. Multi-column magazine layouts and heavily-designed PDFs with overlapping text and graphics may need light cleanup in Word. Forms convert to plain text — not editable Word form fields."
+      "q": "Will the Word file look exactly like the PDF?",
+      "a": "Close for straightforward documents, not identical for complex ones. A PDF describes where text sits on a page, not how it flows, so the converter has to reconstruct paragraphs. Multi-column layouts, text boxes and intricate tables usually need some tidying afterwards."
     },
     {
-      "q": "Can I convert scanned PDFs to Word?",
-      "a": "Yes. Scanned PDFs are auto-detected and pushed through Tesseract OCR before text extraction. For best results on poor scans, run the dedicated OCR PDF tool first (you can pick the language and deskew the pages), then convert the OCR'd PDF to Word."
+      "q": "Why is my converted document empty or full of images?",
+      "a": "The PDF is probably a scan: a picture of text with no text layer to read. Run OCR PDF first to add recognisable text, then convert that version."
     },
     {
-      "q": "What Word format is produced — .doc or .docx?",
-      "a": ".docx (Office Open XML). Compatible with Microsoft Word 2007 and later, Google Docs, LibreOffice Writer, Apple Pages, and every modern word processor. Older .doc binary format is not produced because it has been deprecated since 2007."
+      "q": "What is preserved?",
+      "a": "The text itself, with font names, colours and paragraph spacing where the PDF records them. Embedded images are included too, placed at a standard width rather than their original position. Treat the result as an editable starting point rather than a pixel-perfect copy."
     },
     {
-      "q": "Is it safe to convert a confidential PDF here?",
-      "a": "Yes. The PDF and the generated .docx are held in a temp directory inside an isolated container for the duration of the request only — both are unlinked the moment the response is delivered. No copy remains in permanent storage, logs, or backups. The conversion code is open source under MIT for end-to-end audit."
+      "q": "Why did my large PDF fail?",
+      "a": "Conversion has a time budget, and very long or complex documents can exceed it. Split the PDF into smaller parts with Split PDF, convert each, and combine the text in Word."
     },
     {
-      "q": "Will fonts and exact spacing be preserved?",
-      "a": "Most common fonts are preserved by name; if Word doesn't have the exact font, it substitutes a similar one. Line and paragraph spacing is preserved to within a few pixels. For pixel-perfect re-typesetting, use PDF to RTF instead."
+      "q": "Can I convert a password-protected PDF?",
+      "a": "Not while it is locked. Use Unlock PDF with the password you have, then convert the unlocked copy."
     },
     {
-      "q": "How does this compare to Adobe Acrobat PDF to Word?",
-      "a": "Quality is comparable for typical office documents. Adobe is slightly better on multi-column magazine layouts; PrivaTools is faster, free with no daily limit, and doesn't require an Adobe ID. We don't store the file or send it to any third-party API."
+      "q": "How often can I use it?",
+      "a": "Conversion is one of the heavier jobs on the server, so it has a fair-use rate limit per visitor. Space out a large batch rather than submitting many files in quick succession."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the generated .docx and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

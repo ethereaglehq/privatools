@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload an image",
-      "text": "JPG, PNG, WebP up to 500 MB."
+      "name": "Add the images",
+      "text": "Drop or select JPG, PNG, WebP or BMP pictures up to 500 MB each. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."
     },
     {
-      "name": "Enter watermark text and styling",
-      "text": "Text, opacity (0-1), position (corners or center), font size."
+      "name": "Type the watermark text",
+      "text": "Enter the words to stamp on the image. The starting text is WATERMARK; a name, a website or a word such as DRAFT or SAMPLE is more useful in practice."
     },
     {
-      "name": "Download the watermarked image",
-      "text": "PrivaTools overlays the text at the chosen position with the chosen opacity. Original is unchanged."
+      "name": "Set opacity and size",
+      "text": "Opacity starts a little above half-strength, and the font size starts at 40. Lower opacity is less intrusive but also easier to overlook."
+    },
+    {
+      "name": "Choose where it sits",
+      "text": "Pick one of the four corners, the centre (the default), or Tile to repeat the text across the whole picture. A corner keeps the subject clear; Tile is the hardest to crop away."
+    },
+    {
+      "name": "Apply and download",
+      "text": "Run it and save the marked copy. The text is drawn into the pixels, so it is part of the image rather than a layer that can be switched off."
     }
   ],
   "faq": [
     {
-      "q": "Can I watermark with an image instead of text?",
-      "a": "Currently text-only watermarks. Image watermarks (logo overlay) are on the roadmap."
+      "q": "Can the watermark be removed?",
+      "a": "Not by toggling anything: the text is drawn into the pixels. That said, a determined person with an editor can crop it out or paint over it, particularly a small mark in a corner. Treat a watermark as a clear statement of ownership, not as a technical lock."
     },
     {
-      "q": "Is the watermark removable?",
-      "a": "Depends on placement. Watermarks over high-detail areas are harder to remove than over solid backgrounds. AI inpainting tools can sometimes erase them — for stronger protection, use diagonal repeating patterns."
+      "q": "Where should I put it?",
+      "a": "A corner is tidy and suits a signature or a site name, but it is the easiest to crop off. The centre sits over your subject. Tile repeats the text across the whole image, which is the usual choice for proofs you do not want reused. Pick according to whether you are signing your work or deterring reuse."
     },
     {
-      "q": "Does it affect image quality?",
-      "a": "Negligibly. Output is at the same JPEG quality as input."
+      "q": "What opacity works best?",
+      "a": "Low enough that the picture stays readable, high enough to survive resizing and re-sharing. The starting point of a little over half is a reasonable compromise; raise it for proofs and lower it when the image matters more than the mark."
+    },
+    {
+      "q": "Can I use my logo instead of text?",
+      "a": "This tool stamps text. For a PDF, Watermark PDF accepts an image such as a logo and offers more placement control."
+    },
+    {
+      "q": "Can I watermark a batch with the same text?",
+      "a": "Yes. Add the images together and each is stamped with the same settings; the batch comes back as a single ZIP, which is the usual way to prepare a set of proofs or product photos."
+    },
+    {
+      "q": "Does it change the original file?",
+      "a": "No. You download a new, marked copy and the file on your device is untouched."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }
