@@ -2,9 +2,10 @@
 
 This exists because of a real outage-shaped bug. `services/
 image_watermark_remove_service.py` does `import cv2`, but
-`opencv-python-headless` was never listed in requirements.txt — it happened to
-arrive transitively via rembg, and a comment in that service even justified the
-choice on those grounds ("already in the hashed lock, pulled in by rembg").
+`opencv-python-headless` was never listed in the direct requirements (now
+requirements.in) — it happened to arrive transitively via rembg, and a comment
+in that service even justified the choice on those grounds ("already in the
+hashed lock, pulled in by rembg").
 
 rembg 2.0.81 dropped opencv. The lock regenerated cleanly, every hash verified,
 CI's own dependency checks stayed green — and the image simply had no cv2, so
@@ -27,7 +28,9 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 APP = REPO_ROOT / "backend" / "app"
-REQUIREMENTS = REPO_ROOT / "requirements.txt"
+# The direct pins. requirements.txt is the compiled lock, which lists every
+# transitive package too, so reading it would let exactly this bug through.
+REQUIREMENTS = REPO_ROOT / "requirements.in"
 
 # Import name -> distribution name, where they differ. Only third-party
 # packages the app imports directly belong here.
@@ -133,7 +136,7 @@ def _is_third_party(mod: str) -> bool:
 
 def test_every_directly_imported_package_is_declared():
     declared = _declared()
-    assert declared, "requirements.txt parsed to zero pins"
+    assert declared, "requirements.in parsed to zero pins"
 
     undeclared = []
     for mod, path in sorted(_top_level_imports().items()):
@@ -147,7 +150,7 @@ def test_every_directly_imported_package_is_declared():
 
     assert not undeclared, (
         "These modules are imported directly but are not direct dependencies in "
-        "requirements.txt, so an unrelated upstream release can delete them "
+        "requirements.in, so an unrelated upstream release can delete them "
         "without any dependency tool noticing:\n  " + "\n  ".join(undeclared)
     )
 

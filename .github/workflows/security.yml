@@ -47,20 +47,21 @@ jobs:
         # Installed from a hashed lock, not a bare `pip install pip-audit`.
         # This tool runs in CI with repository context, so a compromised
         # release on PyPI would execute here; --require-hashes makes that a
-        # verification failure instead. Bump via requirements-ci.txt.
-        run: pip install --require-hashes -r requirements-ci.lock
-      - name: Audit root requirements
-        # requirements.txt is the ONLY manifest installed in production (the
-        # Dockerfile and the systemd venv both install it; the former
-        # backend/requirements.txt was an uninstalled mirror and has been
-        # removed to prevent root-vs-backend version skew).
+        # verification failure instead. Bump via requirements-ci.in.
+        run: pip install --require-hashes -r requirements-ci.txt
+      - name: Audit the runtime lock
+        # requirements.txt is the hashed lock the image installs, every
+        # transitive package included, so audit exactly that. --disable-pip
+        # reads the pinned, hashed entries as they are instead of letting pip
+        # re-resolve the direct pins in requirements.in, which could audit newer
+        # transitive versions than the image ships.
         #
         # No --ignore-vuln flags: the two rembg advisories
         # (CVE-2026-40086 / GHSA-55v6-g8pm-pw4c) that previously needed them are
         # fixed in 2.0.81, which became installable when the lock moved to
         # Python 3.12 — every rembg release from 2.0.70 on requires >=3.11.
         # Keep it flagless; a new ignore should be a deliberate, dated decision.
-        run: pip-audit -r requirements.txt
+        run: pip-audit -r requirements.txt --disable-pip
 
   dependency-review:
     name: Dependency review

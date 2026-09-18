@@ -66,7 +66,7 @@ jobs:
           # Install from the hashed lock with --require-hashes so PR CI exercises
           # the exact integrity-verified path the image build uses — a hash/lock
           # problem fails here on every PR instead of only at release build time.
-          pip install --require-hashes -r requirements-dev.lock
+          pip install --require-hashes -r requirements-dev.txt
 
       - name: Run backend tests
         run: python -m pytest backend/tests -q

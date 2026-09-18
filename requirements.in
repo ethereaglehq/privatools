@@ -1,0 +1,90 @@
+# Runtime dependencies. Every package is pinned to an exact version so a
+# rebuild is reproducible and CVE exposure can't drift silently between builds
+# (research DEP1). The versions below match what is running in production
+# (captured from `pip freeze` in the deployed image), so pinning is a no-op for
+# behaviour — it just freezes the known-good set. All have manylinux wheels for
+# both linux/arm64 and linux/amd64 at these versions, so the multi-arch release
+# build is unaffected.
+#
+# This file is the human-edited SOURCE of runtime deps (direct, pinned). It is
+# compiled into requirements.txt, the fully-hashed transitive lock that the
+# Docker image and PR CI install with `--require-hashes` (integrity — DEP1/DEP4).
+# requirements-dev.in and requirements-ci.in work the same way.
+#
+# EDITING THIS FILE ALONE HAS NO EFFECT — the image installs from the lock, so a
+# bump here that isn't compiled into the lock never reaches production.
+# `backend/tests/test_requirements_lock_sync.py` fails the build if they drift.
+#
+# The `name.in` → `name.txt` layout with uv's header is the one Dependabot's uv
+# ecosystem can regenerate: it edits the pin here and reruns the command from
+# the lock's header. By hand, recompile both locks with those commands; they are
+# universal, so any machine resolves them for arm64 and amd64 alike, and uv
+# keeps every pin it is not forced to move:
+#
+#   uv pip compile --generate-hashes --universal --python-version 3.12 \
+#       --output-file=requirements.txt requirements.in
+#   uv pip compile --generate-hashes --universal --python-version 3.12 \
+#       --output-file=requirements-dev.txt requirements-dev.in
+#
+# Then prove it installs before committing. The release image is arm64 and PR CI
+# builds only amd64, so check that a bumped native package has an arm64 wheel.
+# Ask for manylinux_2_28: pikepdf, onnxruntime and pillow-heif ship no
+# manylinux2014 wheels any more, so that platform finds nothing.
+#
+#   pip install --dry-run --require-hashes -r requirements.txt
+#   pip download --only-binary=:all: --platform manylinux_2_28_aarch64 \
+#       --python-version 3.12 --no-deps <package>==<version> -d <scratch-dir>
+fastapi==0.141.1
+# Used directly for cancellation-safe database work and reservation cleanup.
+anyio==4.14.2
+uvicorn[standard]==0.52.3
+python-multipart==0.0.32
+pikepdf==10.12.0
+pypdf==6.19.0
+pdf2image==1.17.0
+Pillow==12.3.0
+reportlab==4.1.0
+brotli==1.2.0
+slowapi==0.1.10
+pymupdf==1.28.2
+pytesseract==0.3.13
+weasyprint==70.0
+python-docx==1.2.0
+openpyxl==3.1.5
+python-pptx==1.0.2
+pillow-heif==1.7.0
+onnxruntime==1.30.0
+rembg==2.0.81
+# Declared explicitly because app code imports cv2 directly
+# (services/image_watermark_remove_service.py). It used to arrive transitively
+# via rembg; rembg 2.0.81 dropped it, which broke the import. A direct import
+# must be a direct dependency — see test_declared_dependencies.py.
+opencv-python-headless==5.0.0.93
+# Same reason: image_watermark_remove_service.py does `import numpy as np` at
+# module level. It arrived via opencv/scipy before; declaring it means no
+# upstream reshuffle can remove it.
+numpy==2.5.2
+cairosvg==2.9.0
+python-barcode==0.16.1
+qrcode==8.2
+pyzbar==0.1.9
+defusedxml==0.7.1
+mistune==3.3.4
+
+# Clerk session verification. Clerk signs its session tokens RS256, so checking
+# one needs RSA — which the standard library does not have. PyJWT does the JWT
+# work and cryptography does the maths.
+#
+# Declared together on purpose: pyjwt[crypto] would pull cryptography in as an
+# extra, and app/auth/clerk_session.py imports cryptography's exceptions
+# directly, so test_declared_dependencies would (rightly) object to it arriving
+# as somebody else's transitive dependency.
+#
+# The alternative was asking Clerk's API to verify each token, which would put
+# a network round-trip on every key request and make API key management stop
+# working whenever Clerk had an incident.
+pyjwt==2.13.0
+# Current, not merely patched. 46.x carries 19 known advisories
+# (GHSA-537c-gmf6-5ccf among them) and 48.0.1 is only the minimum fix; both
+# the audit and the dependency-review job refuse the 46 series outright.
+cryptography==50.0.0
