@@ -31,6 +31,7 @@ import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { providerById } from "@/lib/byok/providers";
 import { findEntitiesWithByok } from "@/lib/byok/redactTask";
 import { ByokError } from "@/lib/byok/errors";
+import { configureTransformers } from "@/lib/transformersEnv";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, ShieldAlert, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { uploadFile, downloadBlob, formatFileSize } from "@/lib/api";
@@ -77,8 +78,7 @@ async function getNer(onProgress: (p: number) => void) {
     if (pipelinePromise) return pipelinePromise;
     pipelinePromise = (async () => {
         const { pipeline, env } = await import("@huggingface/transformers");
-        env.allowLocalModels = false;
-        env.allowRemoteModels = true;
+        configureTransformers(env);
         return pipeline("token-classification", MODEL_ID, {
             progress_callback: modelProgress(onProgress, 110 * 1024 * 1024),
         });
