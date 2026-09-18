@@ -24,7 +24,7 @@
     },
     {
       "q": "Is metadata preserved?",
-      "a": "No. The flipped copy is saved without the original EXIF data, such as camera details and location. A camera orientation tag is not applied first, so a phone photo that relies on one can come out turned on its side; Rotate Image can put it upright."
+      "a": "Partly. The flipped copy keeps the DPI setting and, for an RGB image such as a phone photo, the colour profile, so colours and print resolution stay the same. Other metadata is not carried over, including the EXIF data with camera details, the date taken and location. The orientation tag a phone or camera records is applied to the pixels before the flip, so a photo stored sideways comes out upright."
     }
   ]
 }

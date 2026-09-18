@@ -569,9 +569,9 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "view-exif", icon: ScanLine, name: "View EXIF Data",
     description: "Inspect GPS, camera, and metadata stored in an image",
-    longDescription: "View EXIF data online for free — see the main metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, the stored date and time, software, and more. Exposure settings such as ISO and lens details are not listed. Counterpart to Remove EXIF — see what you'd be stripping out.",
+    longDescription: "View EXIF data online for free — see the metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, lens info, ISO, exposure, timestamps, software, and more. Counterpart to Remove EXIF — see what you'd be stripping out.",
     seoTitle: "View EXIF Data Online Free – Camera and GPS Details",
-    metaDescription: "Inspect the metadata in a JPEG, PNG, TIFF, or HEIC file, including GPS coordinates, camera make and model, and software. Free to use, with no sign-up.",
+    metaDescription: "Inspect the metadata in a JPEG, PNG, TIFF, or HEIC file, including GPS coordinates, camera model, lens, and exposure. Free to use, with no sign-up.",
     synonyms: "metadata gps camera info",
     popularity: 32,
     category: "image", accepts: ".jpg,.jpeg,.png,.tiff,.tif,.webp,.heic,.heif,.bmp,.gif", outputLabel: "metadata JSON",
@@ -1305,7 +1305,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "rotate-image", icon: ImageIcon, name: "Rotate Image",
     description: "Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle",
-    longDescription: "Rotate any image left, right, or upside down — JPG, PNG, WEBP, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). JPG, PNG, and WEBP keep their format and the others come back as PNG; transparency is preserved for PNG and WEBP.",
+    longDescription: "Rotate any image left, right, or upside down — JPG, PNG, WEBP, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). A phone photo stored sideways is put upright first, as the phone shows it. JPG, PNG, and WEBP keep their format and the others come back as PNG; transparency is preserved for PNG and WEBP.",
     seoTitle: "Rotate an Image Online Free – Any Angle Without Cropping",
     metaDescription: "Rotate JPG, PNG, WEBP, BMP, and more left, right, or upside down, with the canvas auto-expanding. Files are processed and then removed automatically.",
     synonyms: "turn spin angle 90 180 270 sideways tilt upright",
@@ -1316,7 +1316,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "flip-image", icon: ImageIcon, name: "Flip Image",
     description: "Mirror an image horizontally or vertically",
-    longDescription: "Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.",
+    longDescription: "Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. A phone photo stored sideways is put upright before it is flipped. Transparency is preserved for PNG and WEBP.",
     seoTitle: "Flip an Image Online Free – Fix Mirrored Selfies",
     metaDescription: "Mirror any image left-to-right or top-to-bottom to fix mirrored selfies or recreate reflections. Files are processed and then removed automatically.",
     synonyms: "mirror reverse horizontal vertical selfie unmirror reflect",

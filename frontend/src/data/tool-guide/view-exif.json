@@ -6,7 +6,7 @@
     },
     {
       "name": "Read what it carries",
-      "text": "The metadata is listed for you: camera make and model, software, the date and time in the main EXIF block and, where the device recorded it, GPS coordinates. Exposure settings, lens details and the original capture time sit in a separate EXIF section that this viewer does not list."
+      "text": "The metadata is listed for you: camera and lens, exposure settings, the capture timestamp and, where the device recorded it, GPS coordinates."
     },
     {
       "name": "Decide what to do next",
