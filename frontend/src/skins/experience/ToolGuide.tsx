@@ -15,9 +15,11 @@ export function ToolGuide({ slug, name }: { slug: string; name: string }) {
         // can lazy-load any one of them — that map must never sit in the
         // entry chunk, so it's imported here instead of at module scope.
         import("@/lib/tool-guide").then(({ loadToolGuide }) => loadToolGuide(slug)).then(data => { if (active) setGuide(data); }).catch(() => {});
-        // The blog module is large; it becomes its own chunk and loads once.
+        // scripts/gen-llms.mjs writes this index from blog.ts: the newest four
+        // posts per tool, a few kilobytes. The blog module itself is every
+        // article's HTML, so it is never imported here.
         // Related reading is optional — if the chunk fails to load, the guide still renders without it.
-        import("@/data/blog").then(({ postsForTool }) => { if (active) setLinks(postsForTool(slug, 4).map(post => ({ slug: post.slug, title: post.title }))); }).catch(() => {});
+        import("@/data/tool-blog-links.json").then(({ default: index }) => { if (active) setLinks((index as Record<string, GuideLink[]>)[slug] ?? []); }).catch(() => {});
         return () => { active = false; };
     }, [slug]);
     if (!guide || (guide.howto.length === 0 && guide.faq.length === 0)) return null;
