@@ -645,6 +645,26 @@ _APPLICATION_SUBCATEGORIES = {
 }
 
 
+_BROWSER_ONLY_FEATURE = "Runs in your browser; files are never uploaded"
+_SERVER_FEATURE = "Server processing in temporary storage, removed after the response"
+_PROVIDER_FEATURE = "Optional AI provider mode sends content only to the AI provider you choose"
+
+
+def _processing_features(slug: str) -> list[str]:
+    """Where a tool's files go, for its structured data.
+
+    Follows the registry's `clientOnly` and `byok` flags from the tool manifest,
+    the same flags that choose the badge on the tool page. Server tools delete
+    their temporary files once the response is sent, and the janitor in main.py
+    sweeps leftovers; that is a cleanup policy, so never promise "immediately".
+    """
+    row = (_load_manifest(str(_TOOL_JSON), blog_content_mtime_ns()) or {}).get(slug) or {}
+    features = [_BROWSER_ONLY_FEATURE if row.get("clientOnly") else _SERVER_FEATURE]
+    if row.get("byok"):
+        features.append(_PROVIDER_FEATURE)
+    return features
+
+
 def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
     """Return a precise SoftwareApplication subcategory for SEO/answer engines.
 
@@ -1321,7 +1341,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
             "Free file tools; server limits apply",
             "No account, email, or sign-up required",
             "No watermarks on output",
-            "Files processed in isolated container and deleted immediately",
+            *_processing_features(slug),
             "Open source (MIT license) and self-hostable",
             "Works in any modern browser — no install",
         ]
