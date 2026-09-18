@@ -580,8 +580,8 @@ def _by_popularity(items):
     Manifest `popularity` ascending, unranked slugs last, equal ranks left in
     the order given — callers pass manifest order, so this matches a stable JS
     sort over the registry and crawlers see the ordering React renders.
-    Without a build manifest nothing is ranked, and the registry tables' own
-    order stands.
+    If no tool manifest can be read, nothing is ranked and the registry
+    tables' own order stands.
     """
     manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns()) or {}
     return sorted(items, key=lambda kv: (manifest.get(kv[0]) or {}).get("popularity", 999))
@@ -606,10 +606,12 @@ def _related_tools(slug: str, registry: dict, prefix: str) -> list[tuple[str, st
     ascending (manifest iteration order breaks ties, same as a stable JS sort
     over `ALL_TOOLS`), excluding the tool itself, first three. Reads the same
     build-owned manifest the client's registry is generated from, so this
-    can't drift from what the workspace's afterword actually shows. When
-    that manifest artifact itself is missing (dev without a build) there is
-    no category or popularity to read, so it falls back to the first three
-    other tools in the registry table.
+    can't drift from what the workspace's afterword actually shows. If no
+    manifest can be read there is no category or popularity, so it falls
+    back to the first three other tools in the registry table. A checkout
+    without a build reads the committed manifest, and the app will not start
+    when no manifest is readable, so in practice only tests and a corrupt
+    dist manifest reach this path.
     """
     manifest = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
     if manifest is not None:
@@ -646,9 +648,9 @@ _APPLICATION_SUBCATEGORIES = {
 def _application_subcategory_for(slug: str, is_pdf_tool: bool) -> str:
     """Return a precise SoftwareApplication subcategory for SEO/answer engines.
 
-    The label follows the tool's registry category, read from the build
-    manifest. Without a manifest (dev without a build) there is no category,
-    only the registry table the slug came from, hence the generic fallback.
+    The label follows the tool's registry category, read from the tool
+    manifest. If no manifest can be read there is no category, only the
+    registry table the slug came from, hence the generic fallback.
     """
     generic = "PDF tools" if is_pdf_tool else "File tools"
     return _APPLICATION_SUBCATEGORIES.get(_tool_category(slug) or "", generic)
