@@ -99,6 +99,7 @@ def _parse_form_fields(raw: str) -> list[dict]:
         raise HTTPException(status_code=400, detail=f"form_fields cannot exceed {MAX_FORM_FIELDS} items")
 
     normalized: list[dict] = []
+    widget_count = 0
     for idx, item in enumerate(parsed, start=1):
         if not isinstance(item, dict):
             raise HTTPException(status_code=400, detail=f"Field #{idx} must be an object")
@@ -153,9 +154,26 @@ def _parse_form_fields(raw: str) -> list[dict]:
                 raise HTTPException(status_code=400, detail=f"Field #{idx} options cannot exceed {MAX_FORM_OPTIONS}")
             field_data["options"] = options
             field_data["value"] = str(item.get("value", options[0]))
+            if field_type == "radio":
+                # Each option becomes a button whose "on" state is named after
+                # it, so options must differ, and Off already means "none".
+                if len(set(options)) != len(options):
+                    raise HTTPException(status_code=400, detail=f"Field #{idx} options must all be different")
+                if any(o.lower() == "off" for o in options):
+                    raise HTTPException(status_code=400, detail=f"Field #{idx} cannot use Off as an option")
+                value = str(field_data["value"]).strip()
+                if value and value != "Off" and value not in options:
+                    raise HTTPException(status_code=400, detail=f"Field #{idx} default value must be one of its options")
+                field_data["value"] = "" if value == "Off" else value
 
+        widget_count += len(field_data["options"]) if field_type == "radio" else 1
         normalized.append(field_data)
 
+    if widget_count > MAX_FORM_FIELDS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"form_fields cannot exceed {MAX_FORM_FIELDS} fields; each radio option counts as one",
+        )
     return normalized
 
 
@@ -461,6 +479,133 @@ async def add_hyperlinks(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Failed to add hyperlinks") from exc
 
 
+_RADIO = 1 << 15              # field flag: the buttons form a radio group
+_NO_TOGGLE_TO_OFF = 1 << 14   # field flag: clicking the chosen button keeps it chosen
+_REQUIRED = 1 << 1
+_RADIO_BUTTON_MAX = 14.0      # points
+_RADIO_LABEL_MAX = 11.0       # the size text fields use
+_RADIO_LABEL_GAP = 4.0
+
+
+def _pdf_name(text: str) -> str:
+    """`text` as a PDF name token, #-escaping what name syntax does not allow."""
+    return "/" + "".join(
+        chr(byte) if 0x21 <= byte <= 0x7E and chr(byte) not in "()<>[]{}/%#" else f"#{byte:02X}"
+        for byte in text.encode("utf-8")
+    )
+
+
+def _radio_layout(rect: fitz.Rect, options: list[str]):
+    """Place a button per option inside the box the user drew.
+
+    The options share the box equally, stacked when it is taller than it is
+    wide and side by side otherwise. Each label sits right of its button,
+    shrunk where needed to leave a gap before the next option. Yields (option,
+    button rect, label baseline point, label font size); a size of 0 means no
+    room.
+    """
+    stacked = rect.height > rect.width
+    step = (rect.height if stacked else rect.width) / len(options)
+    for i, option in enumerate(options):
+        if stacked:
+            cell = fitz.Rect(rect.x0, rect.y0 + i * step, rect.x1, rect.y0 + (i + 1) * step)
+        else:
+            cell = fitz.Rect(rect.x0 + i * step, rect.y0, rect.x0 + (i + 1) * step, rect.y1)
+        size = min(cell.width, cell.height, _RADIO_BUTTON_MAX)
+        middle = (cell.y0 + cell.y1) / 2
+        button = fitz.Rect(cell.x0, middle - size / 2, cell.x0 + size, middle + size / 2)
+        room = cell.x1 - button.x1 - 2 * _RADIO_LABEL_GAP
+        width_at_1pt = fitz.get_text_length(option, fontname="helv", fontsize=1)
+        fontsize = min(_RADIO_LABEL_MAX, 0.8 * size, room / width_at_1pt) if room > 0 and width_at_1pt else 0
+        # 0.35 em below the middle puts the middle of Helvetica's capitals there.
+        yield option, button, fitz.Point(button.x1 + _RADIO_LABEL_GAP, middle + 0.35 * fontsize), fontsize
+
+
+def _delete_keys(doc: fitz.Document, xref: int, keys: tuple[str, ...]) -> None:
+    """Remove `keys` from the dictionary `xref`.
+
+    PyMuPDF's xref_set_key(..., "null") keeps the key with a null value. The
+    PDF spec treats that as absent, but PDFium (Chrome's viewer) does not: a
+    radio button with /FT null does not inherit its group's /FT.
+    """
+    for key in keys:
+        doc.xref_set_key(xref, key, "null")
+    pattern = r"/(?:%s) null(?=[\s/>])" % "|".join(keys)
+    doc.update_object(xref, re.sub(pattern, "", doc.xref_object(xref, compressed=True)))
+
+
+def _replace_fields(doc: fitz.Document, old: list[int], new: int) -> None:
+    """Replace the AcroForm /Fields entries `old` with one entry `new`.
+
+    Keys are only set on the object that holds them: PyMuPDF's xref_set_key
+    cannot write through an indirect object on a key path.
+    """
+    catalog = doc.pdf_catalog()
+    kind, value = doc.xref_get_key(catalog, "AcroForm")
+    owner, key = (int(value.split()[0]), "Fields") if kind == "xref" else (catalog, "AcroForm/Fields")
+    kind, value = doc.xref_get_key(owner, key)
+    if kind == "xref":  # the array is an object of its own
+        owner, key = int(value.split()[0]), None
+        value = doc.xref_object(owner, compressed=True)
+    entries: list[str] = []
+    for num, gen in re.findall(r"(\d+) (\d+) R", value):
+        if int(num) not in old:
+            entries.append(f"{num} {gen} R")
+        elif f"{new} 0 R" not in entries:
+            entries.append(f"{new} 0 R")
+    array = f"[{' '.join(entries)}]"
+    if key is None:
+        doc.update_object(owner, array)
+    else:
+        doc.xref_set_key(owner, key, array)
+
+
+def _add_radio_group(doc: fitz.Document, page: fitz.Page, field: dict, rect: fitz.Rect) -> None:
+    """Add a radio group: one field for the name, flags and chosen option,
+    with a button per option as its kids, each labelled on the page.
+
+    PyMuPDF cannot build this. Each button is added as a radio widget in the
+    Off state, because switching a new radio on fails inside PyMuPDF (its
+    check reads the widget's Parent/Kids before the widget has an xref). The
+    buttons then move under a new parent field, and each one's "on"
+    appearance, which MuPDF names Yes, is renamed after its option.
+    """
+    name = str(field["name"])
+    chosen = str(field.get("value", ""))
+    buttons: list[tuple[str, int]] = []
+    for option, button, label_at, fontsize in _radio_layout(rect, list(field["options"])):
+        widget = fitz.Widget()
+        widget.field_type = fitz.PDF_WIDGET_TYPE_RADIOBUTTON
+        widget.field_name = name
+        widget.rect = button
+        widget.border_color = (0, 0, 0)
+        widget.border_width = 1
+        widget.fill_color = (1, 1, 1)
+        widget.field_value = False
+        buttons.append((option, page.add_widget(widget).xref))
+        if fontsize:
+            page.insert_text(label_at, option, fontname="helv", fontsize=fontsize)
+
+    flags = _RADIO | _NO_TOGGLE_TO_OFF | (_REQUIRED if field.get("required") else 0)
+    parent = doc.get_new_xref()
+    doc.update_object(parent, (
+        f"<</FT/Btn/Ff {flags}/T{fitz.get_pdf_str(name)}/TU{fitz.get_pdf_str(name)}"
+        f"/V{_pdf_name(chosen) if chosen else '/Off'}"
+        f"/Kids[{' '.join(f'{xref} 0 R' for _, xref in buttons)}]>>"
+    ))
+    for option, xref in buttons:
+        on_kind, on_look = doc.xref_get_key(xref, "AP/N/Yes")
+        off_kind, off_look = doc.xref_get_key(xref, "AP/N/Off")
+        if on_kind != "xref" or off_kind != "xref":
+            raise RuntimeError("PyMuPDF did not draw the radio button's on and off appearances")
+        _delete_keys(doc, xref, ("FT", "Ff", "T", "TU", "V"))  # the group holds these
+        doc.xref_set_key(xref, "Parent", f"{parent} 0 R")
+        doc.xref_set_key(xref, "AP/N", f"<<{_pdf_name(option)} {on_look}/Off {off_look}>>")
+        doc.xref_set_key(xref, "AS", _pdf_name(option) if option == chosen else "/Off")
+        doc.xref_set_key(xref, "MK/CA", "(l)")  # the dot viewers draw when they redraw it
+    _replace_fields(doc, [xref for _, xref in buttons], parent)
+
+
 @router.post("/form-creator")
 async def form_creator(
     file: UploadFile = File(...),
@@ -485,7 +630,7 @@ async def form_creator(
                 if len(doc) == 0:
                     raise HTTPException(status_code=400, detail="PDF has no pages")
 
-                seen_non_radio_names: set[str] = set()
+                seen_names: set[str] = set()
                 for idx, field in enumerate(fields, start=1):
                     page_index = int(field["page"]) - 1
                     if page_index < 0 or page_index >= len(doc):
@@ -493,10 +638,9 @@ async def form_creator(
 
                     name = str(field["name"]).strip()
                     field_type = str(field["type"])
-                    if field_type != "radio" and name in seen_non_radio_names:
+                    if name in seen_names:
                         raise HTTPException(status_code=400, detail=f"Duplicate field name '{name}' is not allowed")
-                    if field_type != "radio":
-                        seen_non_radio_names.add(name)
+                    seen_names.add(name)
 
                     page = doc[page_index]
                     rect = fitz.Rect(
@@ -507,6 +651,10 @@ async def form_creator(
                     )
                     if not page.rect.contains(rect):
                         raise HTTPException(status_code=400, detail=f"Field '{name}' rectangle is out of page bounds")
+
+                    if field_type == "radio":
+                        _add_radio_group(doc, page, field, rect)
+                        continue
 
                     widget = fitz.Widget()
                     widget.field_name = name
@@ -526,11 +674,6 @@ async def form_creator(
                     elif field_type == "checkbox":
                         widget.field_type = fitz.PDF_WIDGET_TYPE_CHECKBOX
                         widget.field_value = "Yes" if bool(field.get("checked", False)) else "Off"
-                    elif field_type == "radio":
-                        options = [str(o).strip() for o in field.get("options", []) if str(o).strip()]
-                        widget.field_type = fitz.PDF_WIDGET_TYPE_RADIOBUTTON
-                        widget.button_caption = options[0] if options else "Option"
-                        widget.field_value = str(field.get("value", widget.button_caption))
                     elif field_type == "combobox":
                         widget.field_type = fitz.PDF_WIDGET_TYPE_COMBOBOX
                         widget.choice_values = [str(o) for o in field.get("options", [])]
