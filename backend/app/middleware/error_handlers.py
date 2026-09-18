@@ -13,11 +13,11 @@ Wire via :func:`register_error_handlers(app)` in `main.py`.
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import Any, Callable
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from ..utils.exceptions import ToolError
@@ -280,11 +280,20 @@ async def builtin_exception_handler(request: Request, exc: Exception) -> JSONRes
 # ---------------------------------------------------------------------------
 # Registration
 # ---------------------------------------------------------------------------
-def register_error_handlers(app: FastAPI) -> None:
+def register_error_handlers(
+    app: FastAPI,
+    *,
+    security_headers: Callable[[Request, Response], None] | None = None,
+) -> None:
     """Attach all handlers to the given FastAPI app.
 
     Call this exactly once during app construction. Order doesn't matter
     — FastAPI matches handlers by exception type.
+
+    ``security_headers`` is applied to the catch-all's responses. Starlette
+    runs that handler in ServerErrorMiddleware, which wraps every
+    ``add_middleware`` layer, so the security-headers middleware never sees
+    them: a decompression-bomb 413 or an unhandled 500 would go out bare.
     """
     app.add_exception_handler(ToolError, tool_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
@@ -293,6 +302,8 @@ def register_error_handlers(app: FastAPI) -> None:
     # Keep this last — it's the catch-all.
     async def final_exception_handler(request: Request, exc: Exception) -> JSONResponse:
         response = await builtin_exception_handler(request, exc)
+        if security_headers is not None:
+            security_headers(request, response)
         if getattr(request.state, "v1_activity_deferred", False):
             from ..api_v1.activity import finish
             await finish(request.scope, response.status_code)
