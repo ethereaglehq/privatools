@@ -63,6 +63,40 @@ a running loopback backend; choose a report path with `--output PATH`.
 `backend/app/tool_content.py`; run it after editing steps or FAQ, and
 `--check` in CI-style verification.
 
+## Tool review dates
+
+This one lives with the frontend content scripts, so run it from `frontend/`:
+
+```sh
+npm run check:review-dates            # against origin/main
+npm run check:review-dates -- HEAD    # only what is not committed yet
+```
+
+`frontend/scripts/check-review-dates.mjs` compares both tool registries in the
+working tree with the commit where the branch left its base. It fails when a
+tool's `seoTitle`, `metaDescription`, `longDescription` or `description`
+changed and its `lastReviewed` did not, and when more than 25 existing dates
+moved in one change. A new tool's first date is not a move. A genuine bulk
+review passes with `[bulk-review]` in a commit message or in the PR title; CI
+reads the title when a run starts, so push after editing it.
+
+The marker matches anywhere in those texts, so a commit message that merely
+*mentions* it opts that pull request in — writing this check out in full in its
+own commit message did exactly that. Describe it without the brackets unless
+you mean it. Documentation files are never read, only commit messages and the
+PR title.
+
+It needs the base branch and real history: `git fetch origin` locally,
+`fetch-depth: 0` in a workflow. With neither it fails instead of skipping, so
+it runs as its own `pull_request`-only step in `test.yml` rather than inside
+`npm run test:content` (which also runs on pushes and on the release gate).
+On a pull request the base is the branch the PR targets, read from
+`GITHUB_BASE_REF`. `test:content` still runs the script's own unit tests.
+
+A base older than the commit that introduced `lastReviewed` has none, and a
+tool's first date is not a move, so the check passes against old bases and on
+the base branch itself.
+
 Production deployment scripts and service definitions remain in `deploy/`.
 
 Generated local reports belong in `temp/verification/<area>/`, which is excluded
