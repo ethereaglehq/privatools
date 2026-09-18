@@ -67,5 +67,10 @@ output with the change.
 
 Public starter downloads are generated from `../examples/api/` by
 `python3 scripts/api/starters/build.py` from the repository root. Edit their
-source files rather than the generated copies. Deployment uses the repository's
-[deployment workflow](../deploy/README.md).
+source files rather than the generated copies.
+
+Production never uses a local build. The Dockerfile's `frontend-build` stage
+runs `npm ci` and `npm run build`, and the runtime image copies its `dist/`.
+Pushing a `v*` tag builds, scans and signs that image in `release.yml`, and
+the server deploys the signed image; see the
+[deployment guide](../deploy/README.md).

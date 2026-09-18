@@ -1,5 +1,7 @@
 # API usability upgrade validation
 
+> **Shipped in v2.3.0** (#162, 14 September 2026). Background jobs are now enabled on the hosted API, so "These changes have not been deployed" and "Production validation still required" below describe the state before the release.
+
 Date: 2026-09-14. Branch: `codex/api-usability-upgrade`.
 
 ## Delivery scope
