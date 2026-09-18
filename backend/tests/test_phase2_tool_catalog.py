@@ -7,6 +7,8 @@ or browser-only developer utilities.
 
 from __future__ import annotations
 
+import re
+
 import pytest
 
 from app import seo_meta
@@ -66,5 +68,5 @@ def test_phase2_slug_renders_in_sitemap_xml(slug: str):
 
 
 @pytest.mark.parametrize("slug", P2_SLUGS)
-def test_phase2_slug_has_fixed_review_date(slug: str):
-    assert seo_meta.TOOL_LAST_REVIEWED[slug] == "2026-06-18"
+def test_phase2_slug_has_a_review_date(slug: str):
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", seo_meta._last_reviewed_for(slug))

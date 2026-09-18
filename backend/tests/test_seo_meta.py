@@ -299,7 +299,8 @@ def test_tool_pages_use_registry_search_copy(tmp_path, monkeypatch):
         "merge-pdf": {"slug": "merge-pdf", "name": "Merge PDF", "path": "/tool/merge-pdf", "category": "organize",
                       "description": "Combine PDFs", "longDescription": "Long intro text for the page.",
                       "seoTitle": "Merge PDF Files Online Free – Combine PDFs Privately",
-                      "metaDescription": "Combine PDF files in the order you choose. Free, no sign-up, temporary server processing."},
+                      "metaDescription": "Combine PDF files in the order you choose. Free, no sign-up, temporary server processing.",
+                      "lastReviewed": "2026-08-02"},
         "image-compressor": {"slug": "image-compressor", "name": "Image Compressor", "path": "/tools/image-compressor", "category": "image",
                              "description": "Shrink images", "longDescription": "Long intro for images.",
                              "seoTitle": "Compress Images Online Free – Smaller JPG, PNG and WebP",
@@ -323,6 +324,13 @@ def test_tool_pages_use_registry_search_copy(tmp_path, monkeypatch):
     html = inject_seo(template, "/tools/image-compressor")
     assert "<h1>Compress Images Online Free – Smaller JPG, PNG and WebP</h1>" in html
     assert '<meta property="og:title" content="Compress Images Online Free – Smaller JPG, PNG and WebP">' in html
+
+    # The manifest's lastReviewed date reaches both the visible review line
+    # and the JSON-LD dateModified — `_last_reviewed_for` is the shared read
+    # path for both.
+    assert "Last reviewed 2026-08-02" in seo_meta._build_ssr_content("/tool/merge-pdf", *seo_meta.get_meta_for_path("/tool/merge-pdf"))
+    graph = seo_meta._get_jsonld_for_path("/tool/merge-pdf", seo_meta.blog_content_mtime_ns())["@graph"]
+    assert any(node.get("dateModified") == "2026-08-02" for node in graph)
 
 
 def test_compare_tool_count_claims_match_catalog_size():

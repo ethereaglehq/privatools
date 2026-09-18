@@ -163,6 +163,12 @@ describe("tool registry quality", () => {
         expect(new Set(descriptions).size).toBe(descriptions.length);
     });
 
+    it("records a valid, non-future review date for every tool", () => {
+        const today = new Date().toISOString().slice(0, 10);
+        const bad = allTools.filter(tool => !/^\d{4}-\d{2}-\d{2}$/.test(tool.lastReviewed ?? "") || tool.lastReviewed > today).map(tool => tool.slug);
+        expect(bad).toEqual([]);
+    });
+
     it("keeps search copy free of counts and forbidden claims", () => {
         const bad = allTools.filter(tool => {
             const copy = `${tool.seoTitle}\n${tool.metaDescription}`;

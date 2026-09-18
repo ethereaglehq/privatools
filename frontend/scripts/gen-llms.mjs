@@ -70,7 +70,7 @@ write('tool-content.json', JSON.stringify(tools, null, 2));
 const publicPages = ['', '/tools', '/about', '/trust', '/api', '/compare', '/pipeline', '/batch', '/blog', '/privacy', '/terms', '/security', '/support', '/status', '/ai'];
 const entries = [
   ...publicPages.map(path => ({ path, lastmod: SITE_REVIEWED })),
-  ...tools.map(tool => ({ path: tool.path, lastmod: tool.lastReviewed || '2026-09-13' })),
+  ...tools.map(tool => ({ path: tool.path, lastmod: tool.lastReviewed })),
   ...blogPosts.map(post => ({ path: `/blog/${post.slug}`, lastmod: modified(post) })),
   ...comparisons.map(comparison => ({ path: `/compare/${comparison.slug}`, lastmod: modified(comparison) })),
 ];

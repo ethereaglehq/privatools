@@ -43,6 +43,8 @@ export interface NonPdfTool {
   synonyms?: string;
   accepts: string;
   outputLabel: string;
+  /** ISO date of the last content review; drives the sitemap lastmod and the visible review line. */
+  lastReviewed: string;
 }
 
 const _nonPdfToolsRaw: NonPdfTool[] = [
@@ -56,6 +58,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "shrink optimize jpg png webp size reduce make smaller",
     popularity: 2,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp", outputLabel: "compressed images",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "image-converter", icon: RefreshCw, name: "Image Format Converter",
@@ -66,6 +69,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "format convert jpg png webp avif tiff bmp gif image format",
     popularity: 5,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.tiff,.heic,.bmp", outputLabel: "converted image",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "remove-exif", icon: UserX, name: "Remove EXIF Data",
@@ -76,6 +80,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "exif metadata gps strip clean privacy",
     popularity: 31,
     category: "image", accepts: ".jpg,.jpeg,.png,.tiff,.webp", outputLabel: "clean image",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "resize-crop-image", icon: Crop, name: "Resize & Crop Image",
@@ -86,6 +91,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "resize scale crop dimensions size resize image",
     popularity: 4,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "resized images",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "video-to-gif", icon: Film, name: "Video / Audio to GIF",
@@ -96,6 +102,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "animate looping share preview mp4 to gif mov to gif",
     popularity: 6,
     category: "image", accepts: ".mp4,.mov,.webm,.avi", outputLabel: "animation.gif",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "image-ocr", icon: ScanText, name: "Image OCR",
@@ -106,6 +113,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "text extract from picture recognize",
     popularity: 35,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.tiff,.tif", outputLabel: "extracted text",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Audio & Video ───────────────────────────────────────────────────────────
@@ -118,6 +126,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "rip audio mp3 from video soundtrack",
     popularity: 56,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "audio.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "trim-media", icon: Scissors, name: "Cut / Trim Video & Audio",
@@ -128,6 +137,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "cut clip slice shorten",
     popularity: 54,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mp3,.wav,.ogg,.m4a", outputLabel: "trimmed file",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "compress-video", icon: Video, name: "Compress Video",
@@ -138,6 +148,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "smaller mp4 webm size",
     popularity: 51,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi", outputLabel: "compressed.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "video-to-pdf", icon: Film, name: "Video to PDF",
@@ -148,6 +159,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "frames pages slideshow",
     popularity: 62,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "frames.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "video-converter", icon: RefreshCw, name: "Video Converter",
@@ -158,6 +170,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert format mp4 mov webm avi mkv",
     popularity: 52,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv,.m4v", outputLabel: "converted.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "video-resizer", icon: Maximize2, name: "Video Resizer",
@@ -168,6 +181,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "resize scale dimensions width height",
     popularity: 63,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "video.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "video-thumbnail", icon: ImageIcon, name: "Video Thumbnail",
@@ -178,6 +192,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "preview screenshot still image cover",
     popularity: 64,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "thumbnail.jpg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "gif-to-mp4", icon: Film, name: "GIF to MP4",
@@ -188,6 +203,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert gif to video mp4",
     popularity: 61,
     category: "video-audio", accepts: ".gif", outputLabel: "animation.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "add-subtitles", icon: Type, name: "Add Subtitles to Video",
@@ -198,6 +214,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "subtitle srt caption burn in",
     popularity: 65,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "subtitled.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "video-merge", icon: Merge, name: "Merge Videos",
@@ -208,6 +225,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "join combine concat videos",
     popularity: 66,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "merged.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "audio-merge", icon: Merge, name: "Merge Audio",
@@ -218,6 +236,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "join combine concat audio tracks",
     popularity: 67,
     category: "video-audio", accepts: ".mp3,.wav,.aac,.flac,.ogg,.m4a", outputLabel: "merged.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "subtitle-converter", icon: ArrowLeftRight, name: "Subtitle Converter",
@@ -228,6 +247,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "srt vtt ass convert subtitles format",
     popularity: 68,
     category: "video-audio", clientOnly: true, accepts: ".srt,.vtt,.ass", outputLabel: "subtitles.vtt",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Developer & Text ────────────────────────────────────────────────────────
@@ -240,6 +260,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "pretty print beautify lint validate",
     popularity: 81,
     category: "developer", clientOnly: true, accepts: ".json,.xml", outputLabel: "formatted",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "text-diff", icon: GitCompare, name: "Text Diff / Comparator",
@@ -250,6 +271,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "compare text difference changes",
     popularity: 83,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "diff report",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "base64", icon: KeyRound, name: "Base64 Encoder / Decoder",
@@ -260,6 +282,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "encode decode binary text",
     popularity: 80,
     category: "developer", clientOnly: true, accepts: "*", outputLabel: "encoded/decoded",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "hash-generator", icon: Hash, name: "Hash Generator",
@@ -270,6 +293,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "md5 sha checksum digest fingerprint",
     popularity: 82,
     category: "developer", clientOnly: true, accepts: "*", outputLabel: "hash digest",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Archive & File Management ───────────────────────────────────────────────
@@ -282,6 +306,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "unzip extract zip tar gz files",
     popularity: 110,
     category: "archive", accepts: ".zip,.tar,.tar.gz,.tgz,.tar.bz2,.tbz2,.tar.xz,.txz", outputLabel: "extracted files",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "create-zip", icon: Lock, name: "Create ZIP Archive",
@@ -292,6 +317,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "zip archive compress files into one",
     popularity: 111,
     category: "archive", accepts: "*", outputLabel: "archive.zip",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Document & Office ───────────────────────────────────────────────────────
@@ -304,6 +330,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "csv to json convert format",
     popularity: 84,
     category: "document-office", clientOnly: true, accepts: ".csv,.json", outputLabel: "converted file",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "markdown-html", icon: Code2, name: "Markdown Editor & HTML",
@@ -314,6 +341,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "md html convert preview rendering",
     popularity: 87,
     category: "document-office", clientOnly: true, accepts: ".md,.markdown", outputLabel: "output.html",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "heic-to-jpg", icon: RefreshCw, name: "HEIC to JPG",
@@ -324,6 +352,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "iphone apple convert universal jpeg heif ios",
     popularity: 1,
     category: "image", accepts: ".heic,.heif", outputLabel: "converted.jpg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "remove-background", icon: UserX, name: "Background Remover",
@@ -334,6 +363,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "transparent cutout subject extract bg remove bg",
     popularity: 3,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "no_background.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "svg-to-png", icon: ImageIcon, name: "SVG to PNG",
@@ -344,6 +374,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "vector raster render bitmap convert",
     popularity: 21,
     category: "image", accepts: ".svg", outputLabel: "converted.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "remove-image-watermark", icon: Eraser, name: "Remove Image Watermark",
@@ -354,6 +385,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "erase watermark logo stamp inpaint image photo cleanup",
     popularity: 64,
     category: "image", accepts: ".png,.jpg,.jpeg,.webp,.bmp", outputLabel: "no_watermark.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "image-watermark", icon: Stamp, name: "Image Watermark",
@@ -364,6 +396,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "watermark stamp brand image logo",
     popularity: 15,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "watermarked.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "generate-favicon", icon: Globe, name: "Favicon Generator",
@@ -374,6 +407,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "favicon icon ico website",
     popularity: 36,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "favicon.ico",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "make-collage", icon: LayoutGrid, name: "Photo Collage",
@@ -384,6 +418,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "collage grid mosaic photo album",
     popularity: 33,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "collage.jpg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "generate-barcode", icon: ScanLine, name: "Barcode Generator",
@@ -394,6 +429,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "barcode ean upc code128 qr",
     popularity: 98,
     category: "developer", accepts: "", outputLabel: "barcode.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "url-to-pdf", icon: Link, name: "URL to PDF",
@@ -404,6 +440,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "save webpage to pdf url print",
     popularity: 99,
     category: "developer", accepts: "", outputLabel: "webpage.pdf",
+    lastReviewed: "2026-09-18",
   },
   // ── Client-only utility tools (Round O) ────────────────────────────────────
   {
@@ -415,6 +452,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "password random secure strong",
     popularity: 93,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "password",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "uuid-generator", icon: Hash, name: "UUID Generator",
@@ -425,6 +463,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "guid v4 v7 random id unique",
     popularity: 94,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "uuids",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "lorem-ipsum", icon: Type, name: "Lorem Ipsum Generator",
@@ -435,6 +474,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "placeholder dummy text greek latin",
     popularity: 97,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "lorem text",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "word-counter", icon: Type, name: "Word & Character Counter",
@@ -445,6 +485,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "words characters sentences paragraphs",
     popularity: 96,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "stats",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "color-converter", icon: ImageIcon, name: "Color Converter",
@@ -455,6 +496,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "hex rgb hsl picker palette",
     popularity: 95,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "color value",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "url-encoder", icon: Code2, name: "URL Encoder / Decoder",
@@ -465,6 +507,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "percent escape decode jwt",
     popularity: 88,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "encoded/decoded",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "qr-reader", icon: QrCode, name: "QR Code Reader",
@@ -475,6 +518,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "decode scan camera",
     popularity: 37,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "decoded text",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "merge-images", icon: Merge, name: "Merge Images",
@@ -485,6 +529,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "join combine concat horizontal vertical",
     popularity: 34,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "merged.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "image-upscaler", icon: Maximize2, name: "Image Upscaler",
@@ -495,6 +540,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "enhance enlarge bigger 2x 4x lanczos",
     popularity: 14,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp", outputLabel: "upscaled image",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "audio-converter", icon: Music, name: "Audio Converter",
@@ -505,6 +551,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert format mp3 wav ogg flac aac transcode audio format",
     popularity: 7,
     category: "video-audio", accepts: ".mp3,.wav,.ogg,.flac,.aac,.m4a,.wma", outputLabel: "converted audio",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "transcribe-audio", icon: Mic, name: "Transcribe Audio (AI)",
@@ -515,6 +562,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "transcribe speech to text whisper stt voice notes meeting minutes subtitles dictation",
     popularity: 20,
     category: "video-audio", clientOnly: true, byok: true, accepts: ".mp3,.wav,.m4a,.ogg,.opus,.webm,.flac,.aac", outputLabel: "transcript.txt",
+    lastReviewed: "2026-09-18",
   },
 
   // ── v1.2.0 additions ──────────────────────────────────────────────────────
@@ -527,6 +575,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "metadata gps camera info",
     popularity: 32,
     category: "image", accepts: ".jpg,.jpeg,.png,.tiff,.tif,.webp,.heic,.heif,.bmp,.gif", outputLabel: "metadata JSON",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "webp-to-jpg", icon: RefreshCw, name: "WebP to JPG",
@@ -537,6 +586,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "google webp convert universal",
     popularity: 17,
     category: "image", accepts: ".webp", outputLabel: "image.jpg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "webp-to-png", icon: RefreshCw, name: "WebP to PNG",
@@ -547,6 +597,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "google webp convert lossless",
     popularity: 20,
     category: "image", accepts: ".webp", outputLabel: "image.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "heic-to-png", icon: RefreshCw, name: "HEIC to PNG",
@@ -557,6 +608,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "iphone apple convert universal",
     popularity: 26,
     category: "image", accepts: ".heic,.heif", outputLabel: "image.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "jwt-decoder", icon: KeyRound, name: "JWT Decoder",
@@ -567,6 +619,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "json web token decode parse jwt parser auth",
     popularity: 8,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "decoded JWT",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "regex-tester", icon: Code2, name: "Regex Tester",
@@ -577,6 +630,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "regular expression pattern match test",
     popularity: 91,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "matches",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "timestamp-converter", icon: Hash, name: "Timestamp Converter",
@@ -587,6 +641,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "unix epoch iso 8601 date time",
     popularity: 92,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "converted timestamp",
+    lastReviewed: "2026-09-18",
   },
 
   // ── v1.4.0 image format converter aliases ────────────────────────────────
@@ -599,6 +654,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert format lossless transparency",
     popularity: 19,
     category: "image", accepts: ".jpg,.jpeg", outputLabel: "image.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "png-to-jpg", icon: RefreshCw, name: "PNG to JPG",
@@ -609,6 +665,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert format smaller photo",
     popularity: 18,
     category: "image", accepts: ".png", outputLabel: "image.jpg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "jpg-to-webp", icon: RefreshCw, name: "JPG to WebP",
@@ -619,6 +676,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert smaller google modern format",
     popularity: 27,
     category: "image", accepts: ".jpg,.jpeg", outputLabel: "image.webp",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "png-to-webp", icon: RefreshCw, name: "PNG to WebP",
@@ -629,6 +687,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert smaller google modern",
     popularity: 28,
     category: "image", accepts: ".png", outputLabel: "image.webp",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "tiff-to-jpg", icon: RefreshCw, name: "TIFF to JPG",
@@ -639,6 +698,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "scan convert smaller",
     popularity: 22,
     category: "image", accepts: ".tif,.tiff", outputLabel: "image.jpg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "tiff-to-png", icon: RefreshCw, name: "TIFF to PNG",
@@ -649,6 +709,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "scan convert lossless",
     popularity: 23,
     category: "image", accepts: ".tif,.tiff", outputLabel: "image.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "bmp-to-jpg", icon: RefreshCw, name: "BMP to JPG",
@@ -659,6 +720,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "windows bitmap convert smaller",
     popularity: 24,
     category: "image", accepts: ".bmp", outputLabel: "image.jpg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "bmp-to-png", icon: RefreshCw, name: "BMP to PNG",
@@ -669,6 +731,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "windows bitmap convert lossless",
     popularity: 25,
     category: "image", accepts: ".bmp", outputLabel: "image.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "gif-to-jpg", icon: RefreshCw, name: "GIF to JPG",
@@ -679,6 +742,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "first frame convert image",
     popularity: 29,
     category: "image", accepts: ".gif", outputLabel: "image.jpg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "gif-to-png", icon: RefreshCw, name: "GIF to PNG",
@@ -689,6 +753,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "first frame convert lossless",
     popularity: 30,
     category: "image", accepts: ".gif", outputLabel: "image.png",
+    lastReviewed: "2026-09-18",
   },
 
   // ── v1.4.0 audio/video converter aliases ────────────────────────────────
@@ -701,6 +766,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "iphone voice memo convert universal",
     popularity: 57,
     category: "video-audio", accepts: ".m4a", outputLabel: "audio.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mp4-to-mp3", icon: Music, name: "MP4 to MP3",
@@ -711,6 +777,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "extract audio from video",
     popularity: 50,
     category: "video-audio", accepts: ".mp4", outputLabel: "audio.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mov-to-mp4", icon: Film, name: "MOV to MP4",
@@ -721,6 +788,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "apple quicktime convert universal",
     popularity: 53,
     category: "video-audio", accepts: ".mov", outputLabel: "video.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "avi-to-mp4", icon: Film, name: "AVI to MP4",
@@ -731,6 +799,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "legacy windows convert modern",
     popularity: 58,
     category: "video-audio", accepts: ".avi", outputLabel: "video.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "webm-to-mp4", icon: Film, name: "WebM to MP4",
@@ -741,6 +810,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "google convert universal apple compatible",
     popularity: 59,
     category: "video-audio", accepts: ".webm", outputLabel: "video.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mp4-to-webm", icon: Film, name: "MP4 to WebM",
@@ -751,6 +821,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "convert smaller open web vp9",
     popularity: 60,
     category: "video-audio", accepts: ".mp4", outputLabel: "video.webm",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Phase 2 conversion alias pack — rides existing FFmpeg/Pillow routes ───
@@ -763,6 +834,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "jpeg tiff archive print scan",
     popularity: 61,
     category: "image", accepts: ".jpg,.jpeg", outputLabel: "image.tiff",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "png-to-tiff", icon: RefreshCw, name: "PNG to TIFF",
@@ -773,6 +845,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "lossless tiff archive print",
     popularity: 62,
     category: "image", accepts: ".png", outputLabel: "image.tiff",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "webp-to-tiff", icon: RefreshCw, name: "WebP to TIFF",
@@ -783,6 +856,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "google webp tiff archive",
     popularity: 63,
     category: "image", accepts: ".webp", outputLabel: "image.tiff",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "jpg-to-bmp", icon: RefreshCw, name: "JPG to BMP",
@@ -793,6 +867,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "jpeg windows bitmap legacy",
     popularity: 64,
     category: "image", accepts: ".jpg,.jpeg", outputLabel: "image.bmp",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "png-to-bmp", icon: RefreshCw, name: "PNG to BMP",
@@ -803,6 +878,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "windows bitmap legacy convert",
     popularity: 65,
     category: "image", accepts: ".png", outputLabel: "image.bmp",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "webp-to-bmp", icon: RefreshCw, name: "WebP to BMP",
@@ -813,6 +889,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "google webp windows bitmap",
     popularity: 66,
     category: "image", accepts: ".webp", outputLabel: "image.bmp",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mp3-to-wav", icon: Music, name: "MP3 to WAV",
@@ -823,6 +900,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "audio convert wav uncompressed editing",
     popularity: 67,
     category: "video-audio", accepts: ".mp3", outputLabel: "audio.wav",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "wav-to-mp3", icon: Music, name: "WAV to MP3",
@@ -833,6 +911,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "audio convert smaller compress",
     popularity: 68,
     category: "video-audio", accepts: ".wav", outputLabel: "audio.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "flac-to-mp3", icon: Music, name: "FLAC to MP3",
@@ -843,6 +922,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "lossless audio convert universal",
     popularity: 69,
     category: "video-audio", accepts: ".flac", outputLabel: "audio.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "ogg-to-mp3", icon: Music, name: "OGG to MP3",
@@ -853,6 +933,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "vorbis audio convert universal",
     popularity: 70,
     category: "video-audio", accepts: ".ogg", outputLabel: "audio.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "aac-to-mp3", icon: Music, name: "AAC to MP3",
@@ -863,6 +944,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "audio convert universal iphone",
     popularity: 71,
     category: "video-audio", accepts: ".aac", outputLabel: "audio.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mp3-to-ogg", icon: Music, name: "MP3 to OGG",
@@ -873,6 +955,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "vorbis open web audio",
     popularity: 72,
     category: "video-audio", accepts: ".mp3", outputLabel: "audio.ogg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mp3-to-flac", icon: Music, name: "MP3 to FLAC",
@@ -883,6 +966,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "audio convert flac lossless container",
     popularity: 73,
     category: "video-audio", accepts: ".mp3", outputLabel: "audio.flac",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mp3-to-aac", icon: Music, name: "MP3 to AAC",
@@ -893,6 +977,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "audio convert apple mobile",
     popularity: 74,
     category: "video-audio", accepts: ".mp3", outputLabel: "audio.aac",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "wav-to-flac", icon: Music, name: "WAV to FLAC",
@@ -903,6 +988,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "lossless compress audio archive",
     popularity: 75,
     category: "video-audio", accepts: ".wav", outputLabel: "audio.flac",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "wav-to-ogg", icon: Music, name: "WAV to OGG",
@@ -913,6 +999,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "vorbis open web audio",
     popularity: 76,
     category: "video-audio", accepts: ".wav", outputLabel: "audio.ogg",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mkv-to-mp4", icon: Film, name: "MKV to MP4",
@@ -923,6 +1010,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "matroska convert universal",
     popularity: 77,
     category: "video-audio", accepts: ".mkv", outputLabel: "video.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mp4-to-mov", icon: Film, name: "MP4 to MOV",
@@ -933,6 +1021,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "quicktime apple final cut",
     popularity: 78,
     category: "video-audio", accepts: ".mp4", outputLabel: "video.mov",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mov-to-webm", icon: Film, name: "MOV to WebM",
@@ -943,6 +1032,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "quicktime webm vp9 open web",
     popularity: 79,
     category: "video-audio", accepts: ".mov", outputLabel: "video.webm",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mkv-to-webm", icon: Film, name: "MKV to WebM",
@@ -953,6 +1043,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "matroska webm open web vp9",
     popularity: 80,
     category: "video-audio", accepts: ".mkv", outputLabel: "video.webm",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mp4-to-avi", icon: Film, name: "MP4 to AVI",
@@ -963,6 +1054,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "legacy windows video convert",
     popularity: 81,
     category: "video-audio", accepts: ".mp4", outputLabel: "video.avi",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "avi-to-webm", icon: Film, name: "AVI to WebM",
@@ -973,6 +1065,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "legacy windows webm open web",
     popularity: 82,
     category: "video-audio", accepts: ".avi", outputLabel: "video.webm",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "webm-to-mov", icon: Film, name: "WebM to MOV",
@@ -983,6 +1076,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "google webm quicktime apple",
     popularity: 83,
     category: "video-audio", accepts: ".webm", outputLabel: "video.mov",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mov-to-mkv", icon: Film, name: "MOV to MKV",
@@ -993,6 +1087,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "quicktime matroska archive",
     popularity: 84,
     category: "video-audio", accepts: ".mov", outputLabel: "video.mkv",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "webm-to-gif", icon: Film, name: "WebM to GIF",
@@ -1003,6 +1098,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "animated gif webm clip",
     popularity: 85,
     category: "video-audio", accepts: ".webm", outputLabel: "animation.gif",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "mov-to-gif", icon: Film, name: "MOV to GIF",
@@ -1013,6 +1109,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "quicktime iphone animated gif",
     popularity: 86,
     category: "video-audio", accepts: ".mov", outputLabel: "animation.gif",
+    lastReviewed: "2026-09-18",
   },
 
   // ── v1.4.0 browser-only developer converters ────────────────────────────
@@ -1025,6 +1122,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "kubernetes yaml convert config",
     popularity: 85,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "JSON output",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "json-to-yaml", icon: Braces, name: "JSON to YAML",
@@ -1035,6 +1133,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "kubernetes config convert",
     popularity: 86,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "YAML output",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "case-converter", icon: Type, name: "Case Converter",
@@ -1045,6 +1144,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "camelcase snake kebab title upper lower",
     popularity: 89,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "converted text",
+    lastReviewed: "2026-09-18",
   },
   // ── P2 developer micro-tools pack ────────────────────────────────────────
   {
@@ -1056,6 +1156,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "crontab schedule expression next run explain",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "cron schedule",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "sql-formatter", icon: Code2, name: "SQL Formatter",
@@ -1066,6 +1167,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "sql pretty print beautify format query database",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".sql", outputLabel: "formatted SQL",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "graphql-formatter", icon: Braces, name: "GraphQL Formatter",
@@ -1076,6 +1178,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "graphql query mutation fragment pretty print",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".graphql,.gql", outputLabel: "formatted GraphQL",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "yaml-toml-converter", icon: ArrowLeftRight, name: "YAML to TOML",
@@ -1086,6 +1189,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "yaml toml convert config pyproject cargo",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".yaml,.yml,.toml", outputLabel: "converted config",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "gitignore-generator", icon: GitCompare, name: ".gitignore Generator",
@@ -1096,6 +1200,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "git ignore generator node python docker template",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: "", outputLabel: ".gitignore",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "semver-bumper", icon: RefreshCw, name: "SemVer Bumper",
@@ -1106,6 +1211,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "version semver bump release changelog npm",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "version",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "env-validator", icon: KeyRound, name: ".env Validator",
@@ -1116,6 +1222,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "dotenv env linter secrets config validate",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".env", outputLabel: "validation report",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "json-to-csv-schema", icon: Archive, name: "JSON to CSV Schema",
@@ -1126,6 +1233,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "json csv schema infer flatten columns data",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".json", outputLabel: "data.csv",
+    lastReviewed: "2026-09-18",
   },
   // ── Phase 7 — competitor-gap tools (v1.5.0) ────────────────────────────
   {
@@ -1137,6 +1245,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "remove audio silent strip soundtrack",
     popularity: 53,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi,.m4v", outputLabel: "muted.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "reverse-video", icon: Video, name: "Reverse Video",
@@ -1147,6 +1256,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "backwards play in reverse rewind",
     popularity: 65,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi", outputLabel: "reversed.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "video-speed", icon: Video, name: "Video Speed Changer",
@@ -1157,6 +1267,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "speed up slow down fast forward 2x slow motion",
     popularity: 55,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi", outputLabel: "video.mp4",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "audio-trim", icon: Scissors, name: "Audio Trimmer",
@@ -1167,6 +1278,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "cut clip slice shorten audio",
     popularity: 56,
     category: "video-audio", accepts: ".mp3,.wav,.aac,.flac,.ogg,.m4a", outputLabel: "trimmed.mp3",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "image-palette", icon: ImageIcon, name: "Image Color Palette",
@@ -1177,6 +1289,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "color palette dominant colors extract designer",
     popularity: 39,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff", outputLabel: "color palette",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pixelate-image", icon: ImageIcon, name: "Pixelate / Blur Image",
@@ -1187,6 +1300,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "censor blur mosaic obscure privacy face",
     popularity: 40,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp", outputLabel: "image.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "rotate-image", icon: ImageIcon, name: "Rotate Image",
@@ -1197,6 +1311,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "turn spin angle 90 180 270 sideways tilt upright",
     popularity: 41,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff", outputLabel: "rotated.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "flip-image", icon: ImageIcon, name: "Flip Image",
@@ -1207,6 +1322,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "mirror reverse horizontal vertical selfie unmirror reflect",
     popularity: 42,
     category: "image", accepts: ".jpg,.jpeg,.png,.webp,.bmp,.gif,.tif,.tiff", outputLabel: "flipped.png",
+    lastReviewed: "2026-09-18",
   },
 ];
 

@@ -42,6 +42,8 @@ export interface Tool {
   synonyms?: string;
   accepts: string;
   outputLabel: string;
+  /** ISO date of the last content review; drives the sitemap lastmod and the visible review line. */
+  lastReviewed: string;
 }
 
 const _toolsRaw: Tool[] = [
@@ -55,6 +57,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "join combine concat unite stitch put together",
     popularity: 1,
     category: "organize", accepts: ".pdf", outputLabel: "merged.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "split-pdf", icon: Scissors, name: "Split PDF",
@@ -65,6 +68,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "separate divide cut slice break pdf splitter",
     popularity: 3,
     category: "organize", accepts: ".pdf", outputLabel: "split pages",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "split-by-bookmarks", icon: BookOpen, name: "Split by Bookmarks",
@@ -75,6 +79,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "chapters sections by toc",
     popularity: 17,
     category: "organize", accepts: ".pdf", outputLabel: "split chapters",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "split-by-size", icon: Maximize2, name: "Split by Size",
@@ -85,6 +90,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "by mb max kilobytes file size limit",
     popularity: 18,
     category: "organize", accepts: ".pdf", outputLabel: "split files",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "split-in-half", icon: ScissorsSquare, name: "Split in Half",
@@ -95,6 +101,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "two columns down middle horizontal vertical",
     popularity: 20,
     category: "organize", accepts: ".pdf", outputLabel: "split-in-half.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "organize-pages", icon: Layout, name: "Organize Pages",
@@ -105,6 +112,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "reorder rearrange drag drop pages thumbnails",
     popularity: 14,
     category: "organize", accepts: ".pdf", outputLabel: "organized.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "delete-pages", icon: Trash2, name: "Delete Pages",
@@ -115,6 +123,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove drop discard",
     popularity: 13,
     category: "organize", accepts: ".pdf", outputLabel: "trimmed.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "extract-pages", icon: Download, name: "Extract Pages",
@@ -125,6 +134,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "pull take grab specific",
     popularity: 12,
     category: "organize", accepts: ".pdf", outputLabel: "extracted.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Edit PDF Content ────────────────────────────────────────────────────────
@@ -137,6 +147,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "modify change update annotate text pdf editor",
     popularity: 9,
     category: "edit", accepts: ".pdf", outputLabel: "edited.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "sign-pdf", icon: Stamp, name: "Sign PDF",
@@ -147,6 +158,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "signature handwritten signature sign electronic add signature",
     popularity: 8,
     category: "edit", accepts: ".pdf", outputLabel: "signed.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "watermark", icon: Layers, name: "Watermark",
@@ -157,6 +169,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "stamp brand mark logo overlay diagonal text",
     popularity: 10,
     category: "edit", accepts: ".pdf", outputLabel: "watermarked.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "header-footer", icon: AlignLeft, name: "Header & Footer",
@@ -167,6 +180,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "running headers running footers top bottom text",
     popularity: 37,
     category: "edit", accepts: ".pdf", outputLabel: "headerfooter.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "page-numbers", icon: Hash, name: "Page Numbers",
@@ -177,6 +191,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "numbering pagination print order",
     popularity: 36,
     category: "edit", accepts: ".pdf", outputLabel: "numbered.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "bates-numbering", icon: Tag, name: "Bates Numbering",
@@ -187,6 +202,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "legal discovery prefix sequence litigation",
     popularity: 43,
     category: "edit", accepts: ".pdf", outputLabel: "bates.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "bookmarks", icon: Bookmark, name: "Bookmarks",
@@ -197,6 +213,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "outline toc table of contents index",
     popularity: 41,
     category: "edit", accepts: ".pdf", outputLabel: "bookmarked.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Optimize & Fix ──────────────────────────────────────────────────────────
@@ -209,6 +226,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "shrink reduce smaller optimize size make pdf smaller pdf optimizer",
     popularity: 2,
     category: "optimize", accepts: ".pdf", outputLabel: "compressed.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "remove-watermark", icon: Eraser, name: "Remove Watermark",
@@ -219,6 +237,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "delete watermark strip stamp draft confidential unwatermark",
     popularity: 71,
     category: "edit", accepts: ".pdf", outputLabel: "no_watermark.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "flatten-pdf", icon: GalleryVerticalEnd, name: "Flatten PDF",
@@ -229,6 +248,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "merge layers freeze annotations content",
     popularity: 58,
     category: "optimize", accepts: ".pdf", outputLabel: "flattened.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "deskew-pdf", icon: ScanLine, name: "Deskew PDF",
@@ -239,6 +259,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "straighten skew tilt rotate angle scan",
     popularity: 56,
     category: "optimize", accepts: ".pdf", outputLabel: "deskewed.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "repair-pdf", icon: Wrench, name: "Repair PDF",
@@ -249,6 +270,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "fix damaged corrupted broken recover",
     popularity: 57,
     category: "optimize", accepts: ".pdf", outputLabel: "repaired.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "resize-pdf", icon: Maximize2, name: "Resize PDF",
@@ -259,6 +281,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "page size a4 letter legal dimensions",
     popularity: 51,
     category: "optimize", accepts: ".pdf", outputLabel: "resized.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "rotate-pdf", icon: RotateCw, name: "Rotate PDF",
@@ -269,6 +292,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "turn flip orient clockwise counter",
     popularity: 52,
     category: "optimize", accepts: ".pdf", outputLabel: "rotated.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "grayscale-pdf", icon: Palette, name: "Grayscale PDF",
@@ -279,6 +303,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "black white bw monochrome desaturate",
     popularity: 55,
     category: "optimize", accepts: ".pdf", outputLabel: "grayscale.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "crop-pdf", icon: Crop, name: "Crop PDF",
@@ -289,6 +314,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "trim margins white space cropper bounding box",
     popularity: 53,
     category: "optimize", accepts: ".pdf", outputLabel: "cropped.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Security & Privacy ──────────────────────────────────────────────────────
@@ -301,6 +327,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "password encrypt secure lock",
     popularity: 71,
     category: "security", accepts: ".pdf", outputLabel: "protected.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "unlock-pdf", icon: Unlock, name: "Unlock PDF",
@@ -311,6 +338,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "decrypt remove password unprotect unsecure",
     popularity: 7,
     category: "security", accepts: ".pdf", outputLabel: "unlocked.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "redact-pdf", icon: EyeOff, name: "Redact PDF",
@@ -321,6 +349,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "blackout hide remove sensitive",
     popularity: 72,
     category: "security", accepts: ".pdf", outputLabel: "redacted.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "strip-metadata", icon: DatabaseZap, name: "Strip Metadata",
@@ -331,6 +360,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove metadata clean privacy gps exif",
     popularity: 74,
     category: "security", accepts: ".pdf", outputLabel: "stripped.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "delete-annotations", icon: MessageSquareOff, name: "Delete Annotations",
@@ -341,6 +371,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove comments notes clean",
     popularity: 76,
     category: "security", accepts: ".pdf", outputLabel: "clean.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "metadata", icon: Info, name: "Metadata",
@@ -351,6 +382,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "title author keywords properties subject",
     popularity: 75,
     category: "security", accepts: ".pdf", outputLabel: "metadata.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Convert to PDF ──────────────────────────────────────────────────────────
@@ -363,6 +395,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "webpage url to pdf print page",
     popularity: 106,
     category: "to-pdf", accepts: ".html,.htm", outputLabel: "webpage.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "image-to-pdf", icon: Image, name: "Image to PDF",
@@ -373,6 +406,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "jpg png photo picture combine",
     popularity: 102,
     category: "to-pdf", accepts: ".jpg,.jpeg,.png,.tiff,.bmp,.webp,.heic,.heif", outputLabel: "images.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "jpg-to-pdf", icon: FileImage, name: "JPG to PDF",
@@ -383,6 +417,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "jpeg to pdf image to pdf photo to pdf convert jpg",
     popularity: 6,
     category: "to-pdf", accepts: ".jpg,.jpeg", outputLabel: "images.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "png-to-pdf", icon: FileImage, name: "PNG to PDF",
@@ -393,6 +428,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "image graphic transparent to pdf",
     popularity: 103,
     category: "to-pdf", accepts: ".png", outputLabel: "images.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "heic-to-pdf", icon: FileImage, name: "HEIC to PDF",
@@ -403,6 +439,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "iphone apple photo to pdf",
     popularity: 108,
     category: "to-pdf", accepts: ".heic,.heif", outputLabel: "images.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "webp-to-pdf", icon: FileImage, name: "WebP to PDF",
@@ -413,6 +450,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "google webp to pdf",
     popularity: 109,
     category: "to-pdf", accepts: ".webp", outputLabel: "images.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "tiff-to-pdf", icon: FileImage, name: "TIFF to PDF",
@@ -423,6 +461,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "scan tiff to pdf",
     popularity: 110,
     category: "to-pdf", accepts: ".tiff,.tif", outputLabel: "images.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "bmp-to-pdf", icon: FileImage, name: "BMP to PDF",
@@ -433,6 +472,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "bitmap windows to pdf",
     popularity: 112,
     category: "to-pdf", accepts: ".bmp", outputLabel: "images.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "gif-to-pdf", icon: FileImage, name: "GIF to PDF",
@@ -443,6 +483,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "gif image to pdf",
     popularity: 113,
     category: "to-pdf", accepts: ".gif", outputLabel: "images.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "svg-to-pdf", icon: FileImage, name: "SVG to PDF",
@@ -453,6 +494,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "vector svg to pdf",
     popularity: 111,
     category: "to-pdf", accepts: ".svg", outputLabel: "vectors.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "odt-to-pdf", icon: FileText, name: "ODT to PDF",
@@ -463,6 +505,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "openoffice libreoffice convert",
     popularity: 119,
     category: "to-pdf", accepts: ".odt", outputLabel: "document.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "office-to-pdf", icon: FileBox, name: "Office to PDF",
@@ -473,6 +516,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "doc docx xls xlsx ppt pptx convert",
     popularity: 107,
     category: "to-pdf", accepts: ".doc,.docx,.xls,.xlsx,.ppt,.pptx", outputLabel: "document.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Convert from PDF ────────────────────────────────────────────────────────
@@ -485,6 +529,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "xlsx spreadsheet table",
     popularity: 133,
     category: "from-pdf", accepts: ".pdf", outputLabel: "spreadsheet.xlsx",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-image", icon: FileImage, name: "PDF to Image",
@@ -495,6 +540,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "jpg png screenshot picture",
     popularity: 132,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-long-image", icon: FileImage, name: "PDF to Long Image",
@@ -505,6 +551,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "stitch combine pages single tall scroll screenshot one image",
     popularity: 146,
     category: "from-pdf", accepts: ".pdf", outputLabel: "document_long.png",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-tiff", icon: FileImage, name: "PDF to TIFF",
@@ -515,6 +562,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "tiff fax archival render",
     popularity: 142,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.tif",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-bmp", icon: FileImage, name: "PDF to BMP",
@@ -525,6 +573,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "bitmap windows render convert",
     popularity: 144,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-gif", icon: FileImage, name: "PDF to GIF",
@@ -535,6 +584,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "gif render frame convert",
     popularity: 145,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-svg", icon: FileImage, name: "PDF to SVG",
@@ -545,6 +595,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "vector scalable graphics",
     popularity: 143,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-jpg", icon: FileImage, name: "PDF to JPG",
@@ -555,6 +606,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "convert jpg jpeg image picture",
     popularity: 131,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-png", icon: FileImage, name: "PDF to PNG",
@@ -565,6 +617,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "convert png transparent picture",
     popularity: 134,
     category: "from-pdf", accepts: ".pdf", outputLabel: "pages.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-pptx", icon: Presentation, name: "PDF to PowerPoint",
@@ -575,6 +628,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "powerpoint slides presentation",
     popularity: 135,
     category: "from-pdf", accepts: ".pdf", outputLabel: "slides.pptx",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-text", icon: Type, name: "PDF to Text",
@@ -585,6 +639,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "txt plain extract content",
     popularity: 136,
     category: "from-pdf", accepts: ".pdf", outputLabel: "content.txt",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-word", icon: FileOutput, name: "PDF to Word",
@@ -595,6 +650,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "doc docx convert export editable pdf to docx",
     popularity: 4,
     category: "from-pdf", accepts: ".pdf", outputLabel: "document.docx",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Miscellaneous & Advanced ────────────────────────────────────────────────
@@ -607,6 +663,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "interleave shuffle mix front back",
     popularity: 169,
     category: "advanced", accepts: ".pdf", outputLabel: "mixed.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "compare-pdf", icon: GitCompare, name: "Compare PDF",
@@ -617,6 +674,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "diff difference compare versions changes",
     popularity: 161,
     category: "advanced", accepts: ".pdf", outputLabel: "comparison.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "extract-images", icon: ImageDown, name: "Extract Images",
@@ -627,6 +685,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "embedded photos pictures scrape get",
     popularity: 163,
     category: "advanced", accepts: ".pdf", outputLabel: "images.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "fill-form", icon: FormInput, name: "Fill Form",
@@ -637,6 +696,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "complete sign field acroform",
     popularity: 162,
     category: "advanced", accepts: ".pdf", outputLabel: "filled.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "nup", icon: Grid2x2, name: "N-Up PDF",
@@ -647,6 +707,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "n-up multi-page sheet print layout 2up 4up",
     popularity: 167,
     category: "advanced", accepts: ".pdf", outputLabel: "nup.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "ocr-pdf", icon: ScanText, name: "OCR PDF",
@@ -657,6 +718,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "text recognize read scanned searchable",
     popularity: 160,
     category: "advanced", accepts: ".pdf", outputLabel: "searchable.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "overlay", icon: Copy, name: "Overlay PDF",
@@ -667,6 +729,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "overlay stamp watermark superimpose layer",
     popularity: 168,
     category: "advanced", accepts: ".pdf", outputLabel: "overlaid.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "qr-code", icon: QrCode, name: "QR Code Generator",
@@ -677,6 +740,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "qrcode link generate scan",
     popularity: 165,
     category: "advanced", accepts: ".pdf", outputLabel: "QR code",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-pdfa", icon: Archive, name: "PDF to PDF/A",
@@ -687,6 +751,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "archival iso archive long term",
     popularity: 171,
     category: "advanced", accepts: ".pdf", outputLabel: "archive.pdfa",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Document Cleanup & Structure ────────────────────────────────────────────
@@ -699,6 +764,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "empty white delete clean",
     popularity: 15,
     category: "organize", accepts: ".pdf", outputLabel: "cleaned.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "auto-crop", icon: ScissorsSquare, name: "Auto-Crop PDF (Remove Margins)",
@@ -709,6 +775,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "trim margins white space cropper bounding box",
     popularity: 54,
     category: "optimize", accepts: ".pdf", outputLabel: "cropped.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   // ── New Conversions ─────────────────────────────────────────────────────────
@@ -721,6 +788,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "ebook kindle reader book",
     popularity: 141,
     category: "from-pdf", accepts: ".pdf", outputLabel: "book.epub",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "markdown-to-pdf", icon: Code2, name: "Markdown / Config to PDF",
@@ -731,6 +799,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "md markdown convert pdf",
     popularity: 115,
     category: "to-pdf", accepts: ".md,.markdown,.json,.yaml,.yml,.toml", outputLabel: "document.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "csv-to-pdf", icon: FileSpreadsheet, name: "CSV to PDF",
@@ -741,6 +810,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "csv table data convert",
     popularity: 116,
     category: "to-pdf", accepts: ".csv", outputLabel: "table.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "word-to-pdf", icon: FileText, name: "Word to PDF",
@@ -751,6 +821,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "docx ms word convert export doc to pdf",
     popularity: 5,
     category: "to-pdf", accepts: ".docx", outputLabel: "converted.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "excel-to-pdf", icon: Table, name: "Excel to PDF",
@@ -761,6 +832,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "xlsx ms excel spreadsheet convert",
     popularity: 104,
     category: "to-pdf", accepts: ".xlsx", outputLabel: "converted.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pptx-to-pdf-convert", icon: Presentation, name: "PowerPoint to PDF",
@@ -771,6 +843,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "powerpoint slides deck convert",
     popularity: 105,
     category: "to-pdf", accepts: ".pptx", outputLabel: "converted.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "txt-to-pdf", icon: Type, name: "Text to PDF",
@@ -781,6 +854,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "text plain convert",
     popularity: 114,
     category: "to-pdf", accepts: ".txt", outputLabel: "converted.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "stamp-pdf", icon: Stamp, name: "PDF Stamp",
@@ -791,6 +865,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "draft confidential approved rubber stamp",
     popularity: 39,
     category: "edit", accepts: ".pdf", outputLabel: "stamped.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "esign-pdf", icon: PenLine, name: "E-Sign PDF",
@@ -801,6 +876,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "electronic signature docusign hellosign",
     popularity: 32,
     category: "edit", accepts: ".pdf", outputLabel: "signed.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "extract-tables", icon: Table, name: "PDF Table Extractor",
@@ -811,6 +887,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "table csv rows columns data scrape",
     popularity: 139,
     category: "from-pdf", accepts: ".pdf", outputLabel: "tables.csv",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-markdown", icon: Code2, name: "PDF to Markdown",
@@ -821,6 +898,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "md markdown github readme docs",
     popularity: 138,
     category: "from-pdf", accepts: ".pdf", outputLabel: "document.md",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "whiteout-pdf", icon: Eraser, name: "White-Out / Eraser",
@@ -831,6 +909,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "erase delete redact white cover",
     popularity: 40,
     category: "edit", accepts: ".pdf", outputLabel: "whiteout.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "annotate-pdf", icon: Highlighter, name: "Annotate PDF",
@@ -841,6 +920,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "notes comment markup pen",
     popularity: 34,
     category: "edit", accepts: ".pdf", outputLabel: "annotated.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "highlight-pdf", icon: Highlighter, name: "Highlight PDF",
@@ -851,6 +931,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "mark yellow underline find",
     popularity: 35,
     category: "edit", accepts: ".pdf", outputLabel: "highlighted.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "summarize-pdf", icon: Sparkles, name: "Summarize PDF (AI)",
@@ -861,6 +942,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "ai summary tldr abstract synopsis",
     popularity: 164,
     category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "summary.txt",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "smart-redact", icon: ShieldCheck, name: "Smart Redact (AI)",
@@ -871,6 +953,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "censor blackout privacy pii hide name email",
     popularity: 73,
     category: "security", clientOnly: false, byok: true, accepts: ".pdf", outputLabel: "redacted.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "chat-with-pdf", icon: MessagesSquare, name: "Chat with PDF (AI)",
@@ -881,6 +964,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "ask pdf chat document ai question answer chatpdf talk",
     popularity: 30,
     category: "advanced", clientOnly: true, byok: true, accepts: ".pdf", outputLabel: "answer.txt",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "add-shapes", icon: Shapes, name: "Add Shapes to PDF",
@@ -891,6 +975,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "rectangle circle ellipse line polygon",
     popularity: 42,
     category: "edit", accepts: ".pdf", outputLabel: "shapes.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "set-permissions", icon: Shield, name: "PDF Permissions",
@@ -901,6 +986,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "owner password disable copy print",
     popularity: 77,
     category: "security", accepts: ".pdf", outputLabel: "permissions.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "add-attachment", icon: FileBox, name: "Add Attachment",
@@ -911,6 +997,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "embed file attach inside pdf",
     popularity: 45,
     category: "edit", accepts: ".pdf", outputLabel: "with_attachment.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "json-to-pdf", icon: Braces, name: "JSON to PDF",
@@ -921,6 +1008,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "json convert document",
     popularity: 120,
     category: "to-pdf", accepts: ".json", outputLabel: "document.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "xml-to-pdf", icon: FileCode, name: "XML to PDF",
@@ -931,6 +1019,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "xml convert document",
     popularity: 121,
     category: "to-pdf", accepts: ".xml", outputLabel: "document.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "epub-to-pdf", icon: BookOpen, name: "EPUB to PDF",
@@ -941,6 +1030,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "ebook kindle to pdf",
     popularity: 117,
     category: "to-pdf", accepts: ".epub", outputLabel: "book.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "rtf-to-pdf", icon: FileText, name: "RTF to PDF",
@@ -951,6 +1041,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "rich text convert",
     popularity: 118,
     category: "to-pdf", accepts: ".rtf", outputLabel: "document.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Advanced Editing ────────────────────────────────────────────────────────
@@ -963,6 +1054,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "links clickable url anchor reference",
     popularity: 38,
     category: "edit", accepts: ".pdf", outputLabel: "linked.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "form-creator", icon: ClipboardList, name: "Form Creator",
@@ -973,6 +1065,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "fillable form fields acroform text checkbox",
     popularity: 170,
     category: "advanced", accepts: ".pdf", outputLabel: "form.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "transparent-background", icon: Droplets, name: "Transparent Background",
@@ -983,6 +1076,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "alpha clear see through transparency",
     popularity: 44,
     category: "edit", accepts: ".pdf", outputLabel: "transparent.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "invert-colors", icon: Moon, name: "Invert Colors",
@@ -993,6 +1087,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "negative dark mode reverse colors",
     popularity: 61,
     category: "optimize", accepts: ".pdf", outputLabel: "inverted.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   {
@@ -1005,6 +1100,7 @@ const _toolsRaw: Tool[] = [
     popularity: 45,
     clientOnly: true, byok: true,
     category: "advanced", accepts: ".pdf", outputLabel: "translated text",
+    lastReviewed: "2026-09-18",
   },
 
   {
@@ -1016,6 +1112,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove bates delete bates strip bates numbering legal production stamp discovery unstamp",
     popularity: 82,
     category: "security", accepts: ".pdf", outputLabel: "unstamped.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   {
@@ -1027,6 +1124,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "accessibility a11y pdfua pdf/ua wcag section 508 ada screen reader tagged alt text compliance audit",
     popularity: 60,
     category: "security", accepts: ".pdf", outputLabel: "report",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Security & Forensics ────────────────────────────────────────────────────
@@ -1039,6 +1137,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "pdfa archival iso validation check",
     popularity: 80,
     category: "security", accepts: ".pdf", outputLabel: "report",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "verify-signature", icon: ShieldCheck, name: "Verify Digital Signature",
@@ -1049,6 +1148,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "digital signature check verify authentic",
     popularity: 79,
     category: "security", accepts: ".pdf", outputLabel: "verification report",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "sanitize-pdf", icon: Sparkles, name: "Sanitize Document",
@@ -1059,6 +1159,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove javascript scripts malware safe",
     popularity: 78,
     category: "security", accepts: ".pdf", outputLabel: "sanitized.pdf",
+    lastReviewed: "2026-09-18",
   },
 
   // ── Page Order ─────────────────────────────────────────────────────────────
@@ -1071,6 +1172,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "order backwards last first invert",
     popularity: 16,
     category: "organize", accepts: ".pdf", outputLabel: "reversed.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "booklet-pdf", icon: BookOpenCheck, name: "PDF Booklet",
@@ -1081,6 +1183,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "imposition saddle stitch print layout",
     popularity: 21,
     category: "organize", accepts: ".pdf", outputLabel: "booklet.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "batch-compress-pdf", icon: Minimize2, name: "Batch Compress PDF",
@@ -1091,6 +1194,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "bulk multiple zip many",
     popularity: 60,
     category: "optimize", accepts: ".pdf", outputLabel: "compressed_pdfs.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-page-counter", icon: Hash, name: "PDF Page Counter",
@@ -1101,6 +1205,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "count pages quantity number",
     popularity: 166,
     category: "advanced", accepts: ".pdf", outputLabel: "page counts",
+    lastReviewed: "2026-09-18",
   },
 
   // ── v1.2.0 additions ──────────────────────────────────────────────────────
@@ -1113,6 +1218,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "linearize fast web view streaming",
     popularity: 59,
     category: "optimize", accepts: ".pdf", outputLabel: "web-optimized.pdf",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "split-by-text", icon: ScanText, name: "Split by Text",
@@ -1123,6 +1229,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "by phrase by string search divider",
     popularity: 19,
     category: "organize", accepts: ".pdf", outputLabel: "split-by-text.zip",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-html", icon: FileCode, name: "PDF to HTML",
@@ -1133,6 +1240,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "web html web export",
     popularity: 137,
     category: "from-pdf", accepts: ".pdf", outputLabel: "document.html",
+    lastReviewed: "2026-09-18",
   },
   {
     slug: "pdf-to-rtf", icon: Type, name: "PDF to RTF",
@@ -1143,6 +1251,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "rich text format word legacy",
     popularity: 140,
     category: "from-pdf", accepts: ".pdf", outputLabel: "document.rtf",
+    lastReviewed: "2026-09-18",
   },
 ];
 
