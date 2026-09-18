@@ -52,6 +52,19 @@ describe("static SEO files", () => {
         expect(robots).not.toMatch(/^\s*Disallow:\s*\/assets\/?\s*$/m);
     });
 
+    it("emits a priority for every sitemap URL, with the priority tools ahead of the rest", () => {
+        const sitemap = readFileSync(join(root, "public/sitemap.xml"), "utf8");
+        const urls = [...sitemap.matchAll(/<url><loc>([^<]+)<\/loc><lastmod>[^<]+<\/lastmod><priority>([\d.]+)<\/priority><\/url>/g)];
+        expect(urls.length).toBe((sitemap.match(/<url>/g) || []).length);
+        const priority = Object.fromEntries(urls.map(([, url, value]) => [url.replace("https://privatools.me", "") || "/", Number(value)]));
+        expect(priority["/"]).toBe(1);
+        expect(priority["/tools"]).toBe(0.9);
+        expect(priority["/tool/merge-pdf"]).toBe(0.8);
+        expect(priority["/tool/reverse-pdf"]).toBe(0.6);
+        expect(priority["/blog"]).toBe(0.5);
+        expect(priority["/about"]).toBe(0.4);
+    });
+
     it("does not overclaim that every tool is browser-only", () => {
         const indexHtml = readFileSync(join(root, "index.html"), "utf8");
         const manifest = JSON.parse(readFileSync(join(root, "public/manifest.json"), "utf8")) as { description: string };

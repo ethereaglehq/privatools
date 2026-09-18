@@ -210,23 +210,36 @@ GENERATED_SITEMAP = seo_meta._CONTENT_DIR / "sitemap.xml"
 _NS = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
 
 
-def _entries() -> dict[str, str | None]:
+def _priority(path: str, slug: str | None = None) -> str:
+    if path == "":
+        return "1.0"
+    if path == "/tools":
+        return "0.9"
+    if slug is not None:
+        row = (seo_meta._load_manifest(str(seo_meta._TOOL_JSON), seo_meta.blog_content_mtime_ns()) or {}).get(slug) or {}
+        return f"{float(row.get('priority') or 0.6):.1f}"
+    if path.startswith(("/blog", "/compare")):
+        return "0.5"
+    return "0.4"
+
+
+def _entries() -> dict[str, tuple[str | None, str]]:
     public_pages = ("/", "/about", "/privacy", "/terms", "/batch", "/pipeline",
                     "/security", "/support", "/status", "/compare", "/blog", "/tools", "/trust", "/api", "/ai")
-    rows = {BASE_URL + (path if path != "/" else ""): STATIC_LAST_REVIEWED
+    rows = {BASE_URL + (path if path != "/" else ""): (STATIC_LAST_REVIEWED, _priority(path if path != "/" else ""))
             for path in public_pages if path not in seo_meta.NOINDEX_PATHS}
     for slug, post in seo_meta._blog_posts().items():
-        rows[f"{BASE_URL}/blog/{slug}"] = seo_meta._reviewed_date(post)
+        rows[f"{BASE_URL}/blog/{slug}"] = (seo_meta._reviewed_date(post), _priority(f"/blog/{slug}"))
     for slug, comparison in seo_meta._comparisons().items():
-        rows[f"{BASE_URL}/compare/{slug}"] = seo_meta._reviewed_date(comparison)
+        rows[f"{BASE_URL}/compare/{slug}"] = (seo_meta._reviewed_date(comparison), _priority(f"/compare/{slug}"))
     pdf, nonpdf = seo_meta._tool_registries()
     for prefix, tools in (("tool", pdf), ("tools", nonpdf)):
         for slug in tools:
-            rows[f"{BASE_URL}/{prefix}/{slug}"] = _last_reviewed_for(slug)
+            rows[f"{BASE_URL}/{prefix}/{slug}"] = (_last_reviewed_for(slug), _priority(f"/{prefix}/{slug}", slug))
     return rows
 
 
-def _generated_body(expected: dict[str, str | None]) -> bytes | None:
+def _generated_body(expected: dict[str, tuple[str | None, str]]) -> bytes | None:
     """Only serve a generated sitemap that matches the current public route set."""
     try:
         body = GENERATED_SITEMAP.read_bytes()
@@ -259,9 +272,9 @@ def _render_sitemap(revision: int, generated_mtime: int) -> bytes:
     if generated is not None:
         return generated
     entries = []
-    for url, lastmod in rows.items():
+    for url, (lastmod, priority) in rows.items():
         modified = f"<lastmod>{lastmod}</lastmod>" if lastmod else ""
-        entries.append(f"  <url><loc>{escape(url)}</loc>{modified}</url>")
+        entries.append(f"  <url><loc>{escape(url)}</loc>{modified}<priority>{priority}</priority></url>")
     return ('<?xml version="1.0" encoding="UTF-8"?>\n'
             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
             + "\n".join(entries) + "\n</urlset>").encode("utf-8")

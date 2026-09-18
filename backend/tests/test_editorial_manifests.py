@@ -191,3 +191,12 @@ def test_internal_editorial_sources_are_visible_and_canonical(manifests):
     graph = seo.get_jsonld_for_path('/blog/updated-guide')['@graph']
     post = next(node for node in graph if node.get('@type') == 'BlogPosting')
     assert post['citation'] == ['https://privatools.me/trust', 'https://privatools.me/privacy']
+
+
+def test_fallback_sitemap_emits_priority_from_the_manifest(tmp_path, monkeypatch):
+    monkeypatch.setattr(sitemap, "GENERATED_SITEMAP", tmp_path / "missing.xml")
+    sitemap._render_sitemap.cache_clear()
+    body = sitemap._build_sitemap_xml("2026-09-18").decode("utf-8")
+    assert "<loc>https://privatools.me/tool/merge-pdf</loc><lastmod>" in body
+    assert body.count("<priority>") == body.count("<url>")
+    assert "<loc>https://privatools.me</loc><lastmod>2026-09-14</lastmod><priority>1.0</priority>" in body

@@ -1,6 +1,6 @@
 // One source feeds visible pages, server-rendered articles, sitemap, RSS, and
 // the optional LLM reference. llms.txt is a convenience, not a ranking signal.
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readContentArray } from './content-data.mjs';
@@ -9,6 +9,9 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const BASE = 'https://privatools.me';
 // Change only when the corresponding content is materially reviewed.
 const SITE_REVIEWED = '2026-09-14';
+const { highPriorityTools } = JSON.parse(readFileSync(join(root, 'src/data/sitemap-priority.json'), 'utf8'));
+const HIGH = new Set(highPriorityTools);
+const priorityFor = path => path === '' ? 1 : path === '/tools' ? 0.9 : path.startsWith('/tool/') || path.startsWith('/tools/') ? (HIGH.has(path.split('/').pop()) ? 0.8 : 0.6) : path.startsWith('/blog') || path.startsWith('/compare') ? 0.5 : 0.4;
 const read = (name, variable, ignored) => readContentArray(join(root, `src/data/${name}.ts`), variable, ignored);
 const pdfTools = read('tools', '_toolsRaw', ['icon']);
 const nonPdfTools = read('non-pdf-tools', '_nonPdfToolsRaw', ['icon']);
@@ -64,6 +67,7 @@ for (const post of blogPosts) {
 write('llms-full.txt', full.replace(/[ \t]+$/gm, '').trimEnd() + '\n');
 write('blog-content.json', JSON.stringify(blogPosts, null, 2));
 write('compare-content.json', JSON.stringify(comparisons, null, 2));
+for (const tool of tools) tool.priority = priorityFor(tool.path);
 write('tool-content.json', JSON.stringify(tools, null, 2));
 
 // Personal state and authentication routes deliberately stay out of discovery.
@@ -73,14 +77,14 @@ const entries = [
   ...tools.map(tool => ({ path: tool.path, lastmod: tool.lastReviewed })),
   ...blogPosts.map(post => ({ path: `/blog/${post.slug}`, lastmod: modified(post) })),
   ...comparisons.map(comparison => ({ path: `/compare/${comparison.slug}`, lastmod: modified(comparison) })),
-];
+].map(entry => ({ ...entry, priority: priorityFor(entry.path) }));
 const paths = new Set();
 for (const entry of entries) {
   if (paths.has(entry.path)) throw new Error(`Duplicate sitemap path: ${entry.path}`);
   paths.add(entry.path);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(entry.lastmod)) throw new Error(`Invalid review date: ${entry.path}`);
 }
-write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.map(entry => `  <url><loc>${xml(BASE + entry.path)}</loc><lastmod>${entry.lastmod}</lastmod></url>`).join('\n')}\n</urlset>\n`);
+write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${entries.map(entry => `  <url><loc>${xml(BASE + entry.path)}</loc><lastmod>${entry.lastmod}</lastmod><priority>${entry.priority.toFixed(1)}</priority></url>`).join('\n')}\n</urlset>\n`);
 
 const feed = blogPosts.map(post => `    <item><title>${xml(post.title)}</title><link>${BASE}/blog/${post.slug}</link><guid isPermaLink="true">${BASE}/blog/${post.slug}</guid><description>${xml(post.description)}</description><pubDate>${new Date(`${post.publishedAt}T12:00:00Z`).toUTCString()}</pubDate></item>`).join('\n');
 write('feed.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0"><channel><title>PrivaTools Journal</title><link>${BASE}/blog</link><description>Practical file guides, with processing details and sources.</description><language>en</language>\n${feed}\n</channel></rss>\n`);
