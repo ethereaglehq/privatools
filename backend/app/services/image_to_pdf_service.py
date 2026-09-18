@@ -21,13 +21,6 @@ from ..utils.cleanup import ensure_temp_dir, get_temp_path
 
 logger = logging.getLogger(__name__)
 
-# Register HEIC/HEIF support so PIL (and therefore ReportLab) can open .heic/.heif
-try:
-    from pillow_heif import register_heif_opener  # type: ignore
-    register_heif_opener()
-except ImportError:  # pragma: no cover — falls back to JPEG/PNG/etc only
-    pass
-
 _HEIC_EXTS = {".heic", ".heif"}
 _SVG_EXTS = {".svg"}
 
