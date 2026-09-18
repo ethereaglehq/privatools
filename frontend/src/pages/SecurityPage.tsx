@@ -15,7 +15,6 @@ import {
   ArrowUp,
   Check,
   FileText,
-  Github,
   History,
   KeyRound,
   Link2,

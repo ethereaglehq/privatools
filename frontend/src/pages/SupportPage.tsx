@@ -6,7 +6,8 @@
  * what arrives, and the page says so rather than implying a support desk.
  */
 import { Link } from "react-router-dom";
-import { Bug, Github, LifeBuoy, Mail, ShieldAlert } from "lucide-react";
+import { Bug, LifeBuoy, Mail, ShieldAlert } from "lucide-react";
+import { Github } from "@/components/icons/github";
 import { TOTAL_TOOL_COUNT } from "@/data/site-stats";
 
 const CHANNELS = [

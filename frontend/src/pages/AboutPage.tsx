@@ -12,10 +12,11 @@
 import { Link } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Shield, Server, Trash2, Eye, Lock, Github, Globe, Code, Heart, EyeOff, Zap, Users,
+  Shield, Server, Trash2, Eye, Lock, Globe, Code, Heart, EyeOff, Zap, Users,
   ArrowRight, Cpu, Mail, FileCheck, Sparkles, Upload, ShieldCheck, ChevronDown,
   ExternalLink, GitCommit, FileText,
 } from "lucide-react";
+import { Github } from "@/components/icons/github";
 import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { blogPosts } from "@/data/blog";
