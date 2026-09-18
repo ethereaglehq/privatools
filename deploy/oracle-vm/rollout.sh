@@ -19,8 +19,12 @@
 # traffic through a temporary second compose project, privatools-interim, on
 # 127.0.0.1:8001:
 #
-#   0. Make nginx serve what its upstream file names (a killed run can leave
-#      the file renamed but not reloaded) and retire any leftover interim.
+#   0. Finish a switch a killed run left half done (renamed, perhaps not
+#      reloaded) by re-applying the upstream; otherwise leave the shared nginx
+#      alone. If the port the file names has not been ready for
+#      RECONCILE_WAIT seconds, fall back only to a canonical container that
+#      passes the page probe again, never to an interim that may not have
+#      passed the gates. Then retire any leftover interim.
 #   1. Start the interim container on the new image beside the live one. Wait
 #      for /readyz to report BUILD_SHA and for the real-page probe
 #      (scripts/ci/probe-image.py --running) to pass. Hand the async job queue
@@ -69,6 +73,10 @@ NGINX_PID_FILE="${NGINX_PID_FILE:-/run/nginx.pid}"
 PUBLIC_READY_URL="${PUBLIC_READY_URL:-https://privatools.me/readyz}"
 PUBLIC_RESOLVE="${PUBLIC_RESOLVE:-privatools.me:443:127.0.0.1}"
 PROBE_SCRIPT="${PROBE_SCRIPT:-${REPO_DIR}/scripts/ci/probe-image.py}"
+# The page probe asks for the public site by name, as nginx does, so a release
+# whose TRUSTED_HOSTS rejects it fails the gate instead of the check through
+# nginx after a switch.
+PROBE_HOST="${PROBE_HOST:-privatools.me}"
 PYTHON="${PYTHON:-python3}"
 # The job supervisor's status, inside a container; standard library only, so
 # polling it costs about 0.06 CPU-s instead of the app's 1 s of imports.
@@ -78,6 +86,9 @@ STATUS_MODULE="${STATUS_MODULE:-backend.app.job_handover}"
 READY_TIMEOUT="${READY_TIMEOUT:-180}"
 # A reload must visibly retire nginx's previous worker generation this fast.
 SWITCH_VERIFY="${SWITCH_VERIFY:-10}"
+# A port nginx serves counts as down only after failing /readyz for this long:
+# one failure can be a busy uvicorn's 503 or a slow boot after a reboot.
+RECONCILE_WAIT="${RECONCILE_WAIT:-30}"
 # nginx passes a request to its upstream only after buffering the whole body,
 # so an upload that began before a switch can still reach the old container
 # from a retiring nginx worker. Keep the old container until that nginx
@@ -107,6 +118,12 @@ STATE_DIR="${STATE_DIR:-$REPO_DIR}"
 PREVIOUS_FILE="${PREVIOUS_FILE:-${STATE_DIR}/.privatools-deploy.previous}"
 RESUME_FILE="${RESUME_FILE:-${STATE_DIR}/.privatools-deploy.resume}"
 RESUME_BACKOFF="${RESUME_BACKOFF:-600}"
+# A switch under way: written before the helper runs, removed once nginx is
+# seen to have reloaded. A run that dies in between leaves it, and the next run
+# re-applies the upstream, because nginx may still route to the port the file
+# no longer names. Nothing else reloads the shared nginx. It also lists the
+# worker generation that switch retired, whose late requests a drain waits for.
+SWITCH_FILE="${SWITCH_FILE:-${STATE_DIR}/.privatools-deploy.switching}"
 LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
 POLL="${POLL:-1}"
 
@@ -167,9 +184,40 @@ mount_of() {  # mount_of CONTAINER DESTINATION -> named volume mounted there
 
 image_id() { docker image inspect -f '{{.Id}}' "$1" 2>/dev/null || true; }
 
-is_running() { [[ -n "${1:-}" && "$(docker inspect -f '{{.State.Running}}' "$1" 2>/dev/null || true)" == true ]]; }
+container_state() {  # CONTAINER -> "true|false RESTARTS", or "gone"; nothing when Docker could not say
+    local out
+    [[ -n "${1:-}" ]] || { echo gone; return 0; }
+    if out="$(docker inspect -f '{{.State.Running}} {{.RestartCount}}' "$1" 2>&1)"; then
+        printf '%s\n' "$out"
+    elif [[ "$out" == *"No such"* ]]; then
+        echo gone
+    fi
+    return 0
+}
 
-restarts_of() { docker inspect -f '{{.RestartCount}}' "$1" 2>/dev/null || echo gone; }
+settled_state() {  # container_state, asked again while the Docker CLI fails: one error proves nothing
+    local state attempt
+    for attempt in 1 2 3; do
+        state="$(container_state "${1:-}")"
+        if [[ -n "$state" ]]; then
+            printf '%s\n' "$state"
+            return 0
+        fi
+        (( attempt < 3 )) && sleep "$POLL"
+    done
+    return 0
+}
+
+is_running() { [[ "$(settled_state "${1:-}")" == true* ]]; }
+
+restarts_of() {  # CONTAINER -> its restart count, or "unknown" when Docker could not say
+    local state
+    state="$(settled_state "$1")"
+    case "$state" in
+        true\ *|false\ *) printf '%s\n' "${state#* }" ;;
+        *) echo unknown ;;
+    esac
+}
 
 readyz_sha() {  # readyz_sha URL [CURL_ARGS...] -> build_sha when the body says ready
     local body
@@ -220,8 +268,20 @@ wait_ready() {  # wait_ready CONTAINER PORT SHA
 }
 
 page_probe() {  # page_probe CONTAINER PORT SHA: real pages, not only /readyz
-    log "probing real pages on 127.0.0.1:$2"
-    "$PYTHON" "$PROBE_SCRIPT" --running "$1" --url "http://127.0.0.1:$2" --sha "$3" 2>&1 | sed 's/^/    /'
+    log "probing real pages on 127.0.0.1:$2 as ${PROBE_HOST}"
+    # Older probes ignore the variable and send Host: 127.0.0.1, as before.
+    PRIVATOOLS_PROBE_HOST="$PROBE_HOST" \
+        "$PYTHON" "$PROBE_SCRIPT" --running "$1" --url "http://127.0.0.1:$2" --sha "$3" 2>&1 | sed 's/^/    /'
+}
+
+serving_within() {  # serving_within PORT SECONDS: /readyz answered ready at least once in that time
+    local deadline
+    deadline=$(( $(now) + $2 ))
+    while :; do
+        [[ -n "$(ready_sha "$1")" ]] && return 0
+        (( $(now) >= deadline )) && return 1
+        sleep "$POLL"
+    done
 }
 
 show_logs() {
@@ -236,13 +296,6 @@ nginx_workers() {  # PIDs of nginx's current worker generation (not those alread
     [[ "$master" =~ ^[0-9]+$ ]] || return 0
     ps -o pid=,args= --ppid "$master" 2>/dev/null \
         | awk 'NF == 4 && $2 == "nginx:" && $3 == "worker" && $4 == "process" { print $1 }' || true
-}
-
-nginx_retiring() {  # PIDs of nginx workers from any earlier generation, still shutting down
-    local master
-    master="$(cat "$NGINX_PID_FILE" 2>/dev/null || true)"
-    [[ "$master" =~ ^[0-9]+$ ]] || return 0
-    ps -o pid=,args= --ppid "$master" 2>/dev/null | awk '/nginx: worker process is shutting down/ { print $1 }' || true
 }
 
 alive_workers() {  # alive_workers PID...: those still nginx workers (a reused PID is not)
@@ -266,6 +319,20 @@ switch_to() {  # switch_to PORT: the helper, then proof that nginx reloaded
     local deadline
     read -ra command <<<"$NGINX_SWITCH"
     mapfile -t retired_workers < <(nginx_workers)
+    # Recorded first, so a run that dies from here on is repaired by the next
+    # one (SWITCH_FILE). Kept on every failure below: nginx may not match.
+    # Workers an earlier unfinished switch retired stay listed while they live.
+    local -a earlier=()
+    if [[ -f "$SWITCH_FILE" ]]; then
+        local rest=""
+        read -r _ rest < "$SWITCH_FILE" || true
+        read -ra earlier <<<"$rest"
+        mapfile -t earlier < <(alive_workers "${earlier[@]}")
+    fi
+    if ! printf '%s %s\n' "$1" "${retired_workers[*]} ${earlier[*]}" > "$SWITCH_FILE" 2>/dev/null; then
+        log "cannot record the switch in ${SWITCH_FILE}; not switching nginx"
+        return 1
+    fi
     log "switching nginx to 127.0.0.1:$1"
     if ! "${command[@]}" "$1"; then
         log "nginx switch to $1 failed; the helper kept the previous upstream"
@@ -277,6 +344,7 @@ switch_to() {  # switch_to PORT: the helper, then proof that nginx reloaded
     fi
     if (( ${#retired_workers[@]} == 0 )); then
         log "note: nginx's worker processes are not visible (${NGINX_PID_FILE}); the reload is unverified"
+        rm -f "$SWITCH_FILE"
         return 0
     fi
     deadline=$(( $(now) + SWITCH_VERIFY ))
@@ -287,27 +355,51 @@ switch_to() {  # switch_to PORT: the helper, then proof that nginx reloaded
         fi
         sleep "$POLL"
     done
+    rm -f "$SWITCH_FILE"
 }
 
-reconcile_nginx() {  # reconcile_nginx LIVE: make nginx really serve a ready upstream; 0, 2 or 4
-    local live="$1" other
-    if [[ "$live" == "$CANONICAL_PORT" ]]; then other="$INTERIM_PORT"; else other="$CANONICAL_PORT"; fi
-    if [[ -n "$(ready_sha "$live")" ]]; then
-        # Re-applied on every run: a run killed between the helper's rename and
-        # its reload leaves the file naming a port nginx does not serve.
-        switch_to "$live" && return 0
-        # The helper put the old file back, or nginx did not reload.
+reconcile_nginx() {  # reconcile_nginx LIVE: nginx serves a port that passed the gates; 0, 2 or 4
+    local live="$1" pending=false rest=""
+    local -a interrupted=()
+    retired_workers=()
+    if [[ -f "$SWITCH_FILE" ]]; then
+        pending=true
+        # "PORT PID...": the workers the interrupted switch retired.
+        read -r _ rest < "$SWITCH_FILE" || true
+        read -ra interrupted <<<"${rest:-}"
+    fi
+    if serving_within "$live" "$RECONCILE_WAIT"; then
+        # nginx is reloaded only to finish a switch a killed run left half done
+        # (renamed but maybe not reloaded); otherwise the file is what it serves.
+        $pending || return 0
+        log "a previous switch to ${live} was not seen to take effect; re-applying the upstream"
+        if switch_to "$live"; then
+            mapfile -t -O "${#retired_workers[@]}" retired_workers < <(alive_workers "${interrupted[@]}")
+            return 0
+        fi
         log "could not re-apply the upstream (${live}); nginx may not match its file; retry later"
         return 2
     fi
-    if [[ -n "$(ready_sha "$other")" ]]; then
-        log "the upstream names ${live}, where nothing is ready; switching to ${other}, which serves"
-        switch_to "$other" && return 0
-        log "CRITICAL: could not switch nginx to ${other}, the only port that serves"
-        return 4
+    # The port the file names has not answered ready for RECONCILE_WAIT seconds.
+    # Only the canonical slot is a fallback: it only ever runs an image that
+    # passed the gates, and it must pass the page probe again now. An interim
+    # the file does not name may never have passed them (a run killed in
+    # phase 1), so it never gets traffic here.
+    if [[ "$live" == "$INTERIM_PORT" ]]; then
+        local canonical sha
+        canonical="$(container_of "$COMPOSE_PROJECT")"
+        sha="$(ready_sha "$CANONICAL_PORT")"
+        if [[ -n "$sha" && -n "$canonical" ]] && page_probe "$canonical" "$CANONICAL_PORT" "$sha"; then
+            log "the upstream names the interim container, not ready for ${RECONCILE_WAIT}s; switching to the canonical container, which serves"
+            switch_to "$CANONICAL_PORT" && return 0
+            log "CRITICAL: could not switch nginx to ${CANONICAL_PORT}, the only port that serves"
+            return 4
+        fi
+    elif [[ -n "$(ready_sha "$INTERIM_PORT")" ]]; then
+        log "CRITICAL: the canonical container has not been ready for ${RECONCILE_WAIT}s; the interim container never passed this run's gates, so it gets no traffic; a gated release will replace both"
+        return 0
     fi
-    log "CRITICAL: nothing is ready on ${live} or ${other}; continuing, since a ready release would fix this"
-    retired_workers=()
+    log "CRITICAL: nothing that passed the gates is ready; continuing, since a ready release would fix this"
     return 0
 }
 
@@ -327,13 +419,8 @@ connections() {  # client connections open to the app in CONTAINER (loopback, i.
 drain_http() {  # drain_http CONTAINER RETIRED_NGINX_PID...: 0 drained, 4 nginx still routes to it
     local container="$1" tracked start elapsed busy old quiet_since="" routed_since=""
     shift
-    if (( $# > 0 )); then
-        # Also wait for older generations still shutting down, such as those a
-        # killed run retired: their late requests are not misrouting.
-        local -a lingering
-        mapfile -t lingering < <(nginx_retiring)
-        set -- "$@" "${lingering[@]}"
-    fi
+    # Only the workers this deploy retired, never other sites' reloads: their
+    # generations never send requests here, and some live for hours.
     tracked=$#
     start="$(now)"
     while :; do
@@ -363,7 +450,7 @@ drain_http() {  # drain_http CONTAINER RETIRED_NGINX_PID...: 0 drained, 4 nginx 
             fi
         elif [[ -n "$quiet_since" ]] && (( $(now) - quiet_since >= DRAIN_QUIET )) \
             && (( tracked == 0 || elapsed >= DRAIN_MAX )); then
-            log "${container:0:12} drained after ${elapsed}s (${old} retired nginx workers still open elsewhere)"
+            log "${container:0:12} drained after ${elapsed}s (${old} of the nginx workers it retired still open, held by other connections)"
             return 0
         elif (( elapsed >= DRAIN_MAX + DRAIN_EXTRA )); then
             if (( tracked > 0 )); then
@@ -394,10 +481,22 @@ print(flag(state.get("enabled")), local.get("role") or "none", flag(local.get("p
 ' "$json" 2>/dev/null
 }
 
+worker_view_retry() {  # worker_view, asked again while it fails (3 tries): one Docker error proves nothing
+    local attempt view
+    for attempt in 1 2 3; do
+        if view="$(worker_view "$1")"; then
+            printf '%s\n' "$view"
+            return 0
+        fi
+        (( attempt < 3 )) && sleep "$POLL"
+    done
+    return 1
+}
+
 detect_jobs() {  # detect_jobs CONTAINER...: are async jobs enabled in this deployment?
     local container view
     for container in "$@"; do
-        if view="$(worker_view "$container")"; then
+        if view="$(worker_view_retry "$container")"; then
             [[ "${view%% *}" == true ]] && jobs_enabled=true || jobs_enabled=false
             return 0
         fi
@@ -405,9 +504,13 @@ detect_jobs() {  # detect_jobs CONTAINER...: are async jobs enabled in this depl
     jobs_enabled=false
 }
 
+predates_handover() {  # CONTAINER: running, but no status command however often asked (v2.6.1)
+    is_running "$1" && ! worker_view_retry "$1" >/dev/null
+}
+
 signal_if() {  # signal_if CONTAINER SIGNAL drainable|passive: 0 when sent
     local view role passive alive
-    view="$(worker_view "$1")" || return 1
+    view="$(worker_view_retry "$1")" || return 1
     read -r _ role passive alive _ _ <<<"$view"
     # A supervisor writes its state (alive) only after installing its handlers.
     [[ "$alive" == true ]] || return 1
@@ -420,74 +523,113 @@ signal_if() {  # signal_if CONTAINER SIGNAL drainable|passive: 0 when sent
     docker kill --signal "$2" "$1" >/dev/null 2>&1
 }
 
-wait_released() {  # wait_released FROM: until its supervisor holds no job lock
-    local deadline view role
+release_queue() {  # release_queue FROM: drain FROM's supervisor until it holds no job lock; 1 after HANDOVER_MAX
+    local from="$1" deadline view role alive state asked=false
     deadline=$(( $(now) + HANDOVER_MAX ))
     while (( $(now) < deadline )); do
-        view="$(worker_view "$1")" || return 0      # stopped or gone: holds nothing
-        read -r _ role _ _ _ _ <<<"$view"
-        [[ "$role" != active && "$role" != draining ]] && return 0
+        if view="$(worker_view "$from")"; then
+            read -r _ role _ alive _ _ <<<"$view"
+            [[ "$role" == active || "$role" == draining ]] || return 0
+            # Asked once it can take the signal; again if the first attempt failed.
+            if ! $asked && [[ "$alive" == true ]] && docker kill --signal SIGUSR1 "$from" >/dev/null 2>&1; then
+                asked=true
+                log "asked the job supervisor in ${from:0:12} to finish its current job and hand over the queue"
+            fi
+        else
+            # Stopped or gone holds nothing. A failed Docker call proves
+            # nothing: ask again.
+            state="$(container_state "$from")"
+            [[ "$state" == gone || "$state" == false\ * ]] && return 0
+        fi
         sleep "$POLL"
     done
     return 1
 }
 
+# Why confirm_active last failed: "restart" (its container restarted or
+# stopped, taking its web server with it), "inactive" (it answered, but did
+# not hold the queue) or "unknown" (Docker never let it answer).
+confirm_failure=""
+
 confirm_active() {  # confirm_active TO BASELINE_RESTARTS: holds the queue, keeps it, no restart
-    local to="$1" baseline="$2" deadline soak_until="" view role alive
+    local to="$1" baseline="$2" deadline limit soak_until="" state running restarts view role passive alive
+    local answered=false
     deadline=$(( $(now) + HANDOVER_CONFIRM ))
+    confirm_failure=""
     while :; do
-        if ! is_running "$to" || [[ "$(restarts_of "$to")" != "$baseline" ]]; then
-            log "the job supervisor of ${to:0:12} failed: its container restarted or stopped"
-            return 1
-        fi
-        view="$(worker_view "$to")" || view="false none false false -1 -1"
-        read -r _ role _ alive _ _ <<<"$view"
-        if [[ "$role" == active && "$alive" == true ]]; then
-            soak_until="${soak_until:-$(( $(now) + HANDOVER_SOAK ))}"
-            if (( $(now) >= soak_until )); then
-                log "the job supervisor in ${to:0:12} holds the queue"
-                return 0
+        # Every failed Docker call is asked again until the deadline; only an
+        # answer can fail the supervisor.
+        state="$(container_state "$to")"
+        if [[ -n "$state" ]]; then
+            read -r running restarts <<<"$state"
+            if [[ "$state" == gone || "$running" != true || "$restarts" != "$baseline" ]]; then
+                confirm_failure=restart
+                log "the job supervisor of ${to:0:12} failed: its container restarted or stopped"
+                return 1
             fi
-        elif [[ -n "$soak_until" ]]; then
-            log "the job supervisor of ${to:0:12} lost the queue within ${HANDOVER_SOAK}s"
-            return 1
-        elif (( $(now) >= deadline )); then
-            log "the job supervisor of ${to:0:12} did not take the queue within ${HANDOVER_CONFIRM}s"
+            if view="$(worker_view "$to")"; then
+                answered=true
+                read -r _ role passive alive _ _ <<<"$view"
+                if [[ "$role" == active && "$alive" == true ]]; then
+                    soak_until="${soak_until:-$(( $(now) + HANDOVER_SOAK ))}"
+                    if (( $(now) >= soak_until )); then
+                        log "the job supervisor in ${to:0:12} holds the queue"
+                        return 0
+                    fi
+                elif [[ -n "$soak_until" ]]; then
+                    confirm_failure=inactive
+                    log "the job supervisor of ${to:0:12} lost the queue within ${HANDOVER_SOAK}s"
+                    return 1
+                elif [[ "$passive" == true && "$alive" == true ]]; then
+                    # It is meant to take the queue: resume it, in case the
+                    # first SIGUSR2 was lost to a failed Docker call.
+                    docker kill --signal SIGUSR2 "$to" >/dev/null 2>&1 || true
+                fi
+            fi
+        fi
+        # The deadline is for taking the queue; a soak under way gets its own.
+        limit=$deadline
+        [[ -n "$soak_until" ]] && limit=$(( soak_until + HANDOVER_CONFIRM ))
+        if (( $(now) >= limit )); then
+            if [[ -n "$soak_until" ]] || ! $answered; then
+                confirm_failure=unknown
+                log "Docker did not let ${to:0:12}'s job supervisor be confirmed within ${HANDOVER_CONFIRM}s"
+            else
+                confirm_failure=inactive
+                log "the job supervisor of ${to:0:12} did not take the queue within ${HANDOVER_CONFIRM}s"
+            fi
             return 1
         fi
         sleep "$POLL"
     done
 }
 
-handover() {  # handover FROM TO BASELINE: 0 done, 1 TO cannot hold the queue, 2 FROM would not let go
+handover() {  # handover FROM TO BASELINE: 0 done, 1 TO cannot hold the queue, 2 FROM would not let go or Docker could not tell
     local from="$1" to="$2" baseline="$3"
     $jobs_enabled || return 0
-    if is_running "$from"; then
-        if signal_if "$from" SIGUSR1 drainable; then
-            log "asked the job supervisor in ${from:0:12} to finish its current job and hand over the queue"
-        fi
-        if ! wait_released "$from"; then
-            log "the job supervisor in ${from:0:12} still runs a job after ${HANDOVER_MAX}s"
-            return 2
-        fi
+    if is_running "$from" && ! release_queue "$from"; then
+        log "the job supervisor in ${from:0:12} still runs a job after ${HANDOVER_MAX}s"
+        return 2
     fi
     # A drained supervisor retakes the lock only once resumed.
     signal_if "$to" SIGUSR2 passive || true
-    confirm_active "$to" "$baseline" || return 1
+    confirm_active "$to" "$baseline" && return 0
+    [[ "$confirm_failure" == unknown ]] && return 2
+    return 1
 }
 
 give_back() {  # give_back FROM TO: after a failed handover, TO's supervisor resumes the queue
     $jobs_enabled || return 0
-    if is_running "$1" && signal_if "$1" SIGUSR1 drainable; then
-        wait_released "$1" || log "WARNING: ${1:0:12} still runs a job; stopping it requeues that job once"
+    if is_running "$1" && ! release_queue "$1"; then
+        log "WARNING: ${1:0:12} still runs a job; stopping it requeues that job once"
     fi
     if is_running "$2" && signal_if "$2" SIGUSR2 passive; then
         log "resumed the job supervisor in ${2:0:12}"
     fi
 }
 
-stop_when_idle() {  # stop_when_idle FROM TO: FROM's supervisor predates handover and cannot drain
-    local from="$1" to="$2" deadline idle_until view running queued
+stop_when_idle() {  # stop_when_idle FROM TO: FROM's supervisor predates handover and cannot drain; 1 if it would not stop
+    local from="$1" to="$2" deadline idle_until view running queued attempt
     $jobs_enabled && is_running "$from" || return 0
     deadline=$(( $(now) + HANDOVER_MAX ))
     idle_until=$(( $(now) + HANDOVER_IDLE_WAIT ))
@@ -503,8 +645,16 @@ stop_when_idle() {  # stop_when_idle FROM TO: FROM's supervisor predates handove
         fi
         sleep "$POLL"
     done
-    docker stop --time 45 "$from" >/dev/null 2>&1 || true
-    log "stopped ${from:0:12}, whose job supervisor predates handover (${running:-?} running, ${queued:-?} queued)"
+    # Its supervisor must really be gone, or the new one can never take the lock.
+    for attempt in 1 2; do
+        docker stop --time 45 "$from" >/dev/null 2>&1 || true
+        if ! is_running "$from"; then
+            log "stopped ${from:0:12}, whose job supervisor predates handover (${running:-?} running, ${queued:-?} queued)"
+            return 0
+        fi
+    done
+    log "${from:0:12} would not stop, and its job supervisor still holds the queue"
+    return 1
 }
 
 # ── the interim container ─────────────────────────────────────────────────────
@@ -570,6 +720,10 @@ recover_to_old() {  # recover_to_old CANONICAL INTERIM OLD_SHA: the new supervis
     (( status == 0 )) || return "$status"
     discard_interim        # first, so its supervisor cannot take the lock again
     if signal_if "$canonical" SIGUSR2 passive; then log "resumed the job supervisor in ${canonical:0:12}"; fi
+    if [[ "$confirm_failure" == unknown ]]; then
+        log "Docker could not confirm the new release's job supervisor; the previous release serves; retry later"
+        return 2
+    fi
     log "REJECTED: the new release's job supervisor could not hold the queue; the previous release serves"
     return 1
 }
@@ -589,6 +743,28 @@ recover_legacy() {  # recover_legacy CANONICAL INTERIM OLD_SHA: the same after t
     discard_interim
     log "REJECTED: the new release's job supervisor could not hold the queue; the previous release serves"
     return 1
+}
+
+legacy_handover() {  # legacy_handover CANONICAL INTERIM BASELINE OLD_IMAGE OLD_SHA: after the switch and drain; 0, or the run's exit status
+    local canonical="$1" interim="$2" baseline="$3" old_image="$4" old_sha="$5"
+    if ! stop_when_idle "$canonical" "$interim"; then
+        undo_switch "$canonical" "$interim"
+        return $?
+    fi
+    confirm_active "$interim" "$baseline" && return 0
+    show_logs "$interim"
+    if [[ "$confirm_failure" == restart ]]; then
+        # Its web server went down with its supervisor: bring the old release back.
+        recover_legacy "$canonical" "$interim" "$old_sha"
+        return $?
+    fi
+    # Its web server is up and serves. Stopping it to start the old release
+    # would be an outage; the old one is only stopped, and recorded for
+    # --rollback. The next run retries the queue.
+    record_replaced "$old_image" "$old_sha" || log "WARNING: the rollback record is stale"
+    mark_resume
+    log "DEGRADED: ${interim:0:12} serves, but its job supervisor has not confirmed the queue; the next run retries"
+    return 3
 }
 
 # ── phases ───────────────────────────────────────────────────────────────────
@@ -619,7 +795,11 @@ move_to_canonical() {  # move_to_canonical IMAGE SHA INTERIM: phase 2; 0, 3 or 4
 
     baseline="$(restarts_of "$canonical")"
     detect_jobs "$canonical" "$interim"
-    handover "$interim" "$canonical" "$baseline" || status=$?
+    if [[ "$baseline" == unknown ]]; then
+        status=2                    # Docker could not report it: as good as a failed handover
+    else
+        handover "$interim" "$canonical" "$baseline" || status=$?
+    fi
     if (( status != 0 )); then
         canonical_compose stop --timeout 10 "$SERVICE" >/dev/null 2>&1 || true
         give_back "$canonical" "$interim"
@@ -673,14 +853,26 @@ resume_from_interim() {  # resume_from_interim IMAGE SHA ROLLBACK: nginx points 
         c_sha="$(sha_of "$canonical")"
         detect_jobs "$interim" "$canonical"
         baseline="$(restarts_of "$interim")"
-        handover "$canonical" "$interim" "$baseline" || status=$?
-        if (( status != 0 )); then
-            give_back "$interim" "$canonical"
+        if [[ "$baseline" == unknown ]]; then
             mark_resume
-            log "degraded: the queue could not be handed to the interim container yet"
+            log "degraded: Docker could not report the interim container's state; retry later"
             return 3
         fi
-        drain_http "$canonical" "${retired_workers[@]}" || return $?
+        if $jobs_enabled && predates_handover "$canonical"; then
+            # A cut-over run died after its switch: the pre-handover release
+            # still holds the queue, and only stops once idle.
+            drain_http "$canonical" "${retired_workers[@]}" || return $?
+            legacy_handover "$canonical" "$interim" "$baseline" "$c_image" "$c_sha" || return $?
+        else
+            handover "$canonical" "$interim" "$baseline" || status=$?
+            if (( status != 0 )); then
+                give_back "$interim" "$canonical"
+                mark_resume
+                log "degraded: the queue could not be handed to the interim container yet"
+                return 3
+            fi
+            drain_http "$canonical" "${retired_workers[@]}" || return $?
+        fi
         if [[ "$c_image" != "$interim_image" ]] && ! record_replaced "$c_image" "$c_sha"; then
             mark_resume
             return 3
@@ -757,8 +949,13 @@ deploy_release() {  # deploy_release IMAGE SHA: phase 1, then phase 2
     fi
 
     baseline="$(restarts_of "$interim")"
+    if [[ "$baseline" == unknown ]]; then
+        log "Docker could not report the interim container's state; the previous release keeps serving; retry later"
+        discard_interim
+        return 2
+    fi
     detect_jobs "$interim"
-    if $jobs_enabled && [[ -n "$canonical" ]] && ! worker_view "$canonical" >/dev/null; then
+    if $jobs_enabled && [[ -n "$canonical" ]] && predates_handover "$canonical"; then
         legacy=true
         log "the job supervisor in ${canonical:0:12} predates handover: it stops, once idle, after the switch"
     elif $jobs_enabled; then
@@ -787,22 +984,23 @@ deploy_release() {  # deploy_release IMAGE SHA: phase 1, then phase 2
         drain_http "$canonical" "${retired_workers[@]}" || return $?
     fi
     if $legacy; then
-        stop_when_idle "$canonical" "$interim"
-    fi
-    # Before anything is destroyed: the new supervisor still holds the queue
-    # and its container never restarted.
-    if $jobs_enabled && ! confirm_active "$interim" "$baseline"; then
+        legacy_handover "$canonical" "$interim" "$baseline" "$old_image" "$old_sha" || return $?
+    elif $jobs_enabled && ! confirm_active "$interim" "$baseline"; then
+        # Before anything is destroyed: the new supervisor still holds the
+        # queue and its container never restarted.
         show_logs "$interim"
-        if $legacy; then
-            recover_legacy "$canonical" "$interim" "$old_sha"
-            return $?
-        fi
         if [[ -n "$canonical" ]]; then
             recover_to_old "$canonical" "$interim" "$old_sha"
             return $?
         fi
-        log "CRITICAL: the new release's job supervisor failed and there is no previous release to return to"
-        return 4
+        if [[ "$confirm_failure" == restart ]]; then
+            log "CRITICAL: the new release's job supervisor failed and there is no previous release to return to"
+            return 4
+        fi
+        [[ -z "$container" ]] || record_replaced "$old_image" "$old_sha" || log "WARNING: the rollback record is stale"
+        mark_resume
+        log "DEGRADED: ${sha:0:12} serves from the interim container, but its job supervisor has not confirmed the queue; the next run retries"
+        return 3
     fi
     if [[ -n "$container" ]] && ! record_replaced "$old_image" "$old_sha"; then
         mark_resume
