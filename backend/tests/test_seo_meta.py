@@ -73,6 +73,37 @@ def _types(graph: list[dict]) -> set[str]:
     return found
 
 
+def _application_subcategory(path: str) -> str:
+    app = next(node for node in _graph_for(path) if node.get("@type") == "SoftwareApplication")
+    return app["applicationSubCategory"]
+
+
+def _tool_row(slug: str, prefix: str, category: str, popularity: int | None = None) -> dict:
+    """One tool-content.json row in the shape gen-llms.mjs emits. `popularity`
+    is optional in the registries, so an unranked row simply omits the key."""
+    name = slug.replace("-", " ").title()
+    row = {
+        "slug": slug, "name": name, "description": f"{name} short copy.",
+        "longDescription": f"{name} long copy for the page intro.",
+        "seoTitle": f"{name} Online Free", "metaDescription": f"{name} online, free and without an account.",
+        "synonyms": "", "category": category, "accepts": ".pdf", "outputLabel": "PDF",
+        "lastReviewed": "2026-09-01", "path": f"/{prefix}/{slug}", "priority": 0.6,
+    }
+    if popularity is not None:
+        row["popularity"] = popularity
+    return row
+
+
+def _use_tool_manifest(monkeypatch, tmp_path, rows: list[dict] | None) -> None:
+    """Point seo_meta at a hand-written tool manifest, or at a missing one
+    (`rows=None`), which is what a checkout without a frontend build sees."""
+    path = tmp_path / "tool-content.json"
+    if rows is not None:
+        path.write_text(json.dumps(rows), encoding="utf-8")
+    monkeypatch.setattr(seo_meta, "_TOOL_JSON", path)
+    seo_meta._load_manifest.cache_clear()
+
+
 def test_homepage_jsonld_has_entity_and_answer_graph():
     graph = _graph_for("/")
     types = _types(graph)
@@ -128,6 +159,17 @@ def test_tool_jsonld_application_subcategories_are_specific():
         "/tools/generate-barcode": "Developer tools",
         "/tools/extract-archive": "Archive tools",
         "/tools/csv-json": "Document and data tools",
+        "/tool/compress-pdf": "PDF optimization tools",
+        # Later additions to the registries. The subcategory was once decoded
+        # from a hand-kept rank table that never listed them, so they fell
+        # through to the generic "PDF tools" / "File tools".
+        "/tool/remove-watermark": "PDF editing tools",
+        "/tool/bates-remove": "PDF security tools",
+        "/tool/translate-pdf": "Advanced PDF tools",
+        "/tool/pdf-to-long-image": "Convert from PDF tools",
+        "/tools/jpg-to-tiff": "Image tools",
+        "/tools/mp3-to-wav": "Video and audio tools",
+        "/tools/cron-parser": "Developer tools",
     }
 
     for path, expected in examples.items():
@@ -135,6 +177,42 @@ def test_tool_jsonld_application_subcategories_are_specific():
         app = next(node for node in graph if node.get("@type") == "SoftwareApplication")
 
         assert app["applicationSubCategory"] == expected, path
+
+
+def test_every_tool_gets_a_specific_application_subcategory():
+    """A registry category with no label — or a lookup that misses some tools —
+    silently demotes those pages to the generic subcategory. Walk the whole
+    manifest, not a sample, so a newly added category or tool can't do that."""
+    manifest = seo_meta._load_manifest(str(seo_meta._TOOL_JSON), seo_meta.blog_content_mtime_ns())
+    assert manifest, "tool-content.json manifest not found — run `npm run build` in frontend/ first"
+
+    generic = [row["path"] for row in manifest.values()
+               if _application_subcategory(row["path"]) in ("PDF tools", "File tools")]
+
+    assert not generic, f"tools with only a generic applicationSubCategory: {generic}"
+
+
+def test_tool_jsonld_subcategory_follows_the_manifest_category(tmp_path, monkeypatch):
+    """The manifest's `category` decides the label — not the slug, and not the
+    tool's popularity. Both rows here carry a category and rank their real
+    registry entries don't have, so nothing slug-keyed can produce these."""
+    _use_tool_manifest(monkeypatch, tmp_path, [
+        _tool_row("merge-pdf", "tool", "security", 300),
+        _tool_row("image-compressor", "tools", "archive", 15),
+    ])
+
+    assert _application_subcategory("/tool/merge-pdf") == "PDF security tools"
+    assert _application_subcategory("/tools/image-compressor") == "Archive tools"
+
+
+def test_tool_jsonld_subcategory_is_generic_without_a_manifest(tmp_path, monkeypatch):
+    """A checkout without a frontend build has no category data. The registry
+    tables still say which tools are PDF tools, so the label degrades to the
+    generic one for that family instead of failing or going missing."""
+    _use_tool_manifest(monkeypatch, tmp_path, None)
+
+    assert _application_subcategory("/tool/merge-pdf") == "PDF tools"
+    assert _application_subcategory("/tools/image-compressor") == "File tools"
 
 
 def test_barcode_meta_does_not_advertise_unsupported_svg_output():
@@ -544,6 +622,57 @@ def test_related_tools_and_blog_links_match_client_construction():
     # pass (e.g. an empty/broken manifest) can't slip through.
     assert checked_related > 50, "expected most of the 221 tools to have same-category peers"
     assert checked_guides > 10, "expected multiple tools to have blog mentions capped by this test"
+
+
+def test_tool_lists_follow_manifest_popularity(tmp_path, monkeypatch):
+    """The homepage and /tools lists mirror how the client sorts its
+    registries: manifest `popularity` ascending, equal ranks in manifest order
+    (a stable JS sort over the registry), unranked tools last.
+
+    The ranks are deliberately ones no hand-kept mirror would hold — a recent
+    tool leads, compress-pdf outranks merge-pdf, split-pdf ties with merge-pdf
+    but precedes it in the manifest — so only the manifest can produce this."""
+    _use_tool_manifest(monkeypatch, tmp_path, [
+        _tool_row("rotate-pdf", "tool", "optimize"),
+        _tool_row("split-pdf", "tool", "organize", 3),
+        _tool_row("merge-pdf", "tool", "organize", 3),
+        _tool_row("compress-pdf", "tool", "optimize", 2),
+        _tool_row("remove-watermark", "tool", "edit", 1),
+        _tool_row("image-compressor", "tools", "image", 2),
+        _tool_row("jpg-to-tiff", "tools", "image", 1),
+    ])
+
+    for page in ("/", "/tools"):
+        body = seo_meta._build_ssr_content(page, *get_meta_for_path(page))
+
+        assert re.findall(r'<li><a href="/tool/([^"]+)">', body) == [
+            "remove-watermark", "compress-pdf", "split-pdf", "merge-pdf", "rotate-pdf"], page
+        assert re.findall(r'<li><a href="/tools/([^"]+)">', body) == ["jpg-to-tiff", "image-compressor"], page
+
+
+def test_tool_lists_keep_registry_table_order_without_a_manifest(tmp_path, monkeypatch):
+    """A checkout without a frontend build has no popularity data at all. The
+    lists then follow the registry tables as written, rather than a second
+    ranking kept by hand that drifts from the registries."""
+    _use_tool_manifest(monkeypatch, tmp_path, None)
+
+    for page in ("/", "/tools"):
+        body = seo_meta._build_ssr_content(page, *get_meta_for_path(page))
+
+        assert re.findall(r'<li><a href="/tool/([^"]+)">', body) == list(seo_meta._PDF_TOOLS), page
+        assert re.findall(r'<li><a href="/tools/([^"]+)">', body) == list(seo_meta._NONPDF_TOOLS), page
+
+
+def test_related_tools_fall_back_to_registry_table_order_without_a_manifest(tmp_path, monkeypatch):
+    """No manifest means no category and no popularity, so a tool page links
+    the first three other tools in its registry table. CI always has a
+    manifest, so without this the fallback branch would never run."""
+    _use_tool_manifest(monkeypatch, tmp_path, None)
+
+    others = [slug for slug in seo_meta._PDF_TOOLS if slug != "compress-pdf"][:3]
+
+    assert seo_meta._related_tools("compress-pdf", seo_meta._PDF_TOOLS, "tool") == [
+        (slug, seo_meta._PDF_TOOLS[slug][0], f"/tool/{slug}") for slug in others]
 
 
 def test_tool_guide_text_and_names_are_html_escaped_in_ssr_body():

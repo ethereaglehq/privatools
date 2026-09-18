@@ -4,12 +4,13 @@ from backend.app import seo_meta
 
 
 def _top_tool_paths(limit: int = 50) -> list[tuple[str, str]]:
-    ranked: list[tuple[int, str, str]] = []
-    for slug in seo_meta._PDF_TOOLS:
-        ranked.append((seo_meta._POPULARITY.get(slug, 999), slug, f"/tool/{slug}"))
-    for slug in seo_meta._NONPDF_TOOLS:
-        ranked.append((seo_meta._POPULARITY.get(slug, 999), slug, f"/tools/{slug}"))
-    return [(slug, path) for _, slug, path in sorted(ranked)[:limit]]
+    """The `limit` tools with the lowest registry `popularity`, read from the
+    build manifest — the same ranks the client sorts by. The sort is stable,
+    so equal ranks keep manifest order, like the client's registry sort."""
+    manifest = seo_meta._load_manifest(str(seo_meta._TOOL_JSON), seo_meta.blog_content_mtime_ns())
+    assert manifest, "tool-content.json manifest not found — run `npm run build` in frontend/ first"
+    ranked = sorted(manifest.values(), key=lambda row: row.get("popularity", 999))
+    return [(row["slug"], row["path"]) for row in ranked[:limit]]
 
 
 def _word_count(html: str) -> int:
@@ -31,8 +32,11 @@ def _jsonld_types(path: str) -> set[str]:
 
 
 def test_top_50_tool_pages_have_required_geo_content():
+    top = _top_tool_paths()
+    assert len(top) == 50, "a truncated manifest would let this pass on a handful of pages"
+
     missing: list[str] = []
-    for slug, path in _top_tool_paths():
+    for slug, path in top:
         body = seo_meta._build_ssr_content(path, *seo_meta.get_meta_for_path(path))
         types = _jsonld_types(path)
         checks = {
