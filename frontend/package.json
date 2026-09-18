@@ -60,7 +60,7 @@
     "@vitejs/plugin-react-swc": "^4.3.3",
     "autoprefixer": "^10.4.21",
     "esbuild": "^0.28.1",
-    "eslint": "^9.32.0",
+    "eslint": "^10.10.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.5.7",
     "fake-indexeddb": "^6.2.5",
