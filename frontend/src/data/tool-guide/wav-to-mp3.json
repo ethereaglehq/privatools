@@ -6,21 +6,21 @@
     },
     {
       "name": "PrivaTools encodes via FFmpeg",
-      "text": "Uncompressed source gives the encoder the best possible input. Expect roughly a 10:1 reduction."
+      "text": "Uncompressed source gives the encoder the best possible input. At 192 kbps, expect roughly a 7:1 reduction from CD-quality WAV."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Expect roughly a 10:1 reduction. Keep the WAV if it is your master — MP3 is a delivery format, not an archive one."
+      "text": "Run the conversion. Expect roughly a 7:1 reduction. Keep the WAV if it is your master — MP3 is a delivery format, not an archive one."
     }
   ],
   "faq": [
     {
-      "q": "What bitrate should I choose?",
-      "a": "192 kbps is a solid default; 256–320 kbps is near-transparent for music. MP3 is lossy, so a higher bitrate keeps more detail at the cost of a larger file."
+      "q": "What bitrate is used?",
+      "a": "192 kbps, a solid default for music and speech; this page has no bitrate setting. MP3 is lossy, so a higher bitrate keeps more detail at the cost of a larger file: Audio Converter offers 256 and 320 kbps."
     },
     {
       "q": "How much smaller will the MP3 be?",
-      "a": "Typically 5–11× smaller than the WAV, depending on the bitrate you pick."
+      "a": "About 7× smaller than a CD-quality WAV, because the MP3 is encoded at 192 kbps."
     },
     {
       "q": "Is the conversion private?",

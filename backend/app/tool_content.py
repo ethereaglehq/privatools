@@ -404,11 +404,11 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "m4a-to-mp3": [
         {"name": "Upload an M4A audio file", "text": "Drop a .m4a file (iTunes purchases, GarageBand exports, iPhone voice memos)."},
-        {"name": "Convert and download", "text": "Click Convert. FFmpeg re-encodes the AAC audio inside the M4A container as a 192 kbps MP3, compatible with every player on earth."},
+        {"name": "Convert and download", "text": "Run the conversion. FFmpeg re-encodes the AAC audio inside the M4A container as a 192 kbps MP3, which almost every player supports."},
     ],
     "mp4-to-mp3": [
         {"name": "Upload an MP4 video", "text": "Drop an MP4 file up to 200 MB — music videos, lecture recordings, podcasts, anything with audio."},
-        {"name": "Extract audio and download", "text": "Click Convert. PrivaTools extracts the audio track and re-encodes it as MP3, perfect for offline listening on any device."},
+        {"name": "Extract audio and download", "text": "Run the conversion. PrivaTools extracts the audio track and re-encodes it as MP3, perfect for offline listening on any device."},
     ],
     "mov-to-mp4": [
         {"name": "Upload a MOV", "text": "Drop a QuickTime .mov file, the format iPhone cameras and Mac screen recordings use."},
@@ -495,7 +495,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "audio-trim": [
         {"name": "Upload an audio file", "text": "Drop MP3, WAV, AAC, FLAC, OGG, or M4A — up to 200 MB."},
         {"name": "Set start and end", "text": "Type the start and end timestamps in HH:MM:SS format (e.g. 00:01:30 to 00:02:45)."},
-        {"name": "Click Trim audio", "text": "Stream-copy preserves the original quality — no re-encoding."},
+        {"name": "Click Trim audio", "text": "Stream-copy preserves the original quality — no re-encoding, except that FLAC is rewritten losslessly."},
     ],
     "image-palette": [
         {"name": "Upload an image", "text": "Drop a JPG, PNG, WebP, BMP, TIFF, or GIF — up to 50 MB."},
@@ -830,9 +830,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Add the subtitles and download", "text": "The subtitles are burned into the video pixels, so they show in every player and cannot be switched off. The result is an MP4 with H.264 video."},
     ],
     "audio-merge": [
-        {"name": "Upload audio files", "text": "Drop 2 or more audio files (MP3, WAV, OGG, FLAC, AAC). Maximum 200 MB per file."},
-        {"name": "Reorder if needed", "text": "Drag thumbnails to set the concatenation order."},
-        {"name": "Download the merged audio", "text": "FFmpeg concatenates the files into one output. Format defaults to the first input's format."},
+        {"name": "Upload audio files", "text": "Drop 2 or more audio files (MP3, WAV, OGG, FLAC, AAC), up to 50; the whole upload has to fit within the 500 MB request limit."},
+        {"name": "Reorder if needed", "text": "Use the up and down arrows to set the order the files play in."},
+        {"name": "Download the merged audio", "text": "FFmpeg joins the files in that order into one MP3, whatever the input formats were."},
     ],
     "color-converter": [
         {"name": "Enter a color in any format", "text": "HEX (#FF5733), RGB (255, 87, 51), HSL (10, 100%, 60%), or named (coral, tomato, etc.)."},
@@ -855,9 +855,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the extracted folder as a ZIP", "text": "Or download individual files from the result preview."},
     ],
     "extract-audio": [
-        {"name": "Upload a video file", "text": "Drop an MP4/MOV/MKV/WebM file up to 500 MB."},
+        {"name": "Upload a video file", "text": "Drop an MP4/MOV/MKV/WebM file up to 200 MB."},
         {"name": "Choose output format", "text": "MP3 (universal), WAV (uncompressed), OGG (open), FLAC (lossless), AAC (high quality)."},
-        {"name": "Download the audio track", "text": "FFmpeg extracts the audio stream and re-encodes (or copies, for matching formats) to the chosen format."},
+        {"name": "Download the audio track", "text": "FFmpeg extracts the audio stream and re-encodes it to the chosen format, even when the video already carries that format."},
     ],
     "generate-barcode": [
         {"name": "Enter the data to encode", "text": "The string or number you want to encode. Format limits vary (e.g. EAN-13 needs exactly 12-13 digits)."},
@@ -999,54 +999,54 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── filled in 2026-09-02: these tools shipped without How-To steps, which
     # made them the thinnest pages on the site. ──────────────────────
     "aac-to-mp3": [
-        {"name": 'Upload an AAC file', "text": 'Drop an .aac or .m4a file up to 500 MB.'},
-        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'AAC is decoded and re-encoded as MP3. Both are lossy, so encode at 192 kbps or higher when the source was already compressed.'},
-        {"name": 'Convert and download', "text": 'Click Convert. AAC and MP3 are both lossy, so this is a transcode rather than a lossless change: encode at 192 kbps or higher if the source was already compressed. MP3 is the safer choice for car stereos, gym equipment and older players that never learned AAC.'},
+        {"name": 'Upload an AAC file', "text": 'Drop an .aac file up to 200 MB. For .m4a files, use M4A to MP3.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'AAC is decoded and re-encoded as MP3 at 192 kbps. Both are lossy, so a little more detail is lost.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. AAC and MP3 are both lossy, so this is a transcode rather than a lossless change; the MP3 is encoded at 192 kbps. MP3 is the safer choice for car stereos, gym equipment and older players that never learned AAC.'},
     ],
     "flac-to-mp3": [
         {"name": 'Upload a FLAC file', "text": 'Drop a .flac file. FLAC is lossless, so the source is the best possible input for an encode.'},
-        {"name": 'PrivaTools encodes via FFmpeg', "text": 'FLAC is lossless, so the encoder is working from the best possible source. Expect roughly a 5-10x size reduction.'},
-        {"name": 'Convert and download', "text": 'Click Convert. Expect roughly a 5–10x size reduction. This step is one-way: the detail MP3 discards cannot be recovered, so keep the FLAC if it is your master copy.'},
+        {"name": 'PrivaTools encodes via FFmpeg', "text": 'FLAC is lossless, so the encoder is working from the best possible source. The MP3 is encoded at 192 kbps, roughly 3–6x smaller than a CD-quality FLAC.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Expect roughly a 3–6x size reduction. This step is one-way: the detail MP3 discards cannot be recovered, so keep the FLAC if it is your master copy.'},
     ],
     "mp3-to-aac": [
-        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 200 MB.'},
         {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another loses a little more each time.'},
-        {"name": 'Convert and download', "text": 'Click Convert. AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another always loses a little more. It is worth doing for Apple devices and for streaming, not for archiving.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another always loses a little more. The result is a raw .aac file at 192 kbps, not an .m4a. It is worth doing for Apple devices and for streaming, not for archiving.'},
     ],
     "mp3-to-flac": [
-        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
-        {"name": 'PrivaTools rewraps via FFmpeg', "text": 'The decoded audio is stored losslessly. Nothing further is lost, and nothing is restored: the output sounds identical to the MP3 and is larger.'},
-        {"name": 'Convert and download', "text": 'Click Convert. FLAC wraps the decoded audio losslessly, so nothing further is lost — but nothing is restored either. The output is larger than the MP3 and sounds identical to it. Use this when a workflow demands FLAC input, not to improve quality.'},
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 200 MB.'},
+        {"name": 'PrivaTools converts via FFmpeg', "text": 'The decoded audio is stored losslessly. Nothing further is lost, and nothing is restored: the output sounds identical to the MP3 and is larger.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. FLAC stores the decoded audio losslessly, so nothing further is lost — but nothing is restored either. The output is larger than the MP3 and sounds identical to it. Use this when a workflow demands FLAC input, not to improve quality.'},
     ],
     "mp3-to-ogg": [
-        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 200 MB.'},
         {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops.'},
-        {"name": 'Convert and download', "text": 'Click Convert. Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops. As a lossy-to-lossy transcode, encode generously if the MP3 was already low bitrate.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops. As a lossy-to-lossy transcode, it loses a little more detail; the Ogg is encoded with a 192 kbps target.'},
     ],
     "mp3-to-wav": [
-        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 200 MB.'},
         {"name": 'PrivaTools decodes via FFmpeg', "text": 'The MP3 is decoded to uncompressed PCM, which is what editors, samplers and DAWs want to work from.'},
-        {"name": 'Convert and download', "text": 'Click Convert. The MP3 is decoded to uncompressed PCM, which is what most editors, samplers and DAWs want to work from. Files grow roughly tenfold — a 5 MB MP3 lands near 50 MB.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. The MP3 is decoded to uncompressed PCM, which is what most editors, samplers and DAWs want to work from. Files grow roughly tenfold — a 5 MB MP3 lands near 50 MB.'},
     ],
     "ogg-to-mp3": [
         {"name": 'Upload an Ogg file', "text": 'Drop an .ogg or .oga file.'},
         {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'One more lossy generation, in exchange for a format that plays essentially everywhere.'},
-        {"name": 'Convert and download', "text": 'Click Convert. MP3 plays essentially everywhere, which Ogg still does not, at the cost of one more lossy generation.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. MP3 plays essentially everywhere, which Ogg still does not, at the cost of one more lossy generation. The MP3 is encoded at 192 kbps.'},
     ],
     "wav-to-flac": [
-        {"name": 'Upload a WAV file', "text": 'Drop a .wav file up to 500 MB.'},
+        {"name": 'Upload a WAV file', "text": 'Drop a .wav file up to 200 MB.'},
         {"name": 'PrivaTools compresses via FFmpeg', "text": 'FLAC is lossless: the audio is bit-for-bit identical to the WAV, typically 40-60% smaller.'},
-        {"name": 'Convert and download', "text": 'Click Convert. FLAC is lossless: the audio is bit-for-bit identical to the WAV and typically 40–60% smaller. This is the one audio conversion here that costs you nothing in quality.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. FLAC is lossless: the audio is bit-for-bit identical to the WAV and typically 40–60% smaller. This is the one audio conversion here that costs you nothing in quality.'},
     ],
     "wav-to-mp3": [
         {"name": 'Upload a WAV file', "text": 'Drop a .wav file. Uncompressed audio is the ideal source for an encode.'},
-        {"name": 'PrivaTools encodes via FFmpeg', "text": 'Uncompressed source gives the encoder the best possible input. Expect roughly a 10:1 reduction.'},
-        {"name": 'Convert and download', "text": 'Click Convert. Expect roughly a 10:1 reduction. Keep the WAV if it is your master — MP3 is a delivery format, not an archive one.'},
+        {"name": 'PrivaTools encodes via FFmpeg', "text": 'Uncompressed source gives the encoder the best possible input. At 192 kbps, expect roughly a 7:1 reduction from CD-quality WAV.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Expect roughly a 7:1 reduction. Keep the WAV if it is your master — MP3 is a delivery format, not an archive one.'},
     ],
     "wav-to-ogg": [
-        {"name": 'Upload a WAV file', "text": 'Drop a .wav file up to 500 MB.'},
-        {"name": 'PrivaTools encodes via FFmpeg', "text": 'Encoded straight from uncompressed source, so quality is as good as the chosen bitrate allows.'},
-        {"name": 'Convert and download', "text": 'Click Convert. Ogg Vorbis is patent-free and a good fit for games and web audio, encoded here straight from uncompressed source so quality is as good as the bitrate allows.'},
+        {"name": 'Upload a WAV file', "text": 'Drop a .wav file up to 200 MB.'},
+        {"name": 'PrivaTools encodes via FFmpeg', "text": 'Encoded straight from uncompressed source with a 192 kbps target, so quality is as good as that bitrate allows.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Ogg Vorbis is patent-free and a good fit for games and web audio, encoded here straight from uncompressed source so quality is as good as the bitrate allows.'},
     ],
     "avi-to-webm": [
         {"name": 'Upload an AVI file', "text": 'Drop an .avi file up to 500 MB. AVI is a legacy container, often carrying DivX or Xvid video.'},
@@ -1126,7 +1126,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "webp-to-tiff": [
         {"name": 'Upload a WebP image', "text": 'Drop a .webp file up to 500 MB.'},
         {"name": 'PrivaTools converts via Pillow', "text": 'TIFF keeps the alpha channel and is read by archival software that has never heard of WebP.'},
-        {"name": 'Convert and download', "text": 'Click Convert. TIFF preserves transparency and is accepted by archival and prepress software that has no idea what WebP is.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. TIFF preserves transparency and is accepted by archival and prepress software that has no idea what WebP is.'},
     ],
     "pdf-to-long-image": [
         {"name": 'Upload the PDF', "text": 'Select a PDF up to 500 MB. Every page is rendered, so long documents make very tall images.'},
@@ -1676,12 +1676,12 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "m4a-to-mp3": [
         {"q": "Why convert M4A to MP3?", "a": "M4A (AAC inside an MP4 container) isn't universally supported — older car stereos, some Android players, and many legacy devices won't play it. MP3 works everywhere."},
-        {"q": "Will the audio quality drop?", "a": "Slightly. M4A's AAC codec is more efficient than MP3, so at the same bitrate AAC sounds better. Our 192 kbps default produces a result that's indistinguishable from the source for casual listening."},
+        {"q": "Will the audio quality drop?", "a": "Slightly. M4A's AAC codec is more efficient than MP3, so at the same bitrate AAC sounds better. This page always encodes at 192 kbps, which is hard to tell from the source in casual listening; for another bitrate, use Audio Converter."},
         {"q": "Does it work for iPhone voice memos?", "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here."},
     ],
     "mp4-to-mp3": [
         {"q": "Does this work for any MP4?", "a": "Yes — as long as the MP4 has an audio track. Music videos, lecture recordings, podcasts, screen recordings with narration, all work."},
-        {"q": "What about file size?", "a": "MP3 audio is dramatically smaller than the original video. A 1 GB video file typically becomes a 5–15 MB MP3."},
+        {"q": "What about file size?", "a": "The MP3's size depends on the length, not on the video: it is encoded at about 128 kbps, close to 1 MB per minute of stereo audio. This page takes MP4 files up to 200 MB."},
         {"q": "Is the video kept?", "a": "No — only the audio track is extracted. If you also need the video, keep the original MP4."},
     ],
     "mov-to-mp4": [
@@ -1776,9 +1776,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does it work for slow-motion footage?", "a": "Sort of — for true high-quality slow-motion you need video captured at higher FPS originally. This tool stretches the existing frames in time, so very slow speeds get a duplicated-frame look."},
     ],
     "audio-trim": [
-        {"q": "How precise are the start/end times?", "a": "To 1-second precision via stream-copy. For frame-accurate trimming, use the Trim Media tool which re-encodes."},
+        {"q": "How precise are the start/end times?", "a": "Times can be set to the millisecond. Because the audio is copied rather than re-encoded, a cut lands on the nearest compressed-audio frame, within a few hundredths of a second. Trim Media copies audio the same way."},
         {"q": "Will trimming reduce audio quality?", "a": "No — we use stream-copy mode which preserves the original bytes. The trimmed file is identical quality to the source."},
-        {"q": "What format does it output?", "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC. No re-encoding."},
+        {"q": "What format does it output?", "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC, rewritten losslessly; every other format is copied without re-encoding."},
     ],
     "image-palette": [
         {"q": "How are the colors picked?", "a": "We shrink the image to fit within 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."},
@@ -2141,9 +2141,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I customize the font / size / color?", "a": "Not at the moment. Burned-in subtitles use fixed defaults — white text with a black outline in a sans-serif font — and custom styling is not supported."},
     ],
     "audio-merge": [
-        {"q": "What if my files have different sample rates?", "a": "FFmpeg resamples to a common rate (usually 44.1 kHz) automatically. There may be a tiny re-encoding loss; for lossless concatenation use FLAC inputs."},
+        {"q": "What if my files have different sample rates?", "a": "FFmpeg resamples them to a common rate automatically; a 44.1 kHz MP3 joined to a 48 kHz WAV came out at 44.1 kHz. The result is always an MP3, so the merge is never lossless, even from FLAC or WAV inputs."},
         {"q": "Are gaps between tracks added?", "a": "No — files are concatenated seamlessly. To add silence, prepare it as a separate file with the same format and insert it in the order."},
-        {"q": "Maximum total length?", "a": "Practical limit is whatever fits inside the 500 MB output. Hours of MP3 at moderate bitrate is fine."},
+        {"q": "Maximum total length?", "a": "The limits apply to what you upload: up to 50 files, and the whole upload has to fit within the 500 MB request limit. A merge that takes longer than three minutes to encode is stopped."},
     ],
     "color-converter": [
         {"q": "Does it work with alpha (transparency)?", "a": "Yes — paste #RRGGBBAA or rgba(...) and the alpha channel is preserved across all output formats."},
@@ -2166,7 +2166,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What if the archive contains many small files?", "a": "Up to 1000 files per archive. For larger, split before zipping."},
     ],
     "extract-audio": [
-        {"q": "Will quality be preserved?", "a": "WAV/FLAC are lossless. MP3/AAC at 192 kbps+ is transparent for most listeners. Lower bitrates lose quality."},
+        {"q": "Will quality be preserved?", "a": "WAV and FLAC store the decoded audio without further loss. MP3, AAC and OGG are re-encoded at the encoders' default settings, about 128 kbps for stereo MP3 and AAC, and there is no bitrate setting here."},
         {"q": "What if the video has multiple audio tracks?", "a": "The first (default) audio track is extracted. Choosing another track, or extracting several at once, is not supported."},
         {"q": "Can I extract just a section of the audio?", "a": "Use Trim Media first to isolate the section, then extract audio from the trimmed video."},
     ],
@@ -2446,22 +2446,22 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
         {"q": "Are my audio files stored?", "a": "No. Input and output are temporary and deleted after the download response is sent. Conversion uses FFmpeg server-side."},
     ],
     "wav-to-mp3": [
-        {"q": "What bitrate should I choose?", "a": "192 kbps is a solid default; 256–320 kbps is near-transparent for music. MP3 is lossy, so a higher bitrate keeps more detail at the cost of a larger file."},
-        {"q": "How much smaller will the MP3 be?", "a": "Typically 5–11× smaller than the WAV, depending on the bitrate you pick."},
+        {"q": "What bitrate is used?", "a": "192 kbps, a solid default for music and speech; this page has no bitrate setting. MP3 is lossy, so a higher bitrate keeps more detail at the cost of a larger file: Audio Converter offers 256 and 320 kbps."},
+        {"q": "How much smaller will the MP3 be?", "a": "About 7× smaller than a CD-quality WAV, because the MP3 is encoded at 192 kbps."},
         {"q": "Is the conversion private?", "a": "FFmpeg runs on the PrivaTools server, not a third-party service. The WAV and the MP3 are temporary files that response cleanup removes after the result is sent."},
     ],
     "flac-to-mp3": [
-        {"q": "Will I lose quality converting FLAC to MP3?", "a": "Yes — FLAC is lossless and MP3 is lossy, so the conversion discards some audio data. At 256–320 kbps the difference is inaudible to most people, but it's a one-way trade for a smaller, universally-compatible file."},
+        {"q": "Will I lose quality converting FLAC to MP3?", "a": "Yes — FLAC is lossless and MP3 is lossy, so the conversion discards some audio data. This page encodes at 192 kbps; Audio Converter goes up to 320 kbps. Either way it's a one-way trade for a smaller, universally-compatible file."},
         {"q": "Why convert FLAC to MP3 at all?", "a": "MP3 plays on virtually every device and is roughly 3–6× smaller than FLAC — ideal for phones, portable players, and sharing."},
         {"q": "Are files retained?", "a": "No. Uploads and outputs are temporary files, removed by response cleanup after the download is sent."},
     ],
     "ogg-to-mp3": [
         {"q": "Why convert OGG to MP3?", "a": "OGG Vorbis isn't supported by some players, car stereos, and editing apps; MP3 is nearly universal. Both are lossy, so this is about compatibility, not quality."},
-        {"q": "Is there quality loss?", "a": "Re-encoding one lossy format to another (transcoding) loses a little quality. Choose 256–320 kbps to keep it minimal."},
+        {"q": "Is there quality loss?", "a": "Re-encoding one lossy format to another (transcoding) loses a little quality. This page encodes at 192 kbps; Audio Converter offers up to 320 kbps to keep the loss smaller."},
         {"q": "Is it processed privately?", "a": "The file is converted by FFmpeg on the PrivaTools server, not a third-party service, and the temporary input and output are removed by response cleanup after the result is sent."},
     ],
     "aac-to-mp3": [
-        {"q": "Does AAC to MP3 reduce quality?", "a": "Both are lossy, so transcoding AAC→MP3 loses a little detail. Use 256–320 kbps to keep it near-transparent. Convert for devices that don't support AAC/M4A."},
+        {"q": "Does AAC to MP3 reduce quality?", "a": "Both are lossy, so transcoding AAC→MP3 loses a little detail. This page encodes at 192 kbps; Audio Converter offers up to 320 kbps. Convert for devices that don't support AAC/M4A."},
         {"q": "Why isn't my AAC playing everywhere?", "a": "AAC (often in an .m4a wrapper) has excellent quality-per-byte, but some older or non-Apple devices prefer MP3."},
         {"q": "Are files kept?", "a": "No — temporary input/output, deleted after the download response."},
     ],
@@ -2476,8 +2476,8 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
         {"q": "Are files retained?", "a": "No. Uploads and outputs are temporary and deleted after the download."},
     ],
     "mp3-to-aac": [
-        {"q": "Is AAC better than MP3?", "a": "AAC generally sounds better than MP3 at the same bitrate, but transcoding an existing MP3 won't recover lost detail — it just repackages it. Use it for Apple/M4A workflows."},
-        {"q": "What bitrate should I pick?", "a": "128–256 kbps AAC is typical; AAC is efficient, so 128–192 kbps often matches a higher-bitrate MP3."},
+        {"q": "Is AAC better than MP3?", "a": "AAC generally sounds better than MP3 at the same bitrate, but transcoding an existing MP3 won't recover lost detail. The output is a raw .aac file, not an .m4a."},
+        {"q": "What bitrate is used?", "a": "A 192 kbps target, with no setting on this page; Audio Converter offers 64 to 320 kbps. AAC is efficient, so 128–192 kbps often matches a higher-bitrate MP3."},
         {"q": "Is it private?", "a": "The conversion is a local FFmpeg run on the PrivaTools server. Input and output are temporary files that response cleanup removes after the result is sent."},
     ],
     "wav-to-flac": [
@@ -2487,7 +2487,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
     ],
     "wav-to-ogg": [
         {"q": "Why convert WAV to OGG?", "a": "OGG Vorbis produces small, good-quality lossy files in a royalty-free format — handy for games, web audio, and open-source projects, and far smaller than WAV."},
-        {"q": "Is OGG lossy or lossless?", "a": "OGG Vorbis here is lossy; pick a quality level that balances size and fidelity. For lossless, use WAV→FLAC instead."},
+        {"q": "Is OGG lossy or lossless?", "a": "OGG Vorbis here is lossy, encoded with a 192 kbps target and no quality setting on this page. For lossless, use WAV→FLAC instead."},
         {"q": "Is the conversion private?", "a": "It is a local FFmpeg run on the PrivaTools server, with no third-party service involved. The temporary input and output are removed by response cleanup after the result is sent."},
     ],
     # ── Video ──────────────────────────────────────────────────────────

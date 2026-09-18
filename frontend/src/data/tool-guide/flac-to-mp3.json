@@ -6,17 +6,17 @@
     },
     {
       "name": "PrivaTools encodes via FFmpeg",
-      "text": "FLAC is lossless, so the encoder is working from the best possible source. Expect roughly a 5-10x size reduction."
+      "text": "FLAC is lossless, so the encoder is working from the best possible source. The MP3 is encoded at 192 kbps, roughly 3–6x smaller than a CD-quality FLAC."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Expect roughly a 5–10x size reduction. This step is one-way: the detail MP3 discards cannot be recovered, so keep the FLAC if it is your master copy."
+      "text": "Run the conversion. Expect roughly a 3–6x size reduction. This step is one-way: the detail MP3 discards cannot be recovered, so keep the FLAC if it is your master copy."
     }
   ],
   "faq": [
     {
       "q": "Will I lose quality converting FLAC to MP3?",
-      "a": "Yes — FLAC is lossless and MP3 is lossy, so the conversion discards some audio data. At 256–320 kbps the difference is inaudible to most people, but it's a one-way trade for a smaller, universally-compatible file."
+      "a": "Yes — FLAC is lossless and MP3 is lossy, so the conversion discards some audio data. This page encodes at 192 kbps; Audio Converter goes up to 320 kbps. Either way it's a one-way trade for a smaller, universally-compatible file."
     },
     {
       "q": "Why convert FLAC to MP3 at all?",
