@@ -14,6 +14,7 @@ top-right, blue bottom-left and yellow bottom-right ("RG/BY").
 from __future__ import annotations
 
 import io
+import struct
 
 import pytest
 from PIL import ExifTags, Image, ImageCms
@@ -148,6 +149,26 @@ def test_saved_copy_keeps_the_dpi_across_quarter_turns(client, orientation, endp
 
     # PNG stores pixels per metre, so 300 dpi reads back as 299.9994.
     assert tuple(round(value) for value in out.info.get("dpi", ())) == dpi
+
+
+def test_a_dpi_no_format_can_store_is_dropped(client):
+    # A hand-built big-endian EXIF block whose XResolution is an infinite
+    # DOUBLE; with no density in the JFIF header, Pillow takes the DPI from it.
+    value = 8 + 2 + 2 * 12 + 4
+    block = (
+        b"MM\x00\x2a" + struct.pack(">IH", 8, 2)
+        + struct.pack(">HHII", ExifTags.Base.XResolution, 12, 1, value)
+        + struct.pack(">HHIHH", ExifTags.Base.ResolutionUnit, 3, 1, 2, 0)
+        + struct.pack(">I", 0) + struct.pack(">d", float("inf"))
+    )
+    buf = io.BytesIO()
+    _paint("RG/BY", (120, 160)).save(buf, "JPEG", exif=b"Exif\x00\x00" + block)
+    assert Image.open(io.BytesIO(buf.getvalue())).info["dpi"] == (float("inf"), float("inf"))
+
+    out = _run(client, "/api/rotate-image", "scan.jpg", buf.getvalue(), {"degrees": "90"})
+
+    assert (out.size, _layout(out)) == ((160, 120), "GY/RB")
+    assert "dpi" not in out.info
 
 
 def test_a_profile_for_other_colours_is_not_attached_to_rgb_output(client):

@@ -69,10 +69,10 @@ def _exposure_time(v: Any) -> Any:
     """Shutter speed as photographers write it: 1/160, 0.5, 30."""
     try:
         seconds = float(v)
-    except (TypeError, ValueError):
+        if 0 < seconds <= 0.25:
+            return f"1/{round(1 / seconds)}"
+    except (TypeError, ValueError, OverflowError):  # OverflowError: too small to invert
         return _jsonable(v)
-    if 0 < seconds <= 0.25:
-        return f"1/{round(1 / seconds)}"
     return f"{seconds:.1f}".removesuffix(".0")
 
 

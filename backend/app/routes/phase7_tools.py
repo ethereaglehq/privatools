@@ -357,7 +357,9 @@ def _kept_metadata(img, swap_axes: bool) -> dict:
     if icc and icc[16:20] == b"RGB ":
         kept["icc_profile"] = icc
     dpi = img.info.get("dpi")
-    if dpi and min(dpi) > 0:
+    # Only a positive DPI that JPEG's 16-bit density field can hold: a crafted
+    # file can claim infinity, which fails the save, or a meaningless 0 or NaN.
+    if dpi and all(0 < d <= 65535 for d in dpi):
         kept["dpi"] = (dpi[1], dpi[0]) if swap_axes else dpi
     return kept
 

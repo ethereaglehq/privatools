@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import io
 import re
+import struct
 
 import pytest
 from PIL import ExifTags, Image, ImageCms
@@ -120,6 +121,25 @@ def test_exposure_time_reads_as_photographers_write_it(client, exposure, shown):
     body = _view(client, "IMG_0001.jpg", _camera_photo(exposure))
 
     assert body["exif"]["ExposureTime"] == shown
+
+
+def test_an_exposure_time_too_small_to_invert_is_shown_as_stored(client):
+    # A hand-built big-endian EXIF block: IFD0 points to an Exif IFD whose one
+    # entry is ExposureTime typed DOUBLE, which Pillow's writer cannot produce.
+    exif_ifd = 8 + 2 + 12 + 4
+    value = exif_ifd + 2 + 12 + 4
+    block = (
+        b"MM\x00\x2a" + struct.pack(">I", 8)
+        + struct.pack(">HHHII", 1, ExifTags.IFD.Exif, 4, 1, exif_ifd) + struct.pack(">I", 0)
+        + struct.pack(">HHHII", 1, ExifTags.Base.ExposureTime, 12, 1, value) + struct.pack(">I", 0)
+        + struct.pack(">d", 1e-320)
+    )
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 48), (90, 120, 150)).save(buf, "JPEG", exif=b"Exif\x00\x00" + block)
+
+    body = _view(client, "IMG_0001.jpg", buf.getvalue())
+
+    assert body["exif"]["ExposureTime"] == 1e-320
 
 
 def test_unreadable_exif_still_returns_the_rest(client):
