@@ -37,20 +37,20 @@ anyio==4.14.2
 uvicorn[standard]==0.52.3
 python-multipart==0.0.32
 pikepdf==8.12.0
-pypdf==6.16.1
+pypdf==6.19.0
 pdf2image==1.17.0
 Pillow==12.3.0
 reportlab==4.1.0
 brotli==1.2.0
-slowapi==0.1.9
+slowapi==0.1.10
 pymupdf==1.28.2
 pytesseract==0.3.13
 weasyprint==70.0
 python-docx==1.2.0
 openpyxl==3.1.5
 python-pptx==1.0.2
-pillow-heif==1.4.0
-onnxruntime==1.23.2
+pillow-heif==1.7.0
+onnxruntime==1.30.0
 rembg==2.0.81
 # Declared explicitly because app code imports cv2 directly
 # (services/image_watermark_remove_service.py). It used to arrive transitively
