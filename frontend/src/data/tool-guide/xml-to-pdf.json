@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload an XML file",
-      "text": "Select an .xml file up to 500 MB. Common schemas like RSS, Atom, and XHTML are supported."
+      "text": "Select one or more .xml files of up to 5 MB each; each file becomes its own PDF. Any well-formed UTF-8 XML works, including RSS, Atom, and XHTML."
     },
     {
-      "name": "Choose display format",
-      "text": "Select tree view (collapsible hierarchy) or formatted table view for structured data."
+      "name": "Know the fixed layout",
+      "text": "There are no view options: the XML is re-indented with two spaces per level in 9 pt Courier on A4 pages, with lines that contain tags in blue and text-only lines in black. A line too long for the page is cut off at the right margin, and the rest of it is not printed."
     },
     {
       "name": "Convert and download",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "What XML schemas are supported?",
-      "a": "Any well-formed XML file is supported. The tool renders the structure as a readable tree or table — it does not apply XSL transforms."
+      "a": "Any well-formed XML file is supported. The tool prints the XML itself as indented text; it does not draw a tree or table and does not apply XSL transforms."
     },
     {
       "q": "Is syntax highlighting included?",
-      "a": "Yes. Element names, attributes, and values are color-coded for readability in the PDF output."
+      "a": "Only simple colouring: every line that contains a tag is printed in blue and text-only lines in black. Element names, attributes, and values are not coloured separately."
     },
     {
       "q": "Can I convert large XML files?",
-      "a": "Files up to 500 MB are supported. Very deeply nested structures may produce many pages."
+      "a": "Up to 5 MB per file; larger files are refused. Each nesting level is indented further, and long lines are cut off at the right margin, so very wide or deeply nested documents lose text."
     }
   ]
 }

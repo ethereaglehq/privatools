@@ -5,8 +5,8 @@
       "text": "Drop a PDF up to 500 MB."
     },
     {
-      "name": "PrivaTools pulls out every image",
-      "text": "Each embedded image (raster or vector) is extracted at its native resolution, with original format preserved (JPEG, PNG, TIFF, etc.)."
+      "name": "PrivaTools pulls out the images",
+      "text": "Each embedded raster image is saved at the pixel size stored in the PDF. JPEG and JPEG 2000 images keep their format; others are saved as PNG. Vector drawings are not images and are not extracted, and images stored inline in the page content are skipped."
     },
     {
       "name": "Download as ZIP",
@@ -16,11 +16,11 @@
   "faq": [
     {
       "q": "Will the images be the original resolution?",
-      "a": "Yes. PDF embeds images at the resolution set when the PDF was created — extraction recovers them unchanged."
+      "a": "Yes. Each image is saved at the pixel size stored in the PDF, without resampling. RGB and greyscale JPEGs are copied byte for byte, CMYK JPEGs are re-saved as high-quality JPEG, and other images are saved without further quality loss, but a separate transparency mask is not applied, so a logo with a transparent background comes out on a solid one."
     },
     {
       "q": "What if the same image appears multiple times?",
-      "a": "Each visual occurrence is extracted, even if it's the same underlying image data. Use deduplication after if needed."
+      "a": "Each page that uses it gets its own copy in the ZIP, so a logo repeated on every page comes out once per page. Remove the duplicates afterwards if you need to."
     },
     {
       "q": "Does it work on scanned PDFs?",

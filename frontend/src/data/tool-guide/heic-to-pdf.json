@@ -6,21 +6,21 @@
     },
     {
       "name": "Choose page size",
-      "text": "Letter or A4. Each HEIC is decoded via libheif and scaled to fit."
+      "text": "Auto (the default) makes each page the size of its photo; A4 or Letter scale each photo to fit a standard page. Each HEIC is decoded with libheif."
     },
     {
       "name": "Download the PDF",
-      "text": "All images become one PDF, one photo per page. EXIF metadata is stripped by default."
+      "text": "All images become one PDF, one photo per page. Camera EXIF metadata, including GPS location, is not copied into the PDF."
     }
   ],
   "faq": [
     {
       "q": "Will the PDF be much larger than the HEIC?",
-      "a": "Yes — HEIC is more efficient than JPEG. The PDF uses JPEG internally and is typically 2-3x the size of the source HEICs."
+      "a": "Often, yes. Each photo is re-encoded as a JPEG at quality 92 inside the PDF, and JPEG generally needs more space than HEIC for the same picture. How much larger depends on the photo."
     },
     {
       "q": "Does this preserve image quality?",
-      "a": "Default JPEG quality is 90, which is visually indistinguishable. Lossless would require PNG-to-PDF and produce much larger files."
+      "a": "Photos keep their full pixel dimensions and are re-encoded once as JPEG at quality 92, a high setting. For a lossless copy, convert the photos to PNG first and use PNG to PDF, which gives much larger files."
     },
     {
       "q": "What happens to GPS metadata?",

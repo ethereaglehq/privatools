@@ -40,13 +40,13 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Edit PDF](https://privatools.me/tool/edit-pdf): Edit text and images directly inside the PDF
 - [Sign PDF](https://privatools.me/tool/sign-pdf): Add a visual signature image to a PDF
 - [Watermark](https://privatools.me/tool/watermark): Add text or image watermark over PDF pages
-- [Header & Footer](https://privatools.me/tool/header-footer): Add headers and footers to specified pages
-- [Page Numbers](https://privatools.me/tool/page-numbers): Insert custom page numbers in your chosen format
+- [Header & Footer](https://privatools.me/tool/header-footer): Add a header and footer to every page
+- [Page Numbers](https://privatools.me/tool/page-numbers): Insert page numbers in the position you choose
 - [Bates Numbering](https://privatools.me/tool/bates-numbering): Add Bates Numbers for legal document indexing
-- [Bookmarks](https://privatools.me/tool/bookmarks): Add or edit bookmarks to navigate large files
+- [Bookmarks](https://privatools.me/tool/bookmarks): Add bookmarks to navigate large files
 - [Compress PDF](https://privatools.me/tool/compress-pdf): Reduce the file size of your PDF
 - [Remove Watermark](https://privatools.me/tool/remove-watermark): Find and remove visible watermarks from a PDF
-- [Flatten PDF](https://privatools.me/tool/flatten-pdf): Flatten forms and annotations into PDF content
+- [Flatten PDF](https://privatools.me/tool/flatten-pdf): Make the fields of a filled form read-only
 - [Deskew PDF](https://privatools.me/tool/deskew-pdf): Straighten scanned pages that are slightly tilted
 - [Repair PDF](https://privatools.me/tool/repair-pdf): Attempt to fix corrupted PDF files
 - [Resize PDF](https://privatools.me/tool/resize-pdf): Change the physical dimensions of the pages
@@ -79,24 +79,24 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [PDF to GIF](https://privatools.me/tool/pdf-to-gif): Render PDF pages as GIF images
 - [PDF to SVG](https://privatools.me/tool/pdf-to-svg): Convert PDF pages into editable SVG vectors
 - [PDF to JPG](https://privatools.me/tool/pdf-to-jpg): Render PDF pages as JPG photos
-- [PDF to PNG](https://privatools.me/tool/pdf-to-png): Render PDF pages as PNG images (transparency-friendly)
+- [PDF to PNG](https://privatools.me/tool/pdf-to-png): Render PDF pages as lossless PNG images
 - [PDF to PowerPoint](https://privatools.me/tool/pdf-to-pptx): Convert each PDF page into a PowerPoint slide image
 - [PDF to Text](https://privatools.me/tool/pdf-to-text): Extract all text from a PDF file
 - [PDF to Word](https://privatools.me/tool/pdf-to-word): Convert PDF content to an editable Word draft
-- [Alternate Mix](https://privatools.me/tool/alternate-mix): Mix pages of two or more PDFs alternately
+- [Alternate Mix](https://privatools.me/tool/alternate-mix): Mix pages of two PDFs alternately
 - [Compare PDF](https://privatools.me/tool/compare-pdf): Visually compare two PDF documents
-- [Extract Images](https://privatools.me/tool/extract-images): Extract all embedded images from the PDF
+- [Extract Images](https://privatools.me/tool/extract-images): Extract the embedded images from a PDF
 - [Fill Form](https://privatools.me/tool/fill-form): Fill out interactive PDF forms and save them
 - [N-Up PDF](https://privatools.me/tool/nup): Print multiple pages per sheet
 - [OCR PDF](https://privatools.me/tool/ocr-pdf): Extract text or create a searchable PDF using OCR
 - [Overlay PDF](https://privatools.me/tool/overlay): Overlay one PDF onto another (e.g., letterhead)
-- [QR Code Generator](https://privatools.me/tool/qr-code): Generate QR codes — download as PNG or stamp into a PDF
-- [PDF to PDF/A](https://privatools.me/tool/pdf-to-pdfa): Convert to PDF/A format for long-term archiving
+- [QR Code Generator](https://privatools.me/tool/qr-code): Generate QR codes — download as PNG or PDF
+- [PDF to PDF/A](https://privatools.me/tool/pdf-to-pdfa): Save a cleaned copy labelled PDF/A-2b for archiving
 - [Remove Blank Pages](https://privatools.me/tool/remove-blank-pages): Scan and delete entirely blank or near-blank pages
 - [Auto-Crop PDF (Remove Margins)](https://privatools.me/tool/auto-crop): Auto-detect content and trim margins from every page
 - [PDF to EPUB](https://privatools.me/tool/pdf-to-epub): Convert a PDF into the EPUB format for e-readers
 - [Markdown / Config to PDF](https://privatools.me/tool/markdown-to-pdf): Convert a Markdown document to PDF
-- [CSV to PDF](https://privatools.me/tool/csv-to-pdf): Generate table-style or invoice PDFs from CSV data
+- [CSV to PDF](https://privatools.me/tool/csv-to-pdf): Turn CSV data into a clean PDF table
 - [Word to PDF](https://privatools.me/tool/word-to-pdf): Convert .docx Word documents to PDF
 - [Excel to PDF](https://privatools.me/tool/excel-to-pdf): Convert .xlsx spreadsheets to PDF
 - [PowerPoint to PDF](https://privatools.me/tool/pptx-to-pdf-convert): Convert .pptx presentations to PDF
@@ -118,16 +118,16 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [XML to PDF](https://privatools.me/tool/xml-to-pdf): Convert XML data to a formatted PDF document
 - [EPUB to PDF](https://privatools.me/tool/epub-to-pdf): Convert e-books from EPUB to PDF format
 - [RTF to PDF](https://privatools.me/tool/rtf-to-pdf): Convert Rich Text Format files to PDF
-- [Add Hyperlinks](https://privatools.me/tool/add-hyperlinks): Draw clickable hyperlink areas over text or images
-- [Form Creator](https://privatools.me/tool/form-creator): Add text fields, checkboxes, radios, and dropdowns to PDFs
+- [Add Hyperlinks](https://privatools.me/tool/add-hyperlinks): Make the web addresses in a PDF clickable
+- [Form Creator](https://privatools.me/tool/form-creator): Add text fields, checkboxes, dropdowns, and lists to PDFs
 - [Transparent Background](https://privatools.me/tool/transparent-background): Convert near-white PDF backgrounds to transparency
 - [Invert Colors](https://privatools.me/tool/invert-colors): Invert PDF colors for a dark mode reading experience
 - [Translate PDF](https://privatools.me/tool/translate-pdf): Translate a PDF without uploading it
 - [Remove Bates Numbering](https://privatools.me/tool/bates-remove): Strip Bates stamps back off a PDF
 - [PDF Accessibility Checker](https://privatools.me/tool/accessibility-check): Audit a PDF against PDF/UA and WCAG
 - [PDF/A Validator](https://privatools.me/tool/pdfa-validator): Run basic PDF/A indicator checks
-- [Verify Digital Signature](https://privatools.me/tool/verify-signature): Inspect signature fields in a PDF
-- [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Aggressively clean hidden data, JS, and layers
+- [Verify Digital Signature](https://privatools.me/tool/verify-signature): Look for signature fields in a PDF
+- [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Clear the document info fields of a PDF
 - [Reverse PDF](https://privatools.me/tool/reverse-pdf): Reverse the page order of a PDF document
 - [PDF Booklet](https://privatools.me/tool/booklet-pdf): Rearrange pages for booklet printing
 - [Batch Compress PDF](https://privatools.me/tool/batch-compress-pdf): Compress multiple PDFs at once in parallel

@@ -5,18 +5,18 @@
       "text": "Select an .epub e-book file up to 500 MB."
     },
     {
-      "name": "Choose page layout",
-      "text": "Select a page size (A4, Letter, or custom dimensions). The tool reflows text and embeds images to match the chosen layout."
+      "name": "Know what is kept",
+      "text": "There are no layout options: the text of each chapter is set in 11 pt Helvetica on A4 pages as one running paragraph. Images, headings, bold and italic, and paragraph breaks are not kept, and characters outside Western European scripts print as black boxes."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Chapters, formatting, and embedded images are preserved in the output PDF."
+      "text": "Click Convert. Chapters follow the order of their file names inside the EPUB, which is not always the reading order, so check the result."
     }
   ],
   "faq": [
     {
       "q": "Are images and formatting preserved?",
-      "a": "Yes. Chapter headings, bold/italic text, embedded images, and basic CSS styling are preserved in the PDF output."
+      "a": "No. Only the text is extracted: images, headings, bold and italic, and the book's styling are dropped, and each chapter becomes one continuous block of text. The chapter's page title and any style rules written inside it can also appear as text at the start of the chapter."
     },
     {
       "q": "Can I convert DRM-protected EPUBs?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "What page size options are available?",
-      "a": "A4, Letter, and custom dimensions. The text is reflowed to fit the chosen page size while keeping chapter breaks."
+      "a": "Only A4, with 1-inch margins. There is no Letter or custom size, and the text is wrapped to fit that page."
     }
   ]
 }

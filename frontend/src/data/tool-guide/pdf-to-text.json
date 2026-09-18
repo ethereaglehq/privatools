@@ -2,15 +2,15 @@
   "howto": [
     {
       "name": "Upload the PDF",
-      "text": "Select a text-based or scanned PDF up to 500 MB."
+      "text": "Select one or more text-based PDFs up to 500 MB each."
     },
     {
-      "name": "Choose extraction mode",
-      "text": "Select plain text extraction for text-based PDFs, or enable OCR for scanned documents. Pick the OCR language if needed."
+      "name": "Extract the text",
+      "text": "Click Extract text. The text is read from the PDF text layer; there is no OCR here, so a scanned page comes back empty with a suggestion to run OCR PDF first."
     },
     {
       "name": "Download the text",
-      "text": "Click Convert. The extracted text is returned as a .txt file with page breaks preserved."
+      "text": "For one PDF, the text appears with word, character and line counts; copy it or download it as a .txt file. Several PDFs download as a ZIP with one .txt per PDF. Pages are separated by a blank line."
     }
   ],
   "faq": [
@@ -20,11 +20,11 @@
     },
     {
       "q": "Can I extract text from a specific page range?",
-      "a": "Yes. Specify page numbers or ranges to extract text from only the pages you need."
+      "a": "Not in this tool; it extracts every page. Pull the pages you need into a smaller PDF with Extract Pages first, then extract the text from that."
     },
     {
       "q": "How does it handle multi-column layouts?",
-      "a": "The tool reads text in natural reading order. Two-column layouts are generally handled correctly, but complex magazine-style layouts may interleave columns."
+      "a": "It does not analyze the layout; text comes out in the order it is stored in the PDF. When a two-column document stores each column in turn, the columns come out one after the other; when it stores the page line by line, lines from the two columns are interleaved."
     }
   ]
 }

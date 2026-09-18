@@ -6,7 +6,7 @@
     },
     {
       "name": "Define shapes",
-      "text": "For each shape, specify type (rectangle, ellipse, line, polygon), page number, coordinates, color, and stroke width."
+      "text": "For each shape, choose the type (rectangle, circle, line or arrow), page number, coordinates, stroke color, optional fill color, and stroke width. A circle takes the smaller of its width and height as its diameter."
     },
     {
       "name": "Apply and download",
@@ -20,11 +20,11 @@
     },
     {
       "q": "Can I draw filled or only outlined shapes?",
-      "a": "Both. Set fillColor for a filled shape; omit it and only the stroke renders. Set both for an outlined fill."
+      "a": "Both. Pick a fill color for a filled shape; leave the fill empty and only the outline is drawn. Set both for an outlined fill."
     },
     {
       "q": "What about transparency?",
-      "a": "Use a color with alpha (e.g., rgba(255,0,0,0.5)) or pass an opacity value (0–1)."
+      "a": "Not supported: shapes are drawn in solid colors. Leave the fill empty to keep the content inside a rectangle or circle visible."
     }
   ]
 }

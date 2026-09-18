@@ -5,16 +5,16 @@
       "text": "Upload a PDF up to 500 MB. It is processed in isolated temporary per-request storage for the conversion, and response cleanup removes the job's temporary files after your download is sent."
     },
     {
-      "name": "Choose DPI",
-      "text": "96 DPI for web preview/thumbnails, 150 DPI for general on-screen viewing (default), 300 DPI for printable copies, 600 DPI for archival. Higher DPI means larger files."
+      "name": "Check the output settings",
+      "text": "Every page is rendered at 150 DPI, good for on-screen viewing and sharing, and saved at JPEG quality 75. There is no resolution or quality setting here; for 72 or 300 DPI, use PDF to Image."
     },
     {
-      "name": "Set JPEG quality",
-      "text": "Quality 70-95 (default 85). Lower values produce smaller files with more visible compression artifacts; higher values are nearly indistinguishable from the source."
+      "name": "Add more PDFs (optional)",
+      "text": "Queue up to 25 PDFs. Each one is converted separately and gets its own download, and Download all bundles the results into one ZIP."
     },
     {
-      "name": "Pick pages (optional)",
-      "text": "Enter ranges like '1-3, 7, 12-15' to convert only specific pages, or leave blank to convert every page."
+      "name": "Need only some pages?",
+      "text": "Every page is converted. To convert only some, pull them into a smaller PDF with Extract Pages first."
     },
     {
       "name": "Convert and download",
@@ -24,27 +24,27 @@
   "faq": [
     {
       "q": "Why JPG instead of PNG?",
-      "a": "JPG is smaller for photos and scanned content (typically 5-10x smaller at quality 85). Use PDF-to-PNG if your PDF has crisp text or graphics where JPEG compression artifacts would show as ringing around letter edges."
+      "a": "JPG is much smaller for photos and photographic scans. Use PDF-to-PNG if your PDF has crisp text or graphics where JPEG compression artifacts would show as ringing around letter edges."
     },
     {
       "q": "What about transparency?",
-      "a": "JPG doesn't support transparency. White pages render as white; PDF transparent regions become white in JPG. For transparency, use PDF-to-PNG instead."
+      "a": "JPG doesn't support transparency. Pages are rendered onto a white background, so transparent regions come out white. PDF-to-PNG renders onto white as well, so neither gives a transparent image."
     },
     {
       "q": "How long does it take?",
-      "a": "Roughly 50-100 ms per page at 150 DPI on the server. A 100-page PDF takes ~10 seconds end-to-end. Higher DPI (300+) increases time proportionally."
+      "a": "Roughly 50-100 ms per page at 150 DPI on the server. A 100-page PDF takes ~10 seconds end-to-end, depending on how complex the pages are."
     },
     {
       "q": "What happens to a confidential PDF after I upload it?",
       "a": "The PDF is uploaded over HTTPS and rendered in isolated temporary per-request storage on the PrivaTools server, using local libraries rather than a third-party API. Response cleanup removes the PDF and the generated JPGs after the result is sent, and a background sweep clears anything left behind by an interrupted request."
     },
     {
-      "q": "What DPI should I use?",
-      "a": "96 DPI for web preview/thumbnails, 150 DPI for general on-screen viewing (default), 300 DPI for printable copies, 600 DPI for archival. Higher DPI = larger files. For social-media sharing, 150 DPI is typically more than enough."
+      "q": "What resolution are the JPGs?",
+      "a": "150 DPI, which makes an A4 page about 1240 x 1755 pixels, plenty for on-screen viewing and social-media sharing. For 72 DPI thumbnails or 300 DPI print copies, use PDF to Image, which lets you choose."
     },
     {
       "q": "Can I convert just specific pages?",
-      "a": "Yes. Enter individual page numbers or ranges (e.g. 1-3, 7, 12-15). Each selected page becomes one JPG. Single-page selections return as a single JPG; multi-page selections come as a ZIP."
+      "a": "Not on this page; every page is converted. Pull the pages you need into a smaller PDF with Extract Pages first, then convert it. Longer PDFs come as a ZIP. A one-page PDF returns a single JPG, which currently downloads with a .zip name, so rename it to .jpg."
     },
     {
       "q": "What's the file size limit?",
@@ -52,7 +52,7 @@
     },
     {
       "q": "Do the JPGs carry a watermark or need an account?",
-      "a": "No. The images carry no watermark and the tool works without an account. Fair-use rate limits apply to conversions, as on every tool."
+      "a": "No. The images carry no watermark and the tool works without an account. Fair-use rate limits apply to conversions."
     }
   ]
 }

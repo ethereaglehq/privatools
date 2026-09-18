@@ -2,21 +2,21 @@
   "howto": [
     {
       "name": "Upload the PDF",
-      "text": "Drop a PDF up to 500 MB. Best for scanned documents with consistent margins."
+      "text": "Drop one or more PDFs, up to 500 MB each. It works on pages with real text: a scanned page is one full-page image, so it is left as it is."
     },
     {
       "name": "Let auto-detection scan",
-      "text": "PrivaTools analyses the bounding box of actual content on each page using PyMuPDF — ignoring whitespace, page numbers in margins, and scan-edge artifacts."
+      "text": "PrivaTools finds the area covered by the text and images on each page using PyMuPDF. Everything counts, including a page number in the margin, while vector drawings such as lines and boxes are not detected and can be trimmed away."
     },
     {
       "name": "Download the cropped PDF",
-      "text": "Click Auto Crop. Each page's MediaBox is shrunk to the detected content bounding box, eliminating dead margins."
+      "text": "Click Auto Crop. Each page's visible area (its CropBox) is set to that box plus a 20-point margin; the rest of the page stays in the file, hidden."
     }
   ],
   "faq": [
     {
       "q": "Will this make text run off the page?",
-      "a": "No — the algorithm leaves a small safety margin around detected content. If a page has no content (blank), the original MediaBox is kept."
+      "a": "Not text or images: a 20-point margin is kept around them. Vector graphics such as lines, boxes and charts drawn as shapes are not detected, so they can end up outside the new area. A page with no text or images is left as it is."
     },
     {
       "q": "What if my PDF has different page sizes after scanning?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Will this affect printing?",
-      "a": "After auto-crop, printing produces a smaller paper size. If you need the same paper size with less margin, use the Resize tool afterwards."
+      "a": "The pages become smaller than the paper, so choose how your print dialog should place them, for example Fit to page. Do not run Resize afterwards: it removes the crop box and brings the whole page back."
     }
   ]
 }

@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the stitched image",
-      "text": "Pages are rendered at 100 DPI and joined top to bottom on a white canvas. Pages narrower than the widest one are centred, so a mixed-size document stays aligned."
+      "text": "Pages are rendered at the resolution you pick (100 DPI by default, 36 to 200 DPI) and joined top to bottom on a white canvas, with a thin gap between pages. Pages narrower than the widest one are centred, so a mixed-size document stays aligned."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "What resolution are the pages rendered at?",
-      "a": "100 DPI, which keeps a normal page readable while stopping a long document from becoming an unusable image. A 30-page document produces an image roughly 30,000 pixels tall."
+      "a": "100 DPI by default, which keeps a normal page readable while stopping a long document from becoming an unusable image. You can also pick 36, 72, 150 or 200 DPI. At 100 DPI a 30-page A4 document produces an image roughly 35,000 pixels tall."
     },
     {
       "q": "What happens if my pages are different sizes?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "Is there a page limit?",
-      "a": "No hard limit, but very long documents produce images some software will refuse to open. If you hit that, split the PDF first and stitch each part separately."
+      "a": "Yes. The tool stitches at most 200 pages, and a JPG cannot be taller than 65,500 pixels, which is about 55 A4 pages at 100 DPI, so choose PNG or a lower resolution for longer documents. Very long images can also be refused by some software; if you hit that, split the PDF first and stitch each part separately."
     }
   ]
 }

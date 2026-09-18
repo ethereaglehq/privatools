@@ -6,7 +6,7 @@
     },
     {
       "name": "Describe the stamp",
-      "text": "Give the prefix, digit count and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone."
+      "text": "Give the prefix and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone. The digit count matters only when both are blank: then anything in the top or bottom inch that looks like letters followed by at least that many digits is removed."
     },
     {
       "name": "Download the clean PDF",
@@ -19,8 +19,8 @@
       "a": "Usually, if the stamps were added as text and you can describe their shape: prefix, digit count, suffix. Numbers burned into a scanned image are part of the picture and cannot be lifted this way."
     },
     {
-      "q": "Why do I have to type the prefix and digits?",
-      "a": "So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. Describing the format is what keeps the removal surgical."
+      "q": "Why type the prefix and digits?",
+      "a": "So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. With a prefix or suffix, only text with exactly that around a number is removed; with both blank, anything in the top or bottom inch shaped like letters and at least the given number of digits goes."
     },
     {
       "q": "Does removing Bates numbers change the rest of the page?",

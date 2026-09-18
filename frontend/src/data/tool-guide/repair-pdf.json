@@ -6,11 +6,11 @@
     },
     {
       "name": "PrivaTools rebuilds the file structure",
-      "text": "Uses pikepdf to parse the PDF tolerantly, recover damaged cross-reference tables, and rewrite the file with a clean structure."
+      "text": "Uses pikepdf to parse the PDF tolerantly, recover damaged cross-reference tables, and rewrite the file with a clean structure; if that fails, it retries with MuPDF."
     },
     {
       "name": "Download the repaired PDF",
-      "text": "Most viewer-breaking issues (broken xref, missing trailer, corrupted streams) are fixable."
+      "text": "Structural damage such as a broken cross-reference table or a missing trailer is usually fixable. Damaged data inside a page's content is copied as it is, and a file cut off too early may not be recoverable at all."
     }
   ],
   "faq": [

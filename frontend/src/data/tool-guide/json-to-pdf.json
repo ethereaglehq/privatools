@@ -1,30 +1,30 @@
 {
   "howto": [
     {
-      "name": "Upload a JSON file or paste JSON",
-      "text": "Select a .json file up to 500 MB or paste JSON directly into the editor."
+      "name": "Upload a JSON file",
+      "text": "Select one or more .json files of up to 5 MB each; each file becomes its own PDF. The JSON must be valid UTF-8 and nest no more than 25 levels deep."
     },
     {
-      "name": "Choose the rendering style",
-      "text": "Pick syntax-highlighted code view for developers or a table/tree view for structured data."
+      "name": "Know the fixed layout",
+      "text": "There are no view options: the JSON is pretty-printed with two-space indentation in 9 pt Courier on A4 pages, with keys in bold blue and values in black. Lines are not wrapped, so very long values run off the right edge of the page."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation and optional line numbers."
+      "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation."
     }
   ],
   "faq": [
     {
       "q": "Is JSON validated before conversion?",
-      "a": "Yes. The tool validates the JSON and shows a clear error message with the line number if the syntax is invalid."
+      "a": "Yes. The file is parsed first and invalid JSON is not converted, but the error is a general conversion failure without a line number. Check the syntax in JSON / XML Formatter to find the problem."
     },
     {
       "q": "How are nested objects displayed?",
-      "a": "Nested objects and arrays are indented with syntax highlighting. Collapsible sections are shown in the preview but expanded in the PDF."
+      "a": "Nested objects and arrays are indented two spaces per level, with every key in bold blue. Everything is printed fully expanded; there is no preview or collapsing."
     },
     {
       "q": "Can I convert JSON arrays into tables?",
-      "a": "Yes. Arrays of objects with consistent keys are rendered as a table, with keys as column headers and each object as a row."
+      "a": "No. Arrays of objects are printed as indented JSON like the rest of the file, not as a table. For a table, convert the array to CSV with the CSV ↔ JSON Converter and then use CSV to PDF."
     }
   ]
 }

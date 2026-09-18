@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload a CSV file",
-      "text": "Select a .csv or .tsv file up to 500 MB. The first row is treated as column headers by default."
+      "text": "Select a comma-separated .csv file up to 500 MB. The first row always becomes the column header."
     },
     {
-      "name": "Customize table appearance",
-      "text": "Set font size, enable zebra striping, choose landscape or portrait orientation. Wide tables automatically wrap or scale to fit."
+      "name": "Check the table width",
+      "text": "There are no layout settings: the table is drawn on portrait A4 pages in 9 pt text with striped rows. Columns that do not fit across the page are cut off rather than wrapped or moved to another page, so trim wide files first."
     },
     {
       "name": "Convert to PDF",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "Does the tool auto-detect delimiters?",
-      "a": "Yes. Comma, semicolon, tab, and pipe delimiters are automatically detected. You can also specify the delimiter manually."
+      "a": "No. Only commas separate columns, and quoted values may contain commas. Semicolon-, tab-, or pipe-separated files come out as a single column, so save them as comma-separated CSV first."
     },
     {
       "q": "How are wide tables handled?",
-      "a": "Wide tables can be rendered in landscape orientation. If they still exceed the page width, columns are scaled to fit or split across pages."
+      "a": "Pages are always portrait A4, and columns that do not fit across the page are cut off at the right edge rather than wrapped or split across pages. For example, a file with 30 short columns shows only its first nine, so remove or split columns before converting."
     },
     {
       "q": "Is the first row treated as a header?",
-      "a": "By default yes — the first row is bolded as a header. You can disable this if your data has no header row."
+      "a": "Yes, always. The first row is drawn in bold white text on a dark background, and there is no option to turn this off, so add a header row if your data has none. The header appears once, at the top of the first page."
     }
   ]
 }

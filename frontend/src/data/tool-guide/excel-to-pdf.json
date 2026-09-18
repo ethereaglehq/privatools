@@ -6,7 +6,7 @@
     },
     {
       "name": "PrivaTools converts each sheet to a PDF page",
-      "text": "Cell values, formulas (as computed), formatting, and column widths are preserved. Each worksheet becomes one or more pages depending on content size."
+      "text": "Each sheet, hidden ones included, is drawn as a plain table on landscape A4 pages in 8 pt Helvetica, over one or more pages. Only cell values come across: number and date formats, colours, fonts, and column widths are not kept, the columns share the page width equally, and text too long for its column is cut short."
     },
     {
       "name": "Download the PDF",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "Will my formulas be visible?",
-      "a": "No — only computed values appear. The formulas themselves are not included (PDF has no formula concept)."
+      "a": "No. Each formula shows the result saved with the workbook the last time a spreadsheet app calculated it. Files written by tools that do not store those results show formula cells as blank."
     },
     {
       "q": "What about charts and images?",
-      "a": "Charts render as static images. Embedded images are preserved at their original size."
+      "a": "They are left out: only cell values are converted, so charts, pictures, and shapes do not appear. Office to PDF, which uses LibreOffice, includes them."
     },
     {
       "q": "How does it handle very wide sheets?",
-      "a": "Wide sheets paginate across multiple PDF pages, with column headers repeated on each."
+      "a": "All columns are squeezed across one landscape A4 page and long values are cut short to fit, so very wide sheets become hard to read. The header row is not repeated on later pages."
     }
   ]
 }

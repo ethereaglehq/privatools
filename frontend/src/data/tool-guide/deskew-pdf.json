@@ -6,25 +6,25 @@
     },
     {
       "name": "PrivaTools detects skew per page",
-      "text": "The algorithm analyses the text line angle on each page and computes the rotation needed to straighten it."
+      "text": "The algorithm tries rotations of up to about 6° either way, in half-degree steps, on a low-resolution copy of each page and picks the angle at which the lines of text run straightest."
     },
     {
       "name": "Download the deskewed PDF",
-      "text": "Each page is rotated by its detected angle (typically -5° to +5°) and the corners are cropped to fit. Result: text rows are perfectly horizontal."
+      "text": "Each tilted page is rotated by its detected angle and saved as an image, at 200 DPI in a file of one or two pages and 100 DPI otherwise; the rotated picture is scaled to fit the original page size, with white in the corners. Pages that are already straight, within 0.3°, are kept exactly as they were."
     }
   ],
   "faq": [
     {
       "q": "My scans look fine — should I run deskew?",
-      "a": "If the text appears tilted by more than ~0.5°, deskew helps OCR accuracy noticeably. For perfectly straight scans it's a no-op."
+      "a": "Pages whose detected tilt is 0.3° or less keep their original content, but the file is rebuilt, so bookmarks and document metadata are dropped either way. A tilted page is replaced by a rotated image, so any text layer on that page is lost. Use it on scans only: on born-digital pages the detector reported tilts of 0.5° to 1° that were not there."
     },
     {
       "q": "Will deskew add white margins?",
-      "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills the margins with the surrounding background color (usually white)."
+      "a": "Yes — rotated pages need a slightly larger canvas. PrivaTools fills it with white and scales the result to fit the original page size."
     },
     {
       "q": "Should I deskew before or after OCR?",
-      "a": "Always before. OCR engines are much more accurate on straight-line text."
+      "a": "Before. A straightened page is replaced by an image without a text layer, so OCR has to run on the deskewed file anyway."
     }
   ]
 }

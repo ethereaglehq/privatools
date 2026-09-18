@@ -6,7 +6,7 @@
     },
     {
       "name": "PrivaTools renders via LibreOffice headless",
-      "text": "Fonts, styles, embedded images, tables, footnotes, and bibliography are preserved."
+      "text": "Styles, embedded images, tables, footnotes, and bibliography are kept; fonts the server does not have are replaced with similar ones, which can shift line and page breaks."
     },
     {
       "name": "Download the PDF",

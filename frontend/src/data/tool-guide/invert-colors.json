@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose DPI for rendering",
-      "text": "Higher DPI gives sharper output but larger file size. 150 DPI is the default; 300 for archival, 96 for web previews."
+      "text": "Higher DPI gives sharper output but larger file size. Choose Fast (72 DPI), Balanced (150 DPI, the default) or Sharp (200 DPI)."
     },
     {
       "name": "Download the inverted PDF",

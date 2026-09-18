@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload your PDF",
-      "text": "Drop a PDF up to 500 MB."
+      "text": "Drop one or more PDFs, up to 500 MB each. The same header and footer go on all of them."
     },
     {
       "name": "Enter header and footer text",
-      "text": "Optional left/center/right slots for both header and footer. Use placeholders like {page}, {total}, {date} for dynamic content."
+      "text": "Type a header, a footer, or both, and set the font size (6-32 pt on the slider, 10 pt by default). The text is printed exactly as typed on every page; placeholders such as {page} or {date} are not filled in, so use Page Numbers for numbering."
     },
     {
       "name": "Apply and download",
@@ -16,11 +16,11 @@
   "faq": [
     {
       "q": "Will the header/footer overlap existing content?",
-      "a": "It might if your pages have content close to the edges. Use the Crop or Resize tool first to add margin space if needed."
+      "a": "It can. The header sits about 20 points below the top edge and the footer about 20 points above the bottom edge, drawn on top of whatever is already there, and each line starts at the middle of the page and runs to the right. Check pages whose content comes close to the edges, and keep the text short or the font small."
     },
     {
       "q": "Can I exclude the cover page?",
-      "a": "Pages-to-affect parameter accepts ranges like '2-' to skip the first page or '2-N-1' to skip first + last."
+      "a": "Not in one pass: the header and footer go on every page. To leave the cover plain, split it off with Split PDF, add the header and footer to the rest, then join the two files again with Merge PDF."
     },
     {
       "q": "Are these editable annotations or baked-in?",

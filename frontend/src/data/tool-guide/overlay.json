@@ -2,15 +2,15 @@
   "howto": [
     {
       "name": "Upload the base PDF",
-      "text": "The PDF that forms the background."
+      "text": "The main document (A). The output keeps its pages, bookmarks, links and form fields."
     },
     {
       "name": "Upload the overlay PDF",
-      "text": "A PDF whose pages will be layered on top of the base."
+      "text": "The PDF (B) whose pages are layered onto the base, on top of it or behind it depending on the mode."
     },
     {
       "name": "Choose mode and download",
-      "text": "Overlay: foreground on top. Underlay: behind. Stamp: applied to every page repeatedly. Output: a merged PDF with the overlay rendered onto each base page."
+      "text": "Overlay puts B on top of A; Stamp puts B behind A as a background. Output: the base PDF with an overlay page drawn onto each of its pages."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I overlay only some pages?",
-      "a": "By default it applies cycle-wise: if the overlay has 3 pages and the base has 10, the overlay repeats. For one-time overlay, use a base + overlay of equal length."
+      "a": "No. Every base page gets an overlay page: overlay page 1 goes on base page 1, page 2 on page 2, and so on, and once the overlay runs out its first page is reused for the remaining base pages. A one-page overlay, such as a letterhead, therefore lands on every page."
     },
     {
       "q": "Does transparency work?",

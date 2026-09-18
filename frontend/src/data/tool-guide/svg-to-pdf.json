@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload SVG images",
-      "text": "Drop one or many .svg files. Vector content scales infinitely."
+      "text": "Drop one or many .svg files, up to 50 files and 200 MB in total. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."
     },
     {
       "name": "Choose page size",
-      "text": "Letter or A4. Each SVG scales proportionally to fit while preserving aspect ratio."
+      "text": "Auto (the default) sizes the page to the rendered image, which is 2400 points wide, so choose A4 or Letter for a printable page; each SVG is then scaled to fit while preserving its aspect ratio."
     },
     {
       "name": "Download the PDF",
-      "text": "All SVGs become one PDF, one per page. Vector content stays vector — no rasterization."
+      "text": "All SVGs become one PDF, one per page. Each drawing is rasterized into an image first, so the PDF contains pictures rather than vector paths or selectable text."
     }
   ],
   "faq": [
     {
       "q": "Will my SVG stay as vector inside the PDF?",
-      "a": "Yes — PDF natively supports vector content, so paths, text, and gradients remain editable at any zoom level."
+      "a": "No. Each SVG is rendered with CairoSVG to a PNG image 2400 pixels wide, and that image is placed on the page. It looks sharp at normal sizes, but edges soften when you zoom in far, and text cannot be selected or searched."
     },
     {
       "q": "What about embedded raster images inside SVG?",
-      "a": "Embedded raster images (data URLs, external image refs) are preserved as raster within the PDF."
+      "a": "Images embedded in the SVG as data: URIs are drawn. References to images in other files or at web addresses are blocked for security, and an SVG that contains one is rejected with an error."
     },
     {
       "q": "Does it handle CSS styles inside SVG?",
-      "a": "Standard SVG CSS (fill, stroke, opacity, transform) is honored. External stylesheet refs are inlined first."
+      "a": "Styles written inside the SVG, in a style element or style attributes, are applied, but external stylesheets are not loaded. Note that transparency is not kept: areas with no background come out black, so add a white background rectangle to drawings that need one."
     }
   ]
 }

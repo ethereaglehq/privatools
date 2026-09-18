@@ -36,7 +36,7 @@
     },
     {
       "q": "Is the redaction reversible?",
-      "a": "No. The server applies PyMuPDF redactions, which remove the matched text from the page content instead of drawing a box over it, and the file is rewritten without the removed objects. Document metadata is separate: run Strip Metadata afterwards if the author or title fields are sensitive."
+      "a": "No. The server applies PyMuPDF redactions, which remove the matched text from the page content instead of drawing a box over it, and the file is rewritten without the removed objects. Document metadata is separate: run Strip Metadata afterwards if the author or title fields are sensitive. Bookmark titles and comments that repeat a redacted string are not changed either."
     },
     {
       "q": "How is this different from Redact PDF?",

@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload the PDF",
-      "text": "Select a PDF up to 500 MB. PyMuPDF's HTML exporter preserves fonts and positioning."
+      "text": "Select one or more PDFs up to 500 MB each. Each page is exported with PyMuPDF's HTML exporter, which keeps the text, images and font styles."
     },
     {
       "name": "Download the HTML",
@@ -12,7 +12,7 @@
   "faq": [
     {
       "q": "How accurate is the conversion?",
-      "a": "PyMuPDF preserves text positioning and fonts via inline styles. Layout is faithful for simple documents; complex multi-column or floating-element layouts may need manual cleanup."
+      "a": "Each line of text becomes a paragraph with its font, size, bold, italics and color set as inline styles, and the pages follow one another. The original positions are not applied, so lines stack one under another; drawn lines, boxes, vector charts and links are left out."
     },
     {
       "q": "Are images included?",
@@ -20,7 +20,7 @@
     },
     {
       "q": "Why convert PDF to HTML?",
-      "a": "Web archiving, accessibility (screen readers handle HTML better than complex PDFs), republishing offline documents online, or any use where you need the content as a web page."
+      "a": "Web archiving, republishing offline documents online, reading a document in any browser without a PDF viewer, or any use where you need the content as a web page."
     }
   ]
 }

@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload your PDF",
-      "text": "Select a PDF up to 500 MB."
+      "text": "Select one or more PDFs, up to 500 MB each. The PDF needs real text: a scanned page has no words to search."
     },
     {
-      "name": "Define each link",
-      "text": "Specify the page, rectangle coordinates (x, y, width, height in PDF points), and target URL. Coordinates use the PDF coordinate system where (0,0) is bottom-left."
+      "name": "Let it find the addresses",
+      "text": "There is nothing to draw or type. PrivaTools reads the text of every page and picks out each web address that starts with http:// or https://. Addresses without that prefix, such as www.example.com, and email addresses stay plain text."
     },
     {
       "name": "Download the linked PDF",
-      "text": "Click Add Links. PrivaTools embeds clickable hyperlink annotations at each rectangle, opening the target URL on click in any PDF reader."
+      "text": "Click Add hyperlinks. Each address found gets a clickable link over its text that opens the address when clicked in a PDF reader."
     }
   ],
   "faq": [
     {
       "q": "Can I link to other pages in the same PDF?",
-      "a": "Currently the tool supports external URLs. For internal page jumps, use the Bookmarks tool instead."
+      "a": "No. It only links web addresses already written in the text. For jumps to pages within the document, add bookmarks with the Bookmarks tool."
     },
     {
       "q": "Are the links visible to the user?",
-      "a": "The clickable rectangle is invisible by default. To add visible underlined link text, use the Edit PDF tool to draw the underline first."
+      "a": "The clickable area is invisible and sits over the address text, which looks as it did before. To make links stand out, draw an underline with Edit PDF."
     },
     {
       "q": "Will hyperlinks survive printing or PDF/A conversion?",
-      "a": "Hyperlinks don't print (they're interactive annotations) but they're preserved through most PDF/A conversions. PDF/A-1a strips them; PDF/A-2 keeps them."
+      "a": "A link has no printed appearance, so paper copies show only the address text. PrivaTools' PDF to PDF/A keeps the links: it re-saves the file with a PDF/A-2b label and does not remove annotations."
     }
   ]
 }

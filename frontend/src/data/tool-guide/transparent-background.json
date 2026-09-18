@@ -1,26 +1,26 @@
 {
   "howto": [
     {
-      "name": "Upload a PDF (or image)",
-      "text": "Drop a PDF up to 500 MB. PrivaTools renders each page and detects the background color."
+      "name": "Upload a PDF",
+      "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300)."
     },
     {
       "name": "Set threshold",
-      "text": "How close to pure white (or off-white) should be treated as background. 240 (default) catches most scanned documents."
+      "text": "Set how close to pure white a pixel must be to count as background, from 180 to 255 (245 by default). A pixel whose red, green and blue values are all at or above the threshold becomes transparent."
     },
     {
       "name": "Download with transparency",
-      "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds."
+      "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds. Each page becomes a single image, so its text can no longer be selected or searched."
     }
   ],
   "faq": [
     {
       "q": "Will text be affected?",
-      "a": "Black text is preserved. Light grey or low-contrast text near the threshold may become semi-transparent — lower the threshold (e.g. 220) to be more aggressive about preserving content."
+      "a": "Dark text is kept fully opaque. Each pixel is either kept or made fully transparent, with nothing in between, so light grey text at or above the threshold disappears. Raise the threshold toward 255 to remove only the purest white, or lower it to clear off-white backgrounds as well. The text also stops being selectable, because each page becomes an image."
     },
     {
       "q": "What's the output format?",
-      "a": "PDF with transparent regions where the background was. Open in a reader to see the underlying canvas show through."
+      "a": "A PDF with transparent regions where the background was: each page holds one PNG image with transparency, on a page of the original size. Open it in a reader to see the underlying canvas show through."
     },
     {
       "q": "Can I use this on photos?",

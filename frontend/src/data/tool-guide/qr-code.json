@@ -2,21 +2,21 @@
   "howto": [
     {
       "name": "Enter the data to encode",
-      "text": "URL, contact card (vCard), wifi credentials, plain text, or any string up to ~2,500 characters."
+      "text": "Type or paste a URL or plain text, or a contact card (vCard) or WiFi login already written in its standard text format; there is no form that builds them for you. Ordinary text can run to about 2,200 characters."
     },
     {
       "name": "Choose size and format",
-      "text": "Pixel dimensions of the output QR. Format: PNG (raster) or SVG (vector, scales infinitely)."
+      "text": "Set the size from 100 to 1,200 pixels (300 by default) and download as a PNG image or a one-page PDF containing the same image. You can also change the code and background colours and add a small centre logo."
     },
     {
       "name": "Download the QR",
-      "text": "PrivaTools generates a QR code with error correction level L (default; supports up to 7% damage)."
+      "text": "Click Generate QR code and download the result; PNG codes also show a preview. Codes use error correction level M, which tolerates about 15% damage, or level H, about 30%, when you add a centre logo."
     }
   ],
   "faq": [
     {
       "q": "Can I customize colors?",
-      "a": "No. Codes are generated black on white; custom colours and centre logos are not supported. Plain high-contrast codes are also the most reliable to scan."
+      "a": "Yes. Pick any colour for the code and the background, and optionally add a small centre logo as a PNG, JPG or WebP image. Keep a dark code on a light background with strong contrast, and scan the finished code before sharing it."
     },
     {
       "q": "How do I encode a URL with parameters?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "What's the maximum data I can encode?",
-      "a": "Around 2,500 alphanumeric characters or 4,000 numeric digits at error correction level L. Higher EC levels reduce capacity."
+      "a": "About 2,200 characters of ordinary text, such as a long URL, or about 5,300 digits, at the error correction level M the tool uses. Adding a centre logo switches to level H and roughly halves that. Longer input cannot be encoded."
     }
   ]
 }

@@ -6,17 +6,17 @@
     },
     {
       "name": "View the metadata",
-      "text": "PrivaTools displays the document's Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, and any custom XMP fields."
+      "text": "PrivaTools displays the document's Title, Author, Subject, Keywords, Producer, Creator, Creation Date and Modified Date, as stored in its Info dictionary, plus the page count."
     },
     {
       "name": "Decide what to do next",
-      "text": "If you want to strip the metadata, use Strip Metadata. To set new values, use Update Metadata."
+      "text": "To change the Title, Author, Subject or Keywords, switch to Edit in this tool; clearing a field removes it. To remove all metadata, use Strip Metadata."
     }
   ],
   "faq": [
     {
       "q": "What metadata does a typical PDF carry?",
-      "a": "At minimum: producer (the software that created it) and creation date. Often also: author name, original filename, software version. Scanned PDFs may carry scanner model + driver."
+      "a": "Usually: producer (the software that created it) and creation date. Often also: author name, original filename, software version. Scanned PDFs may carry scanner model + driver."
     },
     {
       "q": "Why does this matter for privacy?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Is XMP metadata shown too?",
-      "a": "Yes — both the Info dictionary (old format) and XMP stream (new format) are inspected."
+      "a": "No. Only the Info dictionary (old format) is shown; the XMP stream (new format) is not read. When you edit, the new values are written to both."
     }
   ]
 }

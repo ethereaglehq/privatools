@@ -6,21 +6,21 @@
     },
     {
       "name": "Choose comparison mode",
-      "text": "Text: word-level diff. Visual: side-by-side rendered pages with changes highlighted."
+      "text": "Visual (the default) renders both versions and paints the areas that differ in a highlight colour you can pick. Text compares the extracted text line by line."
     },
     {
       "name": "Download or view the diff",
-      "text": "PrivaTools returns a report PDF with additions in green and deletions in red, plus a summary of changed pages and word counts."
+      "text": "Visual mode downloads a PDF of page images, the original pages with the changed areas painted in the highlight colour, covering up to the first 50 pages. Text mode shows the diff on the page, with added lines in green and removed lines in red, plus the page count of each file."
     }
   ],
   "faq": [
     {
       "q": "Does this work on scanned PDFs?",
-      "a": "Only with OCR. Run OCR PDF on both files first so the text layer is present, then compare."
+      "a": "Visual mode does, because it compares how the pages look, but scanner noise and small shifts between two scans also show up as changes. Text mode needs a text layer, so run OCR PDF on both files first."
     },
     {
       "q": "How accurate is the text diff?",
-      "a": "Word-level diff handles reordering, insertion, deletion, and formatting changes. Diffs based on character runs would be noisier."
+      "a": "It compares the extracted text line by line, so changing one word marks the whole line as removed and added again. Fonts, colours and other formatting are ignored, and moved text shows up as a deletion plus an addition. Use Visual mode to spot layout changes."
     },
     {
       "q": "Can I compare more than two files?",

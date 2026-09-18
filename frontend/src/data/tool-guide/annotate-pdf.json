@@ -6,7 +6,7 @@
     },
     {
       "name": "Add annotations",
-      "text": "Use the toolbar to add highlights, underlines, strikethroughs, sticky notes, and text boxes. Each annotation has a position, page, content, and color."
+      "text": "Draw a box on the page preview, or add an annotation from the list, then set its type (highlight, underline, strikethrough or sticky note), page, position and colour. A sticky note also takes a line of text."
     },
     {
       "name": "Save and download",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "Are annotations flattened?",
-      "a": "By default no — they remain as editable annotations. If you want them permanently baked into the page, run the Flatten tool afterwards."
+      "a": "No. They stay as separate annotations, so anyone with a PDF editor can move, change or delete them."
     },
     {
       "q": "Can I attach sticky-note comments?",
-      "a": "Yes. Add a note annotation with author + content; readers display it as an icon that opens a popup with the text on click."
+      "a": "Yes. Choose Sticky note and type its text; readers display it as an icon that opens a popup with the text on click. No author name is set."
     },
     {
       "q": "Do annotations survive PDF/A conversion?",
-      "a": "Some do (text, highlight, square) but interactive ones (file attachments, popup notes) get flattened or stripped depending on the PDF/A profile."
+      "a": "They survive PrivaTools' PDF to PDF/A, which re-saves the file with a PDF/A-2b label and leaves annotations, notes included, in place."
     }
   ]
 }

@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload TIFF images",
-      "text": "Drop .tif / .tiff files. Multi-page TIFFs are supported and each page becomes a PDF page."
+      "text": "Drop one or more .tif / .tiff files, up to 50 files and 200 MB in total. Only the first page of a multi-page TIFF is converted."
     },
     {
       "name": "Choose page size",
-      "text": "Letter or A4. Single-page TIFFs scale; multi-page TIFFs preserve their per-page sizes."
+      "text": "Auto (the default) makes each page the size of its image; A4 or Letter scale each image to fit a standard page."
     },
     {
       "name": "Download the PDF",
-      "text": "All TIFFs become one PDF. Compression (LZW, Deflate, JPEG inside TIFF) is converted to PDF-native equivalents."
+      "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF."
     }
   ],
   "faq": [
     {
       "q": "Will quality be preserved?",
-      "a": "Yes — TIFF is lossless. PDF uses Flate (lossless) or JPEG (near-lossless) when embedding. Default is high-quality JPEG to keep file size reasonable."
+      "a": "For standard 8-bit TIFFs, yes: the decoded pixels are stored with lossless Flate compression and no JPEG step is added. The trade-off is file size, since nothing is recompressed to save space."
     },
     {
       "q": "What about CMYK TIFFs (for print)?",
-      "a": "CMYK is preserved through to the PDF. Use this workflow for prepress / professional printing pipelines."
+      "a": "CMYK TIFFs stay CMYK: the pixels are embedded as DeviceCMYK image data. An embedded ICC colour profile is not carried over, so check colour-critical print jobs with your printer."
     },
     {
       "q": "How are multi-page TIFFs handled?",
-      "a": "Each TIFF page becomes a PDF page in order. Multiple multi-page TIFFs in one upload are concatenated."
+      "a": "Only the first page of each TIFF is converted; the other pages are ignored. Every TIFF file you add becomes one PDF page, in the order shown, so save each page as a separate TIFF first if you need them all."
     }
   ]
 }

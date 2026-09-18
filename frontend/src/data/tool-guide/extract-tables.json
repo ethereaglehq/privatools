@@ -5,30 +5,30 @@
       "text": "Select a PDF that contains one or more tables you need to extract as structured data."
     },
     {
-      "name": "Select pages",
-      "text": "Choose specific pages or let the tool auto-detect all tables across the entire document."
+      "name": "Extract the tables",
+      "text": "Click Extract Tables. Every page is checked with PyMuPDF table detection, which finds tables drawn with ruled lines; there is no page selection on this page."
     },
     {
-      "name": "Pick the output format",
-      "text": "Choose CSV, Excel (.xlsx), or JSON. Each detected table becomes a separate sheet or file."
+      "name": "Check the CSV",
+      "text": "All detected tables go into one CSV file in page order, with a blank row between tables. Cells that start with =, +, - or @ get a leading apostrophe so spreadsheet apps do not run them as formulas; this includes negative numbers."
     },
     {
       "name": "Download the extracted data",
-      "text": "Click Extract. Tables are parsed using Camelot/Tabula and delivered in the chosen format inside a ZIP."
+      "text": "For one PDF, the CSV downloads automatically, named after your PDF. For several PDFs, download each CSV or all of them as one ZIP."
     }
   ],
   "faq": [
     {
       "q": "What output formats are supported?",
-      "a": "CSV, Excel (.xlsx), and JSON. Each table is extracted separately and all results are packaged in a ZIP file."
+      "a": "CSV only. All detected tables go into one CSV file, with a blank row between tables. For an Excel workbook, use PDF to Excel, which puts each page on its own sheet."
     },
     {
       "q": "Can it extract tables from scanned PDFs?",
-      "a": "For best results, run OCR first using the OCR tool to create a text layer, then use table extraction. The tool works best with text-based PDFs."
+      "a": "Usually not. Detection looks for ruled lines drawn in the PDF itself, and a scanned page is a picture, so no table is found even after the OCR tool adds a text layer. The tool works on digitally created PDFs whose tables have ruled borders."
     },
     {
       "q": "How does the tool detect table boundaries?",
-      "a": "It uses Camelot and Tabula libraries, which detect ruled lines and text alignment patterns to identify table structures. Tables without visible borders may need manual page selection."
+      "a": "It uses PyMuPDF table detection, which looks for the ruled lines drawn around and between cells. Tables laid out with spacing alone, without visible borders, are usually not detected, and when no table is found you get an error instead of a CSV."
     }
   ]
 }

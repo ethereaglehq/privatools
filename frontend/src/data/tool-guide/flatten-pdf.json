@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload the PDF",
-      "text": "Select a PDF that contains form fields, annotations, or layers you want to flatten."
+      "text": "Select one or more filled PDF forms, up to 500 MB each. A PDF that contains comments, highlights or other annotations currently fails with an error."
     },
     {
-      "name": "Choose flattening options",
-      "text": "Decide whether to flatten form fields only, annotations only, or everything. Flattening converts interactive elements into static page content."
+      "name": "Let it lock the fields",
+      "text": "There are no options. Every form field is set to read-only; the fields and their values stay in the file, and links and layers are left as they are."
     },
     {
       "name": "Download the flattened PDF",
-      "text": "Click Flatten. The result is a clean PDF where all content is baked into the pages, preventing further edits."
+      "text": "Click Flatten and download. The values show as before, but a PDF reader will not let anyone edit the fields; because the fields are still in the file, a PDF editor can clear the read-only setting."
     }
   ],
   "faq": [
     {
       "q": "What does flattening a PDF mean?",
-      "a": "Flattening converts interactive elements like form fields, annotations, and layers into static page content. The visual appearance stays the same but the elements can no longer be edited."
+      "a": "Flattening usually means turning form fields and annotations into ordinary page content. This tool currently does part of that: it makes form fields read-only rather than merging them into the page, and it does not flatten comments, highlights or layers."
     },
     {
       "q": "When should I flatten a PDF?",
-      "a": "Flatten before sharing filled forms (to prevent edits), before printing (to avoid rendering issues), or when a recipient's PDF viewer does not display annotations correctly."
+      "a": "Before sending a filled form, so the recipient's reader will not let them change the answers."
     },
     {
       "q": "Does flattening reduce file size?",
-      "a": "Sometimes. Removing form field metadata and annotation data can slightly reduce file size, but the effect depends on the document."
+      "a": "Sometimes, slightly: the file is rewritten with unused objects removed and its streams compressed. The form fields themselves stay in the file."
     }
   ]
 }

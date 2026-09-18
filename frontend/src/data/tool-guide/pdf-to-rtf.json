@@ -12,11 +12,11 @@
   "faq": [
     {
       "q": "What's RTF good for?",
-      "a": "Rich Text Format opens in every word processor (Word, Pages, LibreOffice, WordPad) without the bloat of .docx and with better text fidelity than .txt. Useful for legacy or cross-platform document exchange."
+      "a": "Rich Text Format opens as an editable document in most word processors (Word, Pages, LibreOffice, WordPad). This export carries the same text as a .txt file, in one font with a page break after each PDF page, so it is a simple way to move PDF text into a word processor. Useful for legacy or cross-platform document exchange."
     },
     {
       "q": "Are images preserved?",
-      "a": "No. The current implementation focuses on text and structure. For full visual fidelity, use PDF to Word instead."
+      "a": "No. Only the text is exported, one PDF line per paragraph, in a single font without bold or italics. To keep images, bold and italics, try PDF to Word instead."
     },
     {
       "q": "Does it handle Unicode?",

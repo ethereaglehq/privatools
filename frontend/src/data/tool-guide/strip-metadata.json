@@ -6,7 +6,7 @@
     },
     {
       "name": "PrivaTools removes all metadata",
-      "text": "Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, all XMP fields, and any custom-defined metadata."
+      "text": "Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, all XMP fields, and any custom-defined metadata. The cleaned XMP keeps just two entries that the PDF library writes itself: a pikepdf producer tag and the time of processing."
     },
     {
       "name": "Download the clean PDF (or ZIP)",
@@ -20,11 +20,11 @@
     },
     {
       "q": "What about embedded images' EXIF?",
-      "a": "Image-level EXIF inside PDF embedded images is also stripped. The image pixel data is unchanged."
+      "a": "It is not removed. EXIF inside images embedded in the PDF is left as it is: in a test, the camera make stored in an embedded JPEG was still in the output. Only the document's own Info and XMP metadata is cleared."
     },
     {
       "q": "Is this the same as Sanitize?",
-      "a": "No — Strip Metadata removes informational fields. Sanitize removes security-risky elements (JavaScript, auto-launch attachments)."
+      "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and Movie and RichMedia (Flash) annotations; it leaves JavaScript, embedded files and XMP in place."
     }
   ]
 }

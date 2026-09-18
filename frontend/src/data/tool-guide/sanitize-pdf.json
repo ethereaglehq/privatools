@@ -5,26 +5,26 @@
       "text": "Drop a PDF up to 500 MB containing potentially risky elements."
     },
     {
-      "name": "PrivaTools removes risky content",
-      "text": "Strips embedded JavaScript, executable links to external apps, embedded files marked for auto-launch, and hidden 'flash' (deprecated SWF) content."
+      "name": "PrivaTools clears what it can",
+      "text": "It empties the document information fields (title, author, dates, producer) and deletes Movie and RichMedia annotations, the containers for old video and Flash (SWF) content. JavaScript, embedded files, links, layers, form fields, screen annotations and XMP metadata are left in the file."
     },
     {
       "name": "Download the sanitized PDF",
-      "text": "Visible content is preserved; security-risky elements are gone."
+      "text": "Visible content is preserved, and the file is rewritten without unused objects."
     }
   ],
   "faq": [
     {
       "q": "What is sanitization protecting against?",
-      "a": "Malicious PDFs that exploit reader vulnerabilities through embedded scripts or auto-launching attachments. Most modern readers are hardened against these, but defense in depth is wise."
+      "a": "In general, malicious PDFs that abuse embedded scripts or attachments. This tool does not remove those: in a test, a document-level JavaScript action, a link that launches a program and an embedded file all survived. Use it to clear identifying document info, not to neutralise a suspicious file."
     },
     {
       "q": "Does this remove form fields?",
-      "a": "No — form fields are kept (just JavaScript actions on them are stripped). Use Flatten or Delete Annotations to remove form structure."
+      "a": "No — form fields are kept, along with any actions attached to them."
     },
     {
       "q": "Are hyperlinks removed?",
-      "a": "Plain http/https links are kept. Links using non-web URI schemes (file:, mailto: with auto-execute, etc.) are stripped."
+      "a": "No. All links are kept, including links that launch another program or use a javascript: address."
     }
   ]
 }

@@ -5,26 +5,26 @@
       "text": "Type a public URL to render, or paste raw HTML/CSS directly into the editor."
     },
     {
-      "name": "Configure rendering options",
-      "text": "Set page size, margins, and whether to include background graphics. JavaScript rendering is supported for dynamic pages."
+      "name": "Know what gets rendered",
+      "text": "There are no page, margin, or background settings. Pasted HTML is laid out on A4 pages unless its CSS sets a page size, and stylesheets and images linked by full http(s) addresses are fetched. A web address is fetched as HTML only and laid out on A4 pages without its external stylesheets or images. JavaScript is not run in either mode."
     },
     {
       "name": "Generate the PDF",
-      "text": "Click Convert. The server uses a headless browser to render the page and produce a pixel-perfect PDF."
+      "text": "Click Convert to PDF. The server renders pasted HTML with WeasyPrint and a fetched page with PyMuPDF, then the PDF downloads."
     }
   ],
   "faq": [
     {
       "q": "Can I convert a live website URL to PDF?",
-      "a": "Yes. Enter any public URL and the server will render the page — including CSS, images, and JavaScript — and convert it to PDF."
+      "a": "Yes, for public http and https addresses; local and private network addresses are refused, and the address must start with http:// or https://. The server fetches the page's HTML, up to 5 MB, and lays it out on A4 pages, but it does not load the page's external stylesheets or images or run its JavaScript, so many sites come out plainer than in a browser."
     },
     {
       "q": "Is JavaScript rendered?",
-      "a": "Yes. A headless browser executes JavaScript before capturing the page, so dynamically loaded content appears in the PDF."
+      "a": "No. Neither mode runs JavaScript, so content that a page builds with scripts after it loads does not appear in the PDF. If you can copy the finished HTML, for example from your browser's developer tools, paste that instead."
     },
     {
       "q": "Are external stylesheets and images included?",
-      "a": "Yes. The renderer fetches external CSS, web fonts, and images. Only resources behind authentication may not load."
+      "a": "Only for pasted HTML. There, stylesheets and images referenced by full http(s) addresses are fetched, up to 25 MB each, while relative paths such as images/logo.png cannot be resolved and are skipped. For a web address, only styles written inside the page itself are applied; its external stylesheets and images are not loaded."
     }
   ]
 }

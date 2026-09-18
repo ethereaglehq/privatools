@@ -5,12 +5,12 @@
       "text": "Drop a PDF up to 500 MB."
     },
     {
-      "name": "Choose DPI",
-      "text": "Lower DPI for smaller files; GIF is limited to 256 colors so detail loss is acceptable for previews."
+      "name": "Convert",
+      "text": "Click Convert. Every page is rendered at 150 DPI; GIF is limited to 256 colors so detail loss is acceptable for previews."
     },
     {
       "name": "Download a ZIP of GIFs",
-      "text": "Each page becomes one GIF file. Useful for embedding PDF previews in legacy systems."
+      "text": "Each page becomes one GIF file, and a multi-page PDF downloads as a ZIP. Useful for embedding PDF previews in legacy systems."
     }
   ],
   "faq": [
@@ -20,11 +20,11 @@
     },
     {
       "q": "Does this make an animated GIF?",
-      "a": "No — each page is one static GIF. To make a flipbook-style animation, use Video to GIF after converting to images and back."
+      "a": "No — each page is one static GIF, and the tool does not combine pages into an animation."
     },
     {
       "q": "How big are the output files?",
-      "a": "Typically 30-100 KB per page at 96 DPI."
+      "a": "It depends on how much is on the page. At the 150 DPI this tool uses, a page with a few lines of text can be under 20 KB, while a page packed with small text can approach 400 KB."
     }
   ]
 }

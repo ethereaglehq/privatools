@@ -115,23 +115,23 @@ URL: https://privatools.me/tool/watermark
 
 Add text or image watermark over PDF pages
 
-Add watermark to PDF online for free. Apply text or image watermarks to every page with full control over opacity, position, rotation, and font size. Protect your documents from unauthorized use. No sign-up needed.
+Add watermark to PDF online for free. Apply text or image watermarks to every page with control over opacity, position, and font size or image scale; centred, diagonal and tiled text runs at a 45° angle. Clearly mark drafts and confidential copies. No sign-up needed.
 
 ### Header & Footer
 
 URL: https://privatools.me/tool/header-footer
 
-Add headers and footers to specified pages
+Add a header and footer to every page
 
-Add headers and footers to PDF online. Insert custom text, dates, page numbers, or company information in the header and footer of your PDF pages. Free tool with flexible formatting options.
+Add headers and footers to PDF online. Insert custom text, such as a title, a date, or company information, in the header and footer of every page of your PDF. The same text repeats on each page. Free tool with an adjustable font size.
 
 ### Page Numbers
 
 URL: https://privatools.me/tool/page-numbers
 
-Insert custom page numbers in your chosen format
+Insert page numbers in the position you choose
 
-Add page numbers to PDF online for free. Choose from multiple formats (1,2,3 / i,ii,iii / A,B,C), set starting page and number, position, font, and optional prefix. No watermarks, no sign-up.
+Add page numbers to PDF online for free. Choose one of six positions, the number to start counting from, and the font size; numbers are plain digits (1, 2, 3). No watermarks, no sign-up.
 
 ### Bates Numbering
 
@@ -145,9 +145,9 @@ Add Bates numbering to PDF for legal document indexing. Apply sequential Bates s
 
 URL: https://privatools.me/tool/bookmarks
 
-Add or edit bookmarks to navigate large files
+Add bookmarks to navigate large files
 
-Add bookmarks to PDF online — create, rename, reorder, and nest bookmarks for easier navigation in large documents. Build a clickable table of contents for your PDF. Free, no software installation.
+Add bookmarks to PDF online — give each entry a title and a page, or paste the whole list as JSON, for easier navigation in large documents. The new bookmarks replace any the PDF already has and appear as a clickable outline in the reader's sidebar. Free, no software installation.
 
 ### Compress PDF
 
@@ -163,15 +163,15 @@ URL: https://privatools.me/tool/remove-watermark
 
 Find and remove visible watermarks from a PDF
 
-Remove watermark from PDF online for free. Detects watermarks — diagonal stamps, CONFIDENTIAL and DRAFT marks, logos — shows you exactly what it found, and removes only what you confirm. Lossless where the PDF allows it: the rest of the page is left untouched. No sign-up.
+Remove watermark from PDF online for free. Detects text watermarks — diagonal stamps, CONFIDENTIAL and DRAFT marks — shows you exactly what it found, and removes only what you confirm. Lossless where the PDF allows it: the rest of the page is left untouched. No sign-up.
 
 ### Flatten PDF
 
 URL: https://privatools.me/tool/flatten-pdf
 
-Flatten forms and annotations into PDF content
+Make the fields of a filled form read-only
 
-Flatten PDF online — permanently merge interactive form fields, annotations, and layers into static page content. Essential for submitting filled forms, preventing further edits, and ensuring consistent display. Free tool.
+Flatten PDF online — lock a filled form so its fields can no longer be edited in a PDF reader. Every form field is set to read-only and keeps its value; comments, highlights and layers are not flattened, and PDFs that contain comments or highlights cannot be processed at the moment. Free tool.
 
 ### Deskew PDF
 
@@ -179,7 +179,7 @@ URL: https://privatools.me/tool/deskew-pdf
 
 Straighten scanned pages that are slightly tilted
 
-Deskew scanned PDF pages online for free. Automatically detect and correct the tilt angle of scanned documents so text appears perfectly straight and readable. Ideal for fixing wonky scans. No installation required.
+Deskew scanned PDF pages online for free. Automatically detect and correct the tilt angle of scanned documents so the lines of text run straight. Ideal for fixing wonky scans. No installation required.
 
 ### Repair PDF
 
@@ -187,7 +187,7 @@ URL: https://privatools.me/tool/repair-pdf
 
 Attempt to fix corrupted PDF files
 
-Repair corrupted PDF files online for free. Fix damaged, broken, or unreadable PDFs that won't open in standard PDF readers. Recover content from corrupted documents. No software download needed.
+Repair corrupted PDF files online for free. Rebuild damaged or broken PDFs that won't open in standard PDF readers and recover the content that is still intact. No software download needed.
 
 ### Resize PDF
 
@@ -195,7 +195,7 @@ URL: https://privatools.me/tool/resize-pdf
 
 Change the physical dimensions of the pages
 
-Resize PDF pages online — change page dimensions to A4, Letter, Legal, or custom sizes. Scale content to fit new page sizes while maintaining aspect ratio. Free PDF page resizer with no watermarks.
+Resize PDF pages online — change page dimensions to A4, Letter, A3, Legal, or a custom size in points. The content is not scaled: it keeps its size and its place at the bottom-left of the page, so a larger page adds space at the top and right, and a smaller one cuts off what falls outside it. Free PDF page resizer with no watermarks.
 
 ### Rotate PDF
 
@@ -203,7 +203,7 @@ URL: https://privatools.me/tool/rotate-pdf
 
 Rotate all or specific pages in the PDF
 
-Rotate PDF pages online for free — rotate individual pages or all pages by 90°, 180°, or 270°. Fix sideways or upside-down scanned documents instantly. Preview each page before saving. No sign-up required.
+Rotate PDF pages online for free — rotate individual pages or all pages by 90°, 180°, or 270°. Fix sideways or upside-down scanned documents instantly. Rotate every page or just the pages you list. No sign-up required.
 
 ### Grayscale PDF
 
@@ -211,7 +211,7 @@ URL: https://privatools.me/tool/grayscale-pdf
 
 Convert a colorful PDF to black and white
 
-Convert PDF to grayscale online for free — turn color PDFs into black and white. Save ink when printing, reduce file size, or prepare documents for monochrome printing. Multiple conversion modes available.
+Convert PDF to grayscale online for free — turn color PDFs into black and white. Save ink when printing or prepare documents for monochrome printing. Photos are converted in place, so black text stays sharp and searchable; if any text or drawing is in color, every page is turned into a grayscale image instead.
 
 ### Crop PDF
 
@@ -227,7 +227,7 @@ URL: https://privatools.me/tool/protect-pdf
 
 Encrypt a PDF with a password or set permissions
 
-Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set open passwords, permission passwords, and control printing, copying, and editing access. No sign-up needed.
+Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set an open password and control printing, copying, and editing access. No sign-up needed.
 
 ### Unlock PDF
 
@@ -243,7 +243,7 @@ URL: https://privatools.me/tool/redact-pdf
 
 Permanently black out sensitive content
 
-Redact PDF online for free — permanently black out sensitive information including names, addresses, SSNs, and confidential text. WARNING: Redaction is irreversible — content is fully erased from the file, not just hidden.
+Redact PDF online for free — permanently black out sensitive information including names, addresses, SSNs, and confidential text. WARNING: Redaction is irreversible — the text and image pixels under each box are erased from the file, not just hidden.
 
 ### Strip Metadata
 
@@ -251,7 +251,7 @@ URL: https://privatools.me/tool/strip-metadata
 
 Remove embedded metadata for privacy
 
-Remove metadata from PDF online — strip author name, creation date, GPS coordinates, software info, and all hidden metadata for maximum privacy before sharing documents. Free, instant, no sign-up.
+Remove metadata from PDF online — strip author name, creation date, GPS coordinates, software info, and the rest of the document's Info and XMP metadata before sharing documents. Metadata inside embedded images is not removed. Free, instant, no sign-up.
 
 ### Delete Annotations
 
@@ -267,7 +267,7 @@ URL: https://privatools.me/tool/metadata
 
 View and edit document metadata
 
-View and edit PDF metadata online for free — read and modify Title, Author, Subject, Keywords, Creator, and Producer fields. See exactly what information is embedded in your PDF before sharing.
+View and edit PDF metadata online for free — read the Title, Author, Subject, Keywords, Creator, Producer and date fields, and change the first four. See exactly what information is embedded in your PDF before sharing.
 
 ### HTML to PDF
 
@@ -275,7 +275,7 @@ URL: https://privatools.me/tool/html-to-pdf
 
 Convert web pages or HTML code into a PDF
 
-Convert HTML to PDF online for free. Paste a URL or upload an HTML file and render it as a pixel-perfect, print-ready PDF document. Preserves CSS styles, images, and layout. No installation required.
+Convert HTML to PDF online for free. Paste HTML code or enter a public web address and download the result as a PDF document. Pasted HTML keeps its CSS, including stylesheets and images linked by full http(s) addresses, and its clickable links; a web address is rendered from the page's HTML alone, without external stylesheets, images, or JavaScript. No installation required.
 
 ### Image to PDF
 
@@ -283,7 +283,7 @@ URL: https://privatools.me/tool/image-to-pdf
 
 Convert JPG, PNG, or other images into a PDF
 
-Convert images to PDF online for free — combine JPG, PNG, TIFF, WebP, or BMP images into a single PDF document. Set page size, orientation, margins, and image quality. Bulk convert multiple images at once.
+Convert images to PDF online for free — combine JPG, PNG, TIFF, WebP, or BMP images into a single PDF document. Choose Auto, where each page matches its image, or fit every image onto A4 or Letter pages. Bulk convert multiple images at once.
 
 ### JPG to PDF
 
@@ -291,7 +291,7 @@ URL: https://privatools.me/tool/jpg-to-pdf
 
 Convert JPG / JPEG photos into a single PDF
 
-Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 500 MB per file, no watermarks, no sign-up.
+Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 50 images and 200 MB per PDF, no watermarks, no sign-up.
 
 ### PNG to PDF
 
@@ -299,7 +299,7 @@ URL: https://privatools.me/tool/png-to-pdf
 
 Convert PNG images into a single PDF document
 
-Convert PNG to PDF online for free — turn one or more PNG images into a single PDF, preserving transparency-aware backgrounds. Bulk convert screenshots, design exports, or charts. No quality loss, no watermark, no sign-up.
+Convert PNG to PDF online for free — turn one or more PNG images into a single PDF, one image per page (transparent areas are not kept). Bulk convert screenshots, design exports, or charts. No quality loss, no watermark, no sign-up.
 
 ### HEIC to PDF
 
@@ -323,7 +323,7 @@ URL: https://privatools.me/tool/tiff-to-pdf
 
 Convert TIFF / TIF scans into a single PDF
 
-Convert TIFF to PDF online for free — combine multi-page TIFF scans, fax images, or archival photos into one PDF. Ideal for healthcare, legal, and government workflows that ship TIFF but need PDF for distribution.
+Convert TIFF to PDF online for free — combine TIFF scans, fax images, or archival photos into one PDF, one page per file (only the first page of a multi-page TIFF is used). Ideal for healthcare, legal, and government workflows that ship TIFF but need PDF for distribution.
 
 ### BMP to PDF
 
@@ -331,7 +331,7 @@ URL: https://privatools.me/tool/bmp-to-pdf
 
 Convert Windows BMP bitmaps into a PDF
 
-Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 500 MB per file.
+Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 50 images and 200 MB per PDF.
 
 ### GIF to PDF
 
@@ -347,7 +347,7 @@ URL: https://privatools.me/tool/svg-to-pdf
 
 Convert SVG vector graphics into PDF
 
-Convert SVG to PDF online for free — turn vector SVG icons, logos, charts, and diagrams into a high-quality PDF. Each SVG becomes one page; line art stays crisp at any zoom level. Perfect for sharing design exports without losing quality.
+Convert SVG to PDF online for free — turn SVG icons, logos, charts, and diagrams into a PDF. Each SVG becomes one page, drawn as a high-resolution image 2400 pixels wide: sharp at normal sizes, though no longer vector, so its text cannot be selected. Handy for sharing design exports with people who expect a PDF.
 
 ### ODT to PDF
 
@@ -355,7 +355,7 @@ URL: https://privatools.me/tool/odt-to-pdf
 
 Convert OpenDocument (ODT) into PDF
 
-Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a polished PDF with all styles, fonts, and layouts preserved. Powered by LibreOffice in the background.
+Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a polished PDF with their styles, images, and layout kept; fonts the server does not have are replaced with similar ones. Powered by LibreOffice in the background.
 
 ### Office to PDF
 
@@ -363,7 +363,7 @@ URL: https://privatools.me/tool/office-to-pdf
 
 Convert Word, Excel, or PowerPoint to PDF
 
-Convert Word, Excel, and PowerPoint to PDF online for free. Upload any Microsoft Office document (.docx, .xlsx, .pptx) and get a perfectly formatted PDF with all styles, fonts, and layouts preserved.
+Convert Word, Excel, and PowerPoint to PDF online for free. Upload a Microsoft Office document (.doc, .docx, .xls, .xlsx, .ppt, or .pptx) and LibreOffice converts it to a PDF that keeps its layout, tables, charts, and images. Fonts the server does not have are replaced with similar ones.
 
 ### PDF to Excel
 
@@ -371,7 +371,7 @@ URL: https://privatools.me/tool/pdf-to-excel
 
 Best-effort table/text extraction into a spreadsheet
 
-Convert PDF to Excel online for free — extract tables and data from PDF documents into editable XLSX spreadsheets. Best-effort extraction works great for invoices, financial reports, and tabular data.
+Convert PDF to Excel online for free — extract tables and data from PDF documents into editable XLSX spreadsheets, with one sheet per page. Best-effort extraction works best on tables drawn with ruled lines; a page without a table keeps its text instead.
 
 ### PDF to Image
 
@@ -379,7 +379,7 @@ URL: https://privatools.me/tool/pdf-to-image
 
 Convert each PDF page into an image file
 
-Convert PDF to images online for free — render each page as a high-resolution JPG or PNG image. Choose DPI (up to 300), color mode, and output format. Perfect for thumbnails, previews, and social media.
+Convert PDF to images online for free — render each page as a high-resolution JPG or PNG image. Choose 72, 150 or 300 DPI and the output format. Perfect for thumbnails, previews, and social media.
 
 ### PDF to Long Image
 
@@ -395,7 +395,7 @@ URL: https://privatools.me/tool/pdf-to-tiff
 
 Convert PDF into a multi-page TIFF image
 
-Convert PDF to TIFF online for free — export your PDF as a single multi-page TIFF image, ideal for archival, fax, healthcare, and legal workflows that require TIFF. All pages bundle into one .tif file with deflate compression.
+Convert PDF to TIFF online for free — export your PDF as a single multi-page TIFF image, ideal for archival and document workflows that require TIFF. Pages are rendered in color at 200 DPI and bundle into one .tif file with deflate compression.
 
 ### PDF to BMP
 
@@ -427,15 +427,15 @@ URL: https://privatools.me/tool/pdf-to-jpg
 
 Render PDF pages as JPG photos
 
-Convert PDF to JPG online for free — render each PDF page as a high-quality JPG image. Choose DPI (up to 300) for the resolution. Perfect for thumbnails, social media previews, or photo-style sharing.
+Convert PDF to JPG online for free — render each PDF page as a high-quality JPG image. Each page comes out at 150 DPI, one JPG per page. Perfect for thumbnails, social media previews, or photo-style sharing.
 
 ### PDF to PNG
 
 URL: https://privatools.me/tool/pdf-to-png
 
-Render PDF pages as PNG images (transparency-friendly)
+Render PDF pages as lossless PNG images
 
-Convert PDF to PNG online for free — render each PDF page as a PNG image. PNGs preserve sharp edges and transparency, making them ideal for screenshots, charts, and design exports.
+Convert PDF to PNG online for free — render each PDF page as a PNG image at 150 DPI. PNG is lossless, so text and line art keep their sharp edges, making it ideal for screenshots, charts, and design exports. Pages are rendered on a white background.
 
 ### PDF to PowerPoint
 
@@ -465,9 +465,9 @@ Convert PDF to Word online for free. Extract text, paragraphs, and images into a
 
 URL: https://privatools.me/tool/alternate-mix
 
-Mix pages of two or more PDFs alternately
+Mix pages of two PDFs alternately
 
-Alternate mix PDF pages online — interleave pages from two or more PDFs for duplex scanning workflows. Combine front-side and back-side scans into the correct page order. Free tool, no sign-up.
+Alternate mix PDF pages online — interleave pages from two PDFs for duplex scanning workflows. Combine front-side and back-side scans into the correct page order. Free tool, no sign-up.
 
 ### Compare PDF
 
@@ -475,15 +475,15 @@ URL: https://privatools.me/tool/compare-pdf
 
 Visually compare two PDF documents
 
-Compare two PDFs online for free — upload two versions of a document and get a visual diff highlighting every text change, addition, and deletion. Essential for contract review, version control, and proofreading.
+Compare two PDFs online for free — upload two versions of a document and get a visual diff that highlights the areas that changed on each page, or a line-by-line text diff of additions and deletions. Essential for contract review, version control, and proofreading.
 
 ### Extract Images
 
 URL: https://privatools.me/tool/extract-images
 
-Extract all embedded images from the PDF
+Extract the embedded images from a PDF
 
-Extract images from PDF online for free — detect and download all embedded images from your PDF as individual PNG or JPEG files. Get all photos, logos, and graphics out of any PDF document.
+Extract images from PDF online for free — detect and download the embedded images in your PDF as individual files, mostly PNG or JPEG. Get photos, scanned pages, and raster logos out of any PDF document; vector drawings are not images and are not extracted.
 
 ### Fill Form
 
@@ -499,7 +499,7 @@ URL: https://privatools.me/tool/nup
 
 Print multiple pages per sheet
 
-Print multiple PDF pages per sheet online — arrange 2, 4, 6, or 9 pages onto a single sheet for booklet-style printing. Save paper and create handouts. Free N-Up PDF tool with no watermarks.
+Print multiple PDF pages per sheet online — arrange 2, 4, 6, 9, or 16 pages onto a single sheet for compact printing. Save paper and create handouts. Free N-Up PDF tool with no watermarks.
 
 ### OCR PDF
 
@@ -507,7 +507,7 @@ URL: https://privatools.me/tool/ocr-pdf
 
 Extract text or create a searchable PDF using OCR
 
-OCR PDF online for free — convert scanned documents into searchable, selectable text using Tesseract OCR. Supports 100+ languages including English, Hindi, Spanish, French, and more. Output as searchable PDF or plain text.
+OCR PDF online for free — convert scanned documents into searchable, selectable text using Tesseract OCR. The server engine reads 17 languages, including English, Hindi, Spanish, and French, and the in-browser engine offers 45. Output as searchable PDF or plain text.
 
 ### Overlay PDF
 
@@ -521,17 +521,17 @@ Overlay PDF pages online — layer one PDF document on top of another. Perfect f
 
 URL: https://privatools.me/tool/qr-code
 
-Generate QR codes — download as PNG or stamp into a PDF
+Generate QR codes — download as PNG or PDF
 
-Generate QR codes online for free — encode any URL, contact card, WiFi credentials, or plain text into a QR code. Download as PNG, or optionally stamp the QR onto a PDF page at a chosen position and size. Standard QR with built-in error correction; reads with any phone camera.
+Generate QR codes online for free — encode any URL, contact card, WiFi credentials, or plain text into a QR code. Download it as a PNG image or a one-page PDF, choose the size and colours, and optionally add a small centre logo. Standard QR with built-in error correction that phone cameras can read.
 
 ### PDF to PDF/A
 
 URL: https://privatools.me/tool/pdf-to-pdfa
 
-Convert to PDF/A format for long-term archiving
+Save a cleaned copy labelled PDF/A-2b for archiving
 
-Convert PDF to PDF/A online for free — create ISO-standardized archival documents for long-term digital preservation. Essential for legal compliance, government records, and permanent document storage.
+Convert PDF to PDF/A online for free — the tool re-saves your PDF with a cleaned-up structure and marks it as PDF/A-2b in its XMP metadata. It does not embed fonts, add a colour profile or check the file against the standard, so validate the result before you rely on it for legal, government or archive submissions.
 
 ### Remove Blank Pages
 
@@ -555,7 +555,7 @@ URL: https://privatools.me/tool/pdf-to-epub
 
 Convert a PDF into the EPUB format for e-readers
 
-Convert PDF to EPUB online for free — transform PDF documents into reflowable e-book format compatible with Kindle, Kobo, Apple Books, and all modern e-reader devices. Read your PDFs anywhere.
+Convert PDF to EPUB online for free — package the text and images of every page into one basic EPUB e-book file, in page order. Text keeps its font sizes, bold, italics, and colors; there are no chapters or table of contents, and bookmarks are not carried over.
 
 ### Markdown / Config to PDF
 
@@ -569,9 +569,9 @@ Convert Markdown to PDF online. Upload a .md, .markdown, or .txt document for te
 
 URL: https://privatools.me/tool/csv-to-pdf
 
-Generate table-style or invoice PDFs from CSV data
+Turn CSV data into a clean PDF table
 
-Convert CSV to PDF online for free — upload a CSV spreadsheet and generate a cleanly formatted PDF with tables, invoices, or report layouts. Instant conversion, no sign-up, free to use.
+Convert CSV to PDF online for free — upload a CSV spreadsheet and generate a cleanly formatted PDF table, with the first row as a bold header and striped rows. Instant conversion, no sign-up, free to use.
 
 ### Word to PDF
 
@@ -579,7 +579,7 @@ URL: https://privatools.me/tool/word-to-pdf
 
 Convert .docx Word documents to PDF
 
-Convert Word to PDF online for free — upload .docx documents and convert them to high-quality PDFs preserving headings, bold, italic text, images, and paragraph formatting. No Microsoft Office needed.
+Convert Word to PDF online for free — upload .docx documents and get a simple PDF of their text on A4 pages, with headings set in larger bold type and paragraphs that contain bold or italic text set that way. Images, tables, headers and footers, links, fonts and alignment are not carried over; for a copy closer to the original, use Office to PDF. No Microsoft Office needed.
 
 ### Excel to PDF
 
@@ -587,7 +587,7 @@ URL: https://privatools.me/tool/excel-to-pdf
 
 Convert .xlsx spreadsheets to PDF
 
-Convert Excel to PDF online for free — upload .xlsx spreadsheets and convert all sheets into a formatted PDF with headers, grid lines, and automatic column sizing. No Microsoft Office required.
+Convert Excel to PDF online for free — upload .xlsx spreadsheets and convert every sheet into a simple PDF table: the sheet name as a title, the first row in bold, a line under each row, and equal-width columns. No Microsoft Office required.
 
 ### PowerPoint to PDF
 
@@ -595,7 +595,7 @@ URL: https://privatools.me/tool/pptx-to-pdf-convert
 
 Convert .pptx presentations to PDF
 
-Convert PowerPoint to PDF online for free — upload .pptx presentations and get a high-quality PDF preserving slide dimensions, text, headings, and formatting. No Microsoft Office required.
+Convert PowerPoint to PDF online for free — upload .pptx presentations and get a PDF with one page per slide at the slide's own size, holding the text from each slide's text boxes. Pictures, tables, charts, and most formatting are not carried over. No Microsoft Office required.
 
 ### Text to PDF
 
@@ -611,7 +611,7 @@ URL: https://privatools.me/tool/stamp-pdf
 
 Add CONFIDENTIAL, DRAFT, or custom stamps
 
-Add stamps to PDF online for free — apply CONFIDENTIAL, DRAFT, APPROVED, COPY, VOID, or custom text stamps to any page. Adjustable opacity, position, and size. No sign-up, no watermarks.
+Add stamps to PDF online for free — apply CONFIDENTIAL, DRAFT, APPROVED, COPY, VOID, or custom text stamps to any page. Adjustable opacity and position; the size is set automatically from the page width. No sign-up, no watermarks.
 
 ### E-Sign PDF
 
@@ -627,7 +627,7 @@ URL: https://privatools.me/tool/extract-tables
 
 Extract tables from PDF pages to CSV
 
-Extract tables from PDF to CSV online for free. Automatically detect and extract tabular data from invoices, reports, and financial statements into clean, editable CSV spreadsheet format.
+Extract tables from PDF to CSV online for free. Automatically detect tables drawn with ruled lines in invoices, reports, and financial statements and extract them into one editable CSV file.
 
 ### PDF to Markdown
 
@@ -659,7 +659,7 @@ URL: https://privatools.me/tool/highlight-pdf
 
 Highlight every match of a word or phrase
 
-Highlight PDF online for free — search for any word or phrase and apply a real PDF Highlight annotation to every occurrence at once. Pick from yellow, green, pink, blue, orange, or any custom hex color. Works on multi-page documents and preserves the highlight as a fully-editable annotation in any PDF reader.
+Highlight PDF online for free — search for any word or phrase and apply a real PDF Highlight annotation to every occurrence at once. Pick from yellow, green, pink, blue, or orange. Works on multi-page documents and preserves the highlight as a fully-editable annotation in any PDF reader.
 
 ### Summarize PDF (AI)
 
@@ -715,7 +715,7 @@ URL: https://privatools.me/tool/json-to-pdf
 
 Format JSON data as a styled PDF document
 
-Convert JSON to PDF online for free — upload a JSON file and get a beautifully formatted PDF with syntax highlighting, key-value coloring, and proper indentation. Perfect for API documentation.
+Convert JSON to PDF online for free — upload a JSON file and get a neatly formatted PDF with the JSON pretty-printed, keys highlighted in bold blue, and proper indentation. Perfect for API documentation.
 
 ### XML to PDF
 
@@ -731,7 +731,7 @@ URL: https://privatools.me/tool/epub-to-pdf
 
 Convert e-books from EPUB to PDF format
 
-Convert EPUB to PDF online for free — transform e-books into paginated PDF documents preserving text content. Compatible with all PDF readers and printers. No Kindle or e-reader required.
+Convert EPUB to PDF online for free — transform e-books into paginated PDF documents that keep the book's text, without its images or formatting. Open the result in a standard PDF reader or print it. No Kindle or e-reader required.
 
 ### RTF to PDF
 
@@ -739,23 +739,23 @@ URL: https://privatools.me/tool/rtf-to-pdf
 
 Convert Rich Text Format files to PDF
 
-Convert RTF to PDF online for free — upload Rich Text Format files and get a cleanly formatted PDF with preserved formatting, fonts, and layout. Instant conversion, no software needed.
+Convert RTF to PDF online for free — upload Rich Text Format files and get a simple PDF of the document's text, set in 11 pt Helvetica on A4 pages; the original formatting, fonts, and layout are not kept. Instant conversion, no software needed.
 
 ### Add Hyperlinks
 
 URL: https://privatools.me/tool/add-hyperlinks
 
-Draw clickable hyperlink areas over text or images
+Make the web addresses in a PDF clickable
 
-Add clickable links to PDF pages online — draw invisible hyperlink areas over any text or image and attach URLs. Perfect for making static PDFs interactive with navigation links. No software needed.
+Add clickable links to PDF pages online — PrivaTools finds every web address in the PDF's text that starts with http:// or https:// and turns it into a clickable link. Perfect for making static PDFs interactive. No software needed.
 
 ### Form Creator
 
 URL: https://privatools.me/tool/form-creator
 
-Add text fields, checkboxes, radios, and dropdowns to PDFs
+Add text fields, checkboxes, dropdowns, and lists to PDFs
 
-Create fillable PDF forms online for free — add text fields, checkboxes, radio buttons, dropdowns, and signature fields to any PDF. Build professional forms without Adobe Acrobat. Free form builder.
+Create fillable PDF forms online for free — add text fields, checkboxes, dropdowns, list boxes, and signature fields to any PDF. Build professional forms without Adobe Acrobat. Free form builder.
 
 ### Transparent Background
 
@@ -771,7 +771,7 @@ URL: https://privatools.me/tool/invert-colors
 
 Invert PDF colors for a dark mode reading experience
 
-Invert PDF colors online for free — flip the color scheme for dark mode reading. Multiple modes: full inversion, text-only, and warm night tint. Reduce eye strain when reading PDFs at night.
+Invert PDF colors online for free — flip the color scheme for dark mode reading. Every page is rendered as an image and fully inverted, so white backgrounds turn black; the Night mode option currently gives the same full inversion. Handy for reading PDFs at night.
 
 ### Translate PDF
 
@@ -795,7 +795,7 @@ URL: https://privatools.me/tool/accessibility-check
 
 Audit a PDF against PDF/UA and WCAG
 
-Check PDF accessibility online for free — audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks; standard upload and rate limits apply.
+Check PDF accessibility online for free — audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Checks tagging, document language, heading order, image alt text, table headers, form-field labels, fonts and links, and lists what must be checked by hand, such as reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks; standard upload and rate limits apply.
 
 ### PDF/A Validator
 
@@ -803,23 +803,23 @@ URL: https://privatools.me/tool/pdfa-validator
 
 Run basic PDF/A indicator checks
 
-Validate PDF/A compliance online for free. Run basic PDF/A indicator checks and metadata warnings. Lightweight heuristic check to verify your documents meet archival standards before submission.
+Check PDF/A indicators online for free. Run basic checks for a PDF/A label, title and author metadata, and encryption. A lightweight heuristic, not a full conformance test: it cannot confirm that a document meets archival standards.
 
 ### Verify Digital Signature
 
 URL: https://privatools.me/tool/verify-signature
 
-Inspect signature fields in a PDF
+Look for signature fields in a PDF
 
-Verify PDF digital signatures online — inspect signature fields and certificate information in signed PDF documents. Check if your PDFs were properly signed. Free verification tool.
+Check a PDF for signature fields online. The tool does not verify signatures: it reads no certificate information and cannot tell whether a signed document was changed, and at present it reports no signature fields even when a PDF has them. Confirm signatures in your PDF reader's signature panel. Free tool.
 
 ### Sanitize Document
 
 URL: https://privatools.me/tool/sanitize-pdf
 
-Aggressively clean hidden data, JS, and layers
+Clear the document info fields of a PDF
 
-Sanitize PDF online — aggressively remove all hidden data, JavaScript, embedded files, form fields, layers, and metadata for maximum security before sharing. Essential for high-security document workflows.
+Sanitize PDF online — clear the document information fields (title, author, dates, software), remove Movie and RichMedia annotations (old video and Flash content), and rewrite the file without unused objects. It does not remove JavaScript, embedded files, form fields, layers, links or XMP metadata, so do not rely on it alone for high-security document workflows.
 
 ### Reverse PDF
 
@@ -843,7 +843,7 @@ URL: https://privatools.me/tool/batch-compress-pdf
 
 Compress multiple PDFs at once in parallel
 
-Batch compress PDFs online for free — upload up to 50 PDF files and compress them all in parallel. Choose light, balanced, or extreme compression. Download all results as a single ZIP. Powered by 4-core parallel processing for speed.
+Batch compress PDFs online for free — upload up to 50 PDF files and compress them all in parallel, up to four at a time. Each file is rewritten without unused objects and with its streams compressed; images are left untouched, so quality does not change. Download all results as a single ZIP.
 
 ### PDF Page Counter
 
@@ -875,7 +875,7 @@ URL: https://privatools.me/tool/pdf-to-html
 
 Convert PDF to a web-viewable HTML file
 
-Convert PDF to HTML online for free — turn a PDF into a single HTML file with text, fonts, and inline styles preserved. Useful for web archiving, screen-reader accessibility, and republishing offline PDFs on the web.
+Convert PDF to HTML online for free — turn a PDF into a single HTML file that keeps the text and images, with each line's font, size, and color as inline styles. Useful for web archiving and republishing offline PDFs on the web.
 
 ### PDF to RTF
 
@@ -883,7 +883,7 @@ URL: https://privatools.me/tool/pdf-to-rtf
 
 Extract PDF text into a Rich Text Format file
 
-Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and every other editor. Preserves page breaks and Unicode text.
+Convert PDF to RTF online for free — produce a Rich Text Format file that opens in WordPad, Word, Pages, LibreOffice, and other word processors. Preserves page breaks and Unicode text; formatting and images are not carried over.
 
 ### Image Compressor
 

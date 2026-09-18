@@ -6,21 +6,21 @@
     },
     {
       "name": "Convert to PDF",
-      "text": "Run the conversion. The document is laid out by LibreOffice on the server and exported as a PDF."
+      "text": "Run the conversion. The text of each paragraph is set in Helvetica on A4 pages with 1-inch margins, and headings become larger bold text. Images, tables, headers, footers and links are left out."
     },
     {
       "name": "Download and check the PDF",
-      "text": "Open the PDF and check fonts, page breaks and any tables, especially if the document uses unusual typefaces."
+      "text": "Open the PDF and check it: everything is set in one typeface, and any text that was in tables, text boxes, headers or footers is missing."
     }
   ],
   "faq": [
     {
       "q": "Will the PDF look exactly like my Word document?",
-      "a": "Usually very close. The layout is recalculated by LibreOffice rather than Microsoft Word, so complex documents can differ in small ways, most often in line breaks and page breaks."
+      "a": "No. Only the text of the body paragraphs is carried over, in Helvetica on A4 pages; headings are enlarged and bold, and a paragraph with any bold or italic text is set that way throughout. Fonts, alignment, spacing, images, tables, headers, footers and links are not kept. For a close copy of the layout, use Office to PDF, which converts with LibreOffice."
     },
     {
       "q": "Why do the fonts look different?",
-      "a": "If the document uses a font the server does not have, a similar one is substituted, which can change spacing and page breaks. Embedding fonts when saving in Word, or using common fonts, gives the most faithful result."
+      "a": "Because every paragraph is set in Helvetica, whatever fonts the document uses, and characters outside Western European scripts, such as Cyrillic or Chinese, do not print correctly. Office to PDF keeps the document's fonts where the server has them."
     },
     {
       "q": "Which file types can I convert?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "Do links and headings carry over?",
-      "a": "Clickable links generally survive the export. Check the result if a table of contents or internal cross-references matter to you."
+      "a": "Headings do, as larger bold text: Heading 1 and 2 get their own sizes, and lower levels share a third. Links do not: their text is kept but is not clickable, and a table of contents comes across as plain text."
     },
     {
       "q": "What happens to my document after I upload it?",

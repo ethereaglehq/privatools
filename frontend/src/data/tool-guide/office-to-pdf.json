@@ -6,11 +6,11 @@
     },
     {
       "name": "Convert via LibreOffice",
-      "text": "The server uses LibreOffice in headless mode for high-fidelity conversion, preserving fonts, tables, charts, and layouts."
+      "text": "The server converts the file with LibreOffice in headless mode, keeping tables, charts, and layout. Fonts the server does not have are replaced with similar ones, which can shift line and page breaks."
     },
     {
       "name": "Download the PDF",
-      "text": "Click Convert. The resulting PDF is ready within seconds for most documents."
+      "text": "Click Convert. Each file becomes its own PDF; queue up to 25 files and they are converted one after another, with an option to download them all as a ZIP."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "How long does conversion take?",
-      "a": "Most documents convert in 2-10 seconds. Large files with many images or complex layouts may take up to 30 seconds."
+      "a": "It depends on the size and complexity of the document. Each conversion starts LibreOffice with a fresh profile, and a conversion still running after two minutes is stopped with a timeout error, so split very large documents first."
     }
   ]
 }

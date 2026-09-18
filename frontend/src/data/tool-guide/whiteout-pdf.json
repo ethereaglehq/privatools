@@ -6,11 +6,11 @@
     },
     {
       "name": "Draw white-out rectangles",
-      "text": "Specify region(s) per page to cover with white (or chosen color). Content underneath is permanently hidden from view."
+      "text": "Drag on the page preview to draw a box, or add one and set its page, position and size. Each box is filled with white; what is underneath is hidden from view but stays in the file."
     },
     {
       "name": "Download the cleaned PDF",
-      "text": "Hidden regions are covered with the chosen color in the rendered output."
+      "text": "Apply the boxes and download the PDF. The regions are covered with white wherever the file is opened."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I use any color, not just white?",
-      "a": "Yes — color is configurable. Black for blackout style, white for whiteout, any custom hex color for matching background."
+      "a": "No. The boxes are always white. To take text out of the file rather than just cover it, use Redact PDF."
     },
     {
       "q": "Does it work on scanned PDFs?",

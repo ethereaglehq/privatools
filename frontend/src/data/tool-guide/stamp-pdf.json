@@ -10,7 +10,7 @@
     },
     {
       "name": "Set opacity and position",
-      "text": "Opacity 0-1 (default 0.5). Position: top/middle/bottom × left/center/right. Click Apply."
+      "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers separated by commas. Click Apply."
     }
   ],
   "faq": [
@@ -20,11 +20,11 @@
     },
     {
       "q": "Can I apply a stamp to only specific pages?",
-      "a": "Yes — pages parameter accepts page ranges like '1-3' or 'all'."
+      "a": "Yes. Enter the page numbers separated by commas, such as 1,3,5, or leave it as all. Ranges such as 1-3 are rejected, so list each page."
     },
     {
       "q": "How big is the stamp?",
-      "a": "Auto-sized to roughly 60% of page width with the chosen opacity for visibility without obscuring content."
+      "a": "It is sized automatically from the page width and the length of the text, up to 72 pt: on an A4 page CONFIDENTIAL spans most of the width and VOID about a third of it. The size cannot be set by hand."
     }
   ]
 }

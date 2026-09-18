@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Drop your PDF",
-      "text": "Select a PDF up to 500 MB. Thumbnail previews of every page load automatically so you can see what needs rotating."
+      "text": "Select one or more PDFs, up to 500 MB each. The same rotation is applied to each file."
     },
     {
       "name": "Select pages to rotate",
-      "text": "Click individual page thumbnails to target specific pages, or 'Select all' for whole-document rotation. Mix-and-match is supported (different angles per page)."
+      "text": "Keep All pages, or choose Specific pages and type them, such as 1,3,5-8. One run applies one angle; to turn different pages by different amounts, run it again on the result."
     },
     {
       "name": "Choose the rotation angle",
@@ -20,7 +20,7 @@
   "faq": [
     {
       "q": "Can I rotate individual pages instead of the entire PDF?",
-      "a": "Yes. Click individual page thumbnails to select specific pages, then apply the rotation angle only to those pages. Mix-and-match is supported: rotate page 3 by 90°, page 7 by 180°, leave the rest untouched."
+      "a": "Yes. Choose Specific pages and type the page numbers or ranges, such as 1,3,5-8; the other pages are left untouched. Each run uses one angle, so rotate page 3 by 90° in one run and page 7 by 180° in the next."
     },
     {
       "q": "Does rotation affect text searchability?",

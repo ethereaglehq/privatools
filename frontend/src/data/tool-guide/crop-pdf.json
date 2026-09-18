@@ -6,11 +6,11 @@
     },
     {
       "name": "Set crop margins",
-      "text": "Specify top / bottom / left / right margins to remove, in PDF points (1 pt = 1/72 inch)."
+      "text": "Draw the area to keep on the page preview, or type the top / bottom / left / right margins to remove, in PDF points (1 pt = 1/72 inch). The same margins apply to every page."
     },
     {
       "name": "Download the cropped PDF",
-      "text": "Click Crop. Each page's MediaBox + CropBox is shrunk by the specified margins."
+      "text": "Click Crop. Each page's CropBox, the area a reader shows, is set inside those margins; the MediaBox is left unchanged."
     }
   ],
   "faq": [
@@ -20,11 +20,11 @@
     },
     {
       "q": "Will the cropped content be deleted from the file?",
-      "a": "No — only the visible region changes. The full page content is still in the file. To permanently remove the cropped data, run Flatten or Sanitize afterwards."
+      "a": "No — only the visible region changes. The full page content is still in the file, so the trimmed parts can be shown again. If what you are trimming is sensitive, remove it with Redact PDF first."
     },
     {
       "q": "How do I undo a crop?",
-      "a": "Re-open the PDF in PrivaTools Crop with negative margins to expand the box, or run Flatten which bakes the current crop in."
+      "a": "Keep your original: cropping writes a new PDF and leaves your upload unchanged. The Crop tool cannot widen the box again, since negative margins are rejected, but Resize with Custom set to the original page size in points removes the crop box and shows the full page again."
     }
   ]
 }

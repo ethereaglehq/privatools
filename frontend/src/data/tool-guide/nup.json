@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose pages-per-sheet",
-      "text": "2, 4, 6, 8, 9, or 16. Each input page is shrunk to fit; output pages are filled left-to-right, top-to-bottom."
+      "text": "2, 4, 6, 9, or 16, and for 2-up either side-by-side or stacked. Every sheet is A4 landscape; each input page is shrunk to fit its cell, and cells are filled left-to-right, top-to-bottom."
     },
     {
       "name": "Download the n-up PDF",
@@ -24,7 +24,7 @@
     },
     {
       "q": "What aspect ratio works best?",
-      "a": "2-up and 8-up work well for landscape, 4-up and 9-up for portrait. Mismatches add whitespace around each sub-page."
+      "a": "Sheets are always A4 landscape. Portrait pages fill 2-up side-by-side with no wasted space, while landscape pages fill 4-up, 9-up and 16-up. Mismatches add whitespace around each sub-page."
     }
   ]
 }

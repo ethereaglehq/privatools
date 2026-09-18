@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose page size",
-      "text": "Letter or A4. Each GIF scales to fit while preserving aspect ratio."
+      "text": "Auto (the default) makes each page the size of its GIF; Letter or A4 scale each GIF to fit while preserving aspect ratio."
     },
     {
       "name": "Download the PDF",
@@ -16,15 +16,15 @@
   "faq": [
     {
       "q": "Do animated GIFs animate inside the PDF?",
-      "a": "No — PDF doesn't support animation. Only the first frame is used. To convert animation to PDF, use GIF to MP4 then Video to PDF for keyframes."
+      "a": "No — PDF doesn't support animation. Only the first frame is used. To convert animation to PDF, use GIF to MP4 and then Video to PDF, which lays out evenly spaced frames, one per page."
     },
     {
       "q": "How is transparency handled?",
-      "a": "GIF transparent pixels render against a white page background. Use PNG-to-PDF if you need true alpha."
+      "a": "It is not kept. Transparent pixels show the colour stored in their palette entry, which is often black, and PNG to PDF does not keep transparency either. Flatten the GIF onto a white background first if needed."
     },
     {
       "q": "Can the GIF stay as a GIF inside the PDF?",
-      "a": "PDF doesn't natively support GIF — the image is re-encoded as JPEG or Flate during embedding."
+      "a": "No. PDF has no GIF image type, so the first frame is decoded and stored with lossless Flate compression; no JPEG step is involved."
     }
   ]
 }
