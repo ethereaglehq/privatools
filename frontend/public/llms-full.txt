@@ -1043,23 +1043,23 @@ URL: https://privatools.me/tools/text-diff
 
 Highlight exact differences between two text blocks
 
-Compare text online for free — paste two versions of text or code side-by-side and get a line-by-line diff with additions in green and deletions in red. Perfect for code review, proofreading, and version comparison.
+Compare text online for free — paste two versions of text or code side-by-side and get a line-by-line diff with additions marked + and deletions marked −. Perfect for code review, proofreading, and version comparison.
 
 ### Base64 Encoder / Decoder
 
 URL: https://privatools.me/tools/base64
 
-Encode or decode text and files as Base64
+Encode or decode text as Base64
 
-Base64 encode and decode online for free — convert text strings or binary files to Base64, or decode Base64 back to the original content. Supports text, images, PDFs, and any file type. Runs entirely in your browser.
+Base64 encode and decode online for free — convert text to Base64, or decode Base64 back to readable text. Handles text in any language as UTF-8. Runs entirely in your browser.
 
 ### Hash Generator
 
 URL: https://privatools.me/tools/hash-generator
 
-Generate MD5, SHA-1, SHA-256 hashes of text or files
+Generate SHA-1, SHA-256, and SHA-512 hashes of text or files
 
-Generate MD5, SHA-1, SHA-256 hashes online for free — verify file integrity and create cryptographic checksums. Paste text or upload files to get instant hash digests. All processing happens in your browser.
+Generate SHA-1, SHA-256, and SHA-512 hashes online for free — verify file integrity and create cryptographic checksums. Paste text or choose a file to get instant hash digests. All processing happens in your browser.
 
 ### Extract ZIP / TAR
 
@@ -1179,7 +1179,7 @@ URL: https://privatools.me/tools/uuid-generator
 
 Bulk-generate UUID v4 or v7 in your browser
 
-Generate UUIDs online for free — bulk-generate up to 500 UUIDs (v4 random or v7-style timestamp-prefixed) using crypto.randomUUID(). Output is one per line, ready to copy. Runs entirely in your browser.
+Generate UUIDs online for free — bulk-generate up to 500 UUIDs (v4 random or v7-style timestamp-prefixed) using the browser's crypto API. Output is one per line, ready to copy. Runs entirely in your browser.
 
 ### Lorem Ipsum Generator
 
@@ -1201,9 +1201,9 @@ Count words, characters, sentences, paragraphs, and lines online for free. Inclu
 
 URL: https://privatools.me/tools/color-converter
 
-Convert between HEX, RGB, HSL, RGBA
+Convert a HEX color to RGB, RGBA, and HSL
 
-Convert colors between HEX, RGB, HSL, and RGBA online for free. Includes a color picker, live preview swatch, and copy-ready Tailwind / CSS-variable snippets. All math runs in your browser.
+Convert a HEX color to RGB, RGBA, and HSL online for free, or pick one with the color picker. Includes a live preview swatch, a contrast check, and copy-ready Tailwind / CSS-variable snippets. All math runs in your browser.
 
 ### URL Encoder / Decoder
 
@@ -1651,7 +1651,7 @@ URL: https://privatools.me/tools/yaml-to-json
 
 Convert YAML to JSON entirely in your browser
 
-Convert YAML to JSON online for free — paste any YAML (Kubernetes manifest, GitHub Actions workflow, Docker Compose) and instantly get the equivalent JSON. Validates YAML syntax. Runs entirely in your browser — your config never touches a server.
+Convert YAML to JSON online for free — paste common YAML (Kubernetes manifest, GitHub Actions workflow, Docker Compose) and instantly get the equivalent JSON. Multi-line block strings, anchors, and tags are reported as errors rather than converted. Runs entirely in your browser — your config never touches a server.
 
 ### JSON to YAML
 

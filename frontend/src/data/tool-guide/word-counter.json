@@ -6,11 +6,11 @@
     },
     {
       "name": "Read live stats",
-      "text": "Word count, character count (with/without spaces), sentence count, paragraph count, reading time at 200 wpm."
+      "text": "Word count, character count (with/without spaces), sentence count, paragraph count, line count, reading time at 220 wpm."
     },
     {
       "name": "Optional metrics",
-      "text": "Average word length, longest word, most-frequent words."
+      "text": "Average word length, longest sentence and an approximate passive-voice count."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "How is reading time calculated?",
-      "a": "Word count ÷ 200 words per minute (average adult reading speed for non-fiction). Adjust for technical content (slower) or casual reading (faster)."
+      "a": "Word count ÷ 220 words per minute, rounded up to a whole minute. Adjust for technical content (slower) or casual reading (faster)."
     },
     {
       "q": "Is my text saved?",

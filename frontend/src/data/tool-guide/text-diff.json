@@ -2,33 +2,33 @@
   "howto": [
     {
       "name": "Enter the two texts",
-      "text": "Paste the original text on the left and the modified text on the right, or upload two text files."
+      "text": "Paste the original text on the left and the modified text on the right."
     },
     {
       "name": "View the diff",
-      "text": "Differences are highlighted inline: green for additions, red for deletions, and yellow for modifications."
+      "text": "Added lines are marked + and removed lines −, each in its own colour; a changed line shows as one removal and one addition."
     },
     {
       "name": "Choose diff mode",
       "text": "Switch between side-by-side and unified views. Line numbers help locate changes in large documents."
     },
     {
-      "name": "Copy or download the diff",
-      "text": "Copy the highlighted diff to your clipboard or download it as an HTML file for sharing."
+      "name": "Swap or start again",
+      "text": "Swap A and B to compare in the other direction, or clear the diff and paste new text."
     }
   ],
   "faq": [
     {
       "q": "What diff algorithm is used?",
-      "a": "The tool uses a line-by-line diff algorithm similar to Unix diff, highlighting additions, deletions, and modifications with color coding."
+      "a": "A line-by-line longest-common-subsequence diff, like Unix diff: each line is marked as added, removed or unchanged. There is no word-level highlighting within a changed line."
     },
     {
       "q": "Can I compare files directly?",
-      "a": "Yes. Upload two text files instead of pasting. Supported formats include .txt, .csv, .json, .xml, .html, .css, .js, .py, and other plain-text formats."
+      "a": "Not as uploads: paste the contents of each file into the two panes. Any plain text works, including .txt, .csv, .json, .xml, .html, .css, .js and .py files."
     },
     {
-      "q": "Is there a file size limit for comparison?",
-      "a": "Each file can be up to 500 MB. Very large files may take a few seconds to process the diff."
+      "q": "Is there a size limit for comparison?",
+      "a": "Yes: roughly 2,000 lines per side. Larger inputs are refused so the page stays responsive, so compare long documents in sections."
     },
     {
       "q": "Can I compare code files?",

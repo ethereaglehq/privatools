@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Paste JSON or XML",
-      "text": "Or upload a file. Auto-detects format from braces / tags."
+      "text": "Choose JSON or XML, then paste your text or load the example."
     },
     {
-      "name": "Click Format",
-      "text": "Adds indentation, proper line breaks, sorted keys (optional). Removes extra whitespace."
+      "name": "Format, minify or validate",
+      "text": "Format adds indentation and line breaks, Minify removes the extra whitespace, and Validate only checks the syntax. Keys keep their original order."
     },
     {
       "name": "Copy or download the result",
@@ -20,7 +20,7 @@
     },
     {
       "q": "Can it convert JSON ↔ XML?",
-      "a": "This tool only formats. For conversion, paste into the CSV/JSON converter or use a dedicated converter."
+      "a": "No. This tool formats, minifies and validates; it does not convert between JSON and XML."
     },
     {
       "q": "Is the indent customizable?",

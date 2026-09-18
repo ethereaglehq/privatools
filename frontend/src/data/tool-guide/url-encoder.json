@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Paste a string, URL, or JWT",
-      "text": "Auto-detects the input type."
+      "text": "Pick the mode yourself: URL encode, URL decode or JWT decode."
     },
     {
       "name": "Choose encode or decode",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Will the encoded URL be browser-safe?",
-      "a": "Yes — outputs only ASCII-safe chars (alphanumeric + - _ . ~ % escapes)."
+      "a": "Yes — it uses encodeURIComponent, so the output holds only letters, digits, - _ . ! ~ * ' ( ) and %XX escapes. Characters with a special meaning in a URL, such as ? & = / # and spaces, are escaped."
     }
   ]
 }

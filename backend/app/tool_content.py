@@ -224,14 +224,14 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── Developer tools ───────────────────────────────────────────────
     "base64": [
         {"name": "Choose encode or decode mode", "text": "Select whether you want to encode data to Base64 or decode a Base64 string back to its original form."},
-        {"name": "Enter input", "text": "Paste text into the editor, or upload a file (image, PDF, binary — up to 500 MB). For decoding, paste the Base64 string."},
-        {"name": "Get the result", "text": "The output appears instantly. Copy the Base64 string to your clipboard, or download the decoded file."},
+        {"name": "Enter input", "text": "Paste text into the editor; any language works, because text is encoded as UTF-8. For decoding, paste the Base64 string."},
+        {"name": "Get the result", "text": "The output appears instantly. Copy it to your clipboard, or use Swap sides to run it back the other way."},
     ],
     "text-diff": [
-        {"name": "Enter the two texts", "text": "Paste the original text on the left and the modified text on the right, or upload two text files."},
-        {"name": "View the diff", "text": "Differences are highlighted inline: green for additions, red for deletions, and yellow for modifications."},
+        {"name": "Enter the two texts", "text": "Paste the original text on the left and the modified text on the right."},
+        {"name": "View the diff", "text": "Added lines are marked + and removed lines −, each in its own colour; a changed line shows as one removal and one addition."},
         {"name": "Choose diff mode", "text": "Switch between side-by-side and unified views. Line numbers help locate changes in large documents."},
-        {"name": "Copy or download the diff", "text": "Copy the highlighted diff to your clipboard or download it as an HTML file for sharing."},
+        {"name": "Swap or start again", "text": "Swap A and B to compare in the other direction, or clear the diff and paste new text."},
     ],
     "image-upscaler": [
         {"name": "Add the image to enlarge", "text": "Drop or select pictures up to 500 MB each. Small, reasonably sharp images give the best results; a heavily compressed thumbnail simply becomes a larger heavily compressed thumbnail."},
@@ -427,7 +427,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert and download", "text": "Run the conversion. The video is re-encoded as VP9 at about 1 Mbit/s with Opus audio, which suits HTML5 video on the open web."},
     ],
     "yaml-to-json": [
-        {"name": "Paste YAML", "text": "Drop any YAML document into the left textarea — a Kubernetes manifest, GitHub Actions workflow, Docker Compose file, or any configuration."},
+        {"name": "Paste YAML", "text": "Drop a YAML document into the left textarea — a Kubernetes manifest, GitHub Actions workflow, Docker Compose file, or other configuration that uses mappings, lists and plain values."},
         {"name": "Read JSON instantly", "text": "Equivalent JSON appears on the right, pretty-printed and validated. Click Copy to grab it. 100% in your browser — your config never touches our servers."},
     ],
     "json-to-yaml": [
@@ -835,9 +835,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the merged audio", "text": "FFmpeg joins the files in that order into one MP3, whatever the input formats were."},
     ],
     "color-converter": [
-        {"name": "Enter a color in any format", "text": "HEX (#FF5733), RGB (255, 87, 51), HSL (10, 100%, 60%), or named (coral, tomato, etc.)."},
-        {"name": "PrivaTools shows the same color in every format", "text": "Live conversion: HEX, RGB, RGBA, HSL, HSLA, HSV, CMYK, and named-color match (if any)."},
-        {"name": "Copy the value you need", "text": "Click any value to copy. Runs entirely in your browser — no network roundtrip."},
+        {"name": "Enter a HEX color", "text": "Type a HEX code (#FF5733, or the short #F53 form), or click the swatch to pick a color."},
+        {"name": "PrivaTools shows the same color in every format", "text": "Live conversion: HEX, RGB, RGBA, HSL, a Tailwind class and a CSS variable, plus a contrast rating against white or black text."},
+        {"name": "Copy the value you need", "text": "Use the Copy button on any row. Runs entirely in your browser — no network roundtrip."},
     ],
     "create-zip": [
         {"name": "Upload files", "text": "Drop multiple files of any type, up to 500 MB per file."},
@@ -875,8 +875,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the MP4", "text": "Typically 5-10x smaller than the source GIF, with smoother playback."},
     ],
     "hash-generator": [
-        {"name": "Type or paste your input", "text": "Or upload a file. Files are read into the browser via FileReader."},
-        {"name": "Choose hash algorithm", "text": "MD5, SHA-1, SHA-256, SHA-384, SHA-512. SHA-256 is the modern recommendation."},
+        {"name": "Type or paste your input", "text": "Or choose a file. It is read in your browser, not uploaded."},
+        {"name": "Calculate the hashes", "text": "One click gives SHA-1, SHA-256 and SHA-512 side by side. SHA-256 is the modern recommendation."},
         {"name": "Copy the hex digest", "text": "Runs entirely in your browser using the Web Crypto API. Input never leaves your machine."},
     ],
     "image-converter": [
@@ -898,13 +898,13 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Apply and download", "text": "Run it and save the marked copy. The text is drawn into the pixels, so it is part of the image rather than a layer that can be switched off."},
     ],
     "json-xml-formatter": [
-        {"name": "Paste JSON or XML", "text": "Or upload a file. Auto-detects format from braces / tags."},
-        {"name": "Click Format", "text": "Adds indentation, proper line breaks, sorted keys (optional). Removes extra whitespace."},
+        {"name": "Paste JSON or XML", "text": "Choose JSON or XML, then paste your text or load the example."},
+        {"name": "Format, minify or validate", "text": "Format adds indentation and line breaks, Minify removes the extra whitespace, and Validate only checks the syntax. Keys keep their original order."},
         {"name": "Copy or download the result", "text": "Runs entirely in your browser."},
     ],
     "lorem-ipsum": [
         {"name": "Choose paragraphs, sentences, or words", "text": "Specify how much placeholder text you need."},
-        {"name": "Click Generate", "text": "Standard Lorem Ipsum (Cicero's De Finibus, scrambled) — the publishing industry standard since the 1500s."},
+        {"name": "Generate or reroll", "text": "Text appears as you change the options; Reroll shuffles it. The classic variant draws on Lorem Ipsum (Cicero's De Finibus, scrambled), the publishing industry's standard placeholder."},
         {"name": "Copy and use in your mockups", "text": "Runs entirely in your browser."},
     ],
     "make-collage": [
@@ -925,8 +925,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the merged image", "text": "Each input is scaled to a common dimension and joined into one PNG, which keeps any transparency. The grid option returns a JPG instead."},
     ],
     "password-generator": [
-        {"name": "Choose length and character classes", "text": "Length 8-100. Include uppercase / lowercase / digits / symbols / exclude ambiguous (1lI0O)."},
-        {"name": "Click Generate", "text": "Uses Web Crypto API's secureRandomValues — cryptographically strong random."},
+        {"name": "Choose length and character classes", "text": "Length 4-64 (20 by default). Include uppercase / lowercase / digits / symbols / exclude ambiguous (1lI0O)."},
+        {"name": "Generate", "text": "A password appears straight away and changes with the options; Regenerate makes a new one and Batch x5 makes five. It uses the Web Crypto API's getRandomValues — cryptographically strong random."},
         {"name": "Copy the password", "text": "Copy the password into your password manager or the form that needs it. It is generated in JavaScript on this page and is not sent to PrivaTools."},
     ],
     "qr-reader": [
@@ -951,7 +951,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Render and download", "text": "Convert and save the PNG. Because SVG is vector artwork, rendering at a larger scale produces genuinely sharper output rather than an enlarged blur."},
     ],
     "url-encoder": [
-        {"name": "Paste a string, URL, or JWT", "text": "Auto-detects the input type."},
+        {"name": "Paste a string, URL, or JWT", "text": "Pick the mode yourself: URL encode, URL decode or JWT decode."},
         {"name": "Choose encode or decode", "text": "URL encode: spaces → %20, etc. URL decode: %20 → spaces. JWT decode: header.payload.signature → parsed JSON."},
         {"name": "Copy the result", "text": "Runs entirely in your browser."},
     ],
@@ -961,9 +961,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "Click Convert. Pagination follows print CSS rules; links remain clickable."},
     ],
     "uuid-generator": [
-        {"name": "Choose UUID version", "text": "v4 (random — most common). v1 (time + MAC — rare). v7 (time-sortable random — modern recommendation)."},
-        {"name": "Choose bulk count", "text": "1 to 1000 UUIDs at once."},
-        {"name": "Copy or download as text", "text": "Runs entirely in your browser using Web Crypto API."},
+        {"name": "Choose UUID version", "text": "v4 (random — most common) or v7-like (time-sortable random — modern recommendation)."},
+        {"name": "Choose bulk count", "text": "1 to 500 UUIDs at once."},
+        {"name": "Copy the list", "text": "One UUID per line, copied with one click. Runs entirely in your browser using Web Crypto API."},
     ],
     "video-converter": [
         {"name": "Upload a video", "text": "MP4, WebM, MOV, AVI, MKV — up to 500 MB."},
@@ -992,8 +992,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "word-counter": [
         {"name": "Paste your text", "text": "Or type directly. Counter updates as you type."},
-        {"name": "Read live stats", "text": "Word count, character count (with/without spaces), sentence count, paragraph count, reading time at 200 wpm."},
-        {"name": "Optional metrics", "text": "Average word length, longest word, most-frequent words."},
+        {"name": "Read live stats", "text": "Word count, character count (with/without spaces), sentence count, paragraph count, line count, reading time at 220 wpm."},
+        {"name": "Optional metrics", "text": "Average word length, longest sentence and an approximate passive-voice count."},
     ],
 
     # ── filled in 2026-09-02: these tools shipped without How-To steps, which
@@ -1425,14 +1425,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How precise is the trimming?", "a": "Video cuts are frame-accurate, because the video is re-encoded. Audio is copied, so an audio cut lands on the nearest compressed-audio frame, within a few hundredths of a second."},
     ],
     "base64": [
-        {"q": "Can I encode files (not just text)?", "a": "Yes. Upload any file — images, PDFs, binaries — and the tool returns the Base64-encoded string. Useful for embedding files in JSON, HTML, or CSS."},
-        {"q": "Is there a size limit for encoding?", "a": "Files up to 500 MB can be encoded. Keep in mind that Base64 output is approximately 33% larger than the original file."},
-        {"q": "What character set is used?", "a": "Standard Base64 (RFC 4648) using A-Z, a-z, 0-9, +, and /. URL-safe Base64 (replacing + and / with - and _) is also available."},
+        {"q": "Can I encode files (not just text)?", "a": "No. This tool encodes and decodes text only; there is no file upload, and Base64 that holds binary data such as an image cannot be decoded to text here."},
+        {"q": "Is there a size limit for encoding?", "a": "There is no fixed limit; everything runs in your browser, so very long text is limited only by your device. Keep in mind that Base64 output is approximately 33% larger than the original."},
+        {"q": "What character set is used?", "a": "Standard Base64 (RFC 4648) using A-Z, a-z, 0-9, +, and /. URL-safe Base64 (with - and _ in place of + and /) is not supported."},
     ],
     "text-diff": [
-        {"q": "What diff algorithm is used?", "a": "The tool uses a line-by-line diff algorithm similar to Unix diff, highlighting additions, deletions, and modifications with color coding."},
-        {"q": "Can I compare files directly?", "a": "Yes. Upload two text files instead of pasting. Supported formats include .txt, .csv, .json, .xml, .html, .css, .js, .py, and other plain-text formats."},
-        {"q": "Is there a file size limit for comparison?", "a": "Each file can be up to 500 MB. Very large files may take a few seconds to process the diff."},
+        {"q": "What diff algorithm is used?", "a": "A line-by-line longest-common-subsequence diff, like Unix diff: each line is marked as added, removed or unchanged. There is no word-level highlighting within a changed line."},
+        {"q": "Can I compare files directly?", "a": "Not as uploads: paste the contents of each file into the two panes. Any plain text works, including .txt, .csv, .json, .xml, .html, .css, .js and .py files."},
+        {"q": "Is there a size limit for comparison?", "a": "Yes: roughly 2,000 lines per side. Larger inputs are refused so the page stays responsive, so compare long documents in sections."},
         {"q": "Can I compare code files?", "a": "Yes. The diff viewer works with any plain-text format. It highlights changes line by line, making it useful for comparing code, configs, or data files."},
     ],
     "image-upscaler": [
@@ -1548,10 +1548,10 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "regex-tester": [
         {"q": "Which regex flavor does it use?", "a": "JavaScript RegExp (ECMAScript). The same engine that powers browser pattern matching. Most patterns are portable to Python re, PCRE, or Go regexp with minor adjustments."},
         {"q": "Is my test text saved anywhere?", "a": "No. Pattern and text are kept in browser state only. Refresh the page and they're gone. No server-side storage."},
-        {"q": "How many matches can it handle?", "a": "Tested up to ~10,000 matches without slowdown. Beyond that, the highlighting may lag but the match list still renders."},
+        {"q": "How many matches can it handle?", "a": "Up to 1,000 matches are found and listed; past that the result says only the first 1,000 are shown. Each check runs in a separate worker and stops after one second, so a pattern that backtracks badly shows an error instead of freezing the page."},
     ],
     "timestamp-converter": [
-        {"q": "How does it know if a number is seconds or milliseconds?", "a": "By magnitude. Numbers larger than 10^12 (Sep 2001 onward in milliseconds) are treated as milliseconds; smaller as seconds. You can also paste an ISO 8601 string explicitly."},
+        {"q": "How does it know if a number is seconds or milliseconds?", "a": "By magnitude: a number of 100,000,000,000 (10^11) or more is read as milliseconds, anything smaller as seconds. The 'Interpret numbers as' setting can force seconds or milliseconds, or you can paste an ISO 8601 string."},
         {"q": "Why is the local time different from the UTC time?", "a": "Your browser's timezone offset is applied. The UTC value is what's actually stored in the timestamp; local is just for human convenience."},
         {"q": "Can I generate a future timestamp?", "a": "Yes. Type or paste any past or future ISO date and you'll get the corresponding epoch. The relative phrase will say 'in X days' for the future."},
     ],
@@ -1706,7 +1706,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "yaml-to-json": [
         {"q": "Is it 100% in my browser?", "a": "Yes. The conversion runs in JavaScript on this page, so the YAML you paste is not uploaded to PrivaTools."},
-        {"q": "Which YAML features are supported?", "a": "All common config features: scalars, lists, nested maps, quoted strings, comments, multi-line strings, and flow-style arrays and objects. Anchors, tags, and multi-doc streams are not supported — those are rare in practice."},
+        {"q": "Which YAML features are supported?", "a": "Scalars, lists, nested maps, quoted strings, comments (left out of the JSON) and flow-style arrays. Inline objects work only with JSON-style quoted keys. Multi-line block strings (| and >), anchors, tags and multi-document streams are not supported and show an error instead of converting wrongly."},
         {"q": "What if my YAML has a parse error?", "a": "The error message appears in the output area with line context. Fix the YAML and the conversion updates instantly."},
     ],
     "json-to-yaml": [
@@ -1716,7 +1716,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "case-converter": [
         {"q": "Which case formats are supported?", "a": "12: lowercase, UPPERCASE, Title Case, Sentence case, camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE, dot.case, path/case, and iNVERSE."},
-        {"q": "Will it handle existing camelCase or snake_case input correctly?", "a": "Yes. The tool detects word boundaries from underscores, hyphens, spaces, and lowercase→uppercase transitions, so converting between any two cases works correctly."},
+        {"q": "Will it handle existing camelCase or snake_case input correctly?", "a": "Yes. The tool detects word boundaries from underscores, hyphens, spaces, and lowercase→uppercase transitions, so camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE and plain words convert cleanly. Dots and slashes are not word breaks, and an acronym such as XML in XMLHttpRequest stays joined to the next word."},
         {"q": "Does it run in my browser?", "a": "Yes — 100%. Your text never leaves the page. Useful for renaming variables, generating CSS class names, or normalizing identifiers without exposing them to a server."},
     ],
     "cron-parser": [
@@ -2146,8 +2146,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Maximum total length?", "a": "The limits apply to what you upload: up to 50 files, and the whole upload has to fit within the 500 MB request limit. A merge that takes longer than three minutes to encode is stopped."},
     ],
     "color-converter": [
-        {"q": "Does it work with alpha (transparency)?", "a": "Yes — paste #RRGGBBAA or rgba(...) and the alpha channel is preserved across all output formats."},
-        {"q": "Why does my CMYK look different from print?", "a": "CMYK conversion uses a sRGB → CMYK approximation. For exact print color, use your printer's color profile."},
+        {"q": "Does it work with alpha (transparency)?", "a": "No. Input is a 3- or 6-digit HEX code without alpha, and the RGBA row always shows an alpha of 1."},
+        {"q": "What does the contrast badge mean?", "a": "It rates the color against white or black text, whichever contrasts more, with the WCAG formula: AAA at 7:1 or more, AA at 4.5:1, AA Large at 3:1, and Fail below that."},
         {"q": "Is the calculation done locally?", "a": "Yes — pure browser JavaScript. No network requests."},
     ],
     "create-zip": [
@@ -2186,7 +2186,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does it preserve transparency?", "a": "MP4 doesn't support transparency. Transparent areas come out white, because the GIF is decoded onto white before encoding. Use WebM with VP9 if you need alpha."},
     ],
     "hash-generator": [
-        {"q": "Is MD5 safe to use?", "a": "For non-security purposes (file integrity, deduplication): yes. For security (passwords, signatures): no — MD5 is broken. Use SHA-256 or SHA-512."},
+        {"q": "Can it make MD5 hashes?", "a": "No. The browser's Web Crypto API has no MD5, so this tool calculates SHA-1, SHA-256 and SHA-512. MD5 and SHA-1 are both broken for security uses such as signatures; use SHA-256 or SHA-512."},
         {"q": "Why are file hashes useful?", "a": "Verifying file integrity after download, deduplication, change detection, content-addressed storage."},
         {"q": "Is the hash calculation done in the browser?", "a": "Yes — Web Crypto API runs the hash in your browser. Files are not uploaded."},
     ],
@@ -2216,12 +2216,12 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "json-xml-formatter": [
         {"q": "Will it validate the input?", "a": "Yes — invalid JSON / XML shows an error with the line and column. Common errors (trailing commas, unclosed strings, mismatched tags) are highlighted."},
-        {"q": "Can it convert JSON ↔ XML?", "a": "This tool only formats. For conversion, paste into the CSV/JSON converter or use a dedicated converter."},
+        {"q": "Can it convert JSON ↔ XML?", "a": "No. This tool formats, minifies and validates; it does not convert between JSON and XML."},
         {"q": "Is the indent customizable?", "a": "Yes — 2 spaces, 4 spaces, or tabs."},
     ],
     "lorem-ipsum": [
         {"q": "Why use Lorem Ipsum and not English?", "a": "It has roughly Latin letter frequencies so designs feel real, without distracting reviewers with the actual content. English placeholder text always gets read instead of looked at."},
-        {"q": "Can I get other languages?", "a": "No. The generator produces classic Latin placeholder text only; placeholder text in other scripts is not supported."},
+        {"q": "Can I get other languages?", "a": "Not other languages or scripts. Besides classic Latin, it offers three themed word lists in English: Cyberpunk, Pirate and Hacker."},
         {"q": "Is it copyrighted?", "a": "Cicero died in 43 BC. Public domain."},
     ],
     "make-collage": [
@@ -2278,7 +2278,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "url-encoder": [
         {"q": "What's the difference between URL encoding and base64?", "a": "URL encoding only escapes characters that have special meaning in URLs. Base64 encodes any binary as ASCII (longer but binary-safe). Use Base64 for arbitrary data."},
         {"q": "Why decode a JWT here?", "a": "All in your browser — never paste a real production JWT into a server-side decoder. The standalone JWT Decoder tool shows expiry and claim details too."},
-        {"q": "Will the encoded URL be browser-safe?", "a": "Yes — outputs only ASCII-safe chars (alphanumeric + - _ . ~ % escapes)."},
+        {"q": "Will the encoded URL be browser-safe?", "a": "Yes — it uses encodeURIComponent, so the output holds only letters, digits, - _ . ! ~ * ' ( ) and %XX escapes. Characters with a special meaning in a URL, such as ? & = / # and spaces, are escaped."},
     ],
     "url-to-pdf": [
         {"q": "Will JavaScript-rendered content show up?", "a": "WeasyPrint doesn't execute JS — only the server-rendered HTML is converted. For JS-heavy SPAs (React, Vue), use the site's print stylesheet or a server-side rendered version."},
@@ -2288,7 +2288,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "uuid-generator": [
         {"q": "What's the difference between v4 and v7?", "a": "v4 is purely random — unsortable. v7 (new in 2024) embeds a timestamp prefix so UUIDs sort chronologically. Use v7 for database primary keys."},
         {"q": "How likely is a collision?", "a": "v4 collision after generating 2^61 ≈ 2.3 quintillion UUIDs. Practically impossible."},
-        {"q": "Are they cryptographically random?", "a": "v4 uses Web Crypto's getRandomValues — yes, cryptographically secure."},
+        {"q": "Are they cryptographically random?", "a": "Yes. v4 comes from the browser's crypto.randomUUID() and the random part of v7-like IDs from crypto.getRandomValues, both cryptographically secure."},
     ],
     "video-converter": [
         {"q": "Which format to choose?", "a": "MP4: most compatible. WebM: smaller, used for web embedding. MOV: works in Apple ecosystem and Final Cut. MKV: open-source flexible container."},
@@ -2317,7 +2317,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "word-counter": [
         {"q": "What counts as a word?", "a": "Whitespace-separated tokens. Hyphenated words ('self-host') count as one. Apostrophes ('don't') keep the word as one."},
-        {"q": "How is reading time calculated?", "a": "Word count ÷ 200 words per minute (average adult reading speed for non-fiction). Adjust for technical content (slower) or casual reading (faster)."},
+        {"q": "How is reading time calculated?", "a": "Word count ÷ 220 words per minute, rounded up to a whole minute. Adjust for technical content (slower) or casual reading (faster)."},
         {"q": "Is my text saved?", "a": "No — everything runs in your browser and persists only in this session."},
     ],
 

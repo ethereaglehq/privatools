@@ -156,8 +156,8 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert SRT, VTT, and ASS subtitles to SRT or VTT
 - [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify and validate JSON or XML offline
 - [Text Diff / Comparator](https://privatools.me/tools/text-diff): Highlight exact differences between two text blocks
-- [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text and files as Base64
-- [Hash Generator](https://privatools.me/tools/hash-generator): Generate MD5, SHA-1, SHA-256 hashes of text or files
+- [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text as Base64
+- [Hash Generator](https://privatools.me/tools/hash-generator): Generate SHA-1, SHA-256, and SHA-512 hashes of text or files
 - [Extract ZIP / TAR](https://privatools.me/tools/extract-archive): Extract ZIP and TAR archives privately
 - [Create ZIP Archive](https://privatools.me/tools/create-zip): Bundle multiple files into a ZIP archive
 - [CSV ↔ JSON Converter](https://privatools.me/tools/csv-json): Swap between CSV and JSON data formats instantly
@@ -175,7 +175,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [UUID Generator](https://privatools.me/tools/uuid-generator): Bulk-generate UUID v4 or v7 in your browser
 - [Lorem Ipsum Generator](https://privatools.me/tools/lorem-ipsum): Placeholder text — words, sentences, or paragraphs
 - [Word & Character Counter](https://privatools.me/tools/word-counter): Live counts of words, characters, sentences, lines
-- [Color Converter](https://privatools.me/tools/color-converter): Convert between HEX, RGB, HSL, RGBA
+- [Color Converter](https://privatools.me/tools/color-converter): Convert a HEX color to RGB, RGBA, and HSL
 - [URL Encoder / Decoder](https://privatools.me/tools/url-encoder): Percent-encode or decode URLs in your browser
 - [QR Code Reader](https://privatools.me/tools/qr-reader): Decode QR codes from an uploaded image
 - [Merge Images](https://privatools.me/tools/merge-images): Combine images side-by-side or top-to-bottom

@@ -28,7 +28,7 @@
     },
     {
       "q": "How many matches can it handle?",
-      "a": "Tested up to ~10,000 matches without slowdown. Beyond that, the highlighting may lag but the match list still renders."
+      "a": "Up to 1,000 matches are found and listed; past that the result says only the first 1,000 are shown. Each check runs in a separate worker and stops after one second, so a pattern that backtracks badly shows an error instead of freezing the page."
     }
   ]
 }

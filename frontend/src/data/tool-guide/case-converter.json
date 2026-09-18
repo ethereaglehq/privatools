@@ -16,7 +16,7 @@
     },
     {
       "q": "Will it handle existing camelCase or snake_case input correctly?",
-      "a": "Yes. The tool detects word boundaries from underscores, hyphens, spaces, and lowercase→uppercase transitions, so converting between any two cases works correctly."
+      "a": "Yes. The tool detects word boundaries from underscores, hyphens, spaces, and lowercase→uppercase transitions, so camelCase, PascalCase, snake_case, kebab-case, CONSTANT_CASE and plain words convert cleanly. Dots and slashes are not word breaks, and an acronym such as XML in XMLHttpRequest stays joined to the next word."
     },
     {
       "q": "Does it run in my browser?",
