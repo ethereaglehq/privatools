@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a PDF",
-      "text": "Drop a PDF up to 500 MB. The page count is automatically padded to a multiple of 4 with blanks if needed."
+      "name": "Add the PDF",
+      "text": "Drop or select the document you want to print as a folded booklet, up to 500 MB."
     },
     {
-      "name": "PrivaTools reorders pages for saddle-stitch",
-      "text": "For an 8-page booklet, the output order is 8,1, 2,7, 6,3, 4,5 — so when printed double-sided and folded in half, the pages read in sequence."
+      "name": "Create the booklet order",
+      "text": "Run it. The pages are rearranged into saddle-stitch order, and blank pages are added at the end if needed so the total is a multiple of four."
     },
     {
-      "name": "Download and print double-sided",
-      "text": "Print the result two pages per sheet, double-sided, then fold in half. You get a perfect-bound booklet."
+      "name": "Print two per sheet, double-sided",
+      "text": "Print the result with two pages per sheet, on both sides, flipping on the short edge. Fold the stack in half and it reads in order."
     }
   ],
   "faq": [
     {
-      "q": "Why is the order so strange?",
-      "a": "Saddle-stitch binding folds the sheets in half — the front cover of sheet 1 carries pages 8 and 1, the back carries pages 2 and 7. The math is fixed by binding geometry."
+      "q": "Why were blank pages added?",
+      "a": "A folded booklet is made from sheets that each carry four pages, two on each side. When your page count is not a multiple of four, blank pages are added at the end so the imposition works."
     },
     {
-      "q": "What if my page count isn't a multiple of 4?",
-      "a": "PrivaTools pads with blank pages at the end before computing the imposition order, so the booklet always works."
+      "q": "Does it place two pages on each sheet?",
+      "a": "No. It reorders the pages into booklet sequence; the two-per-sheet layout comes from your printer's print dialog. That keeps the file at its original page size and lets you choose the paper at print time."
     },
     {
-      "q": "Can I use this for thick books?",
-      "a": "Saddle-stitch caps at about 80 pages (20 sheets) because the inner pages start to creep. For longer documents use perfect binding (no imposition needed)."
+      "q": "My booklet printed out of order.",
+      "a": "Check the double-sided setting. It must flip on the short edge; flipping on the long edge turns every other page upside down relative to its neighbour."
+    },
+    {
+      "q": "Is there a limit on the number of pages?",
+      "a": "Not a fixed one, but a single folded booklet becomes hard to fold and staple beyond a few dozen sheets. Split long documents into several booklets first."
+    },
+    {
+      "q": "Will the content be shrunk?",
+      "a": "Not by this tool. Fitting two pages onto one sheet is done by your printer's two-per-sheet setting, which scales each page down to half a sheet."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and reordered on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

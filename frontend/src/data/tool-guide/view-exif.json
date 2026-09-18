@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload an image",
-      "text": "Select a JPG, PNG, TIFF, WebP, HEIC, or BMP up to 500 MB."
+      "name": "Add the photo",
+      "text": "Drop or select an image up to 500 MB. Photos straight from a camera or phone carry the most metadata; anything already processed by a social platform has usually had it stripped."
     },
     {
-      "name": "Inspect the metadata",
-      "text": "The tool reads every EXIF, IPTC, and XMP field: camera make and model, lens info, ISO, exposure, GPS coordinates, capture timestamps, software versions, embedded copyright."
+      "name": "Read what it carries",
+      "text": "The metadata is listed for you: camera and lens, exposure settings, the capture timestamp and, where the device recorded it, GPS coordinates."
     },
     {
       "name": "Decide what to do next",
-      "text": "If GPS coordinates are present they reveal where the photo was taken. Use Remove EXIF before publishing to strip them."
+      "text": "If the image is going to be published and the metadata should not, run Remove EXIF on the original to write a clean copy."
     }
   ],
   "faq": [
     {
-      "q": "What metadata does it show?",
-      "a": "All standard EXIF tags (camera make/model, lens, ISO, exposure, focal length, timestamps), GPS sub-IFD (latitude, longitude, altitude), IPTC, and XMP-embedded fields, plus PNG tEXt chunks if present."
+      "q": "What can EXIF data reveal?",
+      "a": "More than most people expect: the exact time a photo was taken, the camera or phone that took it, the exposure settings, and often the precise location. For a holiday snap that is harmless; for a photo taken at home and posted publicly, it is an address."
     },
     {
-      "q": "Does this strip the metadata?",
-      "a": "No — this is read-only. To strip metadata, use Remove EXIF."
+      "q": "Why does my image show almost nothing?",
+      "a": "Most social networks and messaging apps strip metadata when you upload, so a photo saved from one of them usually arrives bare. Screenshots and images exported by editors often carry little or nothing too."
     },
     {
-      "q": "Why does my photo have GPS coordinates?",
-      "a": "Most smartphones embed GPS coordinates in photos by default. They reveal exactly where the photo was taken. Strip them before posting publicly."
+      "q": "Does it show GPS coordinates?",
+      "a": "Yes, when the camera recorded them and nothing has removed them since. That is the single most sensitive field in a typical photo, and the main reason to check before publishing."
+    },
+    {
+      "q": "Does viewing the metadata change my file?",
+      "a": "No. This tool only reads. To actually remove anything, use Remove EXIF, which writes a cleaned copy and leaves your original alone."
+    },
+    {
+      "q": "Can I trust the timestamp?",
+      "a": "Treat it as a strong hint rather than proof. It comes from the device's own clock, which may be wrong or set to another time zone, and metadata can be edited after the fact."
+    },
+    {
+      "q": "What happens to my photo after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a TIFF",
-      "text": "Select a .tif or .tiff file."
+      "name": "Add your TIFF images",
+      "text": "Drop or select .tif or .tiff files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The image is decoded with libtiff and written as a lossless PNG with full color depth preserved."
+      "name": "Convert to PNG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to PNG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the PNG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new PNG rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert TIFF to PNG?",
-      "a": "TIFF is excellent for archival but heavyweight and not browser-friendly. PNG is universally supported and still lossless — perfect for sharing scanned documents online."
+      "a": "PNG keeps the lossless quality a TIFF is usually kept for, while being far more portable: browsers, chat apps and web tools all display PNG, and most of them will not touch a TIFF."
     },
     {
-      "q": "Is the conversion lossless?",
-      "a": "Yes. Both TIFF and PNG are lossless image formats, so no pixel data is lost. The PNG is typically 30–60% smaller because PNG's compression is more efficient for typical scan content."
+      "q": "Is anything lost?",
+      "a": "Not in the pixels. Both formats are lossless, so the PNG is a faithful copy of the first page. What is dropped is TIFF-specific baggage: extra pages, embedded metadata and any print-oriented colour information."
     },
     {
-      "q": "Will multi-page TIFFs be handled?",
-      "a": "Only the first page is converted. For multi-page TIFF archives, use our TIFF to PDF tool to preserve every page."
+      "q": "Does a multi-page TIFF become several PNGs?",
+      "a": "No, only the first page is converted. A scanner that produced a multi-page TIFF is best handled by converting to PDF instead, which keeps every page in one document."
+    },
+    {
+      "q": "Will the PNG be smaller?",
+      "a": "Usually, because many TIFFs are stored uncompressed while PNG always compresses losslessly. The saving depends entirely on the source; a TIFF that was already compressed may barely change."
+    },
+    {
+      "q": "Is transparency kept?",
+      "a": "Where the TIFF has an alpha channel, yes: PNG supports transparency and it survives the conversion. A flattened scan has no transparency to preserve in the first place."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload an SVG",
-      "text": "Drop a .svg file up to 500 MB."
+      "name": "Add the SVG",
+      "text": "Drop or select .svg files up to 500 MB each. Vector artwork, icons and exported logos are the usual input. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."
     },
     {
-      "name": "Choose scale factor",
-      "text": "1x = SVG native size. 2x, 3x, 4x for higher-resolution exports."
+      "name": "Choose the scale",
+      "text": "Set how large to render, from 0.1 up to 8 times the SVG's own dimensions; the default is 2 for a crisp result on high-resolution screens."
     },
     {
-      "name": "Download the PNG",
-      "text": "PrivaTools rasterizes the vector via cairosvg at the chosen scale with anti-aliasing."
+      "name": "Render and download",
+      "text": "Convert and save the PNG. Because SVG is vector artwork, rendering at a larger scale produces genuinely sharper output rather than an enlarged blur."
     }
   ],
   "faq": [
     {
-      "q": "Why convert SVG to PNG?",
-      "a": "PNG is universally supported (email, legacy apps, social media uploads). SVG can break in tools that don't render it (Gmail, some Slack clients)."
+      "q": "Why convert an SVG to PNG?",
+      "a": "Because plenty of places will not take vector artwork. Image fields in older software, some document and presentation tools, social previews and many upload forms expect a raster image, and PNG is the lossless choice that keeps transparency."
     },
     {
-      "q": "How large should the output be?",
-      "a": "For social media: 1200×630 (use Resize Crop Image after). For app icons: 1024×1024 base. For web retina: 2x your design size."
+      "q": "What scale should I pick?",
+      "a": "Work out the pixel size you actually need. The default of 2 renders at twice the SVG's own dimensions, which suits high-resolution displays. Raise it for print or large artwork, and drop below 1 when the SVG is already larger than you need."
     },
     {
-      "q": "Does it preserve transparency?",
-      "a": "Yes — SVG transparency translates to PNG alpha. The PNG is fully alpha-channel."
+      "q": "Is transparency preserved?",
+      "a": "Yes. PNG supports an alpha channel, so an SVG with no background produces a PNG with a transparent one — which is what you want for a logo going over another colour."
+    },
+    {
+      "q": "Will the PNG stay sharp if I enlarge it later?",
+      "a": "No, and this is the trade you are making. The SVG is resolution-independent; the PNG is a fixed grid of pixels. Render at the size you need, and keep the SVG as the master for any future size."
+    },
+    {
+      "q": "My fonts look wrong in the PNG.",
+      "a": "An SVG that refers to a font by name needs that font to be available where it is rendered, and the server will not have every typeface. Converting text to outlines in your design tool before exporting the SVG makes the result predictable."
+    },
+    {
+      "q": "What happens to my file after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

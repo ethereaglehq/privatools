@@ -31,12 +31,12 @@
       "a": "Yes. The default output is a searchable PDF, but you can also download just the extracted text as .txt (per page or combined) or as structured JSON with per-page text and bounding boxes."
     },
     {
-      "q": "Is it safe to OCR a confidential document?",
-      "a": "Yes. The PDF enters an isolated Docker container, OCR runs in temporary per-request storage, the result is returned, and both the input and output are unlinked immediately. The text is never logged, never indexed, never sent to any third-party API. The whole pipeline is open source for verification."
+      "q": "Where is my document processed?",
+      "a": "That depends on the engine you pick. 'On our server' (the default) uploads the PDF over HTTPS and runs Tesseract in isolated temporary per-request storage; response cleanup removes the job's temporary files after the result is sent, and a background sweep clears anything left behind by an interrupted request. 'In this browser' runs OCR on your device after a one-time engine download, and with your own AI key the page images go from your browser straight to that provider."
     },
     {
       "q": "Can I OCR a scanned PDF in a language I don't have the keyboard for?",
-      "a": "Yes — the OCR doesn't need a keyboard, only that the language pack is installed (which it is for 100+ languages). After OCR, you can copy the text to a translator like DeepL or Google Translate."
+      "a": "Yes. OCR needs the right language to be available to the engine, not a keyboard. Once the text is recognised you can copy it, or use Translate PDF to translate the searchable result."
     }
   ]
 }

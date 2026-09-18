@@ -24,7 +24,7 @@
     },
     {
       "q": "Can I add a transition between clips?",
-      "a": "Not currently — clips are concatenated directly. Crossfade transitions are on the roadmap."
+      "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."
     }
   ]
 }

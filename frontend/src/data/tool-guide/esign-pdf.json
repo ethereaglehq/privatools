@@ -1,30 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Drop a PDF up to 500 MB."
+      "name": "Add the PDF",
+      "text": "Drop or select the document to sign, up to 500 MB."
     },
     {
-      "name": "Draw or type your signature",
-      "text": "Use the canvas to draw with a finger or stylus, or type your name in a handwriting font."
+      "name": "Make your signature",
+      "text": "Draw it, type your name and pick one of the script styles — Classic italic, Flowing script, Formal cursive or Handwritten — or upload an image of your signature."
     },
     {
-      "name": "Place and apply",
-      "text": "Drag the signature to where you want it, resize as needed, click Sign. The PDF is returned with the signature stamped on the selected page."
+      "name": "Position it",
+      "text": "Choose the page and set the position, width and height so the signature sits on the signing line."
+    },
+    {
+      "name": "Sign and download",
+      "text": "Apply it and save the signed PDF, with the signature drawn onto the page."
     }
   ],
   "faq": [
     {
-      "q": "Is this a cryptographically valid signature?",
-      "a": "No — this places a visual signature image, like signing paper. For cryptographically verifiable signatures, use the Sign PDF tool with a certificate."
+      "q": "Is this a certificate-based digital signature?",
+      "a": "No. It places a visible image of your signature on the page. That suits informal agreements and forms that accept an electronic signature, but it is not the cryptographic, certificate-backed kind some regulated processes require."
     },
     {
-      "q": "Does my signature image stay on PrivaTools?",
-      "a": "No. It's used only to render the output PDF and is deleted immediately afterwards."
+      "q": "Will a typed signature be accepted?",
+      "a": "That depends on who is receiving the document, not on the tool. Many everyday agreements accept a typed signature as a sign of intent; if in doubt, ask the recipient."
     },
     {
-      "q": "Can I use a signature image I already have?",
-      "a": "Yes — upload a transparent PNG of your signature instead of drawing one."
+      "q": "Does the signed PDF show if it was altered later?",
+      "a": "No. A visible signature does not lock the document or detect changes. Keep a copy of the exact file you signed."
+    },
+    {
+      "q": "Can I sign more than one page?",
+      "a": "One signature is placed per run. Sign the output again to add the signature to another page."
+    },
+    {
+      "q": "How is this different from Sign PDF?",
+      "a": "Both add a visible signature image. eSign PDF offers typed signatures in several script styles in addition to drawing and uploading."
+    },
+    {
+      "q": "What happens to my document after I upload it?",
+      "a": "It is uploaded over HTTPS and signed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the document and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

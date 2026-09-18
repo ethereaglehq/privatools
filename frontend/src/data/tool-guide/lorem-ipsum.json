@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I get other languages?",
-      "a": "Cyrillic, Greek, Arabic, and CJK placeholder texts are on the roadmap."
+      "a": "No. The generator produces classic Latin placeholder text only; placeholder text in other scripts is not supported."
     },
     {
       "q": "Is it copyrighted?",

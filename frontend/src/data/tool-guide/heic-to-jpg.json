@@ -1,30 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload HEIC/HEIF images",
-      "text": "Select one or more .heic or .heif files from your iPhone or camera. Each file can be up to 500 MB."
+      "name": "Add your HEIC photos",
+      "text": "Drop or select .heic or .heif files, the format iPhones save by default, up to 500 MB each. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."
     },
     {
-      "name": "Choose output format and quality",
-      "text": "Select JPG or PNG output. For JPG, set the quality slider (1–100). Higher values preserve detail at larger file sizes."
+      "name": "Convert to JPG",
+      "text": "Click convert. Each photo is decoded and written as a JPEG at quality 90, which keeps photographic detail while producing a file most people would not distinguish from the original."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. EXIF orientation is applied automatically so images display correctly. Multiple files are delivered in a ZIP."
+      "name": "Download the JPGs",
+      "text": "A single photo downloads on its own; a batch is offered as one ZIP. The JPGs open in any application, including the older software that refuses HEIC."
     }
   ],
   "faq": [
     {
-      "q": "Why can't I open HEIC files on my computer?",
-      "a": "HEIC is Apple's default photo format since iOS 11. Windows and many web apps do not support it natively. Converting to JPG makes the images universally compatible."
+      "q": "Why will nothing open my HEIC files?",
+      "a": "HEIC is Apple's high-efficiency photo format. It halves the storage a photo needs, but support outside Apple's ecosystem is patchy, so Windows applications, older editors and many web upload forms simply reject the file. A JPG copy sidesteps all of that."
     },
     {
-      "q": "Is image quality lost during conversion?",
-      "a": "At quality 90-100, the difference is imperceptible. Lower quality settings reduce file size with minimal visible degradation."
+      "q": "How much quality is lost?",
+      "a": "Very little at the quality setting used here, though the conversion is lossy and one-way: the JPEG is re-encoded from the decoded photo rather than copied. Keep the HEIC originals if they are your only copy."
     },
     {
-      "q": "Is EXIF data preserved?",
-      "a": "Yes. Camera data, GPS location, and orientation are preserved by default. Use the Remove EXIF tool afterward if you want to strip metadata."
+      "q": "Why is the JPG bigger than the HEIC?",
+      "a": "Because HEIC compresses far more efficiently than JPEG. Roughly doubling in size when you convert is normal and is the price of the compatibility you are buying."
+    },
+    {
+      "q": "Are the GPS coordinates and camera details kept?",
+      "a": "No. The JPEG is written without copying the EXIF block across, so location, camera model and capture time do not travel with the converted file. That is helpful before publishing a photo; run View EXIF on the original first if you need to read that data."
+    },
+    {
+      "q": "Can I convert a whole camera roll?",
+      "a": "Yes. Add the photos together; they are converted a few at a time and the batch comes back as a single ZIP. Each photo is still its own upload, so the 500 MB limit applies per file."
+    },
+    {
+      "q": "What about Live Photos or depth effects?",
+      "a": "Only the still image is converted. The motion attached to a Live Photo and the depth map behind a portrait-mode shot are not part of a JPEG and are not carried over."
+    },
+    {
+      "q": "What happens to my photos after I upload them?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a PNG",
-      "text": "Drop a PNG — transparency is preserved in the WebP output."
+      "name": "Add your PNG images",
+      "text": "Drop or select .png files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The result is a WebP that is usually 60–80% smaller than the source PNG."
+      "name": "Convert to WebP",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to WebP, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the WebP",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new WebP rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert PNG to WebP?",
-      "a": "Lossless WebP is typically 25% smaller than PNG; lossy WebP is dramatically smaller. Either way, you save bandwidth — useful for web assets, icons, and product images."
+      "a": "To cut page weight. WebP usually stores the same picture in noticeably fewer bytes than PNG, which matters when the image is part of a web page rather than an archive."
     },
     {
       "q": "Is transparency preserved?",
-      "a": "Yes. WebP supports an alpha channel exactly like PNG, so transparent areas come through unchanged."
+      "a": "Yes. WebP supports an alpha channel, so a cut-out PNG stays cut out. This is the main reason to pick WebP rather than JPG when shrinking a graphic with a transparent background."
     },
     {
-      "q": "When should I stay with PNG?",
-      "a": "If you need maximum compatibility with very old software, PDF generators, or print pipelines — PNG is supported everywhere."
+      "q": "Is the conversion lossless?",
+      "a": "No. WebP is written with its default lossy settings here, so a PNG that was pixel-perfect becomes an approximation. For flat graphics and text that is often invisible, but if you need an exact copy, keep the PNG."
+    },
+    {
+      "q": "Will a screenshot still look sharp?",
+      "a": "Usually yes, though lossy compression can soften very fine text and hard edges. Check the result at full size before you replace the original, especially for a screenshot people are meant to read."
+    },
+    {
+      "q": "Is any metadata carried across?",
+      "a": "No. The converter writes a fresh image and does not copy EXIF across, so camera model, capture time and any GPS coordinates are left behind. That is useful before publishing a photo, though it also means you should keep the original if you want that data."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

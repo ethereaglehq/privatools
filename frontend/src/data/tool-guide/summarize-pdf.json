@@ -1,58 +1,54 @@
 {
   "howto": [
     {
-      "name": "Open the tool and accept the model download",
-      "text": "On first use the page downloads a ~250 MB AI summarization model (distilbart-cnn) into your browser. It caches in IndexedDB so subsequent visits are instant."
+      "name": "Choose your PDF",
+      "text": "Select a text-based PDF. The text is read page by page in your browser with pdf.js; a scanned PDF has no text layer, so run OCR PDF on it first."
     },
     {
-      "name": "Upload your PDF",
-      "text": "Drag a PDF (any length, any topic) into the upload area. Text is extracted page-by-page using pdf.js — entirely in the browser."
+      "name": "Decide where the model runs",
+      "text": "'On this device' (the default) downloads a DistilBART model of about 250 MB once, caches it in this browser and then works offline. 'My own API key' sends the extracted text from your browser straight to the AI provider you configured, billed to your account."
     },
     {
-      "name": "Choose a summary length",
-      "text": "Pick short (paragraph), medium (page), or long (multi-page) depending on the source size and how much detail you want."
+      "name": "Pick a summary length",
+      "text": "Choose Short, Medium or Long. The setting controls how much is written for each chunk of the document, so a long PDF still produces a longer summary than a short one."
     },
     {
-      "name": "Run summarization",
-      "text": "Click Summarize. The transformer runs in WebAssembly inside your browser, processing chunks at sentence boundaries. No data leaves your machine."
+      "name": "Run the summary",
+      "text": "Start the run and watch the progress readout. On this device the text is split into chunks of roughly 600 words at sentence boundaries and summarized chunk by chunk; longer documents get a second pass that condenses the partial summaries."
     },
     {
       "name": "Copy or download the summary",
-      "text": "When done, the summary appears below. Copy to clipboard or download as a text file."
+      "text": "The summary appears on the page. Copy it to the clipboard or download it as a .txt file named after your PDF."
     }
   ],
   "faq": [
     {
-      "q": "Is my PDF really not uploaded?",
-      "a": "Correct. The summarization model loads once into your browser (~250 MB, cached in IndexedDB after first load). After that, summarization runs entirely in WebAssembly inside your tab. Verify by opening DevTools → Network — no requests fire while summarization is running. Your PDF, your machine, your data."
+      "q": "Is my PDF uploaded to PrivaTools?",
+      "a": "No. The text is extracted in your browser, and with the default 'On this device' engine the summary is produced there too. What does get downloaded is the model: about 250 MB, fetched once from a public model host (Hugging Face) and then cached in this browser. If you switch to 'My own API key', the extracted text goes from your browser directly to the provider you chose, not through PrivaTools."
     },
     {
       "q": "How long does it take?",
-      "a": "About 2–4 seconds per chunk on a modern laptop. A 100-page PDF takes 3–6 minutes end-to-end; a 10-page PDF takes 30–60 seconds. First-ever run is slower (~30s) while the model downloads into IndexedDB — subsequent runs are instant from cold start."
+      "a": "It depends on your device and the length of the document, because the default engine runs on your own processor. The first run also waits for the one-time model download. The progress readout shows pages read and chunks summarized, and long documents take noticeably longer than short ones."
     },
     {
       "q": "What languages are supported?",
-      "a": "The default distilbart-cnn-12-6 model is English-only. Multilingual support via mT5 is on the roadmap; for non-English summaries today, translate the PDF to English first (via DeepL or Google Translate), then summarize."
+      "a": "The on-device DistilBART model was trained on English news text, so it is only dependable for English documents. For other languages, use 'My own API key' with a multilingual model from your provider."
     },
     {
-      "q": "Is the summary as good as ChatGPT?",
-      "a": "Not quite — frontier cloud models like GPT-4 are 50–100x larger. distilbart produces good professional executive summaries but won't match GPT-4 nuance or domain-specific phrasing. The trade-off is full privacy: your document genuinely never leaves your browser."
+      "q": "How good is the on-device summary?",
+      "a": "Modest. DistilBART is a small model that runs in a browser tab, so it gives a serviceable gist, not a nuanced analysis, and it can miss or distort details. Check anything important against the source. 'My own API key' gives better results at your provider's prices."
     },
     {
-      "q": "Is it safe to summarize a confidential PDF?",
-      "a": "Yes — uniquely safe even by PrivaTools standards because nothing is uploaded at all. The PDF is read by your browser's PDF.js library, chunked locally, fed into the WebAssembly model in your tab, and the summary is returned to the same tab. No server, no logs, no third-party API. Confirmable via DevTools."
+      "q": "What leaves my device when I use my own API key?",
+      "a": "The extracted text of the PDF and the summarization instructions go from your browser directly to the provider you selected, using your key. PrivaTools does not relay the request. That provider's terms and retention settings then apply, so check them before sending confidential material."
     },
     {
-      "q": "What's the file size limit?",
-      "a": "There's no server-side size limit since nothing is uploaded. The practical limit is browser memory: PDFs up to ~500 MB work on most laptops with 8 GB+ RAM. Very long PDFs (500+ pages) will be slow but functional."
+      "q": "Is there a file size or page limit?",
+      "a": "Nothing is uploaded, so the server's 500 MB cap does not apply; the practical limit is your browser's memory and your patience. Very long PDFs are slow on the on-device engine because every chunk is summarized in turn."
     },
     {
-      "q": "How is this different from ChatGPT, Claude, or Perplexity summaries?",
-      "a": "Cloud models produce better summaries but require you to upload your document to their servers (Anthropic, OpenAI, Perplexity all retain inputs for at least 30 days under their default ToS). PrivaTools sacrifices some summary polish for zero data leaving your device. For confidential drafts, contracts, or legal briefs, the privacy trade is worth it."
-    },
-    {
-      "q": "Do I need an account?",
-      "a": "No — no account, no email, no sign-up. The tool loads instantly in your browser; the privacy guarantees are architectural, not policy-based."
+      "q": "Why does my scanned PDF produce no summary?",
+      "a": "A scan is a set of page images with no text layer, so there is nothing for the tool to read. Run OCR PDF first to add real text, then summarize the result."
     }
   ]
 }

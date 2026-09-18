@@ -1,26 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload a WebP image",
-      "text": "Select a WebP file. PNG conversion preserves transparency if the original has any."
+      "name": "Add your WebP images",
+      "text": "Drop or select .webp files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The result is a lossless PNG, typically 3–5x larger than the WebP source but universally compatible."
+      "name": "Convert to PNG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to PNG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the PNG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new PNG rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert WebP to PNG?",
-      "a": "PNG is lossless and supports transparency, making it ideal for graphics, logos, screenshots, and anywhere you need pixel-perfect output."
+      "a": "PNG is lossless and keeps transparency, so it is the right target for logos, screenshots, diagrams and anything with a cut-out background that has to drop into another document cleanly. It is also accepted by far more editors and operating systems than WebP."
     },
     {
-      "q": "How much larger is the PNG?",
-      "a": "Typically 3–5x the size of the WebP source. PNG compression is lossless but less efficient than WebP."
+      "q": "Does the PNG lose any quality?",
+      "a": "The conversion itself is lossless: every pixel the WebP decodes to is written into the PNG unchanged. If the source was a lossy WebP, the detail it had already discarded cannot come back, so the PNG preserves the WebP exactly as it is rather than improving it."
     },
     {
-      "q": "Does it preserve transparency?",
-      "a": "Yes. Transparent pixels in the WebP come through unchanged in the PNG."
+      "q": "Is transparency preserved?",
+      "a": "Yes. PNG supports an alpha channel, so see-through areas in the WebP stay see-through in the PNG. This is the main reason to pick PNG over JPG as the target."
+    },
+    {
+      "q": "Why is the PNG so much bigger than the WebP?",
+      "a": "PNG compresses losslessly, while most WebP files on the web are lossy. Giving up lossy compression typically costs several times the file size for a photograph. Flat graphics and screenshots grow far less, because lossless compression suits them well."
+    },
+    {
+      "q": "My animated WebP only produced one image.",
+      "a": "That is expected. A plain PNG holds a single frame, so only the first frame of an animated WebP is converted and the animation itself is not carried over."
+    },
+    {
+      "q": "Does it keep EXIF metadata?",
+      "a": "No. The converter writes a fresh image and does not copy EXIF across, so camera model, capture time and any GPS coordinates are left behind. That is useful before publishing a photo, though it also means you should keep the original if you want that data."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

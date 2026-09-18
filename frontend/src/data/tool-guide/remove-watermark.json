@@ -24,7 +24,7 @@
     },
     {
       "q": "Will the rest of the page survive?",
-      "a": "Yes. Only the objects you confirm are removed. Surrounding text, images and layout are untouched, and your original file is never modified."
+      "a": "Yes. Only the objects you confirm are removed. Surrounding text, images and layout are untouched, and the result is a new PDF, so your original file stays as it was."
     },
     {
       "q": "My watermark is part of a scan. What now?",

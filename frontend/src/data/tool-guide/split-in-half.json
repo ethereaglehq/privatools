@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Select a PDF up to 500 MB. Best for two-up scans or scanned booklets."
+      "name": "Add the PDF",
+      "text": "Drop or select a PDF up to 500 MB, typically a scan where two book or magazine pages were captured on each sheet."
     },
     {
-      "name": "Choose direction",
-      "text": "Vertical splits each page down the middle (left → right halves). Horizontal splits across the middle (top → bottom)."
+      "name": "Choose the cut direction",
+      "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its top half followed by its bottom half."
     },
     {
       "name": "Split and download",
-      "text": "Click Split. The result is a new PDF where each original page is replaced by its two halves in reading order."
+      "text": "Run it and save the new PDF, which has twice as many pages as the original."
     }
   ],
   "faq": [
     {
-      "q": "When would I use this?",
-      "a": "For two-up scans (where two pages were scanned side-by-side onto one physical page), scanned booklets, or any PDF where each page should be two pages in the output."
+      "q": "What is this for?",
+      "a": "Scans of open books and magazines, where each scanned sheet holds two pages side by side. Cutting them apart gives a document that reads one page at a time, which suits phones, e-readers and OCR."
     },
     {
-      "q": "Does it work on PDFs with mixed page sizes?",
-      "a": "Yes. Each page is split independently at its own midpoint, so different page sizes work fine."
+      "q": "Which direction should I choose?",
+      "a": "Vertical for a two-page spread scanned side by side, which is the usual case. Horizontal for sheets where the two halves are stacked, such as some forms or tickets printed two to a page."
     },
     {
-      "q": "What's the difference between vertical and horizontal?",
-      "a": "Vertical bisects each page down the middle into left and right halves (the common case for landscape two-up scans). Horizontal bisects across the middle into top and bottom halves."
+      "q": "Does it cut exactly down the middle?",
+      "a": "Yes, it splits each page into two equal halves. If the spread was scanned off-centre, a little of one page may appear on the other; crop the scan first if the gutter is far from the middle."
+    },
+    {
+      "q": "What order do the new pages come in?",
+      "a": "Left then right for a vertical cut, top then bottom for a horizontal one, for each original page in turn — so a correctly scanned book reads in order."
+    },
+    {
+      "q": "Does it reduce image quality?",
+      "a": "No resampling is involved in the cut itself; each half shows the same content at the same resolution as the original page."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and split on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

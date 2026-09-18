@@ -24,7 +24,7 @@
     },
     {
       "q": "Is the conversion private?",
-      "a": "Yes — local processing on the PrivaTools backend; files removed immediately after the response."
+      "a": "It runs on the PrivaTools server with local image libraries, not a third-party API. The files are temporary and are removed by response cleanup after the BMP is sent."
     }
   ]
 }

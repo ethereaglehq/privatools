@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a JPG",
-      "text": "Select a JPEG file from camera, phone, or web."
+      "name": "Add your JPG images",
+      "text": "Drop or select .jpg or .jpeg files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. PrivaTools encodes the image as WebP, typically saving 25–35% in file size at the same visual quality."
+      "name": "Convert to WebP",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to WebP, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the WebP",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new WebP rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert JPG to WebP?",
-      "a": "WebP files are typically 25–35% smaller than JPGs at the same visual quality. That speeds up page loads and saves bandwidth, especially for image-heavy sites."
+      "a": "To publish a smaller file on the web. WebP generally reaches the same visual quality as JPG in fewer bytes, which is why it has become a common format for page images. Every current browser displays it."
     },
     {
-      "q": "Will every browser display WebP?",
-      "a": "Yes — every major browser supports WebP since 2020 (Chrome, Firefox, Safari 14+, Edge). For maximum compatibility with very old browsers or email clients, use JPG."
+      "q": "Is the WebP lossless?",
+      "a": "No. The converter writes WebP with its default lossy settings, so the image is re-encoded. Because your JPG was already lossy, this is a second round of compression: the result is smaller, but it is not a pixel-perfect copy of the JPG."
     },
     {
-      "q": "Is WebP a lossy format?",
-      "a": "It can be either. Our default is lossy WebP for best compression. Lossless WebP is also supported but produces larger files."
+      "q": "Will the file always get smaller?",
+      "a": "Usually, but not always. An already heavily compressed JPG can come out around the same size or occasionally larger, because there is little redundancy left to exploit. Compare the two files before replacing the original."
+    },
+    {
+      "q": "Where might a WebP not work?",
+      "a": "Older desktop software, some print and office applications, and a few email clients still refuse WebP. Keep a JPG copy for anything you have to send to someone else."
+    },
+    {
+      "q": "Does EXIF survive the conversion?",
+      "a": "No. The converter writes a fresh image and does not copy EXIF across, so camera model, capture time and any GPS coordinates are left behind. That is useful before publishing a photo, though it also means you should keep the original if you want that data."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

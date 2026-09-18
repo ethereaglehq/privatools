@@ -1,26 +1,46 @@
 {
   "howto": [
     {
-      "name": "Upload a WebP image",
-      "text": "Select a WebP file from your iPhone, Android, or any camera/browser export."
+      "name": "Add your WebP images",
+      "text": "Drop or select .webp files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The image becomes a JPEG with the same dimensions and aspect ratio. Default quality is 85 — visually identical for most uses."
+      "name": "Convert to JPG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to JPG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the JPG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new JPG rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert WebP to JPG?",
-      "a": "WebP isn't supported by all software, email clients, or older browsers. JPG is universal — every image viewer can open it."
+      "a": "WebP is efficient but still refused by plenty of older software, print workflows and desktop applications. JPG is the format that opens essentially everywhere, which makes it the safe choice for sending a picture to someone whose tools you do not control."
     },
     {
-      "q": "Will the quality be the same?",
-      "a": "Essentially yes. Default JPG quality is 85, which is visually indistinguishable from the WebP source at typical viewing sizes."
+      "q": "Will the image lose quality?",
+      "a": "JPEG is a lossy format, so the conversion re-encodes the picture and throws away a little detail. There is no quality slider on this page; JPEGs are written at the imaging library's default quality of 75. For a photo at normal viewing size the difference is hard to see, but repeatedly converting the same picture back and forth will visibly soften it."
     },
     {
-      "q": "Does it preserve transparency?",
-      "a": "No — JPEG doesn't support transparency. Transparent pixels in the source render as white in the JPG. Use HEIC to PNG or WebP to PNG if you need transparency preserved."
+      "q": "What happens to transparency?",
+      "a": "JPEG has no transparency. The alpha channel is discarded rather than blended onto a white page, so anything that was see-through takes the colour stored underneath it, which is usually black. Convert to PNG, WebP or TIFF if you need transparency kept. WebP to PNG is the usual choice when the image has a cut-out background."
+    },
+    {
+      "q": "My WebP is animated. Why did I only get one frame?",
+      "a": "Because JPG cannot hold an animation. Only the first frame of an animated WebP is read and converted; the rest are ignored. Convert the animation to a video or GIF instead if you need the movement."
+    },
+    {
+      "q": "Is EXIF or camera metadata carried over?",
+      "a": "No. The converter writes a fresh image and does not copy EXIF across, so camera model, capture time and any GPS coordinates are left behind. That is useful before publishing a photo, though it also means you should keep the original if you want that data."
+    },
+    {
+      "q": "Can I convert a folder of WebP files at once?",
+      "a": "Yes. Add as many as you like and they are converted one after another, each as its own request. A single image downloads by itself; for several, the page offers one ZIP containing them all. Heavy conversion routes are rate limited, so a very large batch will be paced."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

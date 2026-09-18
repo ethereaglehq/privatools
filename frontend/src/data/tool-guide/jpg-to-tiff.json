@@ -24,7 +24,7 @@
     },
     {
       "q": "Is the conversion private?",
-      "a": "Yes. It runs on the PrivaTools backend with local image libraries (no third-party API); input and output files are deleted immediately after the response."
+      "a": "It runs on the PrivaTools server with local image libraries, not a third-party API. The upload is held in isolated temporary per-request storage, and response cleanup removes the input and output after the TIFF is sent."
     }
   ]
 }

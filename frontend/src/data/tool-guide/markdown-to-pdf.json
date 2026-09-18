@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I customize the styling?",
-      "a": "Not yet — the default style is GitHub-inspired (clean serif body, monospace code). Custom CSS is on the roadmap."
+      "a": "Not at the moment. The PDF uses a fixed, GitHub-inspired style with monospace code blocks, and custom CSS is not supported."
     },
     {
       "q": "Does it handle code-block syntax highlighting?",

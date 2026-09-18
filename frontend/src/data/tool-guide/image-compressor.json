@@ -1,42 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload images",
-      "text": "Select one or more images (JPG, PNG, WebP). Each file can be up to 500 MB."
+      "name": "Add the images to shrink",
+      "text": "Drop or select your pictures, up to 500 MB each. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."
     },
     {
-      "name": "Set compression level",
-      "text": "Choose a quality target or let the tool auto-optimize. For PNG, lossless compression is applied; for JPG, you can set the quality percentage."
+      "name": "Set the quality",
+      "text": "Choose a quality value between 1 and 95; the default is 82. It applies to JPG and WebP, where lower values give smaller files with more visible artefacts. PNGs ignore it and are re-saved with lossless optimisation instead."
     },
     {
-      "name": "Download compressed images",
-      "text": "Click Compress. The tool shows the original and compressed sizes side by side. Multiple files are returned in a ZIP."
+      "name": "Compress and compare",
+      "text": "Run the compression and check the reported size against the original before you commit to the result. If it looks over-compressed, raise the quality and run it again."
+    },
+    {
+      "name": "Download the smaller files",
+      "text": "One image downloads on its own; a batch is offered as a single ZIP built in your browser."
     }
   ],
   "faq": [
     {
-      "q": "Is PNG compression lossless?",
-      "a": "Yes — PNG compression here is lossless. The pixels are byte-identical to the original; only the encoding is optimized via zlib levels and palette reduction. Verify with `cmp` or a pixel-diff tool: zero difference."
+      "q": "How much smaller will my images get?",
+      "a": "It depends on the picture, its format and the quality you choose. Photographs straight from a camera or phone usually shrink a great deal, because they are often saved at a higher quality than anyone needs. An image that has already been compressed hard has much less left to give."
     },
     {
-      "q": "How much can I expect a JPG to shrink?",
-      "a": "JPGs typically shrink 40–70% at quality 75 with no visible difference for photos. Screenshots and graphics with flat colors shrink more aggressively. Quality 60 still looks good on most photos and gets you 60–80% reduction."
+      "q": "Why did my PNG barely shrink?",
+      "a": "Because PNGs are only optimised losslessly here: the file is re-saved more efficiently, but no detail is thrown away and the quality setting has no effect. That saving is usually modest. If a photo was saved as PNG, converting it to JPG or WebP with Image Converter shrinks it far more."
     },
     {
-      "q": "Will compression strip my EXIF / GPS data?",
-      "a": "By default EXIF is preserved. If you want to strip it (for privacy when sharing photos), use the dedicated Remove EXIF tool after compressing — or use Strip Metadata for a one-step solution."
+      "q": "Which formats come back in which format?",
+      "a": "PNG stays PNG and WebP stays WebP. Everything else — JPG, and formats such as BMP or TIFF — comes back as a JPG. Transparency is kept in PNG and WebP but discarded when the output is JPG."
     },
     {
-      "q": "Can I batch-compress dozens of images?",
-      "a": "Yes. Drop as many as you want; each is compressed with the same settings, then bundled into a single ZIP. There is no daily cap on the number of files."
+      "q": "What quality setting should I use?",
+      "a": "The default of 82 is a sensible starting point for photographs. Drop towards the sixties when size matters more than fine detail, and go higher when the image will be printed or edited further. Compare the result against the original rather than trusting the number alone."
     },
     {
-      "q": "Is it safe to compress photos with sensitive content?",
-      "a": "Yes. Each image is held in temporary per-request storage only for the duration of the request, then unlinked. No image is written to permanent storage, none is logged, and none is used to train any model. The codec runs server-side in an isolated container; the entire codebase is open source for verification."
+      "q": "Is the compression reversible?",
+      "a": "No. Detail removed during compression cannot be restored by raising the quality afterwards, so always keep your original file until you are happy with the result."
     },
     {
-      "q": "How is this different from TinyPNG or Squoosh?",
-      "a": "TinyPNG caps free use at 20 images/month and uploads to their servers. Squoosh is browser-only but doesn't support batch. PrivaTools is unlimited, batch-friendly, server-processed for speed on large files, and the server-side code is self-hostable so you can run it on your own infrastructure."
+      "q": "Does it change the image dimensions?",
+      "a": "No. Compression changes how the pixels are stored, not how many there are. To reduce the actual width and height — often the biggest single saving for a web image — use Resize and Crop Image first."
+    },
+    {
+      "q": "Is metadata kept?",
+      "a": "The compressed file is written fresh, so EXIF details such as camera model, timestamp and GPS position do not carry over. Use Remove EXIF when stripping metadata is the actual goal."
+    },
+    {
+      "q": "What happens to my images after I upload them?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

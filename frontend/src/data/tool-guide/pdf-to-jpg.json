@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Drop your PDF",
-      "text": "Upload a PDF up to 500 MB. The file enters isolated per-request storage only for the conversion pass — no copy is kept after your download."
+      "text": "Upload a PDF up to 500 MB. It is processed in isolated temporary per-request storage for the conversion, and response cleanup removes the job's temporary files after your download is sent."
     },
     {
       "name": "Choose DPI",
@@ -35,8 +35,8 @@
       "a": "Roughly 50-100 ms per page at 150 DPI on the server. A 100-page PDF takes ~10 seconds end-to-end. Higher DPI (300+) increases time proportionally."
     },
     {
-      "q": "Is it safe to convert a confidential PDF?",
-      "a": "Yes. The PDF and the generated JPGs are held in temporary per-request storage inside an isolated Docker container for the conversion pass only — both are unlinked the moment your download begins. Nothing is logged or sent to any third-party API. The conversion uses PyMuPDF/poppler locally."
+      "q": "What happens to a confidential PDF after I upload it?",
+      "a": "The PDF is uploaded over HTTPS and rendered in isolated temporary per-request storage on the PrivaTools server, using local libraries rather than a third-party API. Response cleanup removes the PDF and the generated JPGs after the result is sent, and a background sweep clears anything left behind by an interrupted request."
     },
     {
       "q": "What DPI should I use?",
@@ -48,11 +48,11 @@
     },
     {
       "q": "What's the file size limit?",
-      "a": "500 MB per file with no daily or monthly quota. There is no cap on the number of pages — every page becomes one JPG and they're bundled into a ZIP."
+      "a": "Up to 500 MB per file on the hosted site. Each page becomes its own JPG, so a very long document produces a large ZIP and can hit the request timeout; split the PDF first if that happens. Fair-use rate limits apply."
     },
     {
-      "q": "How is this different from iLovePDF PDF to JPG?",
-      "a": "Free with no daily limit (iLovePDF caps free use to 2 tasks/day), no account required, and no watermark on the output JPGs. The conversion is the same poppler-based pipeline used by Linux distributions, just exposed without a paywall."
+      "q": "Do the JPGs carry a watermark or need an account?",
+      "a": "No. The images carry no watermark and the tool works without an account. Fair-use rate limits apply to conversions, as on every tool."
     }
   ]
 }

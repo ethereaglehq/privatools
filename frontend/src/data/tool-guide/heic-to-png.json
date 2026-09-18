@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a HEIC image",
-      "text": "Select a HEIC or HEIF file (e.g., from an iPhone photo export)."
+      "name": "Add your HEIC photos",
+      "text": "Drop or select .heic or .heif files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The tool decodes via libheif and writes a PNG that opens in every browser and image editor."
+      "name": "Convert to PNG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to PNG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the PNG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new PNG rather than a renamed copy."
     }
   ],
   "faq": [
     {
-      "q": "What's HEIC and why convert it?",
-      "a": "HEIC (High Efficiency Image Container) is Apple's image format from iOS 11 onward. It's space-efficient but not widely supported outside Apple's ecosystem. PNG works everywhere."
+      "q": "What is HEIC and why convert it?",
+      "a": "HEIC is the high-efficiency format iPhones use by default. It stores a photo in roughly half the space of a comparable JPG, but plenty of software outside Apple's ecosystem cannot open it, which is why a converted copy is often needed."
     },
     {
-      "q": "Is PNG better than JPG for HEIC conversion?",
-      "a": "If you need transparency or are doing further editing: yes. For sharing on the web or attaching to emails: JPG is fine and 3–5x smaller."
+      "q": "Should I choose PNG or JPG?",
+      "a": "PNG is lossless, so it is the better target if you are going to edit the photo further. For sharing or attaching a holiday photo, HEIC to JPG produces a far smaller file at a quality nobody will question."
     },
     {
-      "q": "Are EXIF tags preserved?",
-      "a": "Most are stripped during conversion (since PNG and HEIC have different metadata formats). If you need to preserve EXIF, use HEIC to JPG instead and the standard EXIF block survives."
+      "q": "Is the conversion lossless?",
+      "a": "The PNG stores exactly what the HEIC decodes to, so nothing further is lost. It cannot undo the compression the camera already applied, and the file will be considerably larger than the HEIC because PNG does not compress photographs efficiently."
+    },
+    {
+      "q": "What happens to the location and camera data?",
+      "a": "It is not carried into the PNG. The converter writes a fresh image without copying EXIF, so GPS coordinates, camera model and capture time are dropped. Use View EXIF on the original first if you want to read that information before it goes."
+    },
+    {
+      "q": "My HEIC would not convert. What now?",
+      "a": "HEIC support depends on the decoder available on the server, and some files, particularly Live Photos and depth-map variants, will not open. Converting the photo to JPG on the phone and working from that is the reliable fallback."
+    },
+    {
+      "q": "What happens to my photo after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

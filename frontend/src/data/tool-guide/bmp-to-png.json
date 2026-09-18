@@ -1,26 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload a BMP",
-      "text": "Drop a Windows bitmap file (any depth: 1-bit, 8-bit, 24-bit, or 32-bit)."
+      "name": "Add your BMP images",
+      "text": "Drop or select .bmp files up to 500 MB each. You can queue several images: each one is sent as its own request and you can download them individually or all together as a ZIP the page builds for you."
     },
     {
-      "name": "Convert and download",
-      "text": "Click Convert. The BMP is re-encoded as a compressed lossless PNG, ideal for screenshots and pixel art."
+      "name": "Convert to PNG",
+      "text": "Click the convert button. There are no settings to choose: the output format is fixed to PNG, so the conversion starts straight away."
+    },
+    {
+      "name": "Download the PNG",
+      "text": "A single image downloads on its own; several arrive as a ZIP. The pixels are re-encoded on the server, so the file you get back is a new PNG rather than a renamed copy."
     }
   ],
   "faq": [
     {
       "q": "Why convert BMP to PNG?",
-      "a": "PNG is lossless like BMP but uses compression — typically 70–90% smaller files. PNG is also the standard format for web and modern software."
+      "a": "PNG gives you the same lossless pixels in a much smaller file, and it is accepted everywhere BMP is not — browsers, chat apps, document editors and web forms all handle PNG."
     },
     {
-      "q": "Will my screenshots look identical?",
-      "a": "Yes — pixel-perfect identical. PNG uses lossless compression, so no pixel data changes."
+      "q": "Is any quality lost?",
+      "a": "None. Both formats are lossless, so the PNG holds exactly the same pixels as the bitmap. The only thing that changes is how efficiently they are stored."
     },
     {
-      "q": "What about indexed-color BMPs?",
-      "a": "Supported. 1-bit, 4-bit, and 8-bit palette BMPs convert to indexed-color PNGs preserving the original palette."
+      "q": "How much smaller will the PNG be?",
+      "a": "Substantially, for most bitmaps. PNG's lossless compression works especially well on screenshots, diagrams and anything with areas of flat colour, which is what BMP files frequently contain."
+    },
+    {
+      "q": "Is this better than converting to JPG?",
+      "a": "For screenshots, logos and line art, yes: PNG stays sharp where JPG introduces fringing around edges and text. For a photograph where small size matters more than perfection, BMP to JPG will produce a much smaller file."
+    },
+    {
+      "q": "Will transparency be added?",
+      "a": "No. The conversion copies what is in the bitmap, and a standard BMP is fully opaque. PNG supports transparency, but nothing creates it for you here."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

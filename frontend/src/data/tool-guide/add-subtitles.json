@@ -24,7 +24,7 @@
     },
     {
       "q": "Can I customize the font / size / color?",
-      "a": "Currently uses sensible defaults (white text with black outline, sans-serif). Custom styling is on the roadmap."
+      "a": "Not at the moment. Burned-in subtitles use fixed defaults — white text with a black outline in a sans-serif font — and custom styling is not supported."
     }
   ]
 }

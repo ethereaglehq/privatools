@@ -1,30 +1,42 @@
 {
   "howto": [
     {
-      "name": "Upload an image",
-      "text": "Select a JPG, PNG, or WebP image. The tool shows the current dimensions."
+      "name": "Add the image to enlarge",
+      "text": "Drop or select pictures up to 500 MB each. Small, reasonably sharp images give the best results; a heavily compressed thumbnail simply becomes a larger heavily compressed thumbnail."
     },
     {
-      "name": "Choose the scale",
-      "text": "Select 2x (double) or 4x (quadruple) enlargement. The tool uses Lanczos resampling for sharp, artifact-free results."
+      "name": "Choose 2x or 4x",
+      "text": "Pick how much to enlarge. Those are the only two options, and 4x on an already large photo can exceed the server's pixel limit, in which case the request is rejected and 2x is the way forward."
     },
     {
-      "name": "Download the upscaled image",
-      "text": "Click Upscale. The enlarged image downloads in the same format as the original with the scale factor in the filename."
+      "name": "Upscale and download",
+      "text": "Run it and save the result. The output has two or four times the width and height of your original."
     }
   ],
   "faq": [
     {
-      "q": "What upscaling methods are available?",
-      "a": "The tool uses Lanczos resampling, a high-quality interpolation algorithm that produces sharp, artifact-free results. Choose 2x or 4x enlargement."
+      "q": "Does this use AI to add detail?",
+      "a": "No, and this is worth being clear about. The enlargement uses Lanczos resampling, a high-quality mathematical filter. It produces smooth, clean edges rather than the invented texture an AI model would generate, which also means it cannot add detail the original never contained."
     },
     {
-      "q": "What image formats are supported?",
-      "a": "JPG, PNG, and WebP images are supported. The output format matches the input — upload a JPG, get a JPG back."
+      "q": "Will a blurry photo become sharp?",
+      "a": "No. Enlarging makes every existing pixel bigger, including the blur. Lanczos avoids the blockiness of a naive enlargement, but a soft or out-of-focus source stays soft at a larger size."
     },
     {
-      "q": "Is there a maximum image size?",
-      "a": "The upscaled result cannot exceed 100 megapixels. For a 4x upscale, this means input images up to about 2500x2500 pixels."
+      "q": "What enlargement factors can I choose?",
+      "a": "Two or four times. Anything else falls back to 2x. A 4x enlargement multiplies the pixel count by sixteen, so it is both slow and memory-hungry on a large source."
+    },
+    {
+      "q": "Why was my image rejected as too large?",
+      "a": "Because the enlarged result would exceed the pixel limit the server enforces to protect its memory. Choose 2x instead of 4x, or reduce the source first with Resize and Crop Image."
+    },
+    {
+      "q": "What is this actually good for?",
+      "a": "Making a small logo, icon or diagram usable at a bigger size, and getting a modest photo up to a required minimum dimension. It is not a way to recover detail from a low-quality image."
+    },
+    {
+      "q": "What happens to my image after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

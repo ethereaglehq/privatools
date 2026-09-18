@@ -24,7 +24,7 @@
     },
     {
       "q": "Are my images uploaded to a third party?",
-      "a": "No. Processing is local to the PrivaTools backend; files are temporary and removed right after download."
+      "a": "No. The conversion runs on the PrivaTools server with local image libraries. Uploads are held in temporary per-request storage and removed by response cleanup after the result is sent."
     }
   ]
 }
