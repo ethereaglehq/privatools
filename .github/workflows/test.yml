@@ -82,6 +82,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+        with:
+          # The review-date check below runs `git show <base>:...` against the
+          # branch this PR targets and reads the PR's own commit messages.
+          # A depth-1 clone has neither, and that check fails rather than
+          # skipping, so it must not run on one.
+          fetch-depth: 0
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: 26
@@ -97,6 +103,20 @@ jobs:
           npm run lint -- --max-warnings 0
           npm run test:content
           npm run test
+      # Only on a pull request: it compares this branch with the branch the PR
+      # targets, which is the change being reviewed. A push to main has no such
+      # pair, and the release gate calls this workflow on a tag.
+      - name: Check tool review dates
+        if: github.event_name == 'pull_request'
+        working-directory: frontend
+        env:
+          # Where the check looks for [bulk-review], besides the PR's commits.
+          # An environment variable, never interpolated into the run block: a
+          # PR title is text its author controls.
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        # The base branch comes from GITHUB_BASE_REF, which the runner already
+        # sets on a pull request.
+        run: npm run check:review-dates
 
   image:
     name: Image builds (docker)

@@ -153,7 +153,17 @@ load-bearing.
   enforce most of it; the CSP walker and guide export tests catch the rest.
   Every tool also needs a `seoTitle` (40–60 chars, query-first, no brand,
   unique) and a `metaDescription` (120–160 chars, ends with a period,
-  unique), enforced by `frontend/src/test/tool-registry.test.ts`.
+  unique), enforced by `frontend/src/test/tool-registry.test.ts`. The
+  `lastReviewed` rule is enforced on every pull request by
+  `frontend/scripts/check-review-dates.mjs`, a `pull_request`-only step in
+  `test.yml` that fails when a tool's `seoTitle`, `metaDescription`,
+  `longDescription` or `description` changed without its date moving, unless
+  that date already falls on or after the day before the change began (the
+  author date of the branch's oldest commit touching a registry, or today for
+  uncommitted edits), or when more than 25 dates move without `[bulk-review]`
+  on its own line (the first text on a line) of the PR title or a commit
+  message; a mid-sentence mention does not count. Its limit: a long-lived
+  branch can pass with a date a few days old.
   `frontend/src/data/sitemap-priority.json` lists the tools that get sitemap
   priority 0.8 — head PDF tools plus developer tools chosen because their
   search results are winnable niches; keep it short and reviewed, not a wish

@@ -63,6 +63,57 @@ a running loopback backend; choose a report path with `--output PATH`.
 `backend/app/tool_content.py`; run it after editing steps or FAQ, and
 `--check` in CI-style verification.
 
+## Tool review dates
+
+This one lives with the frontend content scripts, so run it from `frontend/`:
+
+```sh
+npm run check:review-dates            # against origin/main
+npm run check:review-dates -- HEAD    # only what is not committed yet
+```
+
+`frontend/scripts/check-review-dates.mjs` compares both tool registries in the
+working tree with the commit where the branch left its base. It fails when a
+tool's `seoTitle`, `metaDescription`, `longDescription` or `description`
+changed while its `lastReviewed` stayed at a date from before the change, and
+when more than 25 existing dates moved in one change.
+
+An unchanged date is already inside the change when it falls on or after the
+day before the change began, that one day allowing for time zones. The change
+begins on the author date of the oldest commit in the branch (`base..HEAD`)
+that touches either registry file; uncommitted edits, with no such commit yet,
+begin today. So copy corrected twice in one day, or opened the day another copy
+change merged, passes with the date it already has, which could not move
+anyway. Author dates survive a rebase, and a re-run on a later day reads the
+same commits rather than the clock, so it gives the same answer. The summary
+line counts these tools as "already dated inside the change". The limit: a
+long-lived branch can pass with a date a few days old, because everything back
+to the day before its first registry commit counts as inside it.
+
+A new tool's first date is not a move. A genuine bulk
+review passes with `[bulk-review]` on its own line: the first non-space text of
+the PR title or of any line in a commit message on the branch, with or without
+more text after it. CI reads the title when a run starts, so push after
+editing it.
+
+A mention anywhere else — mid-sentence, or quoted in backticks — does not
+count, so a commit message can explain the flag without switching it on. (While
+any mention counted, this check's own first commit message did exactly that.)
+When hard-wrapping such prose, keep the marker from landing at the start of a
+line. Documentation files are never read, only commit messages and the PR
+title.
+
+It needs the base branch and real history: `git fetch origin` locally,
+`fetch-depth: 0` in a workflow. With neither it fails instead of skipping, so
+it runs as its own `pull_request`-only step in `test.yml` rather than inside
+`npm run test:content` (which also runs on pushes and on the release gate).
+On a pull request the base is the branch the PR targets, read from
+`GITHUB_BASE_REF`. `test:content` still runs the script's own unit tests.
+
+A base older than the commit that introduced `lastReviewed` has none, and a
+tool's first date is not a move, so the check passes against old bases and on
+the base branch itself.
+
 Production deployment scripts and service definitions remain in `deploy/`.
 
 Generated local reports belong in `temp/verification/<area>/`, which is excluded
