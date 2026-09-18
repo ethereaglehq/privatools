@@ -324,6 +324,8 @@ CSP-walker and guide-export tests catch most misses.
   - **eslint-plugin-react-hooks 7:** from 6 on, its recommended set carries the
     React Compiler rules: 77 errors in 54 files here, `useMultiFileProcessor`
     among them. Switching the rules off is not the fix (#225).
+  - **ESLint 10** (`eslint`, `@eslint/js`): eslint-plugin-react-hooks declares
+    ESLint 10 support only from 7, so both wait for that task (#247).
   - **Tailwind CSS 4 with tailwind-merge 3:** the PostCSS plugin moved,
     configuration moves into CSS and utilities the UI uses are renamed, so it
     needs visual checks of Air and Play; tailwind-merge 3 supports only

@@ -28,6 +28,17 @@ updates:
       # (#213). Delete this entry when that task starts.
       - dependency-name: "eslint-plugin-react-hooks"
         update-types: ["version-update:semver-major"]
+      # ESLint 10 waits for that same task. eslint-plugin-react-hooks declares
+      # ESLint 10 support only from 7 (5.x and 6.x stop at ESLint 9), so #238
+      # failed npm ci with ERESOLVE, and forcing the peer range would lint with
+      # an unsupported combination. @eslint/js 10 requires ESLint 10, so it
+      # moves with it. typescript-eslint 8.70 and eslint-plugin-react-refresh
+      # 0.5.7 already support ESLint 10. Delete these two entries when the
+      # eslint-plugin-react-hooks 7 task starts.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
       # Tailwind CSS 4 is a migration, not a version bump. Its PostCSS plugin
       # moved to @tailwindcss/postcss, so #229 failed the build as it stood.
       # Configuration moves from tailwind.config.ts into CSS, and v4 renames or
