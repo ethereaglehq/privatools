@@ -16,9 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
+      # The Node the image builds with (node:26-slim) and the other workflows
+      # use, so this job audits and builds the frontend on the same npm.
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version: 20
+          node-version: 26
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - name: Install frontend dependencies
