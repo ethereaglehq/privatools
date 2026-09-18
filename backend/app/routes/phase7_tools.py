@@ -7,6 +7,7 @@ from __future__ import annotations
 import asyncio
 import io
 import logging
+import struct
 import subprocess
 import uuid
 from collections import Counter
@@ -313,6 +314,75 @@ async def pixelate_image_endpoint(
     )
 
 
+# ─── Rotate and flip: decoding and saving ────────────────────────────────
+# A phone or camera often stores a photo sideways and records the turn that
+# shows it upright in the EXIF Orientation tag. The saved copy has no EXIF, so
+# that turn is applied to the pixels first; the user's rotation or flip would
+# otherwise land on the sideways pixels.
+#
+# The copy keeps what reproduces the picture, an RGB colour profile and the
+# DPI, and leaves out what describes the photo: EXIF (camera details, the date
+# taken, location), XMP and comments.
+
+# What Pillow raises for an EXIF block it cannot parse or rewrite.
+_UNREADABLE_EXIF = (KeyError, SyntaxError, TypeError, ValueError, struct.error)
+
+
+def _open_upright(data: bytes):
+    """Decode an image with its EXIF orientation applied to the pixels.
+
+    Returns the image and whether that turn swapped its width and height. An
+    orientation Pillow cannot read leaves the pixels as stored.
+    """
+    from PIL import ExifTags, Image, ImageOps
+
+    img = Image.open(io.BytesIO(data))
+    try:
+        orientation = img.getexif().get(ExifTags.Base.Orientation, 1)
+        if orientation != 1:
+            img = ImageOps.exif_transpose(img)
+    except _UNREADABLE_EXIF:
+        return img, False
+    return img, orientation in (5, 6, 7, 8)
+
+
+def _kept_metadata(img, swap_axes: bool) -> dict:
+    """Save options that carry the colour profile and DPI into the copy."""
+    # Both always passed: Pillow would otherwise copy a JPEG's comment and,
+    # into a PNG, any profile, even a greyscale or CMYK one that no longer
+    # fits the RGB pixels.
+    kept: dict = {"icc_profile": None, "comment": None}
+    icc = img.info.get("icc_profile")
+    # A profile's header names its colour space at bytes 16-19.
+    if icc and icc[16:20] == b"RGB ":
+        kept["icc_profile"] = icc
+    dpi = img.info.get("dpi")
+    if dpi and min(dpi) > 0:
+        kept["dpi"] = (dpi[1], dpi[0]) if swap_axes else dpi
+    return kept
+
+
+def _save_turned(img, suffix: str, prefix: str, swap_axes: bool):
+    """Save a rotated or flipped RGB(A) image and return (path, ext, media type).
+
+    JPG, PNG and WebP keep their format; anything else becomes PNG.
+    """
+    kept = _kept_metadata(img, swap_axes)
+    out_ext = suffix if suffix in (".jpg", ".jpeg", ".png", ".webp") else ".png"
+    ensure_temp_dir()
+    out_path = get_temp_path(f"{prefix}_{uuid.uuid4().hex}{out_ext}")
+    if out_ext in (".jpg", ".jpeg"):
+        if img.mode == "RGBA":
+            img = img.convert("RGB")
+        img.save(out_path, "JPEG", quality=92, **kept)
+        return out_path, out_ext, "image/jpeg"
+    if out_ext == ".webp":
+        img.save(out_path, "WEBP", quality=92, **kept)
+        return out_path, out_ext, "image/webp"
+    img.save(out_path, "PNG", **kept)
+    return out_path, out_ext, "image/png"
+
+
 # ─── Rotate image (90 / 180 / 270 / arbitrary) ───────────────────────────
 @router.post("/rotate-image")
 async def rotate_image_endpoint(
@@ -320,39 +390,31 @@ async def rotate_image_endpoint(
     degrees: int = Form(90),
 ):
     """Rotate an image by 90, 180, 270, or an arbitrary angle (counter-clockwise)."""
-    from PIL import Image
-
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_IMAGE:
         raise HTTPException(status_code=400, detail="Please upload an image file.")
     data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
-    img = Image.open(io.BytesIO(data))
-    # Preserve alpha if PNG/WEBP — convert if needed
-    has_alpha = img.mode in ("RGBA", "LA") or "transparency" in img.info
-    if img.mode not in ("RGB", "RGBA"):
-        img = img.convert("RGBA" if has_alpha else "RGB")
     deg = ((degrees % 360) + 360) % 360
-    if deg in (90, 180, 270):
-        method = {90: Image.Transpose.ROTATE_90, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_270}[deg]
-        img = img.transpose(method)
-    elif deg != 0:
-        # Arbitrary angle — Pillow rotates CCW by default; expand=True to avoid cropping.
-        # Use a transparent fill if source had alpha, else white.
-        fill = (0, 0, 0, 0) if has_alpha else (255, 255, 255)
-        img = img.rotate(deg, resample=Image.Resampling.BICUBIC, expand=True, fillcolor=fill)
-    out_ext = suffix if suffix in (".jpg", ".jpeg", ".png", ".webp") else ".png"
-    out_path = get_temp_path(f"rot_out_{uuid.uuid4().hex}{out_ext}")
-    if out_ext in (".jpg", ".jpeg"):
-        if img.mode == "RGBA":
-            img = img.convert("RGB")
-        img.save(out_path, "JPEG", quality=92)
-        media = "image/jpeg"
-    elif out_ext == ".webp":
-        img.save(out_path, "WEBP", quality=92)
-        media = "image/webp"
-    else:
-        img.save(out_path, "PNG")
-        media = "image/png"
+
+    def _work():
+        from PIL import Image
+
+        img, turned = _open_upright(data)
+        # Preserve alpha if PNG/WEBP — convert if needed
+        has_alpha = img.mode in ("RGBA", "LA") or "transparency" in img.info
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA" if has_alpha else "RGB")
+        if deg in (90, 180, 270):
+            method = {90: Image.Transpose.ROTATE_90, 180: Image.Transpose.ROTATE_180, 270: Image.Transpose.ROTATE_270}[deg]
+            img = img.transpose(method)
+        elif deg != 0:
+            # Arbitrary angle — Pillow rotates CCW by default; expand=True to avoid cropping.
+            # Use a transparent fill if source had alpha, else white.
+            fill = (0, 0, 0, 0) if has_alpha else (255, 255, 255)
+            img = img.rotate(deg, resample=Image.Resampling.BICUBIC, expand=True, fillcolor=fill)
+        return _save_turned(img, suffix, "rot_out", swap_axes=turned != (deg in (90, 270)))
+
+    out_path, out_ext, media = await run_bounded(_work)
     cleanup = BackgroundTask(remove_files, str(out_path))
     return FileResponse(
         str(out_path), media_type=media,
@@ -367,8 +429,6 @@ async def flip_image_endpoint(
     direction: str = Form("horizontal"),
 ):
     """Mirror an image horizontally or vertically."""
-    from PIL import Image
-
     suffix = _suffix(file.filename)
     if suffix not in ALLOWED_IMAGE:
         raise HTTPException(status_code=400, detail="Please upload an image file.")
@@ -376,24 +436,17 @@ async def flip_image_endpoint(
     if direction not in ("horizontal", "vertical", "h", "v"):
         raise HTTPException(status_code=400, detail="direction must be 'horizontal' or 'vertical'")
     data = await read_upload(file, label="Image", max_bytes=MAX_IMAGE_BYTES)
-    img = Image.open(io.BytesIO(data))
-    if img.mode not in ("RGB", "RGBA"):
-        img = img.convert("RGBA" if (img.mode in ("LA",) or "transparency" in img.info) else "RGB")
-    method = Image.Transpose.FLIP_LEFT_RIGHT if direction in ("horizontal", "h") else Image.Transpose.FLIP_TOP_BOTTOM
-    img = img.transpose(method)
-    out_ext = suffix if suffix in (".jpg", ".jpeg", ".png", ".webp") else ".png"
-    out_path = get_temp_path(f"flip_out_{uuid.uuid4().hex}{out_ext}")
-    if out_ext in (".jpg", ".jpeg"):
-        if img.mode == "RGBA":
-            img = img.convert("RGB")
-        img.save(out_path, "JPEG", quality=92)
-        media = "image/jpeg"
-    elif out_ext == ".webp":
-        img.save(out_path, "WEBP", quality=92)
-        media = "image/webp"
-    else:
-        img.save(out_path, "PNG")
-        media = "image/png"
+
+    def _work():
+        from PIL import Image
+
+        img, turned = _open_upright(data)
+        if img.mode not in ("RGB", "RGBA"):
+            img = img.convert("RGBA" if (img.mode in ("LA",) or "transparency" in img.info) else "RGB")
+        method = Image.Transpose.FLIP_LEFT_RIGHT if direction in ("horizontal", "h") else Image.Transpose.FLIP_TOP_BOTTOM
+        return _save_turned(img.transpose(method), suffix, "flip_out", swap_axes=turned)
+
+    out_path, out_ext, media = await run_bounded(_work)
     cleanup = BackgroundTask(remove_files, str(out_path))
     return FileResponse(
         str(out_path), media_type=media,
