@@ -1,22 +1,24 @@
 #!/bin/bash
-# PrivaTools — Oracle VM manual deploy script.
+# PrivaTools — Oracle VM manual deploy of origin/main, built on the VM.
 #
-# Replaces ~/deploy.sh on the VM. Adds three reliability guarantees over the
-# 5-line original:
+# Production normally deploys signed release tags through the auto-deploy
+# timer (auto-deploy.sh). This manual path builds main locally instead, for an
+# emergency when no release image can be produced. Do not use it as a
+# rollback tool: it pulls main and rebuilds. Roll back with
+# `privatools-rollout --rollback` (deploy/README.md).
 #
-#   1. `set -euo pipefail` — fail fast if git pull fails, docker build fails,
-#      or systemctl restart fails. The original would swallow these silently.
-#   2. Health poll after restart — confirms the new container is serving the
-#      commit we just pulled before declaring success. The original would log
-#      "Deploy complete" even if the new container OOM'd and never came up.
-#   3. Failure log entry — if anything goes wrong, deploy.log gets a FAILED
-#      entry instead of nothing, so the operator can spot bad deploys from
-#      `tail ~/deploy.log` without spelunking journalctl.
+# Guarantees:
+#   1. `set -euo pipefail` — a failed pull or build stops before anything
+#      running is touched.
+#   2. Zero downtime — privatools-rollout starts the build beside the running
+#      release and moves traffic only after /readyz reports the new commit and
+#      real pages serve. A build that fails those checks is removed and the
+#      running release keeps serving; there is nothing to roll back.
+#   3. One deploy at a time — it holds the auto-deploy timer's lock.
+#   4. A log line either way in ~/deploy.log.
 #
-# The VM now has a systemd polling deploy path too:
-#   sudo bash deploy/oracle-vm/install-auto-deploy.sh
-#
-# Apply this manual script with:
+# The rollout needs the nginx upstream switch installed
+# (install-auto-deploy.sh). Apply this script with:
 #   scp deploy/oracle-vm/deploy.sh ubuntu@140.245.15.140:/home/ubuntu/deploy.sh.new
 #   ssh ubuntu@140.245.15.140 'cp ~/deploy.sh ~/deploy.sh.bak && \
 #       mv ~/deploy.sh.new ~/deploy.sh && chmod +x ~/deploy.sh'
@@ -25,45 +27,40 @@ set -euo pipefail
 
 REPO_DIR=/home/ubuntu/privatools
 DEPLOY_LOG=/home/ubuntu/deploy.log
-HEALTH_URL=http://127.0.0.1:8000/readyz
-HEALTH_RETRIES=10
-HEALTH_INTERVAL=6  # seconds; total wait = 60s
+LOCK_FILE=/tmp/privatools-auto-deploy.lock
+ROLLOUT=/usr/local/bin/privatools-rollout
 
 log() {
-    echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ'): $*" >> "$DEPLOY_LOG"
-}
-
-health_reports_sha() {
-    local expected_sha="$1"
-    local body
-    body="$(curl --fail --silent --max-time 5 "$HEALTH_URL")" || return 1
-    [[ "$body" == *"\"build_sha\":\"${expected_sha}\""* ]] \
-        || [[ "$body" == *"\"build_sha\": \"${expected_sha}\""* ]]
+    echo "$(date -u +'%Y-%m-%dT%H:%M:%SZ'): $*" | tee -a "$DEPLOY_LOG"
 }
 
 trap 'log "Deploy FAILED at line $LINENO (exit $?)"' ERR
 
+exec 9>>"$LOCK_FILE"
+if ! flock -n 9; then
+    log "Another deploy is running; try again when it finishes"
+    exit 1
+fi
+
 cd "$REPO_DIR"
 
 # 1. Pull latest main
-git pull origin main
+git pull --ff-only origin main
 target_sha="$(git rev-parse HEAD)"
 
-# 2. Rebuild + restart container
-sudo env GIT_SHA="$target_sha" docker compose up -d --build
+# 2. Build the image; nothing running changes yet
+sudo env GIT_SHA="$target_sha" docker compose build privatools
+image_id="$(sudo docker image inspect --format '{{.Id}}' privatools-privatools:latest)"
 
-# 3. Clean up dangling images (best-effort)
-sudo docker image prune -f || true
-
-# 4. Wait for new container to become healthy
-for i in $(seq 1 "$HEALTH_RETRIES"); do
-    if health_reports_sha "$target_sha"; then
-        log "Deploy complete (health reports ${target_sha:0:12} after ${i}/${HEALTH_RETRIES} attempts)"
-        exit 0
-    fi
-    sleep "$HEALTH_INTERVAL"
-done
-
-# 5. Health check exhausted — flag failure
-log "Deploy FAILED — health did not report ${target_sha:0:12} after $((HEALTH_RETRIES * HEALTH_INTERVAL))s"
-exit 1
+# 3. Replace the running release without downtime. No image prune: the
+#    replaced image stays available for `privatools-rollout --rollback`.
+status=0
+sudo env PRIVATOOLS_DEPLOY_LOCK_HELD=1 REPO_DIR="$REPO_DIR" \
+    "$ROLLOUT" "$image_id" "$target_sha" || status=$?
+case "$status" in
+    0) log "Deploy complete (${target_sha:0:12} serves from the canonical container)" ;;
+    1) log "Deploy REJECTED: ${target_sha:0:12} failed its readiness or page checks; the previous release kept serving" ;;
+    3) log "Deploy DEGRADED: ${target_sha:0:12} serves from the interim container; rerun to finish" ;;
+    *) log "Deploy FAILED: rollout exit ${status}; see its output above" ;;
+esac
+exit "$status"

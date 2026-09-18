@@ -2,6 +2,13 @@
 # Poll origin/main and redeploy the Docker Compose app when a new commit is
 # available, the last-success marker is stale, or health reports the wrong SHA.
 # Intended to run from privatools-auto-deploy.service.
+#
+# This script chooses and verifies the release (tag, signature, digest,
+# revision). privatools-rollout (rollout.sh) then replaces the running
+# container with zero downtime: the new release starts beside the old one and
+# receives traffic only after it is ready and serves real pages. A release
+# that fails never replaces anything, so there is nothing to roll back; it is
+# marked failed so it is not retried every minute.
 
 set -euo pipefail
 
@@ -12,14 +19,15 @@ BRANCH="${BRANCH:-main}"
 # the real dependency checks (pikepdf/fitz/PIL importable, tessdata present, temp
 # writable, free disk) and returns build_sha, so a container that came up with
 # broken deps fails the gate (503) instead of deploying "successfully" (research
-# O4). build_sha lets the same check confirm the new revision is live.
+# O4). build_sha lets the same check confirm the new revision is live. This
+# is the canonical container; the rollout gates the new one on the same check
+# (plus a real-page probe) before it takes any traffic.
 HEALTH_URL="${HEALTH_URL:-http://127.0.0.1:8000/readyz}"
-HEALTH_RETRIES="${HEALTH_RETRIES:-20}"
-HEALTH_INTERVAL="${HEALTH_INTERVAL:-6}"
 LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
 STATE_FILE="${STATE_FILE:-${REPO_DIR}/.privatools-auto-deploy.sha}"
-# A target sha that deployed but failed its health gate and was auto-rolled-back.
-# We refuse to redeploy it every cycle (thrash); cleared on the next success.
+# A target sha whose release failed its readiness or page checks and so never
+# replaced the running one. We refuse to retry it every cycle (thrash);
+# cleared on the next success.
 FAILED_FILE="${FAILED_FILE:-${REPO_DIR}/.privatools-auto-deploy.failed}"
 
 # Deploy gate. Without one, *any* commit reaching ${BRANCH} ships to prod
@@ -58,6 +66,9 @@ DEPLOY_IMAGE_REPO_FALLBACK="${DEPLOY_IMAGE_REPO_FALLBACK:-}"
 # similar) check URL. We ping it on success and ping <url>/fail on failure, so a
 # stuck or failed deploy raises an alert instead of going unnoticed.
 DEPLOY_PING_URL="${DEPLOY_PING_URL:-}"
+
+# The zero-downtime replacement, installed beside this script.
+ROLLOUT="${ROLLOUT:-/usr/local/bin/privatools-rollout}"
 
 # cosign signature verification before deploy. release.yml signs each image
 # keyless (Fulcio/OIDC via GitHub Actions); the OCI revision label is
@@ -164,14 +175,14 @@ if [[ "$current_sha" == "$target_sha" ]] \
     exit 0
 fi
 
-# If this exact target already deployed-and-failed-health and was rolled back,
-# don't thrash redeploying it every 60s — stay on the rolled-back image and wait
-# for a newer tag to supersede it. (If the rolled-back image is itself unhealthy
-# now, fall through and retry the deploy.)
+# If this exact target already failed its readiness or page checks, don't
+# thrash retrying it every 60s: the previous release kept serving, so stay on
+# it and wait for a newer tag to supersede it. (If the running release is
+# itself unhealthy now, fall through and retry the deploy.)
 if [[ "$current_sha" == "$target_sha" && -f "$FAILED_FILE" \
       && "$(tr -d '[:space:]' < "$FAILED_FILE")" == "$target_sha" ]] \
     && curl --fail --silent --max-time 5 "$HEALTH_URL" >/dev/null 2>&1; then
-    log "target ${target_sha:0:12} previously failed its health gate and was rolled back; staying on the rolled-back image (push a newer tag to retry)"
+    log "target ${target_sha:0:12} previously failed its readiness or page checks; the previous release keeps serving (push a newer tag to retry)"
     exit 0
 fi
 
@@ -187,14 +198,6 @@ fi
 
 log "deploying ${current_sha:0:12} -> ${target_sha:0:12}"
 git reset --hard "$target_sha"
-
-# Capture the image currently running so we can roll back to it if the new image
-# fails its health gate below (empty on a first deploy / no running container).
-prev_container="$(docker compose ps -q privatools 2>/dev/null | head -1)"
-prev_image="$(docker inspect --format '{{.Image}}' "$prev_container" 2>/dev/null || true)"
-prev_sha="$(docker inspect --format '{{range .Config.Env}}{{println .}}{{end}}' \
-    "$prev_container" 2>/dev/null | sed -n 's/^PRIVATOOLS_BUILD_SHA=//p' || true)"
-[[ -n "$prev_image" ]] && log "pre-deploy: currently running ${prev_image}"
 
 # Deploy the cosign-signed GHCR image release.yml builds for a release tag —
 # and WAIT for it rather than building locally. When a tag is first pushed the
@@ -267,58 +270,50 @@ if [[ "$target_ref" != "${REMOTE}/${BRANCH}" && -n "$DEPLOY_IMAGE_REPO" ]]; then
     fi
     image_ref="$image_digest"
     log "using signed image (revision matches ${target_sha:0:12})"
-    if ! PRIVATOOLS_IMAGE="$image_ref" GIT_SHA="$target_sha" docker compose up -d --no-build --pull never; then
-        log "container replacement failed; checking readiness before rollback"
-    fi
 else
     log "no release tag for ${target_ref}; building locally"
-    if ! GIT_SHA="$target_sha" docker compose up -d --build; then
-        log "local build/replacement failed; checking readiness before rollback"
+    if ! GIT_SHA="$target_sha" docker compose build privatools; then
+        log "local build failed; the running release is untouched"
+        ping_deploy fail
+        exit 1
     fi
+    # The name compose tags the build with; pin the rollout to its image ID.
+    image_ref="$(docker image inspect --format '{{.Id}}' "${PRIVATOOLS_IMAGE:-privatools-privatools:latest}")"
 fi
-# Retain the previous image for rollback. Pruning before the health gate can
-# delete the only usable rollback image when its tag has moved.
 
-for i in $(seq 1 "$HEALTH_RETRIES"); do
-    if health_reports_sha "$target_sha"; then
+# Zero-downtime replacement. It never prunes: the replaced image stays for
+# rollback (`privatools-rollout --rollback`), because pruning could delete the
+# only usable rollback image when its tag has moved.
+rollout_status=0
+PRIVATOOLS_DEPLOY_LOCK_HELD=1 REPO_DIR="$REPO_DIR" LOCK_FILE="$LOCK_FILE" \
+    "$ROLLOUT" "$image_ref" "$target_sha" || rollout_status=$?
+case "$rollout_status" in
+    0)
         printf '%s\n' "$target_sha" > "$STATE_FILE"
         rm -f "$FAILED_FILE"
-        log "deploy complete; health reports ${target_sha:0:12} after ${i}/${HEALTH_RETRIES} checks"
+        log "deploy complete; ${target_sha:0:12} serves from the canonical container"
         ping_deploy ok
         # IndexNow: tell Bing-fed indexes (Copilot, DuckDuckGo, Yandex) the
         # moment new URLs go live — a deploy is exactly when the sitemap
         # changes. Best-effort; never blocks the deploy result.
         curl -fsS --max-time 10 "https://api.indexnow.org/indexnow?url=https%3A%2F%2Fprivatools.me%2Fsitemap.xml&key=63a1ed0533fa44ea9b51efd7a6e34bd1" >/dev/null 2>&1 || true
         exit 0
-    fi
-    sleep "$HEALTH_INTERVAL"
-done
-
-log "health check did not report ${target_sha:0:12} after $((HEALTH_RETRIES * HEALTH_INTERVAL)) seconds"
-docker compose ps || true
-
-# Automated rollback: the new image is up but never went healthy. Restore the
-# image that was running before this deploy (it was healthy until now) so prod
-# isn't left broken, and mark this target failed so the next cycle doesn't
-# redeploy it on a loop. Only roll back to a real, different prior image.
-if [[ -n "$prev_image" && "$prev_image" != "${image_ref:-}" ]]; then
-    log "ROLLBACK: restoring previous image ${prev_image}"
-    if PRIVATOOLS_IMAGE="$prev_image" GIT_SHA="${prev_sha:-unknown}" docker compose up -d --no-build --pull never; then
-        for i in $(seq 1 "$HEALTH_RETRIES"); do
-            if health_reports_sha "${prev_sha:-unknown}"; then
-                printf '%s\n' "$target_sha" > "$FAILED_FILE"
-                log "ROLLBACK successful after ${i} checks; previous image healthy. Marked ${target_sha:0:12} failed (won't redeploy until a newer tag)."
-                ping_deploy fail
-                exit 1
-            fi
-            sleep "$HEALTH_INTERVAL"
-        done
-        log "ROLLBACK image ALSO unhealthy — prod may be down, manual intervention required"
-    else
-        log "ROLLBACK: 'docker compose up' of ${prev_image} failed"
-    fi
-else
-    log "no prior image to roll back to (first deploy or same image)"
-fi
+        ;;
+    1)
+        # The release never took traffic from the running one. Do not retry it
+        # every cycle; a newer tag supersedes it.
+        printf '%s\n' "$target_sha" > "$FAILED_FILE"
+        log "REJECTED: ${target_sha:0:12} failed its readiness or page checks; the previous release kept serving. Marked failed (push a newer tag to retry)."
+        ;;
+    2)
+        log "rollout refused before starting anything (see above); retrying next cycle"
+        ;;
+    3)
+        log "DEGRADED: ${target_sha:0:12} serves from the interim container; the next cycles retry the canonical container"
+        ;;
+    *)
+        log "CRITICAL: rollout exited ${rollout_status}; check nginx and the containers now"
+        ;;
+esac
 ping_deploy fail
 exit 1

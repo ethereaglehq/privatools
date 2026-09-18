@@ -1,6 +1,8 @@
 """Execute the actual deploy gate with inert command doubles; never use Docker/git/network.
 
-These prove selection/signature/digest/rollback behavior, not a live VM rollout.
+These prove selection/signature/digest behavior and what auto-deploy does with
+each rollout outcome, not a live VM rollout. The zero-downtime replacement
+itself is tested in test_zero_downtime_rollout.py.
 """
 import json
 import os
@@ -14,9 +16,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 DEPLOY = ROOT / 'deploy/oracle-vm/auto-deploy.sh'
 NEW = 'a' * 40
-OLD = 'b' * 40
 DIGEST = 'ghcr.io/ethereaglehq/privatools@sha256:' + 'c' * 64
-OLD_IMAGE = 'sha256:' + 'd' * 64
 
 FAKE = r'''
 import json, os, pathlib, sys
@@ -49,21 +49,25 @@ elif name == 'curl':
     active = (root / 'active').read_text() if (root / 'active').exists() else 'old'
     if active == 'new' and mode in ('unhealthy', 'startup_failed'): sys.exit(22)
     print(json.dumps({'build_sha': new if active == 'new' else old}))
+elif name == 'rollout':
+    # The zero-downtime replacement (rollout.sh) has its own tests; here it
+    # only reports the outcome auto-deploy must act on.
+    sys.exit({'rejected': 1, 'refused': 2, 'degraded': 3}.get(mode, 0))
 '''
 
 
 def run_deploy(tmp_path, mode='', with_cosign=True, deploy_mode=None):
     fake_bin = tmp_path / 'bin'
     fake_bin.mkdir()
-    for name in ['git', 'docker', 'curl', 'flock', 'sleep'] + (['cosign'] if with_cosign else []):
+    for name in ['git', 'docker', 'curl', 'flock', 'sleep', 'rollout'] + (['cosign'] if with_cosign else []):
         script = fake_bin / name
         script.write_text(f'#!{sys.executable}\n' + FAKE)
         script.chmod(0o755)
     for name in ['date', 'head', 'sed', 'tr', 'seq', 'rm']:
         (fake_bin / name).symlink_to(shutil.which(name))
     env = {**os.environ, 'PATH': str(fake_bin), 'FAKE_ROOT': str(tmp_path), 'FAKE_MODE': mode,
-           'REPO_DIR': str(tmp_path), 'LOCK_FILE': str(tmp_path / 'lock'), 'HEALTH_RETRIES': '1',
-           'HEALTH_INTERVAL': '0', 'DEPLOY_PING_URL': '', 'DEPLOY_IMAGE_REPO_FALLBACK': ''}
+           'REPO_DIR': str(tmp_path), 'LOCK_FILE': str(tmp_path / 'lock'), 'ROLLOUT': str(fake_bin / 'rollout'),
+           'DEPLOY_PING_URL': '', 'DEPLOY_IMAGE_REPO_FALLBACK': ''}
     env.pop('DEPLOY_MODE', None)
     if deploy_mode is not None:
         env['DEPLOY_MODE'] = deploy_mode
@@ -72,60 +76,74 @@ def run_deploy(tmp_path, mode='', with_cosign=True, deploy_mode=None):
     return result, calls
 
 
-def ups(calls):
-    return [c for c in calls if c['name'] == 'docker' and c['args'][:2] == ['compose', 'up']]
+def rollouts(calls):
+    return [c for c in calls if c['name'] == 'rollout']
+
+
+def replacements(calls):
+    """Anything that could replace the running container outside the rollout."""
+    return [c for c in calls if c['name'] == 'docker' and c['args'][:1] == ['compose']
+            and any(verb in c['args'] for verb in ('up', 'down', 'stop', 'restart'))]
 
 
 def test_default_tag_gate_does_not_fall_back_to_branch(tmp_path):
     result, calls = run_deploy(tmp_path, 'no_tag')
     assert result.returncode == 0, result.stdout + result.stderr
-    assert not ups(calls)
+    assert not rollouts(calls)
     assert not any(c['args'][:2] == ['reset', '--hard'] for c in calls)
 
 
 def test_invalid_mode_does_not_deploy(tmp_path):
     result, calls = run_deploy(tmp_path, deploy_mode='typo')
     assert result.returncode == 1
-    assert not ups(calls)
+    assert not rollouts(calls)
 
 
 @pytest.mark.parametrize('mode,with_cosign', [('bad_signature', True), ('no_digest', True), ('', False)])
 def test_missing_or_bad_signature_prerequisites_fail_closed(tmp_path, mode, with_cosign):
     result, calls = run_deploy(tmp_path, mode, with_cosign)
     assert result.returncode != 0
-    assert not ups(calls)
+    assert not rollouts(calls)
 
 
 def test_wrong_revision_waits_without_replacing_container(tmp_path):
     result, calls = run_deploy(tmp_path, 'wrong_revision')
     assert result.returncode == 0
-    assert not ups(calls)
+    assert not rollouts(calls)
     assert 'not ready yet' in result.stdout
 
 
-def test_verified_digest_is_exactly_the_image_run(tmp_path):
+def test_verified_digest_is_exactly_the_image_rolled_out(tmp_path):
     result, calls = run_deploy(tmp_path)
     assert result.returncode == 0, result.stdout + result.stderr
     verify = next(c for c in calls if c['name'] == 'cosign')
     assert verify['args'][1] == DIGEST
     assert '@refs/tags/v' in verify['args'][3]
-    assert ups(calls)[0]['image'] == DIGEST
-    assert ups(calls)[0]['sha'] == NEW
-    assert ups(calls)[0]['args'][-2:] == ['--pull', 'never']
+    # The signed digest and its revision go to the zero-downtime rollout; the
+    # container is never replaced any other way.
+    assert [c['args'] for c in rollouts(calls)] == [[DIGEST, NEW]]
+    assert not replacements(calls)
     assert (tmp_path / '.privatools-auto-deploy.sha').read_text().strip() == NEW
-    assert not any(c['args'][:2] == ['image', 'prune'] for c in calls)
+    assert not any('prune' in c['args'] for c in calls if c['name'] == 'docker')
 
 
-@pytest.mark.parametrize('mode', ['unhealthy', 'startup_failed'])
-def test_failed_readiness_restores_previous_immutable_image_and_sha(tmp_path, mode):
-    result, calls = run_deploy(tmp_path, mode)
+def test_rejected_release_is_marked_failed_without_touching_the_running_one(tmp_path):
+    # The new release never took traffic, so there is no rollback to run.
+    result, calls = run_deploy(tmp_path, 'rejected')
     assert result.returncode == 1
-    assert 'ROLLBACK successful' in result.stdout
-    assert len(ups(calls)) == 2
-    assert ups(calls)[1]['image'] == OLD_IMAGE
-    assert ups(calls)[1]['sha'] == OLD
-    assert ups(calls)[1]['args'][-2:] == ['--pull', 'never']
+    assert 'previous release kept serving' in result.stdout
+    assert len(rollouts(calls)) == 1
+    assert not replacements(calls)
     assert (tmp_path / '.privatools-auto-deploy.failed').read_text().strip() == NEW
+    assert not (tmp_path / '.privatools-auto-deploy.sha').exists()
+
+
+@pytest.mark.parametrize('mode,message', [('refused', 'retrying next cycle'), ('degraded', 'DEGRADED')])
+def test_refused_or_degraded_rollout_is_retried_not_marked_failed(tmp_path, mode, message):
+    result, _ = run_deploy(tmp_path, mode)
+    assert result.returncode == 1
+    assert message in result.stdout
+    assert not (tmp_path / '.privatools-auto-deploy.failed').exists()
     assert not (tmp_path / '.privatools-auto-deploy.sha').exists()
 
 

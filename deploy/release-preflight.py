@@ -16,6 +16,32 @@ def check_command(name, command, cwd=ROOT):
     return {'check': name, 'status': 'pass' if result.returncode == 0 else 'fail', 'exitCode': result.returncode}
 
 
+def zero_downtime_checks():
+    """What rollout.sh needs on the VM, read-only (deploy/README.md, Zero-downtime deploys)."""
+    import re
+    import socket
+    checks = []
+    upstream = Path('/etc/nginx/privatools-upstream.conf')
+    port = re.search(r'server\s+127\.0\.0\.1:(\d+);', upstream.read_text()) if upstream.is_file() else None
+    checks.append({'check': 'nginx upstream file names 8000 or 8001',
+                   'status': 'pass' if port and port.group(1) in ('8000', '8001') else 'fail'})
+    site = Path('/etc/nginx/sites-enabled/privatools')
+    text = site.read_text() if site.is_file() else ''
+    checks.append({'check': 'nginx site proxies only through privatools_app',
+                   'status': 'pass' if 'proxy_pass http://privatools_app;' in text and 'proxy_pass http://127.0.0.1:' not in text else 'fail'})
+    helper = '/usr/local/sbin/privatools-nginx-upstream'
+    checks.append(check_command('sudo -n allows the upstream switch', ['sudo', '-n', '-l', helper, 'set', '8001']))
+    with socket.socket() as probe:
+        probe.settimeout(2)
+        taken = probe.connect_ex(('127.0.0.1', 8001)) == 0
+    checks.append({'check': 'interim port 127.0.0.1:8001 free', 'status': 'fail' if taken else 'pass'})
+    meminfo = Path('/proc/meminfo').read_text()
+    available = int(re.search(r'^MemAvailable:\s+(\d+)', meminfo, re.M).group(1)) // 1024
+    checks.append({'check': 'memory for a second container (MemAvailable >= 1536 MB)',
+                   'status': 'pass' if available >= 1536 else 'fail', 'availableMb': available})
+    return checks
+
+
 def run(host=False):
     checks = []
     scripts = sorted((ROOT / 'deploy/oracle-vm').glob('*.sh'))
@@ -23,7 +49,8 @@ def run(host=False):
         checks.append(check_command(f'shell syntax: {script.name}', ['bash', '-n', str(script)]))
     shellcheck = shutil.which('shellcheck')
     if shellcheck:
-        checks.append(check_command('release shell lint', [shellcheck, *[str(ROOT / 'deploy/oracle-vm' / name) for name in ['auto-deploy.sh', 'deploy.sh', 'backup-app-data.sh']]]))
+        linted = ['auto-deploy.sh', 'rollout.sh', 'nginx-upstream.sh', 'install-auto-deploy.sh', 'deploy.sh', 'backup-app-data.sh']
+        checks.append(check_command('release shell lint', [shellcheck, *[str(ROOT / 'deploy/oracle-vm' / name) for name in linted]]))
     else:
         checks.append({'check': 'release shell lint', 'status': 'unavailable'})
     binaries = {name: shutil.which(name) is not None for name in ['docker', 'nginx', 'cosign']}
@@ -37,6 +64,8 @@ def run(host=False):
         checks.append(check_command('installed nginx configuration', ['nginx', '-t']))
         result = subprocess.run(['nginx', '-V'], capture_output=True, text=True, timeout=15)
         checks.append({'check': 'nginx real-IP module', 'status': 'pass' if '--with-http_realip_module' in result.stdout + result.stderr else 'fail'})
+    if host:
+        checks.extend(zero_downtime_checks())
     dirty = subprocess.run(['git', 'status', '--porcelain'], cwd=ROOT, capture_output=True, text=True, timeout=15)
     checks.append({'check': 'reviewed checkout is clean', 'status': 'pass' if dirty.returncode == 0 and not dirty.stdout else 'pending'})
     return {

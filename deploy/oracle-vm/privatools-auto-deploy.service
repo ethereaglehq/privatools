@@ -22,8 +22,16 @@ Environment=DEPLOY_MODE=tag
 # (pikepdf, fitz, PIL, tessdata, temp writable, free disk) and 503s when one
 # fails. Pointing the gate at /api/health let a container that booted with
 # broken deps pass as a successful deploy, which is the exact case
-# auto-deploy.sh says it is guarding against. It also governs the rollback
-# confirmation, so the weaker probe made a half-broken rollback look healthy.
+# auto-deploy.sh says it is guarding against. The zero-downtime rollout gates
+# the new container on the same check, plus a real-page probe, before any
+# traffic reaches it.
 Environment=HEALTH_URL=http://127.0.0.1:8000/readyz
+# The rollout switches nginx through `sudo -n /usr/local/sbin/privatools-nginx-upstream`
+# (/etc/sudoers.d/privatools-deploy). Do not add NoNewPrivileges=: sudo would
+# stop working and every deploy would refuse at the switch, leaving the
+# previous release serving.
+Environment=COMPOSE_PROJECT=privatools
 ExecStart=/usr/local/bin/privatools-auto-deploy
+# Worst case: pull and verify, a 3 min readiness wait, up to 7 min of
+# draining and 6 min of job handover per container, twice.
 TimeoutStartSec=45min
