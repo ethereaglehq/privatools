@@ -141,3 +141,87 @@ def test_video_speed_changes_a_video_without_audio(client, speed_clip, tmp_path)
     assert [stream["codec_type"] for stream in info["streams"]] == ["video"]
     assert abs(stream_seconds(info, "video") - 1.0) <= 0.15
 
+
+def solid_clip(path, colour, size, *, sar="1", codec=("-c:v", "libx264", "-pix_fmt", "yuv420p", "-c:a", "aac")):
+    """Two seconds of one colour with a tone, so bars and stretching are easy to find."""
+    # rgb24: in YUV the colour source rounds an odd size down to even.
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "lavfi", "-i", f"color=c={colour}:s={size}:r=10:d=2,format=rgb24", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-vf", f"setsar={sar}", *codec, "-shortest", str(path)], check=True, timeout=30)
+    return path
+
+
+@pytest.fixture(scope="module")
+def merge_clips(media_fixtures):
+    wide = solid_clip(media_fixtures / "wide.mp4", "blue", "320x180")
+    # Phones store portrait video as landscape frames plus a display rotation.
+    portrait = media_fixtures / "portrait.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-display_rotation", "90", "-i", str(wide), "-c", "copy", str(portrait)], check=True, timeout=15)
+    return {
+        "wide": wide,
+        "portrait": portrait,
+        "small": solid_clip(media_fixtures / "small.mp4", "red", "160x120"),
+        # 180x180 stored pixels, each 16:9 wide, display as 320x180.
+        "anamorphic": solid_clip(media_fixtures / "anamorphic.mp4", "red", "180x180", sar="16/9"),
+        # VP8 keeps an odd size; H.264 in 4:2:0 needs even dimensions.
+        "odd": solid_clip(media_fixtures / "odd.webm", "blue", "321x181", codec=("-c:v", "libvpx", "-deadline", "realtime", "-c:a", "libopus")),
+    }
+
+
+def merge(client, *clips):
+    return client.post("/api/video-merge", files=[("files", (clip.name, clip.read_bytes(), "video/mp4")) for clip in clips])
+
+
+def frame_size(info):
+    video = next(stream for stream in info["streams"] if stream["codec_type"] == "video")
+    return video["width"], video["height"]
+
+
+def colours_at(video, seconds, points, tmp_path):
+    frame = tmp_path / f"frame-{seconds}.png"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-ss", str(seconds), "-i", str(video), "-frames:v", "1", str(frame)], check=True, timeout=15)
+    with Image.open(frame) as image:
+        pixels = image.convert("RGB")
+        return [colour_name(pixels.getpixel(point)) for point in points]
+
+
+def colour_name(pixel):
+    red, green, blue = pixel
+    if max(pixel) < 40:
+        return "black"
+    if red > 180 and green < 70 and blue < 70:
+        return "red"
+    if blue > 180 and red < 70 and green < 70:
+        return "blue"
+    return str(pixel)
+
+
+def test_video_merge_fits_clips_of_another_size_inside_the_first_clips_frame(client, merge_clips, tmp_path):
+    info = inspect_download(merge(client, merge_clips["wide"], merge_clips["small"]), tmp_path / "merged.mp4")
+    assert frame_size(info) == (320, 180)
+    assert {stream["codec_type"] for stream in info["streams"]} == {"video", "audio"}
+    assert abs(float(info["format"]["duration"]) - 4.0) <= 0.2
+    assert colours_at(tmp_path / "merged.mp4", 1, [(10, 90), (310, 90)], tmp_path) == ["blue", "blue"]
+    # 160x120 is 4:3: fitted to 180 lines it is 240 wide, centred between 40-pixel bars.
+    assert colours_at(tmp_path / "merged.mp4", 3, [(20, 90), (50, 90), (160, 90), (270, 90), (300, 90)], tmp_path) == ["black", "red", "red", "red", "black"]
+
+
+def test_video_merge_takes_the_frame_from_the_first_clip_as_displayed(client, merge_clips, tmp_path):
+    info = inspect_download(merge(client, merge_clips["portrait"], merge_clips["small"]), tmp_path / "merged.mp4")
+    assert frame_size(info) == (180, 320)
+    assert colours_at(tmp_path / "merged.mp4", 1, [(10, 10), (170, 310)], tmp_path) == ["blue", "blue"]
+    # 160x120 fitted to 180 columns is 135 lines, centred between bars above and below.
+    assert colours_at(tmp_path / "merged.mp4", 3, [(90, 40), (90, 160), (90, 290)], tmp_path) == ["black", "red", "black"]
+
+
+def test_video_merge_keeps_the_shape_of_clips_with_non_square_pixels(client, merge_clips, tmp_path):
+    info = inspect_download(merge(client, merge_clips["anamorphic"], merge_clips["wide"]), tmp_path / "merged.mp4")
+    assert frame_size(info) == (320, 180)
+    assert colours_at(tmp_path / "merged.mp4", 1, [(10, 90), (310, 90)], tmp_path) == ["red", "red"]
+    assert colours_at(tmp_path / "merged.mp4", 3, [(10, 90), (310, 90)], tmp_path) == ["blue", "blue"]
+
+
+def test_video_merge_rounds_an_odd_first_clip_down_to_an_even_frame(client, merge_clips, tmp_path):
+    source = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(merge_clips["odd"])], timeout=15))
+    assert frame_size(source) == (321, 181)
+    info = inspect_download(merge(client, merge_clips["odd"], merge_clips["small"]), tmp_path / "merged.mp4")
+    assert frame_size(info) == (320, 180)
+
