@@ -107,7 +107,10 @@ the queue. It then lets the old container drain, recreates
 changes: the backup script, the CI probe and the runbooks all address that
 container and port. Replacing the container with a bare `docker compose up`
 brings back the old outage; it is only for rolling back to a release older than
-the drainable supervisor. A failed release never takes traffic, so there is
+the drainable supervisor, and only from the steady state (upstream on 8000, no
+interim). A degraded cut-over has its own back-out in `deploy/README.md`:
+there, that command would start v2.6.1 while nginx kept routing to the
+interim. A failed release never takes traffic, so there is
 nothing to roll back; `privatools-rollout --rollback` is itself zero-downtime,
 also from the degraded state. Details, evidence and the cut-over runbook are in
 `deploy/README.md`.

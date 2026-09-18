@@ -37,7 +37,7 @@ Now `privatools-rollout` ([`oracle-vm/rollout.sh`](oracle-vm/rollout.sh)) replac
 1. **Candidate.** Start the new image as a second compose project, `privatools-interim`, on `127.0.0.1:8001`, with the same compose file and the live container's two volumes ([`compose.interim.yml`](oracle-vm/compose.interim.yml)). Wait up to 180 s for `/readyz` to report the new build; a crash loop is caught early. Then run the real-page probe, `scripts/ci/probe-image.py --running`. It is the same set of checks CI runs on a freshly booted image: readiness, a real 404, the homepage's advertised tool count, two server-rendered tool pages and the sitemap. It asks for `Host: privatools.me`, as nginx does. A release whose `TRUSTED_HOSTS` rejects the public name therefore fails here (exit 1), not at the check through nginx after the switch.
 2. **Queue handover, before any traffic moves.** The old container's job supervisor finishes its current job and releases the lock (SIGUSR1). The candidate's supervisor must take the lock and keep it for 5 s without its container restarting. If it cannot, the candidate is removed, the old supervisor resumes (SIGUSR2) and the release is rejected (exit 1). If the old supervisor's job does not finish within 360 s, the attempt is undone and retried later (exit 2). A failed Docker call proves nothing. A status poll or `docker inspect` that fails is asked again until the deadline. A supervisor fails only on an answer: its container restarted or stopped, or it reported that it did not hold the queue. If Docker never answers, that is a host problem (exit 2).
 3. **Switch.** Point host nginx at 8001 through the root helper. The helper checks that 8001 is ready, runs `nginx -t` and reloads gracefully. The rollout then checks two things: that nginx's previous worker generation is retiring, which proves the reload happened, and that `https://privatools.me/readyz` through nginx reports the new build. If either fails, it switches back, returns the queue and removes the candidate (exit 2).
-4. **Drain.** Keep the old container until no request has been open on it for 3 s. Also wait until the nginx worker generation that this deploy's reload retired has exited, capped at 300 s. That includes the generation a killed run's switch retired, which its record lists. Other sites' reloads are not waited for: their workers never reach PrivaTools. The wait matters because nginx buffers a request body before it connects upstream, so an upload that began before the switch still reaches the old container afterwards. A container that still receives requests after that generation has exited means nginx still routes to it. It is kept, and the rollout stops with exit 4.
+4. **Drain.** Keep the old container until no request has been open on it for 3 s. Also wait until the nginx worker generation that this deploy's reload retired has exited, capped at 300 s. That includes the generation a killed run's switch retired, which its record lists. Other sites' reloads are not waited for: their workers never reach PrivaTools. The wait matters because nginx buffers a request body before it connects upstream, so an upload that began before the switch still reaches the old container afterwards. A container that still receives requests after that generation has exited means nginx still routes to it. It is kept, and the rollout stops with exit 4. Rarely the requests instead come from a generation retired just before the switch that is still finishing a long upload. That false alarm loses nothing, and the next run drains the container cleanly (runbook step 7).
 5. **Steady state.** Check again that the new supervisor holds the queue and its container never restarted. If that fails, return traffic to the old container, which is still running. Record the replaced release for `--rollback`, then recreate `privatools-privatools-1` on 8000 with the new image; Compose stops the drained old container. Gate it on readiness and the page probe, hand the queue from the interim to it, switch nginx back to 8000, drain the interim like step 4 and remove it.
 
 The exit status tells the timer what to do:
@@ -180,6 +180,7 @@ The canonical and interim projects ran from this checkout's `docker-compose.yml`
   In every drain of every run, the retired nginx workers had exited and the container was quiet within 2–4 s.
 - **Memory.** A ready instance serving the test load used 305–370 MiB. The two containers together peaked at 745 MiB during an overlap, and one container at 436 MiB, with jobs running.
 - **Refusals.** The only refusals were the test key's fair-use limits: two `429 job_rate_limited` and two `429 rate_limit_exceeded`. No submission was refused with a 503.
+- **Backing out a degraded cut-over.** The runbook's command block for it was rehearsed on the same stand-in, extracted from this file and changed only in names. The starting state was a cut-over killed right after it stopped v2.6.1: nginx on the interim, v2.6.1 stopped. The block drained the interim's supervisor in 2 s and had v2.6.1 ready, holding the queue, 6 s later. It switched nginx back, verified it through nginx, and removed the interim, 11 s in all. Under the same load, 0 of 1486 requests failed, and 38 of 38 jobs ran on their first attempt.
 - **nginx 1.18.** The shipped production site with the upstream include also passed `nginx -t` on `nginx:1.18.0-alpine`, production's version, with the upstream file naming 8000 and naming 8001.
 
 Reproduce with a stand-in of your own. Never point these at production.
@@ -314,12 +315,14 @@ Expect in the journal, in order:
 4. `holds the queue`, then `recorded … as the release to roll back to`.
 5. `phase 2`, the handover to the canonical container, the switch back to 8000, `done` and `deploy complete`.
 
-It takes two to three minutes if retiring nginx workers exit promptly (step 0's measurement), and up to about 15 minutes if they linger to the caps. The watch loop shows only 200s, and the build SHA changes once. Other outcomes:
+It takes two to three minutes if retiring nginx workers exit promptly (step 0's measurement), and up to about 15 minutes if they linger to the caps. The watch loop shows only 200s, and the build SHA changes once.
+
+The timer stays stopped until step 9, so nothing below retries by itself. To retry, start the service again as above once 10 minutes have passed. Inside those 10 minutes a rerun only logs `backing off`, unless you first `rm -f .privatools-auto-deploy.retry` (after exit 3, also `.privatools-deploy.resume`). Other outcomes:
 
 - `REJECTED` (exit 1): the release was at fault and the old release kept serving; read the probe or supervisor lines above it.
-- `host problem` or `refused` (exit 2): nothing changed or the attempt was undone; the timer would retry after 10 minutes.
-- `DEGRADED` (exit 3): the new release serves from the interim container, and the timer retries after 10 minutes. The log says whether the canonical container did not come up, or whether the new job supervisor has not confirmed the queue. For the queue, check `python -m backend.app.job_handover --status` in the interim container. v2.6.1 is stopped, not removed, and recorded; if the queue stays unheld, roll back with the stop-and-start command under Rollback.
-- `CRITICAL` (exit 4): act now; the log says whether nginx or a container still receiving requests needs attention.
+- `host problem` or `refused` (exit 2): nothing changed or the attempt was undone; retry as above.
+- `DEGRADED` (exit 3): the new release serves from the interim container. The log says whether the canonical container did not come up, or whether the new job supervisor has not confirmed the queue. For the queue, check `sudo docker exec privatools-interim-privatools-1 python -m backend.app.job_handover --status`. `"role": "active"` means the queue is held, and a retry finishes the move. If it never becomes active and you would rather return to v2.6.1, which is stopped, not removed, and recorded, follow **Back out a degraded cut-over** below.
+- `CRITICAL` (exit 4): act now; the log says whether nginx or a container still receiving requests needs attention. A container still receiving requests can be a false alarm. nginx workers retired shortly before the switch, by another site's reload or an earlier switch in the same run, may still be finishing a long upload to it. The container is kept either way, so nothing is lost. Check through nginx that the expected build answers, and that the kept container's requests stop, then retry. A clean retry drains and removes the kept container, which shows it was benign; a second exit 4 means nginx really routes there.
 
 **8. Verify.**
 
@@ -347,9 +350,54 @@ sudo systemctl stop privatools-auto-deploy.timer
 sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout --rollback
 ```
 
+**Back out a degraded cut-over to v2.6.1.** Use this when step 7 ended `DEGRADED` because the new job supervisor never confirmed the queue, and you choose v2.6.1 over a retry. In that state the upstream names 8001, the interim serves every request, and v2.6.1's container is stopped but kept. The stop-and-start command under Rollback does not work here. It starts v2.6.1 on 8000, whose own check passes, while nginx keeps sending all traffic to the interim: the rollback looks done and is not. Only one supervisor can hold the queue, and v2.6.1's gives up after 30 s without it (its container then restart-loops), so keep this order:
+
+```bash
+cd /home/ubuntu/privatools
+systemctl is-active privatools-auto-deploy.service      # inactive: no deploy is running
+interim=privatools-interim-privatools-1
+holds_queue() { sudo docker exec "$interim" python -m backend.app.job_handover --status \
+  | python3 -c 'import json, sys; print((json.load(sys.stdin)["local"] or {}).get("role") in ("active", "draining"))'; }
+
+# 1. Drain the interim's job supervisor. It finishes the job it is running
+#    (up to 5 minutes), then releases the queue. Only a real "False" ends the
+#    wait; a failed docker call prints nothing.
+sudo docker kill --signal SIGUSR1 "$interim"
+until [ "$(holds_queue)" = False ]; do sleep 2; done
+
+# 2. Straight away, start v2.6.1 and wait for it. Its /readyz reports ready
+#    only once its own supervisor holds the queue. A drained supervisor takes
+#    the queue back after 30 s without a heartbeat: if v2.6.1 is not ready
+#    within a minute, repeat step 1 while it restarts.
+sudo docker start privatools-privatools-1
+until curl -fsS http://127.0.0.1:8000/readyz 2>/dev/null | grep -q '"api_job_worker":true'; do sleep 2; done
+curl -fsS http://127.0.0.1:8000/readyz                  # build_sha = the v2.6.1 SHA in .privatools-deploy.previous
+
+# 3. Move traffic back. nginx applies a reload a moment after the command
+#    returns: wait until its old workers are retiring, then check through
+#    nginx, the path visitors take.
+old=$(ps -o pid=,args= --ppid "$(cat /run/nginx.pid)" | awk 'NF == 4 && $3 == "worker" { print $1 }' | paste -sd, -)
+sudo /usr/local/sbin/privatools-nginx-upstream set 8000
+for i in $(seq 30); do ps -o args= -p "$old" | grep -qx 'nginx: worker process' || break; sleep 1; done
+cat /etc/nginx/privatools-upstream.conf                                        # server 127.0.0.1:8000;
+curl -fsS --resolve privatools.me:443:127.0.0.1 https://privatools.me/readyz   # the v2.6.1 build_sha
+
+# 4. Let those retired workers finish their requests to the interim (at most
+#    5 minutes here), then remove it. Its volumes are external.
+for i in $(seq 60); do ps -o args= -p "$old" | grep -q '^nginx: worker process' || break; sleep 5; done
+sudo docker stop --time 45 "$interim" && sudo docker rm "$interim"
+sudo docker network rm privatools-interim_default
+
+# Keep the timer from redeploying the withdrawn tag, clear the degraded state,
+# and re-enable automatic deploys.
+git rev-parse HEAD > .privatools-auto-deploy.failed
+rm -f .privatools-deploy.resume .privatools-auto-deploy.retry
+sudo systemctl start privatools-auto-deploy.timer
+```
+
 **Undo the cut-over** if anything above misbehaves. First restore the steady state:
 
-- **If the upstream names 8001,** an interim container is serving. Finish the move with `sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout IMAGE SHA`, using the release it serves. Or, if the canonical container serves, run `sudo /usr/local/sbin/privatools-nginx-upstream set 8000`.
+- **If the upstream names 8001,** an interim container is serving. Finish the move with `sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout IMAGE SHA`, using the release it serves. Or return to v2.6.1 with **Back out a degraded cut-over** above; if the canonical container already serves, `sudo /usr/local/sbin/privatools-nginx-upstream set 8000` is enough.
 - **Once the upstream names 8000,** remove any interim container that is left: `sudo docker rm -f privatools-interim-privatools-1; sudo docker network rm privatools-interim_default`. Its volumes are external, so this never touches data.
 
 Then:
@@ -460,7 +508,7 @@ echo "$bad_sha" > /home/ubuntu/privatools/.privatools-auto-deploy.failed
 sudo systemctl start privatools-auto-deploy.timer
 ```
 
-A release older than the drainable supervisor (v2.6.1 and earlier) cannot start beside a newer one while async jobs are enabled: its supervisor gives up on the shared lock and its `/readyz` rejects the newer heartbeat, so the rollout rejects it and nothing changes. Restore such a release with the stop-and-start form, which has the old gap of a few seconds:
+A release older than the drainable supervisor (v2.6.1 and earlier) cannot start beside a newer one while async jobs are enabled: its supervisor gives up on the shared lock and its `/readyz` rejects the newer heartbeat, so the rollout rejects it and nothing changes. Restore such a release with the stop-and-start form, which has the old gap of a few seconds. It is only for the steady state: the upstream names 8000 (`cat /etc/nginx/privatools-upstream.conf`) and no interim container runs. After a degraded cut-over, follow **Back out a degraded cut-over** in the runbook instead. There, this command would start the old release on 8000 while nginx kept routing to the interim.
 
 ```bash
 # Rollback to a pre-handover release. Fill only from the recorded values.
