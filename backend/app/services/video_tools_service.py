@@ -219,7 +219,7 @@ def gif_to_mp4(input_path: str) -> str:
 # ─── 6. Burn-in subtitles (.srt) onto a video ────────────────────────────
 
 
-def _has_audio(path: str) -> bool:
+def has_audio(path: str) -> bool:
     """Return True if the file has at least one audio stream."""
     try:
         result = subprocess.run(
@@ -252,7 +252,7 @@ def video_merge(input_paths: list[str]) -> str:
 
     # Probe whether ANY input has audio. If none do, drop the audio stream
     # entirely. If some do, pad the silent ones with anullsrc so concat works.
-    audio_flags = [_has_audio(p) for p in input_paths]
+    audio_flags = [has_audio(p) for p in input_paths]
     any_audio = any(audio_flags)
 
     inputs: list[str] = []

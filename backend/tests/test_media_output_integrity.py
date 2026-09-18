@@ -104,3 +104,40 @@ def test_audio_only_trim_preserves_container_and_codec(client, media_fixtures, t
     assert info["streams"][0]["codec_name"] == source_info["streams"][0]["codec_name"]
     assert 0.85 <= float(info["format"]["duration"]) <= 1.2
     assert response.headers["content-type"].startswith("audio/")
+
+def stream_seconds(info, kind):
+    return float(next(stream for stream in info["streams"] if stream["codec_type"] == kind)["duration"])
+
+
+@pytest.fixture(scope="module")
+def speed_clip(media_fixtures):
+    # 30 fps keeps the video's duration within a few frames of the exact value at 4x.
+    path = media_fixtures / "speed.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=160x90:rate=30:duration=2", "-f", "lavfi", "-i", "sine=frequency=440:duration=2", "-c:v", "libx264", "-c:a", "aac", "-shortest", str(path)], check=True, timeout=30)
+    return path
+
+
+# The slider's 0.25x end and the 4x preset, sent with two decimals as the page does.
+@pytest.mark.parametrize("speed,seconds", [("0.25", 8.0), ("4.00", 0.5)])
+def test_video_speed_accepts_both_ends_of_its_range(client, speed_clip, tmp_path, speed, seconds):
+    response = client.post("/api/video-speed", files={"file": ("clip.mp4", speed_clip.read_bytes(), "video/mp4")}, data={"speed": speed})
+    info = inspect_download(response, tmp_path / "speed.mp4")
+    # Per stream: audio left at the old tempo would still pass a check of the file's duration.
+    assert abs(stream_seconds(info, "video") - seconds) <= 0.15
+    assert abs(stream_seconds(info, "audio") - seconds) <= 0.15
+
+
+@pytest.mark.parametrize("speed", ["0.24", "4.01"])
+def test_video_speed_rejects_speeds_outside_its_range(client, speed_clip, speed):
+    response = client.post("/api/video-speed", files={"file": ("clip.mp4", speed_clip.read_bytes(), "video/mp4")}, data={"speed": speed})
+    assert response.status_code == 422
+
+
+def test_video_speed_changes_a_video_without_audio(client, speed_clip, tmp_path):
+    source = tmp_path / "silent.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-i", str(speed_clip), "-an", "-c:v", "copy", str(source)], check=True, timeout=15)
+    response = client.post("/api/video-speed", files={"file": ("silent.mp4", source.read_bytes(), "video/mp4")}, data={"speed": "2"})
+    info = inspect_download(response, tmp_path / "result.mp4")
+    assert [stream["codec_type"] for stream in info["streams"]] == ["video"]
+    assert abs(stream_seconds(info, "video") - 1.0) <= 0.15
+
