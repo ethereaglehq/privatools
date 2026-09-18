@@ -384,7 +384,7 @@ export default function NonPdfToolPage() {
         m.name = "description";
         document.head.appendChild(m);
       }
-      m.content = tool.longDescription || tool.description;
+      m.content = toolSeo(tool).description;
     }
     return () => { document.title = "PrivaTools"; };
   }, [tool]);

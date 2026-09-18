@@ -474,11 +474,13 @@ def _tool_registries() -> tuple[dict[str, tuple[str, str]], dict[str, tuple[str,
     return pdf, nonpdf
 
 
-_SEO_FIELDS = ("seoTitle", "metaDescription", "lastReviewed", "category", "popularity")
+_SEO_FIELDS = ("seoTitle", "metaDescription", "lastReviewed")
 
 
 def _tool_seo_fields(slug: str) -> dict[str, str]:
-    """Search copy and review data the registries carry through the build manifest."""
+    """seoTitle and metaDescription search copy, plus lastReviewed, that the
+    registries carry through the build manifest. lastReviewed is unused here
+    today but stays because a follow-up PR reads it from this helper."""
     data = _load_manifest(str(_TOOL_JSON), blog_content_mtime_ns())
     row = (data or {}).get(slug) or {}
     return {key: str(row[key]).strip() for key in _SEO_FIELDS if row.get(key) not in (None, "")}
