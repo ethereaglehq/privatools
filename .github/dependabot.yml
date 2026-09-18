@@ -20,6 +20,13 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    # init, analyze and upload-sarif must run the same CodeQL Action version:
+    # analyze refuses a configuration written by a different init. Proposed one
+    # at a time, init alone moved to v4 in #148 and failed both CodeQL jobs.
+    groups:
+      codeql-action:
+        patterns:
+          - "github/codeql-action*"
 
   # The Dockerfile's two base images are pinned by digest (see the comment
   # there). A digest pin is only safe if something moves it forward — without
