@@ -7,8 +7,8 @@ import { AiTaskWorkspace } from "./AiTaskWorkspace";
  * Pipeline:
  *  1. pdf.js extracts text (client-side).
  *  2. Regex passes find emails / phones / SSNs / credit cards / dates.
- *  3. @huggingface/transformers loads Xenova/bert-base-NER (~256MB, cached
- *     in IndexedDB after first load) and tags PER / ORG / LOC / MISC.
+ *  3. @huggingface/transformers loads Xenova/bert-base-NER (~110 MB, cached
+ *     in the browser Cache API after first load) and tags PER / ORG / LOC / MISC.
  *  4. UI groups results by type with checkboxes, all on by default.
  *  5. POST /api/smart-redact with the chosen strings; backend searches the
  *     real PDF and applies PyMuPDF redaction annotations (permanent, not a
@@ -243,7 +243,7 @@ export function SmartRedactUI() {
             }
 
             // Entity pass. BYOK branches BEFORE the local model loads, so
-            // choosing it never downloads 256MB the user did not ask for.
+            // choosing it never downloads ~110 MB the user did not ask for.
             //
             // The regex hits above are passed as knownPii and masked out
             // before anything is sent: this tool exists to remove PII, so

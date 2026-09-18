@@ -10,7 +10,7 @@ export function ToolGuide({ slug, name }: { slug: string; name: string }) {
     useEffect(() => {
         let active = true;
         setGuide(null);
-        // Dynamic: lib/tool-guide.ts globs all 221 tools' JSON (~24 KB) so it
+        // Dynamic: lib/tool-guide.ts globs every tool's JSON (~24 KB) so it
         // can lazy-load any one of them — that map must never sit in the
         // entry chunk, so it's imported here instead of at module scope.
         import("@/lib/tool-guide").then(({ loadToolGuide }) => loadToolGuide(slug)).then(data => { if (active) setGuide(data); }).catch(() => {});

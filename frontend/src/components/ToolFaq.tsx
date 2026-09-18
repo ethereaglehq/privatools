@@ -27,7 +27,7 @@ export function ToolFaq({ slug, toolName }: { slug: string; toolName: string }) 
 
     useEffect(() => {
         let cancelled = false;
-        // Dynamic: lib/tool-guide.ts globs all 221 tools' JSON (~24 KB) so it
+        // Dynamic: lib/tool-guide.ts globs every tool's JSON (~24 KB) so it
         // can lazy-load any one of them — that map must never sit in the
         // entry chunk, so it's imported here instead of at module scope.
         import("@/lib/tool-guide")

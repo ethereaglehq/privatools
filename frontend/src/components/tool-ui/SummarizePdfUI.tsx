@@ -6,7 +6,7 @@ import { AiTaskWorkspace } from "./AiTaskWorkspace";
  *
  * 1. pdfjs-dist extracts text from the PDF (client-side).
  * 2. @huggingface/transformers loads a small distilbart-cnn model (~250 MB,
- *    cached in IndexedDB after the first load).
+ *    cached in the browser Cache API after the first load).
  * 3. Long PDFs are chunked at sentence boundaries and summarized chunk-by-
  *    chunk; the chunk summaries are stitched back together. For very long
  *    docs we run a second-pass summary over the joined chunk summaries to
