@@ -26,15 +26,18 @@ import os
 from pathlib import Path
 import signal
 import shutil
-import socket
 import sqlite3
 import subprocess
 import sys
 import threading
 import time
 
+from ... import job_handover
+from ...job_handover import StateReporter
 from . import config, storage
 from .adapters import execute
+
+__all__ = ["StateReporter", "Control", "acquire", "serve", "run_supervisor", "run_job", "status", "main"]
 
 
 def terminate_group(process: subprocess.Popen, grace: float = 1.0) -> None:
@@ -148,75 +151,9 @@ def execute_child(request_file: Path) -> int:
     return 0
 
 
-class StateReporter:
-    """Tell this container's web workers what its supervisor is doing.
-
-    Written to a per-container tmpfs path (config.worker_state_path) about
-    once a second and on every role change. Readiness treats a fresh file from
-    a living supervisor of this build as a working job worker, including a
-    standby that waits for another container to hand over the lock.
-    """
-
-    def __init__(self, path: Path | None = None) -> None:
-        self.path = path or config.worker_state_path()
-        self.last: tuple[str, bool, float] = ("", False, 0.0)
-
-    def __call__(self, role: str, *, passive: bool = False) -> None:
-        now = time.time()
-        if self.last[:2] == (role, passive) and now - self.last[2] < 1:
-            return
-        state = {"role": role, "passive": passive, "pid": os.getpid(), "host": socket.gethostname(),
-                 "build_sha": config.build_sha(), "updated": now}
-        temporary = self.path.with_name(f"{self.path.name}.{os.getpid()}.tmp")
-        try:
-            temporary.write_text(json.dumps(state), encoding="utf-8")
-            os.replace(temporary, self.path)
-        except OSError:
-            # Readiness then falls back to the shared heartbeat alone.
-            return
-        self.last = (role, passive, now)
-
-    def clear(self) -> None:
-        try:
-            if json.loads(self.path.read_text(encoding="utf-8")).get("pid") == os.getpid():
-                self.path.unlink()
-        except (OSError, ValueError, AttributeError):
-            pass
-
-
 def status() -> dict:
-    """What a deploy needs to hand the queue over; counts only, never job contents."""
-    now = time.time()
-    result: dict = {"enabled": config.enabled(), "build_sha": config.build_sha(), "local": None,
-                    "active": None, "running_jobs": None, "queued_jobs": None}
-    try:
-        state = json.loads(config.worker_state_path().read_text(encoding="utf-8"))
-        result["local"] = {"role": state.get("role"), "passive": bool(state.get("passive")),
-                           "age": round(now - float(state["updated"]), 3),
-                           "alive": storage.local_worker(now) is not None}
-    except (OSError, ValueError, TypeError, KeyError):
-        pass
-    database = storage.store.DB_PATH
-    if not result["enabled"] or not database.exists():
-        return result
-    try:
-        # Read-only: a status probe must never create or change the database.
-        conn = sqlite3.connect(f"file:{database}?mode=ro", uri=True, timeout=10)
-        conn.row_factory = sqlite3.Row
-        try:
-            row = conn.execute("SELECT * FROM api_async_worker WHERE id=1").fetchone()
-            if row:
-                result["active"] = {"build_sha": row["build_sha"], "accepting": bool(row["accepting"]),
-                                    "age": round(now - row["heartbeat"], 3)}
-            result["running_jobs"] = conn.execute(
-                "SELECT COUNT(*) FROM api_async_jobs WHERE state='running' AND claim IS NOT NULL").fetchone()[0]
-            result["queued_jobs"] = conn.execute(
-                "SELECT COUNT(*) FROM api_async_jobs WHERE state='queued'").fetchone()[0]
-        finally:
-            conn.close()
-    except sqlite3.Error:
-        pass
-    return result
+    """The deploy's view (job_handover.status) of the database this process uses."""
+    return job_handover.status(storage.store.DB_PATH)
 
 
 class Control:
@@ -323,12 +260,15 @@ def main() -> int:
         return 0
     if not config.enabled():
         return 0
-    storage.init_schema()
+    # Handlers first. The launcher starts this process with SIGUSR1/SIGUSR2
+    # ignored, so a drain sent during imports is dropped rather than fatal;
+    # from here on it is honoured, and init_schema() can take a while.
     control = Control()
     for sig in (signal.SIGTERM,signal.SIGINT):
         signal.signal(sig,control.request_stop)
     signal.signal(signal.SIGUSR1,control.request_drain)
     signal.signal(signal.SIGUSR2,control.request_resume)
+    storage.init_schema()
     report = StateReporter()
     try:
         run_supervisor(control, report)

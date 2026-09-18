@@ -639,3 +639,63 @@ def test_status_cli_prints_json(jobs):
                           capture_output=True,text=True,timeout=60)
     assert result.returncode==0,result.stderr
     assert json.loads(result.stdout)["enabled"] is True
+
+
+def write_state(role,*,since_age=0.0,**changes):
+    now=time.time()
+    state={"role":role,"passive":False,"pid":os.getpid(),"host":__import__("socket").gethostname(),
+           "build_sha":config.build_sha(),"updated":now,"since":now-since_age,**changes}
+    config.worker_state_path().write_text(json.dumps(state))
+
+
+def test_standby_counts_as_ready_only_within_the_queue_deadline(jobs,monkeypatch):
+    # A standby that never gets the lock would otherwise report ready forever
+    # and accept jobs that expire in the queue. Past queue_seconds it is honest
+    # to refuse: /readyz turns 503 and submissions get jobs_unavailable, while
+    # pages keep serving (exiting would stop the whole container instead).
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","old-build")
+    storage.heartbeat()
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+    write_state("standby",since_age=config.LIMITS.queue_seconds-5)
+    assert storage.capability()["available"]
+    write_state("standby",since_age=config.LIMITS.queue_seconds+5)
+    assert not storage.capability()["available"]
+    # Holding the queue is never stale: an active or draining supervisor stays ready.
+    for role in ("active","draining"):
+        write_state(role,since_age=config.LIMITS.queue_seconds*4)
+        assert storage.capability()["available"],role
+
+
+def test_status_command_is_cheap_and_imports_no_web_stack(jobs,sample_pdf):
+    # The deploy polls this every second during a handover; the old entry point
+    # imported FastAPI, pydantic and the auth stack (about 1 CPU-s, 100 MB each).
+    submit(jobs,sample_pdf)
+    worker.StateReporter()("standby",passive=True)
+    env=dict(os.environ,PRIVATOOLS_DATA_DIR=str(store.DATA_DIR))
+    result=subprocess.run([sys.executable,"-X","importtime","-m","backend.app.job_handover","--status"],env=env,
+                          capture_output=True,text=True,timeout=60)
+    assert result.returncode==0,result.stderr
+    imported={line.split("|")[-1].strip().split(".")[0] for line in result.stderr.splitlines() if "|" in line}
+    assert not imported & {"fastapi","starlette","pydantic","anyio","slowapi","fitz","pikepdf","PIL"},imported
+    assert not any("api_v1" in line for line in result.stderr.splitlines())
+    report=json.loads(result.stdout)
+    assert report["enabled"] and report["local"]["role"]=="standby" and report["local"]["passive"]
+    assert report["local"]["alive"] and report["local"]["ready"]
+    assert (report["running_jobs"],report["queued_jobs"])==(0,1)
+
+
+def test_handover_module_reads_the_database_and_state_file_the_app_uses(tmp_path):
+    # One definition of each path: the status command runs without the app's
+    # modules, so it must derive them exactly as store.py and the worker do.
+    code=("import json; from backend.app import job_handover, store; "
+          "from backend.app.api_v1.jobs import config; "
+          "print(json.dumps([str(job_handover.database_path()), str(store.DB_PATH), "
+          "str(job_handover.state_path()), str(config.worker_state_path())]))")
+    for extra in ({}, {"PRIVATOOLS_DATA_DIR":str(tmp_path/"d"),"API_V1_JOBS_WORKER_STATE":str(tmp_path/"s.json")}):
+        env={key:value for key,value in os.environ.items() if key not in ("PRIVATOOLS_DATA_DIR","API_V1_JOBS_WORKER_STATE")}
+        result=subprocess.run([sys.executable,"-c",code],env={**env,**extra},capture_output=True,text=True,timeout=60)
+        assert result.returncode==0,result.stderr
+        database,store_path,state,config_state=json.loads(result.stdout)
+        assert database==store_path and state==config_state
+    from backend.app import job_handover
+    assert (config.LIMITS.lease_seconds,config.LIMITS.queue_seconds)==(job_handover.LEASE_SECONDS,job_handover.QUEUE_SECONDS)

@@ -50,12 +50,19 @@ def supervise(commands: list[list[str]], *, grace_seconds: float = 35,
         if relay_to is not None and relay_to < len(children):
             _signal_group(children[relay_to], signum)
 
+    deploy_signals = (signal.SIGUSR1, signal.SIGUSR2)
     previous = {sig: signal.signal(sig, stop) for sig in (signal.SIGTERM, signal.SIGINT)}
-    previous.update({sig: signal.signal(sig, relay) for sig in (signal.SIGUSR1, signal.SIGUSR2)})
+    # Children start with the deploy signals ignored (an ignored disposition
+    # survives exec). Their default action is to terminate, and the worker
+    # installs its handlers only after its imports, so a drain relayed in that
+    # window would otherwise kill it and, below, the whole container.
+    previous.update({sig: signal.signal(sig, signal.SIG_IGN) for sig in deploy_signals})
     result = 0
     try:
         for command in commands:
             children.append(subprocess.Popen(command, start_new_session=True))
+        for sig in deploy_signals:
+            signal.signal(sig, relay)
         while not stopping:
             for child in children:
                 code = child.poll()

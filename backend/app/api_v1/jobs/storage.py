@@ -11,7 +11,6 @@ import json
 import os
 import re
 import shutil
-import socket
 import sqlite3
 import time
 import uuid
@@ -19,7 +18,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ... import store
+from ... import job_handover, store
 from .. import quota
 from . import config
 from .adapters import ADAPTERS
@@ -103,33 +102,15 @@ def heartbeat(*, accepting: bool = True, now: float | None = None) -> None:
 
 
 def local_worker(now: float | None = None) -> dict | None:
-    """This container's own supervisor, if it is alive and runs this build.
+    """This container's own supervisor, if it runs this build and counts as ready.
 
-    The supervisor rewrites a small state file in the container's private /tmp
-    about once a second, whether it is the active worker or a standby waiting
-    for the singleton lock. A standby counts as ready: during a deploy the new
-    container's supervisor waits for the old one to finish its current job and
-    hand over the lock, so the heartbeat row still names the old build.
-    Queued jobs are durable, and this build's supervisor claims them as soon
-    as the old one has drained, so accepting work here is safe.
+    During a deploy the new container's supervisor waits as a standby while the
+    old one finishes its current job and hands over the lock, so the heartbeat
+    row still names the old build. Queued jobs are durable, and this build's
+    supervisor claims them once it holds the lock, so accepting work here is
+    safe. A standby counts for at most queue_seconds (job_handover.ready_state).
     """
-    try:
-        state = json.loads(config.worker_state_path().read_text(encoding="utf-8"))
-        pid = int(state["pid"])
-        updated = float(state["updated"])
-    except (OSError, ValueError, TypeError, KeyError):
-        return None
-    if (state.get("host") != socket.gethostname() or state.get("build_sha") != config.build_sha()
-            or state.get("role") not in ("active", "draining", "standby") or pid <= 0
-            or (now or time.time()) - updated > config.LIMITS.lease_seconds):
-        return None
-    try:
-        os.kill(pid, 0)
-    except ProcessLookupError:
-        return None
-    except PermissionError:
-        pass
-    return state
+    return job_handover.ready_state(now)
 
 
 def heartbeat_age(now: float | None = None) -> float | None:

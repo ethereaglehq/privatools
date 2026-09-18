@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from ... import store
+from ... import job_handover, store
 
 
 @dataclass(frozen=True)
@@ -19,9 +19,9 @@ class Limits:
     per_account: int = 6
     submissions_per_minute: int = 30
     upload_seconds: int = 300
-    queue_seconds: int = 900
+    queue_seconds: int = job_handover.QUEUE_SECONDS
     runtime_seconds: int = 300
-    lease_seconds: int = 30
+    lease_seconds: int = job_handover.LEASE_SECONDS
     heartbeat_seconds: int = 5
     result_seconds: int = 3600
     tombstone_seconds: int = 86400
@@ -49,11 +49,5 @@ def build_sha() -> str:
 
 
 def worker_state_path() -> Path:
-    """Where this container's supervisor reports its role to its own web workers.
-
-    It must be private to one container, never on a shared volume: during a
-    deploy two containers share app-data and app-temp, and each web process
-    has to see its own supervisor, not the other container's. Compose mounts
-    /tmp as a per-container tmpfs, which is exactly that scope.
-    """
-    return Path(os.environ.get("API_V1_JOBS_WORKER_STATE", "/tmp/privatools-job-worker.json"))
+    """Where this container's supervisor reports its role (see backend/app/job_handover.py)."""
+    return job_handover.state_path()
