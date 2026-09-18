@@ -291,7 +291,7 @@ URL: https://privatools.me/tool/jpg-to-pdf
 
 Convert JPG / JPEG photos into a single PDF
 
-Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 500 MB per file, no watermarks, no sign-up.
+Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 50 images and 200 MB per PDF, no watermarks, no sign-up.
 
 ### PNG to PDF
 
@@ -579,7 +579,7 @@ URL: https://privatools.me/tool/word-to-pdf
 
 Convert .docx Word documents to PDF
 
-Convert Word to PDF online for free — upload .docx documents and convert them to high-quality PDFs preserving headings, bold, italic text, images, and paragraph formatting. No Microsoft Office needed.
+Convert Word to PDF online for free — upload .docx documents and get a simple PDF of their text on A4 pages, with headings set in larger bold type and paragraphs that contain bold or italic text set that way. Images, tables, headers and footers, links, fonts and alignment are not carried over; for a copy closer to the original, use Office to PDF. No Microsoft Office needed.
 
 ### Excel to PDF
 

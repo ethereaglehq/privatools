@@ -128,8 +128,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "word-to-pdf": [
         {"name": "Add the Word document", "text": "Drop or select a .docx file up to 500 MB. Older .doc files are not accepted here; Office to PDF handles a wider range of formats."},
-        {"name": "Convert to PDF", "text": "Run the conversion. The document is laid out by LibreOffice on the server and exported as a PDF."},
-        {"name": "Download and check the PDF", "text": "Open the PDF and check fonts, page breaks and any tables, especially if the document uses unusual typefaces."},
+        {"name": "Convert to PDF", "text": "Run the conversion. The text of each paragraph is set in Helvetica on A4 pages with 1-inch margins, and headings become larger bold text. Images, tables, headers, footers and links are left out."},
+        {"name": "Download and check the PDF", "text": "Open the PDF and check it: everything is set in one typeface, and any text that was in tables, text boxes, headers or footers is missing."},
     ],
     "epub-to-pdf": [
         {"name": "Upload an EPUB file", "text": "Select an .epub e-book file up to 500 MB."},
@@ -1306,11 +1306,11 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How long does conversion take?", "a": "It depends on the size and complexity of the document. Each conversion starts LibreOffice with a fresh profile, and a conversion still running after two minutes is stopped with a timeout error, so split very large documents first."},
     ],
     "word-to-pdf": [
-        {"q": "Will the PDF look exactly like my Word document?", "a": "Usually very close. The layout is recalculated by LibreOffice rather than Microsoft Word, so complex documents can differ in small ways, most often in line breaks and page breaks."},
-        {"q": "Why do the fonts look different?", "a": "If the document uses a font the server does not have, a similar one is substituted, which can change spacing and page breaks. Embedding fonts when saving in Word, or using common fonts, gives the most faithful result."},
+        {"q": "Will the PDF look exactly like my Word document?", "a": "No. Only the text of the body paragraphs is carried over, in Helvetica on A4 pages; headings are enlarged and bold, and a paragraph with any bold or italic text is set that way throughout. Fonts, alignment, spacing, images, tables, headers, footers and links are not kept. For a close copy of the layout, use Office to PDF, which converts with LibreOffice."},
+        {"q": "Why do the fonts look different?", "a": "Because every paragraph is set in Helvetica, whatever fonts the document uses, and characters outside Western European scripts, such as Cyrillic or Chinese, do not print correctly. Office to PDF keeps the document's fonts where the server has them."},
         {"q": "Which file types can I convert?", "a": "This page takes .docx. For .doc, .odt, .rtf, spreadsheets or presentations, use Office to PDF, which accepts a wider set of formats."},
         {"q": "Are comments and tracked changes included?", "a": "Accept or reject tracked changes and remove comments before converting if you do not want them to appear. Converting exactly the version you intend to share avoids surprises."},
-        {"q": "Do links and headings carry over?", "a": "Clickable links generally survive the export. Check the result if a table of contents or internal cross-references matter to you."},
+        {"q": "Do links and headings carry over?", "a": "Headings do, as larger bold text: Heading 1 and 2 get their own sizes, and lower levels share a third. Links do not: their text is kept but is not clickable, and a table of contents comes across as plain text."},
         {"q": "What happens to my document after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the document and the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "epub-to-pdf": [
@@ -1938,7 +1938,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I combine many images into one PDF?", "a": "Yes. Every image you add becomes a page of the same PDF, in the order shown — the usual way to turn photos of a multi-page document into a single file."},
         {"q": "Will the images lose quality?", "a": "No detail is removed on purpose: each photo is placed in the PDF at its full resolution and scaled on the page to fit. That also means large photos produce a large PDF; run Compress PDF afterwards if you need it smaller."},
         {"q": "What about other image formats?", "a": "This page takes JPG. Image to PDF accepts other common formats, such as PNG and WebP, with the same page-size options."},
-        {"q": "Is there a limit on image size?", "a": "Very large images are rejected rather than processed, to protect the server's memory; normal photos and scans are far below that limit. Each upload also has the site-wide 500 MB limit."},
+        {"q": "Is there a limit on image size?", "a": "Very large images are rejected rather than processed, to protect the server's memory; normal photos and scans are far below that limit. One PDF can take up to 50 images with a combined size of up to 200 MB."},
         {"q": "Can I make the text in my photographed pages searchable?", "a": "Not in this step — a PDF of photos is just pictures. Run OCR PDF on the result to add a searchable text layer."},
         {"q": "What happens to my images after I upload them?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the images and the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],

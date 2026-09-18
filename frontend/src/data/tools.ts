@@ -411,7 +411,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "jpg-to-pdf", icon: FileImage, name: "JPG to PDF",
     description: "Convert JPG / JPEG photos into a single PDF",
-    longDescription: "Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 500 MB per file, no watermarks, no sign-up.",
+    longDescription: "Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 50 images and 200 MB per PDF, no watermarks, no sign-up.",
     seoTitle: "Convert JPG to PDF Online Free – Batch in Seconds",
     metaDescription: "JPG to PDF combines one or many JPEG photos into a single document, sized to each photo or to A4 or Letter pages. Free tool, batch conversion, no watermark.",
     synonyms: "jpeg to pdf image to pdf photo to pdf convert jpg",
@@ -815,9 +815,9 @@ const _toolsRaw: Tool[] = [
   {
     slug: "word-to-pdf", icon: FileText, name: "Word to PDF",
     description: "Convert .docx Word documents to PDF",
-    longDescription: "Convert Word to PDF online for free — upload .docx documents and convert them to high-quality PDFs preserving headings, bold, italic text, images, and paragraph formatting. No Microsoft Office needed.",
-    seoTitle: "Convert Word to PDF Online – Keep Formatting Intact",
-    metaDescription: "Upload a docx file and convert it into a high-quality PDF that preserves headings, bold and italic text, and images. Free, no Microsoft Office needed.",
+    longDescription: "Convert Word to PDF online for free — upload .docx documents and get a simple PDF of their text on A4 pages, with headings set in larger bold type and paragraphs that contain bold or italic text set that way. Images, tables, headers and footers, links, fonts and alignment are not carried over; for a copy closer to the original, use Office to PDF. No Microsoft Office needed.",
+    seoTitle: "Convert Word to PDF Online – Simple Text Layout",
+    metaDescription: "Upload a docx file and get a simple A4 PDF of its text, with headings and bold or italic paragraphs kept. Free, no Microsoft Office needed.",
     synonyms: "docx ms word convert export doc to pdf",
     popularity: 5,
     category: "to-pdf", accepts: ".docx", outputLabel: "converted.pdf",
