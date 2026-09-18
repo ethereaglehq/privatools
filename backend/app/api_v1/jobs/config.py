@@ -5,7 +5,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from ... import store
+from ... import job_handover, store
 
 
 @dataclass(frozen=True)
@@ -19,9 +19,9 @@ class Limits:
     per_account: int = 6
     submissions_per_minute: int = 30
     upload_seconds: int = 300
-    queue_seconds: int = 900
+    queue_seconds: int = job_handover.QUEUE_SECONDS
     runtime_seconds: int = 300
-    lease_seconds: int = 30
+    lease_seconds: int = job_handover.LEASE_SECONDS
     heartbeat_seconds: int = 5
     result_seconds: int = 3600
     tombstone_seconds: int = 86400
@@ -46,3 +46,8 @@ def root() -> Path:
 
 def build_sha() -> str:
     return os.environ.get("PRIVATOOLS_BUILD_SHA", "unknown")
+
+
+def worker_state_path() -> Path:
+    """Where this container's supervisor reports its role (see backend/app/job_handover.py)."""
+    return job_handover.state_path()

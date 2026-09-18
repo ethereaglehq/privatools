@@ -50,3 +50,8 @@ lo_input_*.pdf
 # Private local cleanup archives and generated compiler state.
 /.local-archive/
 /frontend/*.tsbuildinfo
+
+# Deploy state that auto-deploy.sh and rollout.sh keep in the VM checkout:
+# last deployed and failed revisions, the replaced release, degraded backoff.
+/.privatools-auto-deploy.*
+/.privatools-deploy.*

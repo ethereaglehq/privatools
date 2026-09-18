@@ -54,6 +54,115 @@ def test_sigterm_drains_both_children(tmp_path):
             process.wait()
 
 
+def test_drain_and_resume_signals_reach_only_the_job_worker(tmp_path):
+    # SIGUSR1's default action terminates a process, so a web server that got
+    # it would die. The deploy signals the container (the launcher is its
+    # PID 1); only the worker may receive the relay.
+    worker = (
+        "import pathlib,signal,sys,time; "
+        f"p=pathlib.Path({str(tmp_path / 'worker-signals')!r}); "
+        "record=lambda s,_: p.open('a').write(signal.Signals(s).name+'\\n'); "
+        "signal.signal(signal.SIGUSR1, record); signal.signal(signal.SIGUSR2, record); "
+        "signal.signal(signal.SIGTERM, lambda *_: sys.exit(0)); "
+        "p.write_text(''); time.sleep(15)"
+    )
+    web = (
+        "import pathlib,signal,sys,time; "
+        f"p=pathlib.Path({str(tmp_path / 'web-state')!r}); "
+        "signal.signal(signal.SIGTERM, lambda *_: (p.write_text('stopped'),sys.exit(0))); "
+        "p.write_text('started'); time.sleep(15)"
+    )
+    code = (
+        "from backend.app.launcher import supervise; "
+        f"raise SystemExit(supervise({[[sys.executable, '-c', worker], [sys.executable, '-c', web]]!r}, "
+        "grace_seconds=2, relay_to=0))"
+    )
+    process = subprocess.Popen([sys.executable, "-c", code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        deadline = time.monotonic() + 4
+        while not all((tmp_path / name).exists() for name in ("web-state", "worker-signals")):
+            assert time.monotonic() < deadline
+            time.sleep(0.02)
+        process.send_signal(signal.SIGUSR1)
+        process.send_signal(signal.SIGUSR2)
+        deadline = time.monotonic() + 4
+        while (tmp_path / "worker-signals").read_text().split() != ["SIGUSR1", "SIGUSR2"]:
+            assert time.monotonic() < deadline, (tmp_path / "worker-signals").read_text()
+            time.sleep(0.02)
+        assert process.poll() is None
+        assert (tmp_path / "web-state").read_text() == "started"
+        process.send_signal(signal.SIGTERM)
+        _, stderr = process.communicate(timeout=5)
+        assert process.returncode == 0, stderr.decode()
+        assert (tmp_path / "web-state").read_text() == "stopped"
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+
+
+def test_deploy_signals_that_arrive_before_the_worker_is_ready_are_harmless(tmp_path):
+    # The worker installs its handlers only after its imports; until then a
+    # relayed SIGUSR1/SIGUSR2 had its default action and killed it, and the
+    # launcher then stopped the web server too. Children now start with both
+    # ignored, and the worker replaces that with its handlers when it is ready.
+    worker = (
+        "import pathlib,signal,sys,time; "
+        f"p=pathlib.Path({str(tmp_path / 'worker-signals')!r}); "
+        "time.sleep(1.0); "
+        "record=lambda s,_: p.open('a').write(signal.Signals(s).name+'\\n'); "
+        "signal.signal(signal.SIGUSR1, record); "
+        "signal.signal(signal.SIGTERM, lambda *_: sys.exit(0)); "
+        "p.write_text('ready\\n'); time.sleep(15)"
+    )
+    web = (
+        "import pathlib,signal,sys,time; "
+        f"p=pathlib.Path({str(tmp_path / 'web-state')!r}); "
+        "signal.signal(signal.SIGTERM, lambda *_: (p.write_text('stopped'),sys.exit(0))); "
+        "p.write_text('started'); time.sleep(15)"
+    )
+    code = (
+        "from backend.app.launcher import supervise; "
+        f"raise SystemExit(supervise({[[sys.executable, '-c', worker], [sys.executable, '-c', web]]!r}, "
+        "grace_seconds=2, relay_to=0))"
+    )
+    process = subprocess.Popen([sys.executable, "-c", code], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        deadline = time.monotonic() + 4
+        while not (tmp_path / "web-state").exists():
+            assert time.monotonic() < deadline
+            time.sleep(0.02)
+        process.send_signal(signal.SIGUSR1)  # before the worker's handler exists
+        deadline = time.monotonic() + 5
+        while not (tmp_path / "worker-signals").exists():
+            assert time.monotonic() < deadline
+            assert process.poll() is None, process.communicate()[1].decode()
+            time.sleep(0.02)
+        process.send_signal(signal.SIGUSR1)  # after
+        deadline = time.monotonic() + 4
+        while (tmp_path / "worker-signals").read_text().split() != ["ready", "SIGUSR1"]:
+            assert time.monotonic() < deadline, (tmp_path / "worker-signals").read_text()
+            time.sleep(0.02)
+        assert process.poll() is None
+        assert (tmp_path / "web-state").read_text() == "started"
+        process.send_signal(signal.SIGTERM)
+        _, stderr = process.communicate(timeout=5)
+        assert process.returncode == 0, stderr.decode()
+    finally:
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+
+
+def test_enabled_jobs_relay_deploy_signals_to_the_worker(monkeypatch):
+    monkeypatch.setenv("API_V1_JOBS_ENABLED", "true")
+    calls = []
+    monkeypatch.setattr(launcher, "supervise", lambda commands, **kwargs: calls.append((commands, kwargs)) or 0)
+    assert launcher.main() == 0
+    commands, kwargs = calls[0]
+    assert commands[kwargs["relay_to"]][-1] == "backend.app.api_v1.jobs.worker"
+
+
 def test_disabled_jobs_exec_the_existing_web_command(monkeypatch):
     monkeypatch.setenv("API_V1_JOBS_ENABLED", "false")
     calls = []

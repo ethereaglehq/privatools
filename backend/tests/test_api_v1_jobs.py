@@ -18,7 +18,7 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 import pytest
 
-from backend.app import store
+from backend.app import job_handover, store
 from backend.app.api_v1 import quota
 from backend.app.api_v1.body_accounting import V1AccountingMiddleware
 from backend.app.api_v1.jobs import config, storage
@@ -33,6 +33,8 @@ def jobs(tmp_path,monkeypatch):
     store.reset_for_tests(tmp_path)
     monkeypatch.setenv("API_V1_JOBS_ENABLED","true")
     monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+    # The supervisor's per-container state file; never the host's /tmp.
+    monkeypatch.setenv("API_V1_JOBS_WORKER_STATE",str(tmp_path/"worker-state.json"))
     storage.init_schema()
     storage.heartbeat()
     user = accounts.create_user("job-tests@example.com","synthetic-long-password")
@@ -399,7 +401,7 @@ def test_cross_process_duplicate_acceptance_charges_once(jobs,sample_pdf):
     inputs = [{"name":"0.pdf","sha256":hashlib.sha256(sample_pdf).hexdigest(),"bytes":len(sample_pdf)}]
     code = """import json,sys
 from pathlib import Path
-from backend.app import store
+from backend.app import job_handover, store
 from backend.app.api_v1.jobs import storage
 store.DATA_DIR=Path(sys.argv[1]); store.DB_PATH=store.DATA_DIR/'privatools.db'
 row,state,replayed=storage.accept(sys.argv[2],sys.argv[3],sys.argv[4],'process-race','grayscale',{},json.loads(sys.argv[5]),321)
@@ -477,3 +479,243 @@ def test_download_delete_race_closes_without_reopening_a_deleted_path(jobs,sampl
         assert download.result().status_code in (200,409,410)
         assert deleted.result().status_code==200
     assert not storage.job_dir(identifier).exists()
+
+
+# ── zero-downtime handover between two containers' supervisors ──────────────
+#
+# A deploy runs the old and the new container side by side on the same data
+# volume. These run two supervisors as threads of one process: each opens the
+# lock file itself, so their flocks conflict exactly as two containers' do.
+
+SLOW_JOB = (
+    "import json,pathlib,shutil,sys,time\n"
+    "request=pathlib.Path(sys.argv[1]); spec=json.loads(request.read_text())\n"
+    "time.sleep(1.5)\n"
+    "out=request.parent/'out.pdf'; shutil.copy(spec['inputs'][0],out)\n"
+    "(request.parent/'manifest.json').write_text(json.dumps({'output':str(out)}))\n"
+)
+
+
+def wait_for(condition,timeout=10.0,message="condition"):
+    deadline=time.monotonic()+timeout
+    while time.monotonic()<deadline:
+        if condition():
+            return
+        time.sleep(0.05)
+    raise AssertionError(f"timed out waiting for {message}")
+
+
+def role(path):
+    try:
+        return json.loads(path.read_text())["role"]
+    except (OSError,ValueError,KeyError):
+        return None
+
+
+@pytest.fixture
+def supervisors(jobs,tmp_path,monkeypatch):
+    """Start named supervisor threads that run SLOW_JOB for every claim."""
+    real_popen=subprocess.Popen
+    ran=[]
+    def slow_child(command,**kwargs):
+        ran.append(threading.current_thread().name)
+        return real_popen([sys.executable,"-c",SLOW_JOB,command[-1]],**kwargs)
+    monkeypatch.setattr(worker.subprocess,"Popen",slow_child)
+    started={}
+    def start(name):
+        control=worker.Control()
+        state=tmp_path/f"{name}-state.json"
+        thread=threading.Thread(target=worker.run_supervisor,args=(control,worker.StateReporter(state)),name=name,daemon=True)
+        thread.start()
+        started[name]=(control,thread,state)
+        return control,state
+    yield start,ran
+    for control,thread,_ in started.values():
+        control.request_stop()
+    for _,thread,_ in started.values():
+        thread.join(timeout=10)
+        assert not thread.is_alive()
+
+
+def test_second_supervisor_stands_by_and_takes_over_only_after_the_drain(jobs,sample_pdf,supervisors):
+    start,ran=supervisors
+    old,old_state=start("old")
+    wait_for(lambda: role(old_state)=="active",message="old supervisor active")
+    first=submit(jobs,sample_pdf,idempotency="before-handover").json()["id"]
+    wait_for(lambda: storage.lookup(first,jobs[2].key_id)["state"]=="running",message="first job running")
+
+    new,new_state=start("new")
+    wait_for(lambda: role(new_state)=="standby",message="new supervisor standing by")
+    # A standby never exits and never claims while the other holds the lock.
+    time.sleep(1)
+    assert role(new_state)=="standby"
+
+    old.request_drain()
+    wait_for(lambda: role(new_state)=="active",message="handover to the new supervisor")
+    row=storage.lookup(first,jobs[2].key_id)
+    # The drain let the running job finish where it started: one attempt, no retry.
+    assert row["state"]=="succeeded" and row["attempts"]==1
+    wait_for(lambda: role(old_state)=="standby",message="old supervisor passive")
+    assert json.loads(old_state.read_text())["passive"] is True
+
+    second=submit(jobs,sample_pdf,idempotency="after-handover").json()["id"]
+    wait_for(lambda: storage.lookup(second,jobs[2].key_id)["state"]=="succeeded",message="second job done")
+    assert storage.lookup(second,jobs[2].key_id)["attempts"]==1
+    assert ran==["old","new"]
+
+
+def test_drained_supervisor_heals_when_no_successor_arrives_and_resumes_on_request(jobs,sample_pdf,supervisors):
+    start,ran=supervisors
+    old,old_state=start("old")
+    wait_for(lambda: role(old_state)=="active",message="old supervisor active")
+    old.request_drain()
+    wait_for(lambda: role(old_state)=="standby",message="old supervisor passive")
+    # Its own last heartbeat is fresh, so it leaves the queue to a successor...
+    time.sleep(1)
+    assert role(old_state)=="standby"
+    # ...until that heartbeat is older than a lease: nobody took over.
+    storage.heartbeat(accepting=False,now=time.time()-config.LIMITS.lease_seconds-5)
+    wait_for(lambda: role(old_state)=="active",message="self-heal")
+
+    old.request_drain()
+    wait_for(lambda: role(old_state)=="standby",message="drained again")
+    old.request_resume()
+    wait_for(lambda: role(old_state)=="active",message="resume")
+    identifier=submit(jobs,sample_pdf).json()["id"]
+    wait_for(lambda: storage.lookup(identifier,jobs[2].key_id)["state"]=="succeeded",message="job done")
+    assert ran==["old"]
+
+
+def test_readiness_accepts_this_containers_live_standby_of_this_build_only(jobs,tmp_path,monkeypatch):
+    # The shared heartbeat names another build, as it does while the old
+    # container still owns the queue during a deploy.
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","old-build")
+    storage.heartbeat()
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+    assert not storage.capability()["available"]
+
+    reporter=worker.StateReporter()
+    reporter("standby")
+    assert storage.capability()["available"]
+    assert storage.capability()["operations"]
+
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","a-third-build")
+    assert not storage.capability()["available"]
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+
+    state=json.loads(config.worker_state_path().read_text())
+    for field,value in [("updated",time.time()-config.LIMITS.lease_seconds-1),("host","another-container"),
+                        ("role","stopped"),("pid",2**22+12345)]:
+        config.worker_state_path().write_text(json.dumps({**state,field:value}))
+        assert not storage.capability()["available"],field
+    config.worker_state_path().write_text(json.dumps(state))
+    assert storage.capability()["available"]
+    reporter.clear()
+    assert not config.worker_state_path().exists()
+    assert not storage.capability()["available"]
+
+
+def test_status_reports_the_handover_without_creating_a_database(jobs,sample_pdf,tmp_path,monkeypatch):
+    submit(jobs,sample_pdf)
+    worker.StateReporter()("standby",passive=True)
+    report=worker.status()
+    assert report["enabled"] and report["build_sha"]=="jobs-test-build"
+    assert report["local"]["role"]=="standby" and report["local"]["passive"] and report["local"]["alive"]
+    assert report["active"]["build_sha"]=="jobs-test-build" and report["active"]["accepting"]
+    assert (report["running_jobs"],report["queued_jobs"])==(0,1)
+    storage.claim()
+    assert (worker.status()["running_jobs"],worker.status()["queued_jobs"])==(1,0)
+
+    empty=tmp_path/"empty"
+    empty.mkdir()
+    monkeypatch.setattr(store,"DB_PATH",empty/"privatools.db")
+    assert worker.status()["active"] is None
+    assert not (empty/"privatools.db").exists()
+
+
+def test_status_cli_prints_json(jobs):
+    env=dict(os.environ,PRIVATOOLS_DATA_DIR=str(store.DATA_DIR))
+    result=subprocess.run([sys.executable,"-m","backend.app.api_v1.jobs.worker","--status"],env=env,
+                          capture_output=True,text=True,timeout=60)
+    assert result.returncode==0,result.stderr
+    assert json.loads(result.stdout)["enabled"] is True
+
+
+def write_state(role,*,since_age=0.0,**changes):
+    now=time.time()
+    state={"role":role,"passive":False,"pid":os.getpid(),"host":__import__("socket").gethostname(),
+           "build_sha":config.build_sha(),"updated":now,"since":now-since_age,**changes}
+    config.worker_state_path().write_text(json.dumps(state))
+
+
+def test_standby_counts_as_ready_only_within_the_queue_deadline(jobs,monkeypatch):
+    # A standby that never gets the lock while no supervisor serves the queue
+    # would otherwise report ready forever and accept jobs that expire there.
+    # Past queue_seconds it is honest to refuse: /readyz turns 503 and
+    # submissions get jobs_unavailable, while pages keep serving (exiting would
+    # stop the whole container instead).
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","old-build")
+    storage.heartbeat(accepting=False)          # the holder stopped claiming
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+    write_state("standby",since_age=config.LIMITS.queue_seconds-5)
+    assert storage.capability()["available"]
+    write_state("standby",since_age=config.LIMITS.queue_seconds+5)
+    assert not storage.capability()["available"]
+    # Holding the queue is never stale: an active or draining supervisor stays ready.
+    for role in ("active","draining"):
+        write_state(role,since_age=config.LIMITS.queue_seconds*4)
+        assert storage.capability()["available"],role
+
+
+def test_standby_stays_ready_while_another_supervisor_serves_the_queue(jobs,monkeypatch):
+    # The first deploy after the cut-over can keep the new container a
+    # standby for longer than queue_seconds: a long drain, then the old
+    # supervisor stops only once idle. Meanwhile that supervisor claims every
+    # job this container accepts, so readiness must not lapse while it serves.
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","old-build")
+    storage.heartbeat()                         # fresh and still claiming
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+    write_state("standby",since_age=config.LIMITS.queue_seconds*2)
+    assert storage.capability()["available"]
+    assert job_handover.status(storage.store.DB_PATH)["local"]["ready"]
+    # Once nobody heartbeats, the bound applies again.
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","old-build")
+    storage.heartbeat(now=time.time()-config.LIMITS.lease_seconds-5)
+    monkeypatch.setenv("PRIVATOOLS_BUILD_SHA","jobs-test-build")
+    assert not storage.capability()["available"]
+    assert not job_handover.status(storage.store.DB_PATH)["local"]["ready"]
+
+
+def test_status_command_is_cheap_and_imports_no_web_stack(jobs,sample_pdf):
+    # The deploy polls this every second during a handover; the old entry point
+    # imported FastAPI, pydantic and the auth stack (about 1 CPU-s, 100 MB each).
+    submit(jobs,sample_pdf)
+    worker.StateReporter()("standby",passive=True)
+    env=dict(os.environ,PRIVATOOLS_DATA_DIR=str(store.DATA_DIR))
+    result=subprocess.run([sys.executable,"-X","importtime","-m","backend.app.job_handover","--status"],env=env,
+                          capture_output=True,text=True,timeout=60)
+    assert result.returncode==0,result.stderr
+    imported={line.split("|")[-1].strip().split(".")[0] for line in result.stderr.splitlines() if "|" in line}
+    assert not imported & {"fastapi","starlette","pydantic","anyio","slowapi","fitz","pikepdf","PIL"},imported
+    assert not any("api_v1" in line for line in result.stderr.splitlines())
+    report=json.loads(result.stdout)
+    assert report["enabled"] and report["local"]["role"]=="standby" and report["local"]["passive"]
+    assert report["local"]["alive"] and report["local"]["ready"]
+    assert (report["running_jobs"],report["queued_jobs"])==(0,1)
+
+
+def test_handover_module_reads_the_database_and_state_file_the_app_uses(tmp_path):
+    # One definition of each path: the status command runs without the app's
+    # modules, so it must derive them exactly as store.py and the worker do.
+    code=("import json; from backend.app import job_handover, store; "
+          "from backend.app.api_v1.jobs import config; "
+          "print(json.dumps([str(job_handover.database_path()), str(store.DB_PATH), "
+          "str(job_handover.state_path()), str(config.worker_state_path())]))")
+    for extra in ({}, {"PRIVATOOLS_DATA_DIR":str(tmp_path/"d"),"API_V1_JOBS_WORKER_STATE":str(tmp_path/"s.json")}):
+        env={key:value for key,value in os.environ.items() if key not in ("PRIVATOOLS_DATA_DIR","API_V1_JOBS_WORKER_STATE")}
+        result=subprocess.run([sys.executable,"-c",code],env={**env,**extra},capture_output=True,text=True,timeout=60)
+        assert result.returncode==0,result.stderr
+        database,store_path,state,config_state=json.loads(result.stdout)
+        assert database==store_path and state==config_state
+    from backend.app import job_handover
+    assert (config.LIMITS.lease_seconds,config.LIMITS.queue_seconds)==(job_handover.LEASE_SECONDS,job_handover.QUEUE_SECONDS)

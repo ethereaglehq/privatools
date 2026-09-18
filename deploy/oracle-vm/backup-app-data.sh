@@ -16,7 +16,16 @@
 
 set -euo pipefail
 
-CONTAINER="${CONTAINER:-privatools-privatools-1}"
+# Any running PrivaTools container will do: they all mount the same accounts
+# volume. Normally that is the canonical container. While a zero-downtime
+# deploy has left the new release on the interim container (the degraded
+# state in deploy/README.md), it is that one.
+CONTAINER="${CONTAINER:-}"
+CANDIDATES="${CANDIDATES:-privatools-privatools-1 privatools-interim-privatools-1}"
+# Take the deploy lock so a backup never races a deploy replacing the
+# container it reads from. The backup service's start timeout is 10 minutes.
+LOCK_FILE="${LOCK_FILE:-/tmp/privatools-auto-deploy.lock}"
+LOCK_WAIT="${LOCK_WAIT:-480}"
 DB_IN_CONTAINER="${DB_IN_CONTAINER:-/app/data/privatools.db}"
 DEST_DIR="${DEST_DIR:-/home/ubuntu/backups/privatools}"
 RETAIN_DAYS="${RETAIN_DAYS:-30}"
@@ -37,7 +46,10 @@ ping_backup() {  # ping_backup ok|fail
     curl --fail --silent --max-time 8 -o /dev/null "$url" || true
 }
 
-cleanup() { docker exec "$CONTAINER" rm -f "$TMP_IN_CONTAINER" >/dev/null 2>&1 || true; }
+cleanup() {
+    [[ -n "$CONTAINER" ]] && docker exec "$CONTAINER" rm -f "$TMP_IN_CONTAINER" >/dev/null 2>&1
+    return 0
+}
 on_exit() {
     local status="$1" line="$2"
     if [[ "$status" -ne 0 ]]; then
@@ -48,8 +60,30 @@ on_exit() {
 }
 trap 'on_exit "$?" "$LINENO"' EXIT
 
-if ! docker inspect -f '{{.State.Running}}' "$CONTAINER" 2>/dev/null | grep -q true; then
-    log "container ${CONTAINER} is not running; nothing to back up"
+running() { [[ "$(docker inspect -f '{{.State.Running}}' "$1" 2>/dev/null || true)" == true ]]; }
+
+# Root cannot open the deploy user's lock in sticky /tmp (fs.protected_regular);
+# a backup run by hand as root proceeds without it.
+if [[ "$(id -u)" != 0 ]]; then
+    exec 9>>"$LOCK_FILE"
+    if ! flock -w "$LOCK_WAIT" 9; then
+        log "a deploy has held the deploy lock for ${LOCK_WAIT}s; backing up from whichever container runs"
+    fi
+else
+    log "running as root: not taking the deploy lock"
+fi
+
+if [[ -z "$CONTAINER" ]]; then
+    for candidate in $CANDIDATES; do
+        if running "$candidate"; then
+            CONTAINER="$candidate"
+            break
+        fi
+    done
+fi
+if [[ -z "$CONTAINER" ]] || ! running "$CONTAINER"; then
+    log "no PrivaTools container is running (${CONTAINER:-$CANDIDATES}); nothing to back up"
+    CONTAINER=""
     ping_backup fail
     exit 1
 fi

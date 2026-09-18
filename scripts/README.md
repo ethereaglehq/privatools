@@ -39,12 +39,28 @@ python3 scripts/ci/probe-image.py IMAGE
 ```
 
 It starts IMAGE from `docker-compose.yml` under its own compose project, with
-the deploy's `up --no-build --pull never`, and checks `/readyz`, a 404, the
-homepage's tool count, two server-rendered tool pages and the sitemap. Expected
-values come from the manifest inside the container. On failure it prints the
+the deploy's `up --no-build --pull never` and async jobs enabled, as production
+runs them. It checks that the job supervisor takes the queue (a release whose
+supervisor crashes on taking it must fail here, before any tag), then `/readyz`,
+a 404, the homepage's tool count, two server-rendered tool pages and the
+sitemap. Expected values come from the manifest inside the container. On failure it prints the
 container's logs; the container and its volumes are always removed. It needs
 the compose file's port, 8000. Where that is taken, add a file with a
 `ports: !override` entry through `COMPOSE_FILE`.
+
+The deploy runs the same checks against a container that is already running,
+before it gets any traffic, and starts or removes nothing:
+
+```sh
+python3 scripts/ci/probe-image.py --running CONTAINER --url http://127.0.0.1:8001 --sha BUILD_SHA
+```
+
+That is `deploy/oracle-vm/rollout.sh`'s real-page probe: a release whose
+`/readyz` is ready but which cannot serve those pages is removed instead of
+switched to (`deploy/README.md`, Zero-downtime deploys). The rollout sets
+`PRIVATOOLS_PROBE_HOST=privatools.me`, so every request carries the Host
+header nginx forwards and a release that rejects the public name fails here.
+Without it, as in CI, requests go to `127.0.0.1`.
 
 ## Local development
 

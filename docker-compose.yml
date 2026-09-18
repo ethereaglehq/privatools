@@ -18,7 +18,12 @@ services:
       # (which terminates TLS and proxies to 127.0.0.1:8000). The previous
       # "8000:8000" published on 0.0.0.0, exposing the app on the VM's public
       # IP and letting clients bypass nginx/TLS and the real-IP forwarding.
-      - "127.0.0.1:8000:8000"
+      #
+      # The host port is a variable only so a zero-downtime deploy can start
+      # the next release beside this one: deploy/oracle-vm/rollout.sh runs a
+      # temporary "interim" project on 127.0.0.1:8001 while this container is
+      # replaced. Leave it unset; the steady state is always 8000.
+      - "127.0.0.1:${PRIVATOOLS_HOST_PORT:-8000}:8000"
     volumes:
       - app-temp:/app/temp
       # Accounts and API keys. Deliberately NOT app-temp: the cleanup janitor

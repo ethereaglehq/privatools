@@ -97,6 +97,82 @@ processing files in `app-temp`. Backup tooling and its timer are installed.
 Preserve both durable data and a usable rollback image during cleanup. Check
 live timer and backup state before maintenance.
 
+**Deploys are zero-downtime (2026-09-18).** `deploy/oracle-vm/rollout.sh`
+(installed as `privatools-rollout`) starts the new release as a second compose
+project, `privatools-interim`, on `127.0.0.1:8001`. Before moving traffic there
+it requires three things: `/readyz` reports the build,
+`scripts/ci/probe-image.py --running` passes, and the new job supervisor holds
+the queue. It then lets the old container drain, recreates
+`privatools-privatools-1` on 8000 and switches back. The steady state never
+changes: the backup script, the CI probe and the runbooks all address that
+container and port. Replacing the container with a bare `docker compose up`
+brings back the old outage; it is only for rolling back to a release older than
+the drainable supervisor, and only from the steady state (upstream on 8000, no
+interim). A degraded cut-over has its own back-out in `deploy/README.md`:
+there, that command would start v2.6.1 while nginx kept routing to the
+interim. A failed release never takes traffic, so there is
+nothing to roll back; `privatools-rollout --rollback` is itself zero-downtime,
+also from the degraded state. Details, evidence and the cut-over runbook are in
+`deploy/README.md`.
+
+- **Run deploy scripts as ubuntu, never root.** `rollout.sh`, `auto-deploy.sh`
+  and `deploy.sh` refuse root. The deploy lock lives in sticky `/tmp`, and
+  `fs.protected_regular=2` makes root's open of ubuntu's file fail; a root run
+  before the file exists would create one the timer can't open. By hand:
+  `sudo runuser -u ubuntu -g ubuntu -G docker -- privatools-rollout ...`.
+- **Rollout exit codes drive the timer.** 1: the release is at fault, marked
+  failed until a newer tag. 2: a host problem or unmet precondition. 3:
+  degraded, the interim serves. 4: nginx or a still-routed container needs a
+  human. The timer retries 2, 3 and 4 only after a 10-minute backoff. Classify
+  new failure paths accordingly; a host problem reported as 1 blocks the
+  release for good.
+- **nginx is verified, not trusted, and otherwise left alone.** Each switch is
+  recorded (`.privatools-deploy.switching`) before the helper runs and cleared
+  once nginx visibly retires its old worker generation. A run that finds one
+  recorded re-applies the file's port, because a kill between the helper's
+  rename and reload leaves them apart; no other run reloads the shared nginx.
+  Traffic never falls back to an interim the file does not name: it may not
+  have passed the gates. A container that still receives requests after the
+  generation this deploy retired exits is never removed (exit 4).
+- **One failed Docker call proves nothing.** Status polls and `docker
+  inspect` are asked again until their deadline; a supervisor or container is
+  judged failed only from an answer. In the cut-over deploy, a container nginx
+  routes to is stopped only if it actually restarted; otherwise the run ends
+  degraded.
+- **Old and new code share the SQLite database for the overlap** (about a
+  minute), and the new container applies its migrations on start. Migrations must
+  be additive and quick (one `BEGIN IMMEDIATE` against a database the live
+  release writes), with the previous release still working on the new schema.
+  Never add a column to a table written with a positional
+  `INSERT ... VALUES` (`api_async_worker`, `api_async_ingest`,
+  `api_async_submit_window`, `api_v1_leases`, `api_v1_rate_buckets`): the running
+  release's inserts would fail. A failed `store.init()` is only logged
+  ("accounts disabled"); neither readiness nor the probe checks the store.
+- **Exactly one job supervisor holds `jobs/worker.lock`.** A second one waits as
+  a standby. It must never exit, because the launcher stops the whole container
+  when a child exits. SIGUSR1 to the container (the launcher relays it) drains:
+  the supervisor finishes its job, then releases the lock. SIGUSR2 resumes. The
+  launcher starts children with both ignored until the worker installs its
+  handlers. Readiness counts this container's live standby through
+  `backend/app/job_handover.py`'s state file in its private `/tmp`, because the
+  shared heartbeat names the old build until the handover: without limit while
+  another supervisor serves the queue, for at most `queue_seconds` otherwise. The deploy polls `python -m backend.app.job_handover --status`,
+  which is standard library only on purpose: keep FastAPI and pydantic out of
+  it.
+- **The only root step is the nginx switch.** It runs through
+  `sudo -n /usr/local/sbin/privatools-nginx-upstream set 8000|8001`. The helper
+  refuses a port where nothing is ready, serializes concurrent switches, runs
+  `nginx -t` and restores the old upstream on failure. It also ignores SIGTERM
+  from rename to reload. The deploy unit must not set `NoNewPrivileges`.
+- **The installed rollout reads a release's files** (`deploy/README.md` lists
+  them): the probe's `--running` command line and `PRIVATOOLS_PROBE_HOST`,
+  `compose.interim.yml` and its volume variables, `PRIVATOOLS_HOST_PORT`, the
+  status JSON and the signal meanings. Change them only compatibly.
+- **Installed scripts are copies.** A deploy resets the checkout, not
+  `/usr/local/bin`. Reinstall with `install-auto-deploy.sh`, which never starts a
+  deploy unless given `--start`; the backup script is installed separately and
+  its timer is never touched.
+
 The API remains free with bounded fair usage on this server. Async job results
 expire within one hour and can be explicitly deleted immediately.
 

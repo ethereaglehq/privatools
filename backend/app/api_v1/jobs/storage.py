@@ -18,7 +18,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
-from ... import store
+from ... import job_handover, store
 from .. import quota
 from . import config
 from .adapters import ADAPTERS
@@ -101,6 +101,27 @@ def heartbeat(*, accepting: bool = True, now: float | None = None) -> None:
                      (now or time.time(), config.build_sha(), int(accepting)))
 
 
+def local_worker(now: float | None = None, *, queue_served: bool = False) -> dict | None:
+    """This container's own supervisor, if it runs this build and counts as ready.
+
+    During a deploy the new container's supervisor waits as a standby while the
+    old one finishes its current job and hands over the lock, so the heartbeat
+    row still names the old build. Queued jobs are durable, and this build's
+    supervisor claims them once it holds the lock, so accepting work here is
+    safe. While another supervisor serves the queue (queue_served) a standby
+    stays ready; otherwise it counts for at most queue_seconds
+    (job_handover.ready_state).
+    """
+    return job_handover.ready_state(now, queue_served=queue_served)
+
+
+def heartbeat_age(now: float | None = None) -> float | None:
+    """Seconds since any supervisor last wrote the shared heartbeat, or None."""
+    with connection() as conn:
+        row = conn.execute("SELECT heartbeat FROM api_async_worker WHERE id=1").fetchone()
+    return None if row is None else (now or time.time()) - row["heartbeat"]
+
+
 def capability() -> dict:
     result = {"enabled": config.enabled(), "available": False, "operations": [],
               "result_retention_seconds": config.LIMITS.result_seconds}
@@ -109,9 +130,11 @@ def capability() -> dict:
     try:
         with connection() as conn:
             row = conn.execute("SELECT * FROM api_async_worker WHERE id=1").fetchone()
-        result["available"] = bool(row and row["accepting"] and
-                                   row["build_sha"] == config.build_sha() and
-                                   time.time() - row["heartbeat"] <= config.LIMITS.lease_seconds)
+        now = time.time()
+        served = job_handover.queue_served(row, now)
+        result["available"] = served and row["build_sha"] == config.build_sha()
+        if not result["available"]:
+            result["available"] = local_worker(now, queue_served=served) is not None
         if result["available"]:
             result["operations"] = list(ADAPTERS)
     except (sqlite3.Error, OSError):

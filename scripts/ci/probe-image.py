@@ -2,6 +2,13 @@
 """Boot a built PrivaTools image the way production does, then probe it over HTTP.
 
     python3 scripts/ci/probe-image.py IMAGE
+    python3 scripts/ci/probe-image.py --running CONTAINER --url BASE_URL --sha BUILD_SHA
+
+The second form runs the same checks against a container that is already
+running and starts, stops and removes nothing. The zero-downtime deploy
+(deploy/oracle-vm/rollout.sh) uses it as its real-page probe: a release whose
+/readyz is ready but which cannot serve the homepage, a tool page or the
+sitemap never receives traffic.
 
 The container comes from the repository's docker-compose.yml, started with the
 deploy script's own command (`docker compose up -d --no-build --pull never`).
@@ -46,7 +53,8 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from xml.etree import ElementTree
 
-USAGE = "usage: python3 scripts/ci/probe-image.py IMAGE"
+USAGE = ("usage: python3 scripts/ci/probe-image.py IMAGE\n"
+         "       python3 scripts/ci/probe-image.py --running CONTAINER --url BASE_URL --sha BUILD_SHA")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COMPOSE_YAML = REPO_ROOT / "docker-compose.yml"
 PROJECT = "privatools-probe"
@@ -110,15 +118,31 @@ def output_of(result: subprocess.CompletedProcess) -> str:
 
 
 def isolate_environment(image: str, build_sha: str) -> None:
-    """Clear what the compose file reads, so its defaults apply, then set what the deploy passes."""
+    """Clear what the compose file reads, so its defaults apply, then set what the deploy passes.
+
+    Async jobs are on, as in production: the image's job supervisor must take
+    the queue here before any release is tagged. The first deploy after the
+    zero-downtime cut-over can only hand it the queue after traffic has moved.
+    """
     for name in set(re.findall(r"\$\{(\w+)", COMPOSE_YAML.read_text(encoding="utf-8"))):
         os.environ.pop(name, None)
-    os.environ.update(PRIVATOOLS_IMAGE=image, GIT_SHA=build_sha)
+    os.environ.update(PRIVATOOLS_IMAGE=image, GIT_SHA=build_sha, API_V1_JOBS_ENABLED="true")
+
+
+def request_headers() -> dict[str, str]:
+    """The deploy's probe (rollout.sh) sets PRIVATOOLS_PROBE_HOST to the public
+    site's name, the Host nginx forwards, so a release whose TRUSTED_HOSTS
+    rejects it fails here rather than after traffic moved. Unset in CI."""
+    headers = {"User-Agent": "privatools-image-probe"}
+    host = os.environ.get("PRIVATOOLS_PROBE_HOST", "").strip()
+    if host:
+        headers["Host"] = host
+    return headers
 
 
 def fetch(base_url: str, path: str, timeout: float = REQUEST_TIMEOUT_SECONDS) -> tuple[int, bytes]:
     """Status and body, without following redirects or raising on 4xx and 5xx."""
-    request = Request(base_url + path, headers={"User-Agent": "privatools-image-probe"})
+    request = Request(base_url + path, headers=request_headers())
     try:
         with _opener.open(request, timeout=timeout) as response:
             return response.status, response.read()
@@ -172,9 +196,9 @@ def wait_until_ready(base_url: str, container: str) -> float:
     raise ProbeFailure(f"/readyz did not answer 200 within {READY_DEADLINE_SECONDS} s (last: {last})")
 
 
-def read_manifest() -> dict[str, dict]:
+def read_manifest(container: str) -> dict[str, dict]:
     """The tool manifest the server reads, read as the app user reads it, keyed by path."""
-    shown = compose("exec", "-T", SERVICE, "cat", MANIFEST_IN_IMAGE)
+    shown = run("docker", "exec", container, "cat", MANIFEST_IN_IMAGE)
     expect(shown.returncode == 0, f"cannot read {MANIFEST_IN_IMAGE}: {output_of(shown)}")
     try:
         rows = json.loads(shown.stdout)
@@ -196,6 +220,29 @@ def check_readyz(base_url: str, build_sha: str) -> str:
     # The deploy gate rolls back unless this matches, so prove it is plumbed.
     expect(payload.get("build_sha") == build_sha, f"build_sha is {payload.get('build_sha')!r}, expected {build_sha!r}")
     return f"ready, {len(checks)} dependency checks pass, build_sha matches"
+
+
+def check_supervisor_status(status: dict) -> str:
+    """The async job supervisor took the singleton lock and keeps its state fresh."""
+    expect(status.get("enabled"), "async jobs are not enabled in the container")
+    local = status.get("local") or {}
+    expect(local.get("role") == "active" and local.get("alive"),
+           f"the job supervisor does not hold the queue (role {local.get('role')!r}, alive {local.get('alive')!r})")
+    return "the job supervisor holds the job queue"
+
+
+def check_supervisor(container: str) -> str:
+    shown = run("docker", "exec", container, "python", "-m", "backend.app.job_handover", "--status")
+    expect(shown.returncode == 0, f"no job status: {output_of(shown)}")
+    deadline = time.monotonic() + READY_DEADLINE_SECONDS
+    while True:
+        try:
+            return check_supervisor_status(json.loads(shown.stdout))
+        except (CheckFailed, ValueError):
+            if time.monotonic() >= deadline:
+                raise
+        time.sleep(1)
+        shown = run("docker", "exec", container, "python", "-m", "backend.app.job_handover", "--status")
 
 
 def check_unknown_tool(base_url: str) -> str:
@@ -262,14 +309,20 @@ def probe(image: str, build_sha: str) -> list[str]:
     base_url = published_url()
     print(f"container {container[:12]} runs {image} at {base_url}")
     print(f"ready after {wait_until_ready(base_url, container):.1f} s")
+    failed: list[str] = []
+    run_checks([("async job supervisor", lambda: check_supervisor(container))], failed)
+    return failed + check_serving(base_url, build_sha, container)
 
+
+def check_serving(base_url: str, build_sha: str, container: str) -> list[str]:
+    """Names of the checks that failed against a container that is ready."""
     failed: list[str] = []
     run_checks([
         ("GET /readyz", lambda: check_readyz(base_url, build_sha)),
         (f"GET {UNKNOWN_TOOL_PAGE}", lambda: check_unknown_tool(base_url)),
     ], failed)
     try:
-        manifest = read_manifest()
+        manifest = read_manifest(container)
     except CheckFailed as error:
         print(f"FAIL  tool manifest: {error}")
         print("skip  GET /, the tool pages and GET /sitemap.xml, whose expected values come from the manifest")
@@ -303,7 +356,26 @@ def remove() -> None:
         print(f"docker compose down failed: {output_of(down)}")
 
 
+def probe_running(arguments: list[str]) -> int:
+    """Check a running container in place: the deploy's real-page probe."""
+    options = dict(zip(arguments[::2], arguments[1::2]))
+    if len(arguments) != 6 or set(options) != {"--running", "--url", "--sha"} or not all(options.values()):
+        print(USAGE, file=sys.stderr)
+        return 2
+    container, base_url, build_sha = options["--running"], options["--url"].rstrip("/"), options["--sha"]
+    sys.stdout.reconfigure(line_buffering=True)
+    print(f"probing running container {container[:12]} at {base_url}")
+    failed = check_serving(base_url, build_sha, container)
+    if failed:
+        print("page probe FAILED: " + ", ".join(failed))
+        return 1
+    print("page probe passed")
+    return 0
+
+
 def main() -> int:
+    if sys.argv[1:2] == ["--running"]:
+        return probe_running(sys.argv[1:])
     if len(sys.argv) != 2 or sys.argv[1].startswith("-"):
         print(USAGE, file=sys.stderr)
         return 2
