@@ -4,11 +4,11 @@
 
 **Every file task, done privately.**
 
-221 free, open-source tools for PDFs, images, video, audio, and developer work — all running on your own server.
+Free, open-source tools for PDFs, images, video, audio, and developer work — use them at privatools.me or run them on your own server.
 AI two private ways: on-device models that download once into your browser, or your own API key going straight to the provider.
-Zero uploads to third parties. No account needed. No watermarks. No premium tier.
+PrivaTools never passes your files to third parties. No account needed. No watermarks. No premium tier.
 
-[![Live Demo](https://img.shields.io/badge/Live-privatools.me-blue?style=for-the-badge&logo=vercel)](https://privatools.me)
+[![Live Demo](https://img.shields.io/badge/Live-privatools.me-blue?style=for-the-badge)](https://privatools.me)
 [![MIT License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)](LICENSE)
 [![Security](https://github.com/ethereaglehq/privatools/actions/workflows/security.yml/badge.svg)](https://github.com/ethereaglehq/privatools/actions/workflows/security.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ethereaglehq/privatools/badge)](https://securityscorecards.dev/viewer/?uri=github.com/ethereaglehq/privatools)
@@ -26,11 +26,11 @@ Zero uploads to third parties. No account needed. No watermarks. No premium tier
 | **Truly free** | 100%, no quota | Limited free / paid tier |
 | **No account** | Just open and use | Email / sign-up required |
 | **Privacy** | Files processed in an isolated container, deleted on response; many tools never leave your browser | Uploaded to vendor cloud |
-| **Tool count** | **221** (PDF + image + video + audio + dev) | 20–95 (PDF only) |
-| **On-device AI** | 6 models (summarize, PII detection, translation, background removal, 2× Whisper speech-to-text) download once into the browser cache, then run offline — nothing uploads | Cloud APIs |
+| **Tool range** | PDF, image, video, audio and developer tools in one place ([full list](https://privatools.me/tools)) | 20–95 tools, PDF only |
+| **On-device AI** | 6 models (summarize, PII detection, translation, background removal, 2× Whisper speech-to-text) download once into the browser cache, then run offline without uploading their input | Cloud APIs |
 | **Bring your own AI key** | Chat with PDF, vision OCR, translation, redaction, transcription through *your* Anthropic/OpenAI/Gemini/Groq/Mistral/OpenRouter/DeepSeek/Together or self-hosted key — requests go browser → provider, never through PrivaTools | Not offered |
-| **Batch everywhere** | ~160 tools take up to 25 files per run: per-file status, retry failed, one ZIP | Batch is a paid feature |
-| **Pipeline** | Chain Merge → Compress → Watermark → Sign in one click | Not offered free |
+| **Batch everywhere** | Many tools take several files per run (up to 25 on the standard tool page): per-file status, retry failed, one ZIP | Batch is a paid feature |
+| **Pipeline** | Chain steps such as Compress → Watermark → Page numbers → Strip metadata on one PDF | Not offered free |
 | **Self-hostable** | `docker compose up --build` | No |
 | **Open source** | MIT — fork, modify, deploy | Proprietary |
 
@@ -63,8 +63,9 @@ npm start
 ```
 
 Open **http://127.0.0.1:8000**. The same-origin server supports real uploads,
-native account sessions, API keys, downloads, scoped security policies and the
-production PWA. Local accounts persist in `data/local/`; job files use
+account sessions (Clerk with a development key, or native accounts in a build
+with `VITE_AUTH_PROVIDER=local`), API keys, downloads, scoped security policies
+and the production PWA. Local accounts persist in `data/local/`; job files use
 `temp/local/` and are deleted after responses or by the cleanup worker. Both
 directories are ignored by Git. The launcher does not load production secrets.
 
@@ -74,9 +75,10 @@ the public `/api` documentation page remains a frontend route. Preview the PWA
 on port 8000 after rebuilding. To change the local backend port, use
 `npm run backend -- --port 8001` (set `VITE_DEV_API_TARGET` when using Vite).
 
-The consumer UI uses Clerk for Google, username/password and passkey sign-in,
-with password recovery by email. Configure matching public frontend/backend
-instance keys; localhost uses a Development instance with a separate user list.
+The consumer UI uses Clerk for Google, GitHub, email or username with a
+password, and passkey sign-in, with password recovery by email. Configure
+matching public frontend/backend instance keys; localhost uses a Development
+instance with a separate user list.
 Without a key, tools work and account controls show an unavailable state.
 Existing self-hosted native accounts require explicit `VITE_AUTH_PROVIDER=local`
 and no Clerk key. See [the Clerk deployment guide](deploy/clerk-production.md).
@@ -106,38 +108,39 @@ sudo apt install tesseract-ocr ffmpeg qpdf libreoffice poppler-utils libzbar0 li
 
 ---
 
-## 🛠️ All Tools (221)
+## 🛠️ All tools
 
-Counts come straight from the tool registry (2026-09-01) — the full, always-current catalogue lives at [privatools.me/tools](https://privatools.me/tools).
+The full, always-current catalogue, with each tool's page and guide, lives at [privatools.me/tools](https://privatools.me/tools). The families:
 
-| Family | Count | What's inside |
-|---|---|---|
-| 📄 **PDF — organize** | 12 | Merge, Split (by size/bookmarks/text/half), Organize, Delete/Extract Pages, Reverse, Booklet, Alternate Mix, Repair |
-| 📄 **PDF — edit** | 17 | Edit PDF (text, ink pen, arrows, shapes, images, whiteout, layers panel), Sign & E-Sign, Watermark + Remove Watermark, Stamp, Header/Footer, Page Numbers, Bates, Bookmarks, Forms, Hyperlinks, Highlight, Annotate |
-| 📄 **PDF — optimize** | 12 | Compress (9 profiles + target size), Web Optimize, Flatten, Grayscale, Deskew, Crop, Auto Crop, Resize, Rotate, Remove Blank Pages, Invert Colors |
-| 📄 **PDF — security** | 13 | Protect, Unlock (vault auto-try), Redact, Smart Redact (AI), Sanitize, Strip Metadata, Permissions, Verify Signature, Metadata Editor |
-| 📄 **PDF — convert to** | 22 | Images/HTML/URL/Office/ODT/TXT/Markdown/CSV/EPUB/RTF/JSON/XML → PDF |
-| 📄 **PDF — convert from** | 17 | PDF → images/Word/Excel/PPTX/Text/HTML/RTF/EPUB/Markdown/PDF-A, Extract Tables & Images, Long Image |
-| 📄 **PDF — advanced** | 14 | **Chat with PDF (AI)**, Summarize (AI), **Translate (AI)**, OCR (3 engines), Compare, N-up, Overlay, PDF/A Validator, Page Counter |
-| 🖼️ **Images** | 40 | Compress, Convert, Resize & Crop, **Remove Background (on-device AI)**, Upscale, Watermark ± removal, EXIF scrub/view, **Image OCR (3 engines)**, Collage, Favicon, QR/Barcode, HEIC/WebP/TIFF/BMP/GIF ↔ JPG/PNG |
-| 🎬 **Video & Audio** | 44 | Convert, Resize, Merge, Trim, GIF ↔ MP4, Mute/Reverse/Speed, Compress, Extract Audio, **Transcribe Audio (AI, on-device Whisper or your key)**, Subtitles (convert + burn), thumbnails |
-| 💻 **Developer & Text** | 26 | JSON/XML/YAML/CSV converters, Markdown ↔ HTML, Diff, Counter, Base64, Hashes, JWT, Regex, Timestamps, UUID/Password generators, Case, Colors |
-| 📦 **Archive & Office** | 4 | Extract Archive, Create ZIP, office document tools |
+| Family | What's inside |
+|---|---|
+| 📄 **PDF — organize** | Merge, Split (by bookmarks/size/text/half), Organize, Delete/Extract Pages, Remove Blank Pages, Reverse, Booklet |
+| 📄 **PDF — edit** | Edit PDF (text, ink pen, arrows, shapes, images, whiteout, layers panel), Sign & E-Sign, Watermark + Remove Watermark, Stamp, Header/Footer, Page Numbers, Bates, Bookmarks, White-Out, Shapes, Attachments, Hyperlinks, Highlight, Annotate, Transparent Background |
+| 📄 **PDF — optimize** | Compress (presets, custom settings or a target size) and Batch Compress, Web Optimize, Flatten, Grayscale, Deskew, Repair, Crop, Auto Crop, Resize, Rotate, Invert Colors |
+| 📄 **PDF — security** | Protect, Unlock (vault auto-try), Redact, Smart Redact (AI), Sanitize, Strip Metadata, Metadata Editor, Delete Annotations, Permissions, Remove Bates Numbering, Accessibility Checker, PDF/A Validator, Verify Signature |
+| 📄 **PDF — convert to** | Images/HTML and web pages/Office/ODT/TXT/Markdown/CSV/EPUB/RTF/JSON/XML → PDF |
+| 📄 **PDF — convert from** | PDF → images/Word/Excel/PowerPoint/Text/HTML/RTF/EPUB/Markdown, Extract Tables, Long Image |
+| 📄 **PDF — advanced** | **Chat with PDF (AI)**, Summarize (AI), **Translate (AI)**, OCR (3 engines), Compare, N-up, Overlay, Alternate Mix, Fill Form, Form Creator, Extract Images, PDF to PDF/A, QR Code, Page Counter |
+| 🖼️ **Images** | Compress, Convert, Resize & Crop, **Background Remover (server or on-device)**, Upscale, Watermark ± removal, EXIF scrub/view, **Image OCR (3 engines)**, Collage, Merge Images, Favicon, QR Code Reader, Rotate/Flip, Pixelate/Blur, Color Palette, HEIC/WebP/TIFF/BMP/GIF/SVG ↔ JPG/PNG |
+| 🎬 **Video & Audio** | Convert, Resize, Merge, Trim, GIF ↔ MP4, Mute/Reverse/Speed, Compress, Extract Audio, **Transcribe Audio (AI, on-device Whisper or your key)**, Subtitles (convert + burn), thumbnails |
+| 💻 **Developer & Text** | JSON/XML/SQL/GraphQL formatters, YAML ↔ JSON/TOML, JSON to CSV schema, Diff, Counter, Base64, Hashes, JWT, Regex, Timestamps, Cron, UUID/Password/Barcode generators, Case, Colors, URL encoder, URL to PDF |
+| 📦 **Archive & documents** | Extract Archive, Create ZIP, CSV ↔ JSON, Markdown editor with HTML export |
 
 ### 🤖 AI, two private ways
 
-**On-device models** — download once from the Hugging Face CDN into the browser cache, then work on every visit, even offline. No key, no account, nothing uploads. Managed from the **AI hub** in the top bar (install, sizes, remove):
+**On-device models** — download once into the browser, then work on every visit, even offline: the transformers.js models from the Hugging Face CDN and the background-removal model from privatools.me itself. No key, no account, and the model's input stays in the browser. Managed from the **AI hub** in the top bar (install, sizes, remove):
 
 | Model | Powers | Size |
 |---|---|---|
 | DistilBART CNN 6-6 | Summarize PDF | ~250 MB |
-| BERT-base-NER | Smart Redact PII detection | ~250 MB |
+| BERT-base-NER | Smart Redact PII detection | ~110 MB |
 | OPUS-MT (per language pair) | Translate PDF | ~107 MB |
-| RMBG-1.4 | Remove Background | ~44 MB |
+| U²-Net-P | Background Remover (optional on-device engine; the server engine is the default) | ~4.4 MB + runtime |
 | Whisper tiny / base | Transcribe Audio | ~41 / ~74 MB |
-| tesseract.js + language packs | OCR PDF · Image OCR | few MB per language |
 
-**Bring your own key (BYOK)** — paste an API key once (encrypted on-device, never sent to PrivaTools) and five tools use frontier models: **Chat with PDF**, **Summarize**, **Translate** (any language), **Smart Redact** NER, **Transcribe Audio** — plus **vision OCR** on both OCR tools for hard scans. Eight hosted providers (Anthropic, OpenAI, Gemini, OpenRouter, Groq, Mistral, DeepSeek, Together) plus any self-hosted OpenAI-compatible endpoint (Ollama, vLLM). Every request goes **browser → provider directly**; the page's Content-Security-Policy only permits provider egress on the pages that actually use a key.
+The OCR tools' optional browser engine loads tesseract.js and its language data (a few MB per language) from jsDelivr; the server engine is their default.
+
+**Bring your own key (BYOK)** — paste an API key once (encrypted on-device, never sent to PrivaTools) and these tools can use it: **Chat with PDF**, **Summarize**, **Translate** (any language), **Smart Redact** NER, **Transcribe Audio** — plus **vision OCR** on both OCR tools for hard scans. Eight hosted providers (Anthropic, OpenAI, Gemini, OpenRouter, Groq, Mistral, DeepSeek, Together) plus any self-hosted OpenAI-compatible endpoint (Ollama, vLLM). Every request goes **browser → provider directly**; the page's Content-Security-Policy only permits provider egress on the pages that actually use a key.
 
 ## 📊 Compare & guides
 
@@ -165,14 +168,21 @@ Chain tools sequentially and download one final PDF. Drafts auto-save locally,
 named pipelines can be saved, and share links use `/pipeline?p=<base64url>`
 payloads so recipes are portable without an account. Available at `/pipeline`.
 
-The public pipeline API starts with the safe automation subset
-`compress-pdf` and `strip-metadata`:
+The pipeline API runs up to 12 of its 17 PDF steps (compress, repair, deskew,
+grayscale, flatten, rotate, reverse, N-up, booklet, page numbers, Bates
+numbering, header/footer, watermark, stamp, strip metadata, delete annotations
+and PDF/A) on one uploaded PDF. The same routes exist under `/api/v1/` for
+account keys:
 
-- API docs: `/api-docs`
-- Templates: `GET /api/pipeline/templates`
+- API reference: [privatools.me/api](https://privatools.me/api) and
+  `GET /api/v1/openapi.json` (FastAPI's `/api-docs` is disabled when
+  `ENVIRONMENT=production`, as Docker Compose sets it)
+- Templates and the supported steps: `GET /api/pipeline/templates`
 - Validate/share: `POST /api/pipeline/validate`
 - Run a PDF pipeline: `POST /api/pipeline` with `file` and JSON `steps`
-- Optional auth: set `PRIVATOOLS_API_KEYS` and send `X-API-Key`
+  (`POST /api/v1/pipeline` with an account key costs the sum of its steps)
+- Optional auth on a self-hosted server: set `PRIVATOOLS_API_KEYS` in the
+  backend's environment and send `X-API-Key`
 
 ### Accounts and `/api/v1`
 
@@ -210,7 +220,9 @@ V1 processing and account/usage queries require a key. Its catalog and schema
 are public and do not spend processing quota. The website continues to use
 the unversioned `/api/*` routes.
 
-Background processing is optional (`API_V1_JOBS_ENABLED=true`). It adds
+Background processing is enabled on api.privatools.me and optional when
+self-hosting (`API_V1_JOBS_ENABLED=true`; off by default in
+`docker-compose.yml`). It adds
 `POST /api/v1/jobs` with an `Idempotency-Key`, authenticated status/result
 retrieval, and explicit deletion. The initial adapters are `merge`, `compress`,
 `grayscale`, and `pdf-to-text`; the catalog reports actual availability.
@@ -230,7 +242,7 @@ Developer clients live under `packages/`:
 
 ### Multi-file, everywhere
 
-Roughly 160 tools accept up to 25 files directly on the tool page — same settings applied to each, bounded concurrency, per-file status rows, retry-failed, and a single ZIP (one file keeps the classic direct download). The dedicated `/batch` page still handles the "drop 50 PDFs" case with drag-reordering.
+Many tools accept several files directly on the tool page (up to 25 on the standard tool page) — same settings applied to each, bounded concurrency, per-file status rows, retry-failed, and a single ZIP (one file keeps the classic direct download). The dedicated `/batch` page takes larger drops for a single tool and processes them file by file.
 
 ### The AI hub
 
@@ -242,10 +254,11 @@ The **AI** button in the top bar opens one dialog for everything AI: manage the 
 
 | Shortcut | Action |
 |---|---|
-| `⌘K` / `Ctrl+K` | Open Command Palette (multi-token fuzzy search, 145+ synonyms, lazy-loaded) |
-| `↑` `↓` | Navigate results |
-| `Enter` | Open selected tool |
-| `Escape` | Close palette |
+| `⌘K` / `Ctrl+K` | Open search — matches tool names, synonyms, descriptions, categories, file types and site pages |
+| `↑` `↓` | Move through results |
+| `Enter` | Open the selected result |
+| `Escape` | Close search |
+| `/` | Jump to the filter on the tools page |
 | `⌘↵` / `Ctrl+↵` | Start processing (when a file is selected) |
 
 ---
@@ -267,16 +280,17 @@ privatools/
 ├── scripts/
 │   ├── api/                  # Capacity checks and starter generation/tests
 │   ├── analytics/            # Public analytics configuration verification
+│   ├── ci/                   # Boot the built image and probe what it serves
 │   ├── dev/                  # Local application launcher
-│   └── seo/                  # Public manifest verification
+│   └── seo/                  # Tool guide export, registry copy merge, manifest checks
 ├── deploy/                   # Deployment profiles and operational guides
 │   └── oracle-vm/            # Oracle deployment, backup and systemd files
 ├── docs/
 │   ├── api/                  # API integration and maintainer guides
 │   ├── verification/         # Account and API verification evidence
-│   ├── seo/                  # Search visibility analysis and runbooks
+│   ├── seo/                  # Search visibility runbook
 │   ├── superpowers/          # Engineering plans and specifications
-│   └── archive/              # Explicitly historical research and roadmap
+│   └── archive/              # Explicitly historical research, roadmap and analysis
 ├── Dockerfile
 ├── docker-compose.yml
 ├── package.json              # Root development commands and CLI workspace
@@ -292,12 +306,14 @@ and [script guide](scripts/README.md) for the relevant commands and conventions.
 
 PrivaTools ships with serious AI / answer-engine optimisation:
 
-- **SSR meta + JSON-LD** for every route via Python middleware (Organization, WebSite, SoftwareApplication, BreadcrumbList, HowTo, FAQPage, BlogPosting, Article+Review, AboutPage, CollectionPage, ItemList, SpeakableSpecification)
-- **`speakable` CSS-selector targets** on every TL;DR and FAQ so voice assistants and featured-snippet pickers get a clean read-aloud target
+- **SSR meta + JSON-LD** for every route via Python middleware (Organization, WebSite, WebPage, SoftwareApplication, BreadcrumbList, HowTo, FAQPage, Blog, BlogPosting, Article, AboutPage, CollectionPage, ItemList)
+- **Visible tool guides** — each tool page shows the same "How to use" steps and FAQ the server renders for crawlers, written in `backend/app/tool_content.py` and exported by `scripts/seo/export-tool-guides.py`
+- **HowTo + FAQ schema** on every tool page, matching the visible guide
+- **Hand-written search titles and descriptions** — every registry entry has its own `seoTitle` and `metaDescription`; a test enforces length, format and uniqueness
+- **Sitemap priorities and real review dates** — tools listed in `frontend/src/data/sitemap-priority.json` get priority 0.8 and other tool pages 0.6; each tool's `lastReviewed` drives its `lastmod`, JSON-LD `dateModified` and visible "Last reviewed" line, and a pull request that changes a tool's copy without moving its date fails CI
 - **`llms.txt` + `llms-full.txt`** — auto-generated index and full corpus for AI crawlers (ChatGPT, Claude, Perplexity, Gemini)
-- **HowTo + FAQ schema** on every one of the 221 tools
 - **Dynamic OG images** per route via `/api/og-image?p=<path>`
-- **robots.txt** explicitly allows 21 AI crawlers and blocks aggressive ones
+- **robots.txt** — one policy for every crawler, AI assistants included: public pages allowed, `/api/` closed except `/api/og-image`; eight scraper and SEO-tool bots are blocked
 
 ---
 
@@ -305,72 +321,107 @@ PrivaTools ships with serious AI / answer-engine optimisation:
 
 PrivaTools is MIT-licensed and PRs are welcome.
 
-### Adding a new tool — 3-step pattern
+### Adding a new tool
 
 **1. Service** — `backend/app/services/my_tool_service.py`
 
 ```python
-import uuid
-from ..utils.cleanup import get_temp_path, ensure_temp_dir
+from ..utils.filenames import temp_output
 
-def my_tool(input_path: str, option: str = "default") -> str:
-    ensure_temp_dir()
-    output_path = get_temp_path(f"output_{uuid.uuid4().hex}.pdf")
-    # processing logic
+def my_tool(input_path: str) -> str:
+    output_path = temp_output("my_tool", "pdf")
+    # processing logic: read input_path, write output_path
     return str(output_path)
 ```
 
-**2. Route** — add to an existing `routes/*.py` or create a new module
+**2. Route** — add to an existing `routes/*.py` or create a new module. For one
+PDF in and one file out, `process_pdf_upload` handles the whole lifecycle: it
+checks and streams the upload to disk, runs the service off the event loop
+under the heavy-work gate (`run_bounded`) and deletes both temporary files
+after the response. This is `backend/app/routes/grayscale.py`:
 
 ```python
-@router.post("/my-tool")
-async def my_tool_endpoint(file: UploadFile = File(...)):
-    content = await file.read()
-    temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
-    temp.write_bytes(content)
-    out = my_tool_service.my_tool(str(temp))
-    cleanup = BackgroundTask(remove_files, str(temp), out)
-    return FileResponse(out, filename="output.pdf", background=cleanup)
+from fastapi import APIRouter, File, UploadFile
+
+from ..services import grayscale_service
+from ..utils.upload_helper import process_pdf_upload
+
+router = APIRouter()
+
+
+@router.post("/grayscale")
+async def grayscale_pdf(file: UploadFile = File(...)):
+    return await process_pdf_upload(
+        file,
+        grayscale_service.convert_to_grayscale,
+        output_filename="grayscale.pdf",
+    )
 ```
+
+Bind extra form fields to the service with a lambda. Register a new router in
+`backend/app/main.py` under `/api`, and in the `api_v1.mount` list to expose it
+at `/api/v1`. Heavy routes also take `request: Request` and
+`@limiter.limit(EXPENSIVE_RATE_LIMIT)`, as `routes/ocr.py` does.
 
 **3. Tool entry** — `frontend/src/data/tools.ts` (PDF) or `non-pdf-tools.ts`
 
 ```typescript
 {
-  slug: "my-tool",                  // must match the API path
+  slug: "my-tool",                  // the frontend calls /api/my-tool unless lib/tool-endpoints.ts maps it
   icon: FileText,                   // any Lucide icon
   name: "My Tool",
   description: "Short description",
   longDescription: "Detailed description for the tool page.",
+  seoTitle: "Do the Task to Any PDF Online – Free and Private",  // 40–60 characters, no brand
+  metaDescription: "My Tool does the task to every page of a PDF in seconds. It is free, needs no sign-up, and adds no watermark to the result.", // 120–160 characters, ends with a period
+  synonyms: "other words people search for",
   popularity: 42,                   // lower = higher up the listing
   category: "edit",                 // organize | edit | optimize | security | to-pdf | from-pdf | advanced
   accepts: ".pdf",
   outputLabel: "output.pdf",
+  lastReviewed: "2026-09-18",       // ISO date; move it only when this tool's copy changes
 }
 ```
 
-Add an endpoint mapping in `frontend/src/lib/tool-endpoints.ts`; `seoTitle`, `metaDescription` and `lastReviewed` on the registry entry; HowTo steps + FAQs in `backend/app/tool_content.py` (then `.venv/bin/python scripts/seo/export-tool-guides.py`); and run `npm run gen:llms` so the build manifest and sitemap pick the tool up — the sitemap reads that manifest, not a per-tool list in `backend/app/routes/sitemap.py`. `backend/app/seo_meta.py`'s `_PDF_TOOLS`/`_NONPDF_TOOLS` tables are only the fallback used when the manifest is absent. The `GenericUI` component handles single-file upload/download automatically; for richer interactions add a dedicated component under `frontend/src/components/tool-ui/`.
+Non-PDF tools use the categories `image`, `video-audio`, `developer`, `archive`
+and `document-office`. Set `clientOnly: true` for a tool that runs entirely in
+the browser and `byok: true` for one that can use the visitor's own AI key.
+`frontend/src/test/tool-registry.test.ts` checks the title, description,
+synonyms and date rules. Add HowTo steps and FAQs in
+`backend/app/tool_content.py` (then run
+`.venv/bin/python scripts/seo/export-tool-guides.py`), and run
+`npm run gen:llms` so the manifest and sitemap pick the tool up — the sitemap
+reads that manifest, not a per-tool list in `backend/app/routes/sitemap.py`.
+`backend/app/seo_meta.py` holds no tool copy either: it reads the manifest
+`npm run gen:llms` writes (the build's `tool-content.json`, or the committed
+`frontend/public/tool-content.json` without a build) and refuses to start if
+neither is readable. `GenericUI` handles upload, a queue of up to 25 files and
+download automatically; a dedicated component under
+`frontend/src/components/tool-ui/` must call `emitToolRun` from
+`lib/toolRun.ts` when it succeeds or fails. [CONTRIBUTING.md](CONTRIBUTING.md)
+lists the checks, and [CLAUDE.md](CLAUDE.md) keeps the full list of places a
+new slug touches.
 
 ### Guidelines
 
 - **Privacy first** — the server never sends file content to third parties. The one sanctioned exception is BYOK, and it lives entirely in the browser: the client may call the user's *chosen* AI provider with the user's *own* key, directly, with CSP scoping that egress to the specific tool pages that use it
-- **Test before PR** — `python -m pytest backend/tests -q` for backend, `npm run build && npm test` for frontend
+- **Test before PR** — build the frontend first (`npm --prefix frontend run build`; some backend tests read the build), then run `.venv/bin/python -m pytest backend/tests -q` and the frontend checks listed in [CONTRIBUTING.md](CONTRIBUTING.md#testing--required-before-a-pr). CI also checks review dates on pull requests and boots the Docker image
 - **Match the style** — follow existing patterns in similar tools
-- **Update docs** — add a CHANGELOG entry and a TLDR in `seo_meta.py`
+- **Update the copy with the code** — tool text lives in the registry entry (move its `lastReviewed`), steps and FAQ in `backend/app/tool_content.py` (then run `export-tool-guides.py`); run `npm run gen:llms` and commit the result, and add a line under `[Unreleased]` in [CHANGELOG.md](CHANGELOG.md) for a user-visible change
 
 ---
 
 ## 🔒 Privacy promise
 
 - ✅ Files processed in an **isolated Docker container**, unlinked from disk immediately after the response
-- ✅ Many tools (Summarize PDF, Smart Redact, JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) **run entirely in your browser** — no upload at all
+- ✅ Many tools (JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) **run entirely in your browser** — no upload at all. Summarize PDF does too with its on-device model; its optional bring-your-own-key mode sends the PDF's text to the provider you choose. Smart Redact finds personal data in your browser, then uploads the PDF and your selected terms to apply the redaction
 - ✅ **No account, sign-up, email or payment needed to use any tool**
 - ✅ **No watermarks, no daily quota, no premium tier**
 - ✅ **500 MB upload limit per file**, unlimited files per day
-- ✅ Default AI runs via WebAssembly **in your browser** — models download once, cache locally, and work offline; no third-party AI APIs are involved
+- ✅ On-device AI (Summarize PDF, Smart Redact detection, Translate PDF, Transcribe Audio) runs via WebAssembly **in your browser** by default — models download once, cache locally, and work offline; no AI provider is involved. Background Remover and the OCR tools default to PrivaTools' own server and offer an in-browser engine; Chat with PDF always uses the provider you choose
 - ✅ Optional **bring-your-own-key** AI sends requests from **your browser straight to the provider you chose**, authenticated with your key (stored encrypted on your device) — PrivaTools is never in the path, and CSP confines provider egress to the AI tool pages
-- ✅ Saved PDF passwords live in a **device-local encrypted vault** (WebCrypto, non-extractable key) — never synced, never uploaded
-- ✅ The public demo at privatools.me uses **anonymous GA4 pageview telemetry only** (IP-anonymized; blockable by any extension). No other trackers, no ad networks, no behavioural profiling
+- ✅ Saved PDF passwords live in a **device-local encrypted vault** (WebCrypto, non-extractable key) — never synced; Unlock tries them in your browser and sends only the one that works, with the PDF, to unlock it
+- ✅ privatools.me runs **Google Analytics by default**: page views, one event per tool run (the tool and its category, single/batch/pipeline, the outcome and the file count — never file names or contents) and Google's scroll, outbound-link and video measurement. It uses cookies and pseudonymous identifiers and Google receives your IP address, so it is not anonymous. Turn it off with the **Allow Google Analytics** switch on the Privacy page. Advertising features and Google Signals are off, and there are no ad networks. A self-hosted copy sends nothing unless its operator sets `GA_BROWSER_TAG_ENABLED=true`
 - ✅ **Open source under MIT** — audit `backend/app/utils/cleanup.py` and `backend/app/main.py` yourself
 
 ---
