@@ -1,12 +1,21 @@
 """Execute deploy/oracle-vm/rollout.sh against inert command doubles.
 
-A small simulated host (containers, their readiness and pages, the nginx
-upstream file, job supervisor roles) stands in for docker, curl, the nginx
-switch and the page probe, so these prove sequencing and failure handling:
-the new release takes traffic only after it is ready and serves real pages,
-every failure leaves a serving release behind nginx, and the job queue is
-handed over rather than interrupted. They never run Docker, nginx or the
-network; deploy/README.md records the live load test on a real stand-in.
+A simulated host stands in for docker, curl, ps, id, the nginx switch and the
+page probe. It keeps containers with their readiness, pages and job
+supervisors (a free lock goes to the first eager supervisor; a broken one
+crashes its container instead), nginx's worker generations and the port nginx
+really routes to (which a killed run can leave different from the upstream
+file), and the traffic that reaches a container. These prove sequencing and
+failure handling:
+
+- a new release takes traffic only after it is ready, serves real pages and
+  its job supervisor holds the queue;
+- every failure leaves a serving release behind nginx;
+- the queue is handed over, never interrupted;
+- nothing that still receives requests is removed.
+
+They run no Docker, nginx or network. deploy/README.md records the live load
+test on a real stand-in.
 """
 from __future__ import annotations
 
@@ -14,15 +23,19 @@ import json
 import os
 from pathlib import Path
 import shutil
+import signal
 import socket
 import subprocess
 import sys
+import threading
 import time
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 ROLLOUT = ROOT / "deploy/oracle-vm/rollout.sh"
+HELPER = ROOT / "deploy/oracle-vm/nginx-upstream.sh"
 OLD, NEW = "b" * 40, "a" * 40
 
 FAKE = r'''
@@ -30,6 +43,7 @@ import json, os, pathlib, sys
 root = pathlib.Path(os.environ["FAKE_ROOT"])
 world_path = root / "world.json"
 world = json.loads(world_path.read_text())
+containers, nginx = world["containers"], world["nginx"]
 name = pathlib.Path(sys.argv[0]).name
 args = sys.argv[1:]
 
@@ -40,46 +54,109 @@ def event(*item):
     with (root / "events.jsonl").open("a") as f:
         f.write(json.dumps(list(item)) + "\n")
 
+def image(c):
+    return world["images"].get(c["image"], {})
+
+def running(c):
+    return c["status"] == "running"
+
 def by_port(port):
-    for cid, c in world["containers"].items():
-        if c["port"] == port and c["status"] == "running":
+    for cid, c in sorted(containers.items()):
+        if c["port"] == port and running(c):
             return cid, c
     return None, None
 
-def answer_readyz(port):
-    cid, c = by_port(port)
-    image = world["images"].get(c["image"], {}) if c else {}
-    if not c or not image.get("ready", True):
+def ready(port):
+    _, c = by_port(port)
+    return c is not None and image(c).get("ready", True)
+
+def settle():
+    """A free job lock goes to the first eager supervisor; a broken one crashes its container."""
+    if not world.get("jobs", True):
+        return
+    if any(c["role"] in ("active", "draining") and running(c) for c in containers.values()):
+        return
+    for cid, c in sorted(containers.items()):
+        if not running(c) or not c["booted"] or c["passive"]:
+            continue
+        if image(c).get("crash_on_lock"):
+            c["restarts"] += 1          # the launcher stops the container; Docker restarts it
+            event("crash", c["project"])
+            continue
+        c["role"] = "active"
+        return
+
+def roles():
+    return {c["project"]: [c["role"], c["passive"]] for c in containers.values() if running(c)}
+
+if name == "id":
+    print(world.get("uid", 1000))
+
+elif name == "curl":
+    url = next(a for a in args if a.startswith("http"))
+    if url == os.environ["PUBLIC_READY_URL"]:
+        if world.get("public_down"):
+            sys.exit(7)
+        port = nginx["port"]
+    else:
+        port = int(url.split(":")[2].split("/")[0])
+    _, c = by_port(port)
+    if c is None or not image(c).get("ready", True):
         sys.exit(22)
     print(json.dumps({"status": "ready", "build_sha": c["sha"], "checks": {}}))
 
-def upstream_port():
-    text = pathlib.Path(os.environ["UPSTREAM_FILE"]).read_text()
-    return int(text.split("server 127.0.0.1:")[1].split(";")[0])
-
-if name == "curl":
-    url = next(a for a in args if a.startswith("http"))
-    if url == os.environ["PUBLIC_READY_URL"]:
-        if world.get("public_stuck_on"):
-            port = world["public_stuck_on"]
-        else:
-            port = upstream_port()
-        answer_readyz(port)
-    else:
-        answer_readyz(int(url.split(":")[2].split("/")[0]))
-
 elif name == "nginx-switch":
     port = int(args[-1])
-    event("switch", port)
-    if world.get("switch_fails"):
+    event("switch", port, roles())
+    if world.get("switch_fails_to") == port:
         sys.exit(3)
+    if not ready(port):
+        sys.exit(5)                     # the helper refuses a target that is not ready
     pathlib.Path(os.environ["UPSTREAM_FILE"]).write_text(f"upstream privatools_app {{\n    server 127.0.0.1:{port};\n}}\n")
+    if nginx.get("stuck_to") in (port, "any"):
+        nginx["stuck_to"] = None        # the helper said yes, but nginx did not reload
+    else:
+        for pid in nginx["workers"]:
+            nginx["retired"][str(pid)] = nginx.get("retire_polls", 1)
+        nginx["workers"] = [nginx["next_pid"], nginx["next_pid"] + 1]
+        nginx["next_pid"] += 2
+        nginx["port"] = port
+    crash = world.get("crash_on_switch_to")
+    if crash:
+        for c in containers.values():
+            if c["project"] == crash and c["port"] == port and running(c):
+                c["restarts"] += 1      # its supervisor died after the switch
+                c["role"] = "standby"
+                world["crash_on_switch_to"] = None
+                event("crash", c["project"])
+        settle()
+    save()
+
+elif name == "ps":
+    if "--ppid" in args:
+        for pid in nginx["workers"]:
+            print(f"{pid} nginx: worker process")
+        for pid in nginx["retired"]:
+            print(f"{pid} nginx: worker process is shutting down")
+    else:
+        pid = args[args.index("-p") + 1]
+        if int(pid) in nginx["workers"]:
+            print("nginx: worker process")
+        elif pid in nginx["retired"]:
+            if nginx["retired"][pid] <= 0:
+                del nginx["retired"][pid]
+                save()
+                sys.exit(1)
+            nginx["retired"][pid] -= 1
+            print("nginx: worker process is shutting down")
+        else:
+            sys.exit(1)
+    save()
 
 elif name == "probe":
-    container = args[args.index("--running") + 1]
-    c = world["containers"][container]
+    c = containers[args[args.index("--running") + 1]]
     event("probe", c["project"])
-    sys.exit(0 if world["images"].get(c["image"], {}).get("pages", True) else 1)
+    sys.exit(0 if image(c).get("pages", True) else 1)
 
 elif name == "docker":
     if args[0] == "compose":
@@ -90,34 +167,36 @@ elif name == "docker":
         command = rest[0]
         event("compose", project, command, os.environ.get("PRIVATOOLS_IMAGE"), os.environ.get("GIT_SHA"),
               os.environ.get("PRIVATOOLS_HOST_PORT"), os.environ.get("PRIVATOOLS_DATA_VOLUME"))
-        mine = [cid for cid, c in world["containers"].items() if c["project"] == project]
+        mine = [cid for cid, c in containers.items() if c["project"] == project]
         if command == "up":
             if project in world.get("up_fails", []):
                 sys.exit(1)
             for cid in mine:
-                del world["containers"][cid]
+                del containers[cid]
             ref = os.environ["PRIVATOOLS_IMAGE"]
-            image = world["refs"].get(ref, ref)
             world["next"] += 1
-            cid = f"c{world['next']:02d}{project.replace('-', '')}"
-            world["containers"][cid] = {"project": project, "image": image, "sha": os.environ["GIT_SHA"],
-                                        "port": int(os.environ["PRIVATOOLS_HOST_PORT"]), "status": "running",
-                                        "role": "standby"}
+            polls = world.get("boot_polls", 0)
+            containers[f"c{world['next']:02d}{project.replace('-', '')}"] = {
+                "project": project, "image": world["refs"].get(ref, ref), "sha": os.environ["GIT_SHA"],
+                "port": int(os.environ["PRIVATOOLS_HOST_PORT"]), "status": "running", "role": "standby",
+                "passive": False, "restarts": 0, "booted": polls == 0, "boot_polls": polls}
         elif command == "down":
             for cid in mine:
-                del world["containers"][cid]
+                del containers[cid]
         elif command == "stop":
             for cid in mine:
-                world["containers"][cid]["status"] = "exited"
+                containers[cid]["status"] = "exited"
+                containers[cid]["role"] = "standby"
+        settle()
         save()
     elif args[0] == "ps":
         project = next(a.split("=", 2)[2] for a in args if a.startswith("label=com.docker.compose.project="))
-        for cid, c in world["containers"].items():
+        for cid, c in sorted(containers.items()):
             if c["project"] == project:
                 print(cid)
     elif args[0] == "inspect":
         form, cid = args[2], args[3]
-        c = world["containers"].get(cid)
+        c = containers.get(cid)
         if c is None:
             sys.exit(1)
         if form == "{{.Image}}":
@@ -127,46 +206,69 @@ elif name == "docker":
         elif ".Mounts" in form:
             print("privatools_app-data" if "/app/data" in form else "privatools_app-temp")
         elif form == "{{.State.Running}}":
-            print("true" if c["status"] == "running" else "false")
+            print("true" if running(c) else "false")
+        elif form == "{{.RestartCount}}":
+            print(c["restarts"])
         else:
-            print(c["status"], 0)
+            print(c["status"], c["restarts"])
     elif args[0] == "image":
-        ref = args[-1]
-        print(world["refs"].get(ref, ref))
+        print(world["refs"].get(args[-1], args[-1]))
     elif args[0] == "exec":
-        cid = args[1]
-        c = world["containers"].get(cid)
-        if not c or c["status"] != "running":
-            sys.exit(1)  # like docker exec on a stopped or missing container
+        c = containers.get(args[1])
+        if c is None or not running(c):
+            sys.exit(1)
         if "--status" in args:
-            if not c or world["images"].get(c["image"], {}).get("legacy"):
-                sys.exit(2)
-            print(json.dumps({"enabled": world.get("jobs", True), "local": {"role": c["role"]},
+            if image(c).get("legacy"):
+                sys.exit(1)             # older releases have no status command
+            local = None
+            if not c["booted"]:
+                c["boot_polls"] -= 1
+                if c["boot_polls"] <= 0:
+                    c["booted"] = True
+                    settle()
+            elif world.get("jobs", True):
+                local = {"role": c["role"], "passive": c["passive"], "alive": True, "ready": True}
+            save()
+            print(json.dumps({"enabled": world.get("jobs", True), "local": local,
                               "running_jobs": 0, "queued_jobs": 0}))
         else:
             print("  sl  local_address rem_address   st")
+            late = world.get("pin_until_retired") or {}
+            if world.get("traffic") and (c["port"] == nginx["port"] or world.get("pin_traffic_to") == c["project"]
+                                         or (late.get("project") == c["project"]
+                                             and any(str(p) in nginx["retired"] for p in late["pids"]))):
+                print("   0: 020012AC:1F40 010012AC:D431 01 00000000:00000000 00:00000000 00000000 1000 0 1")
     elif args[0] == "kill":
-        signal, cid = args[2], args[3]
-        event("kill", signal, world["containers"][cid]["project"])
-        c = world["containers"][cid]
-        if signal == "SIGUSR1" and c["role"] == "active":
-            # The drained supervisor releases the lock; the eager standby of
-            # the other container takes it.
-            c["role"] = "standby"
-            for other in world["containers"].values():
-                if other is not c and other["status"] == "running" and not world["images"].get(other["image"], {}).get("legacy"):
-                    other["role"] = "active"
-                    break
-        elif signal == "SIGUSR2" and not any(o["role"] == "active" for o in world["containers"].values()):
-            c["role"] = "active"
+        sig, cid = args[2], args[3]
+        c = containers[cid]
+        event("kill", sig, c["project"], c["passive"], c["booted"], c["role"])
+        if sig == "SIGUSR1":
+            if world.get("stuck_job") == c["project"] and c["role"] == "active":
+                c["role"] = "draining"      # finishing a long job; reports passive false, like the worker
+            elif c["role"] in ("active", "draining"):
+                c["role"] = "standby"
+                c["passive"] = True
+            else:
+                c["passive"] = True
+        elif sig == "SIGUSR2":
+            if c["role"] == "draining":
+                c["role"] = "active"        # the drain is cancelled; it keeps the lock
+            c["passive"] = False
+        settle()
         save()
-    elif args[0] == "stop":
-        event("stop", world["containers"][args[-1]]["project"])
-        world["containers"][args[-1]]["status"] = "exited"
-        save()
-    elif args[0] == "rm":
-        world["containers"].pop(args[-1], None)
-        save()
+    elif args[0] in ("stop", "start", "rm"):
+        cid = args[-1]
+        c = containers.get(cid)
+        if c is not None:
+            event(args[0], c["project"])
+            if args[0] == "rm":
+                del containers[cid]
+            else:
+                c["status"] = "running" if args[0] == "start" else "exited"
+                c["role"] = "standby"
+                c["passive"] = False
+            settle()
+            save()
 '''
 
 
@@ -185,13 +287,13 @@ def bash() -> str:
 
 
 class Host:
-    """The simulated VM: one canonical container on OLD, nginx pointing at it."""
+    """The simulated VM: one canonical container on OLD whose supervisor holds the queue, nginx on it."""
 
     def __init__(self, tmp_path: Path):
         self.root = tmp_path
         self.bin = tmp_path / "bin"
         self.bin.mkdir()
-        for name in ("docker", "curl", "nginx-switch", "probe"):
+        for name in ("docker", "curl", "nginx-switch", "probe", "ps", "id"):
             script = self.bin / name
             script.write_text(f"#!{sys.executable}\n" + FAKE)
             script.chmod(0o755)
@@ -202,12 +304,18 @@ class Host:
         self.site.write_text("location / { proxy_pass http://privatools_app; }\n")
         self.meminfo = tmp_path / "meminfo"
         self.meminfo.write_text("MemTotal: 12000000 kB\nMemAvailable: 6000000 kB\n")
+        (tmp_path / "nginx.pid").write_text("100\n")
         self.world = {
             "next": 1,
             "refs": {"ghcr.io/x@sha256:new": "sha256:new", "ghcr.io/x@sha256:old": "sha256:old"},
             "images": {"sha256:new": {}, "sha256:old": {}},
-            "containers": {"c01privatools": {"project": "privatools", "image": "sha256:old", "sha": OLD,
-                                              "port": self.canonical_port, "status": "running", "role": "active"}},
+            "containers": {"c01privatools": {
+                "project": "privatools", "image": "sha256:old", "sha": OLD, "port": self.canonical_port,
+                "status": "running", "role": "active", "passive": False, "restarts": 0, "booted": True,
+                "boot_polls": 0}},
+            "nginx": {"port": self.canonical_port, "workers": [101, 102], "retired": {}, "next_pid": 200,
+                      "retire_polls": 1},
+            "traffic": True,
         }
         self.save()
 
@@ -216,6 +324,11 @@ class Host:
 
     def load(self) -> dict:
         return json.loads((self.root / "world.json").read_text())
+
+    def update(self, **changes):
+        self.world = self.load()
+        self.world.update(changes)
+        self.save()
 
     def set_upstream(self, port: int):
         self.upstream.write_text(f"upstream privatools_app {{\n    server 127.0.0.1:{port};\n}}\n")
@@ -227,6 +340,9 @@ class Host:
         path = self.root / "events.jsonl"
         return [json.loads(line) for line in path.read_text().splitlines()] if path.exists() else []
 
+    def clear_events(self):
+        (self.root / "events.jsonl").unlink(missing_ok=True)
+
     def run(self, *args: str, **env: str) -> subprocess.CompletedProcess:
         environment = {
             **os.environ,
@@ -237,7 +353,7 @@ class Host:
             "UPSTREAM_FILE": str(self.upstream),
             "NGINX_SITE": str(self.site),
             "NGINX_SWITCH": "nginx-switch set",
-            "NGINX_PID_FILE": str(self.root / "no-nginx.pid"),
+            "NGINX_PID_FILE": str(self.root / "nginx.pid"),
             "PUBLIC_READY_URL": "http://public.test/readyz",
             "PUBLIC_RESOLVE": "",
             "PROBE_SCRIPT": str(self.bin / "probe"),
@@ -245,13 +361,15 @@ class Host:
             "INTERIM_PORT": str(self.interim_port),
             "MEMINFO": str(self.meminfo),
             "PRIVATOOLS_DEPLOY_LOCK_HELD": "1",
-            "READY_TIMEOUT": "2", "DRAIN_MAX": "1", "DRAIN_EXTRA": "1", "DRAIN_QUIET": "0",
-            "HANDOVER_MAX": "3", "HANDOVER_IDLE_WAIT": "1", "POLL": "0.05",
+            # Upper bounds, generous for a loaded CI runner; happy paths finish early.
+            "READY_TIMEOUT": "6", "DRAIN_MAX": "1", "DRAIN_EXTRA": "1", "DRAIN_QUIET": "0",
+            "DRAIN_ROUTED_GRACE": "0", "SWITCH_VERIFY": "3", "HANDOVER_MAX": "10", "HANDOVER_IDLE_WAIT": "1",
+            "HANDOVER_CONFIRM": "10", "HANDOVER_SOAK": "0", "POLL": "0.05",
             **env,
         }
         environment.pop("COMPOSE_PROJECT", None)
         return subprocess.run([bash(), str(ROLLOUT), *args], env=environment, capture_output=True, text=True,
-                              timeout=120)
+                              timeout=180)
 
     def containers(self, project: str) -> list[dict]:
         return [c for c in self.load()["containers"].values() if c["project"] == project]
@@ -270,31 +388,53 @@ def steps(events: list[list]) -> list[tuple]:
             out.append(("compose", item[1], item[2]))
         elif item[0] in ("switch", "probe"):
             out.append((item[0], item[1]))
-        elif item[0] in ("kill", "stop"):
-            out.append(tuple(item))
+        elif item[0] == "kill":
+            out.append(("kill", item[1], item[2]))
+        elif item[0] in ("stop", "start"):
+            out.append((item[0], item[1]))
     return out
 
 
-def test_good_release_moves_through_the_interim_and_back_to_the_canonical_port(host):
+def switch_roles(events: list[list], port: int) -> dict:
+    """Supervisor roles at the first switch to PORT."""
+    return next(item[2] for item in events if item[0] == "switch" and item[1] == port)
+
+
+def signals_were_safe(events: list[list]):
+    for item in events:
+        if item[0] == "kill":
+            _, sig, project, passive, booted, role = item
+            assert booted, f"{sig} sent to {project} before its supervisor was running"
+            if sig == "SIGUSR2":
+                assert passive or role == "draining", f"SIGUSR2 sent to {project}, whose supervisor was not passive"
+
+
+# ── the normal path ──────────────────────────────────────────────────────────
+
+def test_good_release_takes_the_queue_before_any_switch_and_returns_to_the_canonical_port(host):
     result = host.run("ghcr.io/x@sha256:new", NEW)
     assert result.returncode == 0, result.stdout + result.stderr
     assert steps(host.events()) == [
+        ("switch", host.canonical_port),            # re-apply what the upstream file names
         ("compose", "privatools-interim", "up"),
         ("probe", "privatools-interim"),
-        ("kill", "SIGUSR2", "privatools-interim"),  # the successor may take the queue...
-        ("kill", "SIGUSR1", "privatools"),          # ...when the old one finishes its job; before any switch
-        ("switch", host.interim_port),
+        ("kill", "SIGUSR1", "privatools"),          # old supervisor finishes its job and hands over...
+        ("switch", host.interim_port),              # ...before any traffic moves
         ("compose", "privatools", "up"),            # only after the old container drained
         ("probe", "privatools"),
-        ("kill", "SIGUSR2", "privatools"),
         ("kill", "SIGUSR1", "privatools-interim"),
         ("switch", host.canonical_port),
         ("compose", "privatools-interim", "down"),
     ]
+    # At each switch the release that takes traffic already holds the job queue.
+    assert switch_roles(host.events(), host.interim_port) == {
+        "privatools": ["standby", True], "privatools-interim": ["active", False]}
+    final = [item for item in host.events() if item[0] == "switch"][-1][2]
+    assert final == {"privatools": ["active", False], "privatools-interim": ["standby", True]}
+    signals_were_safe(host.events())
     up = next(e for e in host.events() if e[:3] == ["compose", "privatools-interim", "up"])
-    # The verified image and its revision, on the interim port, on the live data volume.
     assert up[3:] == ["ghcr.io/x@sha256:new", NEW, str(host.interim_port), "privatools_app-data"]
-    assert host.live_port() == host.canonical_port
+    assert host.live_port() == host.canonical_port and host.load()["nginx"]["port"] == host.canonical_port
     [canonical] = host.containers("privatools")
     assert (canonical["image"], canonical["sha"], canonical["role"]) == ("sha256:new", NEW, "active")
     assert not host.containers("privatools-interim")
@@ -302,184 +442,61 @@ def test_good_release_moves_through_the_interim_and_back_to_the_canonical_port(h
 
 
 @pytest.mark.parametrize("fault,message", [("ready", "never became ready"), ("pages", "failed the real-page probe")])
-def test_rejected_release_never_takes_traffic_and_is_removed(host, fault, message):
+def test_rejected_release_never_takes_traffic_or_the_queue(host, fault, message):
     host.world["images"]["sha256:new"] = {fault: False}
     host.save()
     result = host.run("ghcr.io/x@sha256:new", NEW)
     assert result.returncode == 1, result.stdout + result.stderr
     assert message in result.stdout
     actions = steps(host.events())
-    assert not [a for a in actions if a[0] == "switch"]
+    assert actions[0] == ("switch", host.canonical_port)
+    assert ("switch", host.interim_port) not in actions
     assert not [a for a in actions if a[0] == "kill"], "the old supervisor must keep the queue"
     assert actions[-1] == ("compose", "privatools-interim", "down")
     assert host.live_port() == host.canonical_port
-    assert [c["sha"] for c in host.containers("privatools")] == [OLD]
+    assert [(c["sha"], c["role"]) for c in host.containers("privatools")] == [(OLD, "active")]
     assert not host.containers("privatools-interim")
     assert not (host.root / ".privatools-deploy.previous").exists()
 
 
-def test_failed_switch_returns_the_queue_and_removes_the_interim(host):
-    host.world["switch_fails"] = True
+# ── review item 3: the new supervisor must hold the queue before traffic moves ─
+
+def test_supervisor_that_crashes_on_taking_the_queue_is_rejected_before_any_switch(host):
+    host.world["images"]["sha256:new"] = {"crash_on_lock": True}
     host.save()
     result = host.run("ghcr.io/x@sha256:new", NEW)
     assert result.returncode == 1, result.stdout + result.stderr
+    assert "job supervisor" in result.stdout and "REJECTED" in result.stdout
     actions = steps(host.events())
-    assert ("switch", host.interim_port) in actions
-    # The drained old supervisor is resumed, the interim (which took the queue
-    # when the old one released it) drains back to it, and then it is removed.
-    after = actions[actions.index(("switch", host.interim_port)) + 1:]
-    assert after == [("kill", "SIGUSR2", "privatools"), ("kill", "SIGUSR2", "privatools"),
-                     ("kill", "SIGUSR1", "privatools-interim"), ("compose", "privatools-interim", "down")]
-    assert host.live_port() == host.canonical_port
-    assert [c["role"] for c in host.containers("privatools")] == ["active"]
+    assert ("switch", host.interim_port) not in actions
+    assert any(item[0] == "crash" for item in host.events())
+    # The broken candidate goes first, so it cannot grab the lock again; then
+    # the old supervisor is resumed.
+    down = actions.index(("compose", "privatools-interim", "down"))
+    assert actions[down + 1:] == [("kill", "SIGUSR2", "privatools")]
+    signals_were_safe(host.events())
+    assert [(c["sha"], c["role"]) for c in host.containers("privatools")] == [(OLD, "active")]
+    assert not host.containers("privatools-interim")
+    assert host.load()["nginx"]["port"] == host.canonical_port
 
 
-def test_switch_that_does_not_reach_the_new_build_is_undone(host):
-    # nginx reloaded but still answers from the old container.
-    host.world["public_stuck_on"] = host.canonical_port
-    host.save()
+def test_supervisor_that_dies_after_the_switch_is_caught_before_the_old_release_is_destroyed(host):
+    host.update(crash_on_switch_to="privatools-interim")
     result = host.run("ghcr.io/x@sha256:new", NEW)
     assert result.returncode == 1, result.stdout + result.stderr
-    switches = [a for a in steps(host.events()) if a[0] == "switch"]
-    assert switches == [("switch", host.interim_port), ("switch", host.canonical_port)]
-    assert host.live_port() == host.canonical_port
-    assert [c["sha"] for c in host.containers("privatools")] == [OLD]
-    assert not host.containers("privatools-interim")
-
-
-def test_canonical_that_will_not_start_leaves_the_new_release_serving_from_the_interim(host):
-    host.world["up_fails"] = ["privatools"]
-    host.save()
-    result = host.run("ghcr.io/x@sha256:new", NEW)
-    assert result.returncode == 3, result.stdout + result.stderr
-    assert "DEGRADED" in result.stdout
-    assert host.live_port() == host.interim_port
-    [interim] = host.containers("privatools-interim")
-    assert interim["sha"] == NEW and interim["status"] == "running"
-    assert (host.root / ".privatools-deploy.resume").exists()
-
-    # The next run backs off instead of rebooting a failing container every minute...
-    again = host.run("ghcr.io/x@sha256:new", NEW)
-    assert again.returncode == 3 and "failed less than" in again.stdout
-    # ...and after the backoff finishes the move once the canonical can start.
-    host.world = host.load()
-    host.world["up_fails"] = []
-    host.save()
-    past = time.time() - 3600
-    os.utime(host.root / ".privatools-deploy.resume", (past, past))
-    resumed = host.run("ghcr.io/x@sha256:new", NEW)
-    assert resumed.returncode == 0, resumed.stdout + resumed.stderr
-    assert "resuming" in resumed.stdout
-    assert host.live_port() == host.canonical_port
-    assert [c["sha"] for c in host.containers("privatools")] == [NEW]
-    assert not host.containers("privatools-interim")
-    assert not (host.root / ".privatools-deploy.resume").exists()
-
-
-def test_leftover_interim_is_drained_and_removed_before_a_new_deploy(host):
-    host.world["containers"]["c09privatoolsinterim"] = {
-        "project": "privatools-interim", "image": "sha256:old", "sha": OLD, "port": host.interim_port,
-        "status": "running", "role": "standby"}
-    host.save()
-    result = host.run("ghcr.io/x@sha256:new", NEW)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "left an interim container behind" in result.stdout
-    assert steps(host.events())[0] == ("kill", "SIGUSR2", "privatools")
-    assert steps(host.events())[2] == ("compose", "privatools-interim", "down")
-
-
-def test_run_killed_after_its_switch_is_finished_by_the_next_run(host):
-    # A previous run switched nginx to the interim and died before draining
-    # the old canonical container, whose supervisor still holds the queue.
-    host.set_upstream(host.interim_port)
-    host.world["containers"]["c09privatoolsinterim"] = {
-        "project": "privatools-interim", "image": "sha256:new", "sha": NEW, "port": host.interim_port,
-        "status": "running", "role": "standby"}
-    host.save()
-    result = host.run("ghcr.io/x@sha256:new", NEW)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "resuming" in result.stdout
-    assert steps(host.events()) == [
-        ("kill", "SIGUSR2", "privatools-interim"),  # the old canonical hands the queue over...
-        ("kill", "SIGUSR1", "privatools"),
-        ("compose", "privatools", "up"),            # ...before compose stops it
-        ("probe", "privatools"),
-        ("kill", "SIGUSR2", "privatools"),
-        ("kill", "SIGUSR1", "privatools-interim"),
-        ("switch", host.canonical_port),
-        ("compose", "privatools-interim", "down"),
-    ]
-    assert host.live_port() == host.canonical_port
-    assert [(c["sha"], c["role"]) for c in host.containers("privatools")] == [(NEW, "active")]
-    assert not host.containers("privatools-interim")
-
-
-def test_interim_that_stopped_serving_is_replaced_by_a_serving_canonical(host):
-    # nginx still names the interim port, but the interim no longer answers;
-    # the canonical container does. Go back to it and retire the interim
-    # through a queue handover rather than killing it.
-    host.set_upstream(host.interim_port)
-    host.world["images"]["sha256:broken"] = {"ready": False}
-    host.world["containers"]["c09privatoolsinterim"] = {
-        "project": "privatools-interim", "image": "sha256:broken", "sha": NEW, "port": host.interim_port,
-        "status": "running", "role": "active"}
-    host.world["containers"]["c01privatools"]["role"] = "standby"
-    host.save()
-    result = host.run("ghcr.io/x@sha256:old", OLD)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "switched nginx back to the canonical container" in result.stdout
-    assert steps(host.events()) == [
-        ("switch", host.canonical_port),
-        ("kill", "SIGUSR2", "privatools"),
-        ("kill", "SIGUSR1", "privatools-interim"),
-        ("compose", "privatools-interim", "down"),
-    ]
-    assert host.live_port() == host.canonical_port
-    assert [c["role"] for c in host.containers("privatools")] == ["active"]
-
-
-def test_stopped_canonical_container_is_replaced_without_drain_or_signals(host):
-    host.world["containers"]["c01privatools"]["status"] = "exited"
-    host.save()
-    result = host.run("ghcr.io/x@sha256:new", NEW)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "is not running" in result.stdout
-    assert "predates handover" not in result.stdout
     actions = steps(host.events())
-    assert not [a for a in actions if a[0] in ("kill", "stop") and a[-1] == "privatools"
-                and actions.index(a) < actions.index(("compose", "privatools", "up"))]
-    assert [c["sha"] for c in host.containers("privatools")] == [NEW]
-    # The stopped release is still recorded for rollback.
-    assert (host.root / ".privatools-deploy.previous").read_text().split() == ["sha256:old", OLD]
+    assert ("compose", "privatools", "up") not in actions, "the old release must survive"
+    assert actions[actions.index(("switch", host.interim_port)) + 1:] == [
+        ("switch", host.canonical_port),
+        ("compose", "privatools-interim", "down"),
+        ("kill", "SIGUSR2", "privatools"),
+    ]
+    assert host.load()["nginx"]["port"] == host.canonical_port
+    assert [(c["image"], c["role"]) for c in host.containers("privatools")] == [("sha256:old", "active")]
+    assert "c01privatools" in host.load()["containers"]
 
 
-def test_same_image_and_build_is_a_no_op(host):
-    result = host.run("ghcr.io/x@sha256:old", OLD)
-    assert result.returncode == 0, result.stdout + result.stderr
-    assert "already serves" in result.stdout
-    assert not host.events()
-
-
-@pytest.mark.parametrize("breakage,message", [
-    ("memory", "refusing to start a second container"),
-    ("upstream", "install the nginx switch first"),
-    ("site", "does not proxy only through"),
-])
-def test_unmet_preconditions_change_nothing(host, breakage, message):
-    if breakage == "memory":
-        host.meminfo.write_text("MemAvailable: 1000000 kB\n")
-    elif breakage == "upstream":
-        host.upstream.unlink()
-    else:
-        host.site.write_text("location / { proxy_pass http://127.0.0.1:8000; }\n")
-    result = host.run("ghcr.io/x@sha256:new", NEW)
-    assert result.returncode == 2, result.stdout + result.stderr
-    assert message in result.stdout
-    assert not host.events()
-
-
-def test_supervisor_that_cannot_drain_is_stopped_only_when_idle(host):
-    # The first deploy after the cut-over replaces a release without --status.
+def test_first_deploy_after_the_cut_over_stops_the_old_supervisor_only_when_idle(host):
     host.world["images"]["sha256:old"] = {"legacy": True}
     host.save()
     result = host.run("ghcr.io/x@sha256:new", NEW)
@@ -491,27 +508,332 @@ def test_supervisor_that_cannot_drain_is_stopped_only_when_idle(host):
     assert actions.index(("switch", host.interim_port)) < stop < actions.index(("compose", "privatools", "up"))
 
 
+def test_first_deploy_whose_supervisor_breaks_brings_the_old_release_back(host):
+    host.world["images"]["sha256:old"] = {"legacy": True}
+    host.world["images"]["sha256:new"] = {"crash_on_lock": True}
+    host.save()
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 1, result.stdout + result.stderr
+    actions = steps(host.events())
+    assert actions.index(("stop", "privatools")) < actions.index(("start", "privatools"))
+    assert actions[-2:] == [("switch", host.canonical_port), ("compose", "privatools-interim", "down")]
+    assert ("compose", "privatools", "up") not in actions
+    assert host.load()["nginx"]["port"] == host.canonical_port
+    assert [(c["sha"], c["status"], c["role"]) for c in host.containers("privatools")] == [(OLD, "running", "active")]
+    assert not host.containers("privatools-interim")
+
+
+# ── review item 2: nginx must really route where the file says ───────────────
+
+def test_run_after_a_killed_switch_back_repairs_nginx_before_removing_anything(host):
+    # A run killed between renaming the upstream file and reloading nginx left
+    # the file naming the canonical port while nginx still routes to the
+    # interim. The next run must not trust the file.
+    host.world["containers"]["c01privatools"].update(image="sha256:new", sha=NEW)
+    host.world["containers"]["c01privatools"]["role"] = "active"
+    host.world["containers"]["c09privatoolsinterim"] = {
+        "project": "privatools-interim", "image": "sha256:new", "sha": NEW, "port": host.interim_port,
+        "status": "running", "role": "standby", "passive": True, "restarts": 0, "booted": True, "boot_polls": 0}
+    host.world["nginx"]["port"] = host.interim_port
+    host.save()
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert steps(host.events())[0] == ("switch", host.canonical_port)
+    assert host.load()["nginx"]["port"] == host.canonical_port
+    assert not host.containers("privatools-interim")
+    assert "already serves" in result.stdout
+
+
+def test_container_that_still_receives_requests_after_nginx_moved_on_is_never_removed(host):
+    host.update(pin_traffic_to="privatools")
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 4, result.stdout + result.stderr
+    assert "still receives requests" in result.stdout
+    actions = steps(host.events())
+    assert ("compose", "privatools", "up") not in actions
+    assert host.containers("privatools") and host.containers("privatools-interim")
+
+
+def test_switch_that_nginx_never_applied_is_undone_and_retried_later(host):
+    # The re-apply at the start of a run is checked like any switch.
+    host.world["nginx"]["stuck_to"] = "any"
+    host.save()
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert "did not reload" in result.stdout
+    assert not [a for a in steps(host.events()) if a[0] == "compose"]
+
+    # The switch to the new release: the helper reports success, nginx keeps
+    # routing to the old port. Undone, not counted as a deploy.
+    host.clear_events()
+    host.update(nginx={**host.load()["nginx"], "stuck_to": host.interim_port})
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 2, result.stdout + result.stderr
+    actions = steps(host.events())
+    switch = actions.index(("switch", host.interim_port))
+    assert ("switch", host.canonical_port) in actions[switch + 1:]
+    assert host.live_port() == host.canonical_port and host.load()["nginx"]["port"] == host.canonical_port
+    assert [(c["sha"], c["role"]) for c in host.containers("privatools")] == [(OLD, "active")]
+    assert not host.containers("privatools-interim")
+
+
+def test_old_supervisor_whose_job_outlasts_the_handover_keeps_the_queue(host):
+    # Its job runs past HANDOVER_MAX: the attempt is undone (a host matter, not
+    # the release's), and the drain is cancelled so it keeps serving jobs.
+    host.update(stuck_job="privatools")
+    result = host.run("ghcr.io/x@sha256:new", NEW, HANDOVER_MAX="1")
+    assert result.returncode == 2, result.stdout + result.stderr
+    actions = steps(host.events())
+    assert ("switch", host.interim_port) not in actions
+    down = actions.index(("compose", "privatools-interim", "down"))
+    assert actions[down + 1:] == [("kill", "SIGUSR2", "privatools")]
+    assert [c["role"] for c in host.containers("privatools")] == ["active"]
+    signals_were_safe(host.events())
+
+
+def test_requests_from_workers_a_killed_run_retired_are_not_mistaken_for_routing(host):
+    # A run died right after its switch. Its retired nginx workers (301, 302)
+    # are still finishing uploads to the old container; the next run re-applies
+    # the upstream and must wait for them, not call it misrouting.
+    host.set_upstream(host.interim_port)
+    host.world["nginx"].update(port=host.interim_port, retired={"301": 6, "302": 6})
+    host.world["pin_until_retired"] = {"project": "privatools", "pids": [301, 302]}
+    host.world["containers"]["c09privatoolsinterim"] = {
+        "project": "privatools-interim", "image": "sha256:new", "sha": NEW, "port": host.interim_port,
+        "status": "running", "role": "standby", "passive": False, "restarts": 0, "booted": True, "boot_polls": 0}
+    host.save()
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "still receives requests" not in result.stdout
+    assert host.live_port() == host.canonical_port
+    assert [c["sha"] for c in host.containers("privatools")] == [NEW]
+
+
+@pytest.mark.parametrize("rollback,expected", [(False, 3), (True, 2)])
+def test_moving_back_from_the_degraded_state_checks_memory_first(host, rollback, expected):
+    host.update(up_fails=["privatools"])
+    assert host.run("ghcr.io/x@sha256:new", NEW).returncode == 3
+    host.update(up_fails=[])
+    past = time.time() - 3600
+    os.utime(host.root / ".privatools-deploy.resume", (past, past))
+    host.meminfo.write_text("MemAvailable: 1000000 kB\n")
+    host.clear_events()
+    result = host.run(*(["--rollback"] if rollback else ["ghcr.io/x@sha256:new", NEW]))
+    assert result.returncode == expected, result.stdout + result.stderr
+    assert "refusing to start a second container" in result.stdout
+    assert ("compose", "privatools", "up") not in steps(host.events())
+    assert host.live_port() == host.interim_port
+
+
+# ── review item 5: host trouble is retried, not blamed on the release ─────────
+
+@pytest.mark.parametrize("fault", ["interim_up", "switch", "public"])
+def test_infrastructure_failure_exits_2_and_leaves_the_old_release_in_charge(host, fault):
+    if fault == "interim_up":
+        host.update(up_fails=["privatools-interim"])
+    elif fault == "switch":
+        host.update(switch_fails_to=host.interim_port)
+    else:
+        host.update(public_down=True)
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert host.live_port() == host.canonical_port and host.load()["nginx"]["port"] == host.canonical_port
+    assert [(c["sha"], c["role"]) for c in host.containers("privatools")] == [(OLD, "active")]
+    assert not host.containers("privatools-interim")
+    signals_were_safe(host.events())
+
+
+# ── review item 4: the rollback record and --rollback while degraded ─────────
+
+def test_degraded_run_records_the_replaced_release_before_destroying_it(host):
+    host.update(up_fails=["privatools"])
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 3, result.stdout + result.stderr
+    assert "DEGRADED" in result.stdout
+    assert (host.root / ".privatools-deploy.previous").read_text().split() == ["sha256:old", OLD]
+    assert host.live_port() == host.interim_port
+    [interim] = host.containers("privatools-interim")
+    assert (interim["sha"], interim["role"]) == (NEW, "active")
+
+
+def test_rollback_while_degraded_restores_the_previous_release_at_once(host):
+    host.update(up_fails=["privatools"])
+    assert host.run("ghcr.io/x@sha256:new", NEW).returncode == 3
+    host.update(up_fails=[])
+    host.clear_events()
+    result = host.run("--rollback")                  # inside the resume backoff
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "failed less than" not in result.stdout
+    assert host.live_port() == host.canonical_port and host.load()["nginx"]["port"] == host.canonical_port
+    assert [(c["image"], c["sha"], c["role"]) for c in host.containers("privatools")] == [("sha256:old", OLD, "active")]
+    assert not host.containers("privatools-interim")
+    assert (host.root / ".privatools-deploy.previous").read_text().split() == ["sha256:new", NEW]
+    signals_were_safe(host.events())
+
+
+def test_degraded_run_backs_off_then_finishes_the_move(host):
+    host.update(up_fails=["privatools"])
+    assert host.run("ghcr.io/x@sha256:new", NEW).returncode == 3
+    again = host.run("ghcr.io/x@sha256:new", NEW)
+    assert again.returncode == 3 and "failed less than" in again.stdout
+    host.update(up_fails=[])
+    past = time.time() - 3600
+    os.utime(host.root / ".privatools-deploy.resume", (past, past))
+    host.clear_events()
+    resumed = host.run("ghcr.io/x@sha256:new", NEW)
+    assert resumed.returncode == 0, resumed.stdout + resumed.stderr
+    assert "resuming" in resumed.stdout
+    assert steps(host.events())[:1] == [("switch", host.interim_port)]   # re-apply the file
+    assert host.live_port() == host.canonical_port
+    assert [(c["sha"], c["role"]) for c in host.containers("privatools")] == [(NEW, "active")]
+    assert not host.containers("privatools-interim")
+    assert not (host.root / ".privatools-deploy.resume").exists()
+
+
+# ── review item 13: a failed record must not be reported as done ──────────────
+
+def test_release_that_cannot_be_recorded_for_rollback_is_not_destroyed(host):
+    result = host.run("ghcr.io/x@sha256:new", NEW, PREVIOUS_FILE=str(host.root / "missing-dir" / "previous"))
+    assert result.returncode == 3, result.stdout + result.stderr
+    assert "cannot record" in result.stdout and "recorded " not in result.stdout
+    assert ("compose", "privatools", "up") not in steps(host.events())
+    assert "c01privatools" in host.load()["containers"]
+
+
+# ── resuming and reconciling ─────────────────────────────────────────────────
+
+def test_run_killed_after_its_switch_is_finished_by_the_next_run(host):
+    host.set_upstream(host.interim_port)
+    host.world["nginx"]["port"] = host.interim_port
+    host.world["containers"]["c09privatoolsinterim"] = {
+        "project": "privatools-interim", "image": "sha256:new", "sha": NEW, "port": host.interim_port,
+        "status": "running", "role": "standby", "passive": False, "restarts": 0, "booted": True, "boot_polls": 0}
+    host.save()
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "resuming" in result.stdout
+    assert steps(host.events()) == [
+        ("switch", host.interim_port),              # re-apply
+        ("kill", "SIGUSR1", "privatools"),          # the old canonical hands the queue over...
+        ("compose", "privatools", "up"),            # ...before compose stops it
+        ("probe", "privatools"),
+        ("kill", "SIGUSR1", "privatools-interim"),
+        ("switch", host.canonical_port),
+        ("compose", "privatools-interim", "down"),
+    ]
+    assert host.live_port() == host.canonical_port
+    assert [(c["sha"], c["role"]) for c in host.containers("privatools")] == [(NEW, "active")]
+    assert (host.root / ".privatools-deploy.previous").read_text().split() == ["sha256:old", OLD]
+    signals_were_safe(host.events())
+
+
+def test_interim_that_stopped_serving_is_replaced_by_a_serving_canonical(host):
+    host.set_upstream(host.interim_port)
+    host.world["nginx"]["port"] = host.interim_port
+    host.world["images"]["sha256:broken"] = {"ready": False}
+    host.world["containers"]["c09privatoolsinterim"] = {
+        "project": "privatools-interim", "image": "sha256:broken", "sha": NEW, "port": host.interim_port,
+        "status": "running", "role": "active", "passive": False, "restarts": 0, "booted": True, "boot_polls": 0}
+    host.world["containers"]["c01privatools"]["role"] = "standby"
+    host.world["containers"]["c01privatools"]["passive"] = True
+    host.save()
+    result = host.run("ghcr.io/x@sha256:old", OLD)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "switching to" in result.stdout
+    assert steps(host.events()) == [
+        ("switch", host.canonical_port),
+        ("kill", "SIGUSR1", "privatools-interim"),
+        ("kill", "SIGUSR2", "privatools"),
+        ("compose", "privatools-interim", "down"),
+    ]
+    assert host.live_port() == host.canonical_port
+    assert [c["role"] for c in host.containers("privatools")] == ["active"]
+    signals_were_safe(host.events())
+
+
+def test_leftover_interim_is_retired_without_signalling_an_eager_successor(host):
+    host.world["containers"]["c09privatoolsinterim"] = {
+        "project": "privatools-interim", "image": "sha256:old", "sha": OLD, "port": host.interim_port,
+        "status": "running", "role": "standby", "passive": False, "restarts": 0, "booted": True, "boot_polls": 0}
+    host.save()
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "left an interim container behind" in result.stdout
+    assert steps(host.events())[:2] == [("switch", host.canonical_port), ("compose", "privatools-interim", "down")]
+    signals_were_safe(host.events())
+
+
+def test_supervisors_are_signalled_only_once_they_run(host):
+    host.update(boot_polls=3)
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    signals_were_safe(host.events())
+
+
+def test_stopped_canonical_container_is_replaced_without_drain_or_signals(host):
+    host.world["containers"]["c01privatools"]["status"] = "exited"
+    host.world["containers"]["c01privatools"]["role"] = "standby"
+    host.save()
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "is not running" in result.stdout
+    actions = steps(host.events())
+    assert not [a for a in actions[:actions.index(("compose", "privatools", "up"))] if a[0] == "kill"]
+    assert [c["sha"] for c in host.containers("privatools")] == [NEW]
+    assert (host.root / ".privatools-deploy.previous").read_text().split() == ["sha256:old", OLD]
+
+
+def test_same_image_and_build_changes_nothing_but_the_re_apply(host):
+    result = host.run("ghcr.io/x@sha256:old", OLD)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "already serves" in result.stdout
+    assert steps(host.events()) == [("switch", host.canonical_port)]
+
+
+@pytest.mark.parametrize("breakage,message,touched", [
+    ("root", "as root", False),
+    ("memory", "refusing to start a second container", True),
+    ("upstream", "install the nginx switch first", False),
+    ("site", "does not proxy only through", False),
+])
+def test_unmet_preconditions_start_nothing(host, breakage, message, touched):
+    if breakage == "root":
+        host.update(uid=0)
+    elif breakage == "memory":
+        host.meminfo.write_text("MemAvailable: 1000000 kB\n")
+    elif breakage == "upstream":
+        host.upstream.unlink()
+    else:
+        host.site.write_text("location / { proxy_pass http://127.0.0.1:8000; }\n")
+    result = host.run("ghcr.io/x@sha256:new", NEW)
+    assert result.returncode == 2, result.stdout + result.stderr
+    assert message in result.stdout
+    # Only the re-apply of the unchanged upstream may have happened.
+    assert steps(host.events()) == ([("switch", host.canonical_port)] if touched else [])
+
+
 def test_rollback_redeploys_the_recorded_previous_release(host):
     assert host.run("ghcr.io/x@sha256:new", NEW).returncode == 0
-    (host.root / "events.jsonl").unlink()
+    host.clear_events()
     result = host.run("--rollback")
     assert result.returncode == 0, result.stdout + result.stderr
     assert [c["sha"] for c in host.containers("privatools")] == [OLD]
     assert (host.root / ".privatools-deploy.previous").read_text().split() == ["sha256:new", NEW]
-    assert steps(host.events())[0] == ("compose", "privatools-interim", "up")
+    assert steps(host.events())[1] == ("compose", "privatools-interim", "up")
 
 
 def test_disabled_jobs_send_no_supervisor_signals(host):
-    host.world["jobs"] = False
-    host.save()
+    host.update(jobs=False)
     result = host.run("ghcr.io/x@sha256:new", NEW)
     assert result.returncode == 0, result.stdout + result.stderr
     assert not [a for a in steps(host.events()) if a[0] == "kill"]
 
 
+# ── the files the rollout relies on (review item 14: stable interfaces) ──────
+
 def test_ports_and_privilege_are_consistent_across_the_deploy_files():
     rollout = ROLLOUT.read_text()
-    helper = (ROOT / "deploy/oracle-vm/nginx-upstream.sh").read_text()
+    helper = HELPER.read_text()
     sudoers = (ROOT / "deploy/oracle-vm/privatools-deploy.sudoers").read_text()
     assert 'CANONICAL_PORT="${CANONICAL_PORT:-8000}"' in rollout
     assert 'INTERIM_PORT="${INTERIM_PORT:-8001}"' in rollout
@@ -529,7 +851,21 @@ def test_ports_and_privilege_are_consistent_across_the_deploy_files():
         assert not [line for line in code if "docker" in line and "prune" in line], path
 
 
-def test_compose_defaults_to_the_steady_state_port_and_the_interim_cannot_own_data():
+def test_the_interfaces_the_installed_rollout_reads_from_a_release():
+    rollout = ROLLOUT.read_text()
+    # The page probe's command line.
+    probe = (ROOT / "scripts/ci/probe-image.py").read_text()
+    assert '--running "$1" --url "http://127.0.0.1:$2" --sha "$3"' in rollout
+    assert "--running CONTAINER --url BASE_URL --sha BUILD_SHA" in probe
+    # The status command and the keys it parses.
+    assert 'STATUS_MODULE="${STATUS_MODULE:-backend.app.job_handover}"' in rollout
+    from backend.app import job_handover
+    report = job_handover.status()
+    assert set(report) >= {"enabled", "local", "running_jobs", "queued_jobs"}
+    for key in ('state.get("enabled")', 'local.get("role")', 'local.get("passive")', 'local.get("alive")',
+                '"running_jobs"', '"queued_jobs"'):
+        assert key in rollout, key
+    # The compose variables and the overlay file.
     compose = (ROOT / "docker-compose.yml").read_text()
     assert '- "127.0.0.1:${PRIVATOOLS_HOST_PORT:-8000}:8000"' in compose
     interim = (ROOT / "deploy/oracle-vm/compose.interim.yml").read_text()
@@ -537,43 +873,140 @@ def test_compose_defaults_to_the_steady_state_port_and_the_interim_cannot_own_da
         block = interim.split(f"  {volume}:\n", 1)[1].split("\n  app-", 1)[0]
         assert "external: true" in block
     assert "${PRIVATOOLS_DATA_VOLUME:?" in interim and "${PRIVATOOLS_TEMP_VOLUME:?" in interim
+    # The drain and resume signals the launcher relays to the supervisor.
+    launcher = (ROOT / "backend/app/launcher.py").read_text()
+    assert "signal.SIGUSR1, signal.SIGUSR2" in launcher
+    worker = (ROOT / "backend/app/api_v1/jobs/worker.py").read_text()
+    assert "signal.signal(signal.SIGUSR1,control.request_drain)" in worker
+    assert "signal.signal(signal.SIGUSR2,control.request_resume)" in worker
 
 
 # ── the root helper, through its unprivileged testing hook ───────────────────
 
-def run_helper(tmp_path, *args, test="true", reload="true"):
+class ReadyServer:
+    """A stand-in app port: /readyz answers ready (or 503 when not ready)."""
+
+    def __init__(self, ready=True):
+        state = {"ready": ready}
+
+        class Handler(BaseHTTPRequestHandler):
+            def do_GET(self):
+                body = json.dumps({"status": "ready" if state["ready"] else "degraded"}).encode()
+                self.send_response(200 if state["ready"] else 503)
+                self.end_headers()
+                self.wfile.write(body)
+
+            def log_message(self, *_):
+                pass
+
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+        self.port = self.server.server_address[1]
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+
+    def close(self):
+        self.server.shutdown()
+        self.server.server_close()
+
+
+@pytest.fixture
+def ports():
+    servers = [ReadyServer(), ReadyServer(), ReadyServer(ready=False)]
+    yield [server.port for server in servers]
+    for server in servers:
+        server.close()
+
+
+def run_helper(tmp_path, ports, *args, test="true", reload="true", background=False):
     env = {**os.environ, "PRIVATOOLS_UPSTREAM_FILE": str(tmp_path / "up.conf"),
-           "PRIVATOOLS_ALLOWED_PORTS": "8000 8001", "PRIVATOOLS_NGINX_TEST": test,
+           "PRIVATOOLS_UPSTREAM_LOCK": str(tmp_path / "helper.lock"),
+           "PRIVATOOLS_ALLOWED_PORTS": " ".join(map(str, ports)), "PRIVATOOLS_NGINX_TEST": test,
            "PRIVATOOLS_NGINX_RELOAD": reload}
-    return subprocess.run([bash(), str(ROOT / "deploy/oracle-vm/nginx-upstream.sh"), *args], env=env,
-                          capture_output=True, text=True, timeout=30)
+    command = [bash(), str(HELPER), *map(str, args)]
+    if background:
+        return subprocess.Popen(command, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    return subprocess.run(command, env=env, capture_output=True, text=True, timeout=30)
 
 
-def test_helper_switches_only_to_privatools_ports_and_restores_on_failure(tmp_path):
+def shown(tmp_path, ports):
+    return run_helper(tmp_path, ports, "show").stdout.strip()
+
+
+def script(tmp_path, name, body):
+    """The helper splits its commands on whitespace, like the real ones: use a file."""
+    path = tmp_path / name
+    path.write_text(f"#!/bin/sh\n{body}\n")
+    path.chmod(0o755)
+    return str(path)
+
+
+@pytest.fixture
+def helper_env(tmp_path):
     if os.geteuid() == 0:
         pytest.skip("the testing hook is ignored as root, by design")
     shipped = (ROOT / "deploy/oracle-vm/privatools-upstream.conf").read_text()
-    (tmp_path / "up.conf").write_text(shipped)
+    return shipped
 
-    assert run_helper(tmp_path, "set", "8001").returncode == 0
-    assert "server 127.0.0.1:8001;" in (tmp_path / "up.conf").read_text()
-    assert run_helper(tmp_path, "show").stdout.strip() == "8001"
 
-    for port in ("22", "8002", "8001;", "80 01"):
-        assert run_helper(tmp_path, "set", port).returncode == 2
-    assert run_helper(tmp_path, "show").stdout.strip() == "8001"
+def test_helper_switches_only_to_ready_privatools_ports_and_restores_on_failure(tmp_path, ports, helper_env):
+    a, b, down = ports
+    (tmp_path / "up.conf").write_text(helper_env.replace("8000", str(a)))
+    assert run_helper(tmp_path, ports, "set", b).returncode == 0
+    assert f"server 127.0.0.1:{b};" in (tmp_path / "up.conf").read_text()
+    assert shown(tmp_path, ports) == str(b)
+
+    for port in ("22", "8002", f"{a};", "80 01"):
+        assert run_helper(tmp_path, ports, "set", port).returncode == 2
+    assert shown(tmp_path, ports) == str(b)
+
+    # Nothing ready listens there (review item 12): a stray switch would be an outage.
+    refused = run_helper(tmp_path, ports, "set", down)
+    assert refused.returncode == 5 and "nothing ready" in refused.stderr
+    assert shown(tmp_path, ports) == str(b)
+    assert run_helper(tmp_path, ports, "set", down, "--force").returncode == 2, "--force is for root only"
 
     # nginx -t rejects the result: the previous file is back and nothing reloads.
     marker = tmp_path / "reloaded"
-    failed = run_helper(tmp_path, "set", "8000", test="false", reload=f"touch {marker}")
+    failed = run_helper(tmp_path, ports, "set", a, test="false", reload=f"touch {marker}")
     assert failed.returncode == 3 and not marker.exists()
-    assert run_helper(tmp_path, "show").stdout.strip() == "8001"
+    assert shown(tmp_path, ports) == str(b)
 
     # The reload itself fails: the file matches what nginx still runs.
-    failed = run_helper(tmp_path, "set", "8000", reload="false")
-    assert failed.returncode == 4
-    assert run_helper(tmp_path, "show").stdout.strip() == "8001"
+    assert run_helper(tmp_path, ports, "set", a, reload="false").returncode == 4
+    assert shown(tmp_path, ports) == str(b)
 
-    assert run_helper(tmp_path, "set", "8000").returncode == 0
-    assert (tmp_path / "up.conf").read_text() == shipped
-    assert sorted(p.name for p in tmp_path.iterdir()) == ["up.conf", "up.conf.previous"]
+    assert run_helper(tmp_path, ports, "set", a).returncode == 0
+    assert (tmp_path / "up.conf").read_text() == helper_env.replace("8000", str(a))
+    assert not [p.name for p in tmp_path.iterdir() if p.name.startswith(".privatools-upstream")]
+
+
+def test_helper_finishes_its_switch_when_terminated_inside_the_rename_to_reload_window(tmp_path, ports, helper_env):
+    # systemctl stop, or the unit's start timeout, sends SIGTERM to every
+    # process of the deploy. Inside this window the file already names the new
+    # port; stopping there would leave nginx on the old one (review item 2).
+    a, b, _ = ports
+    (tmp_path / "up.conf").write_text(helper_env.replace("8000", str(a)))
+    window, reloaded = tmp_path / "in-window", tmp_path / "reloaded"
+    process = run_helper(tmp_path, ports, "set", b, test=script(tmp_path, "slow-test", f"touch {window}; sleep 1.5"),
+                         reload=f"touch {reloaded}", background=True)
+    deadline = time.monotonic() + 10
+    while not window.exists():
+        assert time.monotonic() < deadline
+        time.sleep(0.02)
+    process.send_signal(signal.SIGTERM)
+    _, stderr = process.communicate(timeout=20)
+    assert process.returncode == 0, stderr
+    assert reloaded.exists() and shown(tmp_path, ports) == str(b)
+
+
+def test_concurrent_switches_are_serialized(tmp_path, ports, helper_env):
+    a, b, _ = ports
+    (tmp_path / "up.conf").write_text(helper_env.replace("8000", str(a)))
+    log = tmp_path / "order"
+    first = run_helper(tmp_path, ports, "set", b, test=script(tmp_path, "test-b", f"echo test-b >> {log}; sleep 1"),
+                       reload=script(tmp_path, "reload-b", f"echo reload-b >> {log}"), background=True)
+    time.sleep(0.3)
+    second = run_helper(tmp_path, ports, "set", a, test=script(tmp_path, "test-a", f"echo test-a >> {log}"),
+                        reload=script(tmp_path, "reload-a", f"echo reload-a >> {log}"), background=True)
+    assert first.wait(timeout=20) == 0 and second.wait(timeout=20) == 0
+    assert log.read_text().split() == ["test-b", "reload-b", "test-a", "reload-a"]
+    assert shown(tmp_path, ports) == str(a)
