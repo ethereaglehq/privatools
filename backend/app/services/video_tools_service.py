@@ -8,11 +8,13 @@ These all share the same constraints:
 
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
 import subprocess
 import tempfile
+from fractions import Fraction
 from pathlib import Path
 
 from ..utils.exceptions import DependencyError, ToolTimeoutError, ValidationError
@@ -24,6 +26,13 @@ FFMPEG_TIMEOUT = 180  # seconds — covers ~10 min of input at preset speeds
 
 # Supported output formats per tool — kept lower-case for sanity.
 VIDEO_OUTPUT_FORMATS = {"mp4", "mov", "webm", "mkv", "avi"}
+
+# libvpx-vp9 at its default speed spent ~11 CPU-seconds per second of 720p30
+# camera footage (release image, 2-core Oracle ARM VM), so WebM output of more
+# than 15-20 s of 720p hit FFMPEG_TIMEOUT. Realtime speed 8 spends ~1, a
+# little less than the H.264 path, for a slightly lower SSIM at the same
+# bitrate target.
+VP9_SPEED = ["-deadline", "realtime", "-cpu-used", "8", "-row-mt", "1"]
 
 # ─── helpers ─────────────────────────────────────────────────────────────
 
@@ -135,7 +144,7 @@ def video_convert(input_path: str, target_format: str) -> str:
     # Sensible per-format codec choices:
     args = ["-i", input_path]
     if fmt == "webm":
-        args += ["-c:v", "libvpx-vp9", "-b:v", "1M", "-c:a", "libopus"]
+        args += ["-c:v", "libvpx-vp9", "-b:v", "1M", *VP9_SPEED, "-c:a", "libopus"]
     elif fmt == "mkv":
         args += ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac"]
     elif fmt == "avi":
@@ -219,7 +228,7 @@ def gif_to_mp4(input_path: str) -> str:
 # ─── 6. Burn-in subtitles (.srt) onto a video ────────────────────────────
 
 
-def _has_audio(path: str) -> bool:
+def has_audio(path: str) -> bool:
     """Return True if the file has at least one audio stream."""
     try:
         result = subprocess.run(
@@ -233,6 +242,36 @@ def _has_audio(path: str) -> bool:
         return False
 
 
+def _display_size(path: str) -> tuple[int, int]:
+    """Frame size of the first video stream as players show it.
+
+    Phones store portrait video as landscape frames plus a display rotation,
+    which ffmpeg applies when it decodes, and some clips have non-square
+    pixels. Rounded down to even numbers, which H.264 in 4:2:0 requires.
+    """
+    try:
+        result = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0",
+             "-show_streams", "-of", "json", path],
+            capture_output=True, timeout=15, text=True, check=True,
+        )
+        stream = json.loads(result.stdout)["streams"][0]
+        width, height = int(stream["width"]), int(stream["height"])
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError, KeyError, IndexError) as exc:
+        raise ValidationError("Could not read the frame size of the first video.") from exc
+    try:
+        sar = Fraction(stream.get("sample_aspect_ratio", "1:1").replace(":", "/"))
+    except (ValueError, ZeroDivisionError):
+        sar = Fraction(1)
+    if sar <= 0:  # 0:1 means unknown
+        sar = Fraction(1)
+    rotation = next((entry["rotation"] for entry in stream.get("side_data_list", []) if "rotation" in entry), 0)
+    if round(rotation / 90) % 2:  # a quarter turn either way
+        width, height, sar = height, width, 1 / sar
+    width = int(width * sar)
+    return width - width % 2, height - height % 2
+
+
 def video_merge(input_paths: list[str]) -> str:
     """Concatenate multiple videos using ffmpeg's concat filter (re-encodes
     once for compatibility — concat demuxer would be faster but only works
@@ -242,6 +281,9 @@ def video_merge(input_paths: list[str]) -> str:
     Handles mixed audio-presence inputs by padding video-only clips with a
     silent audio track at concat time, so the user never gets the cryptic
     "Error binding filtergraph inputs/outputs" failure.
+
+    concat also needs one frame size, so every clip is scaled to fit the
+    first clip's frame, keeping its shape, and centred between black bars.
     """
     if len(input_paths) < 2:
         raise ValidationError("Need at least 2 videos to merge.")
@@ -252,37 +294,44 @@ def video_merge(input_paths: list[str]) -> str:
 
     # Probe whether ANY input has audio. If none do, drop the audio stream
     # entirely. If some do, pad the silent ones with anullsrc so concat works.
-    audio_flags = [_has_audio(p) for p in input_paths]
+    audio_flags = [has_audio(p) for p in input_paths]
     any_audio = any(audio_flags)
 
     inputs: list[str] = []
     for p in input_paths:
         inputs += ["-i", p]
 
+    # The first scale squares non-square pixels, so the fit keeps the shape
+    # players show; setsar=1 undoes the rounding the fit leaves in the ratio.
+    width, height = _display_size(input_paths[0])
+    fit = (f"scale=trunc(iw*sar/2)*2:ih,setsar=1,"
+           f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
+           f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1")
+    scaled = "".join(f"[{i}:v:0]{fit}[v{i}];" for i in range(n))
+
     if any_audio:
         # Add an anullsrc per silent input as additional inputs.
         anull_indices: dict[int, int] = {}
         for idx, has in enumerate(audio_flags):
             if not has:
-                anull_indices[idx] = len(inputs) // 2  # next ffmpeg input index
+                anull_indices[idx] = n + len(anull_indices)  # next ffmpeg input index
                 inputs += ["-f", "lavfi", "-t", "0.1", "-i",
                            "anullsrc=channel_layout=stereo:sample_rate=44100"]
         # Build concat input list — use real audio when available, anullsrc when not.
-        # The `aresample=async=1` keeps audio in sync after concat.
         parts = []
         for i in range(n):
-            parts.append(f"[{i}:v:0]")
+            parts.append(f"[v{i}]")
             if audio_flags[i]:
                 parts.append(f"[{i}:a:0]")
             else:
                 parts.append(f"[{anull_indices[i]}:a:0]")
-        filter_complex = "".join(parts) + f"concat=n={n}:v=1:a=1[v][a]"
+        filter_complex = scaled + "".join(parts) + f"concat=n={n}:v=1:a=1[v][a]"
         map_args = ["-map", "[v]", "-map", "[a]"]
         codec_args = ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast",
                       "-c:a", "aac"]
     else:
         # Video-only concat — drop audio entirely.
-        filter_complex = "".join(f"[{i}:v:0]" for i in range(n)) + f"concat=n={n}:v=1:a=0[v]"
+        filter_complex = scaled + "".join(f"[v{i}]" for i in range(n)) + f"concat=n={n}:v=1:a=0[v]"
         map_args = ["-map", "[v]"]
         codec_args = ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-an"]
 

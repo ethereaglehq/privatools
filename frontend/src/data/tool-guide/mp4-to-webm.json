@@ -20,7 +20,7 @@
     },
     {
       "q": "How much smaller will it be?",
-      "a": "It depends on the source. The video is encoded at about 1 Mbit/s whatever the input, so a high-bitrate MP4 shrinks a lot while a low-bitrate one can come out larger. VP9 is also far slower to encode than H.264, so a long or high-resolution video can run into the three-minute processing limit."
+      "a": "It depends on the source. The video is encoded at about 1 Mbit/s whatever the input, so a high-bitrate MP4 shrinks a lot while a low-bitrate one can come out larger."
     }
   ]
 }

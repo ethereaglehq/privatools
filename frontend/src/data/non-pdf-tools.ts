@@ -219,7 +219,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "video-merge", icon: Merge, name: "Merge Videos",
     description: "Concatenate multiple videos into one",
-    longDescription: "Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips of the same resolution into a single video file, one after another. Re-encodes once for broad playback compatibility.",
+    longDescription: "Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file, one after another. Clips of other sizes are scaled to fit the first clip's frame. Re-encodes once for broad playback compatibility.",
     seoTitle: "Merge Video Files Online Free – Combine Clips Seamlessly",
     metaDescription: "Concatenate multiple MP4, MOV, WebM, or MKV clips into one video file with a single re-encode for smooth playback. Files are processed and then removed.",
     synonyms: "join combine concat videos",
@@ -1260,10 +1260,10 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   },
   {
     slug: "video-speed", icon: Video, name: "Video Speed Changer",
-    description: "Speed up or slow down a video, 0.3× to 3.95×",
-    longDescription: "Change the playback speed of a video with an audio track from 0.3× (slow-mo) to 3.95× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.",
+    description: "Speed up or slow down a video, 0.25× to 4×",
+    longDescription: "Change the playback speed of any video from 0.25× (slow-mo) to 4× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.",
     seoTitle: "Change Video Speed Online Free – Slow Motion to Hyperlapse",
-    metaDescription: "Speed up or slow down a video, from slow motion to hyperlapse, with audio pitch-corrected automatically. Files are processed and then removed automatically.",
+    metaDescription: "Speed up or slow down any video, from slow motion to hyperlapse, with audio pitch-corrected automatically. Files are processed and then removed automatically.",
     synonyms: "speed up slow down fast forward 2x slow motion",
     popularity: 55,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi", outputLabel: "video.mp4",

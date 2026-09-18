@@ -1,10 +1,12 @@
 """Build frame-accurate video trims without discarding non-keyframe footage."""
 
+from .video_tools_service import VP9_SPEED
+
 VIDEO_ENCODERS = {
     ".mp4": ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac", "-movflags", "+faststart"],
     ".mov": ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac"],
     ".mkv": ["-c:v", "libx264", "-preset", "veryfast", "-crf", "20", "-c:a", "aac"],
-    ".webm": ["-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "32", "-c:a", "libopus"],
+    ".webm": ["-c:v", "libvpx-vp9", "-b:v", "0", "-crf", "32", *VP9_SPEED, "-c:a", "libopus"],
     ".avi": ["-c:v", "mpeg4", "-q:v", "2", "-c:a", "libmp3lame"],
 }
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".aac", ".flac", ".ogg", ".m4a"}

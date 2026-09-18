@@ -20,6 +20,7 @@ from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files
 from ..utils.route_helpers import read_upload, stream_upload_to_disk
 from ..utils.concurrency import run_bounded
 from ..services.media_trim_service import trim_command
+from ..services.video_tools_service import has_audio
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -126,8 +127,6 @@ async def video_speed_endpoint(
     # Build atempo chain — ffmpeg's atempo only handles 0.5-2.0 per call.
     atempo_chain: list[str] = []
     s = float(speed)
-    if s <= 0.25 or s >= 4:
-        raise HTTPException(status_code=400, detail="Speed must be between 0.25 and 4.")
     # Decompose into 0.5/2.0 factors
     while s > 2.0:
         atempo_chain.append("atempo=2.0")
@@ -139,12 +138,15 @@ async def video_speed_endpoint(
     a_filter = ",".join(atempo_chain)
     v_filter = f"setpts={1.0 / float(speed):.4f}*PTS"
     try:
+        # A video without sound has no [0:a] for atempo to read.
+        if await run_bounded(has_audio, str(in_path)):
+            streams = ["-filter_complex", f"[0:v]{v_filter}[v];[0:a]{a_filter}[a]",
+                       "-map", "[v]", "-map", "[a]", "-c:a", "aac", "-b:a", "128k"]
+        else:
+            streams = ["-filter_complex", f"[0:v]{v_filter}[v]", "-map", "[v]"]
         await _run_ffmpeg_async([
-            "ffmpeg", "-y", "-i", str(in_path),
-            "-filter_complex", f"[0:v]{v_filter}[v];[0:a]{a_filter}[a]",
-            "-map", "[v]", "-map", "[a]",
+            "ffmpeg", "-y", "-i", str(in_path), *streams,
             "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-            "-c:a", "aac", "-b:a", "128k",
             str(out_path),
         ], "Video speed change")
         cleanup = BackgroundTask(remove_files, str(in_path), str(out_path))
