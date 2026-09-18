@@ -156,9 +156,11 @@ load-bearing.
   build, `seo_meta` reads that committed copy as its tool manifest, so a
   worktree runs the tool-manifest tests too; the blog-link test still needs
   `npm run build`. `test_tool_registry_parity.py` compares the tables with the
-  registry source, but CI's build regenerates that file before pytest, so
-  only a run without a build catches a stale commit. The count tests
-  enforce most of it; the CSP walker and guide export tests catch the rest.
+  registry source; in CI the build regenerates that file before pytest, so a
+  stale commit is caught instead by the frontend job's "Check generated
+  content is current" step, which reruns gen-llms and fails on any change.
+  The count tests enforce most of it; the CSP walker and guide export tests
+  catch the rest.
   Every tool also needs a `seoTitle` (40–60 chars, query-first, no brand,
   unique) and a `metaDescription` (120–160 chars, ends with a period,
   unique), enforced by `frontend/src/test/tool-registry.test.ts`. The
