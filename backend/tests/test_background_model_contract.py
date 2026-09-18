@@ -13,11 +13,12 @@ def test_invalid_image_fails_before_model_loading(tmp_path, monkeypatch):
         bg_remover_service.remove_background(str(file))
 
 
-@pytest.mark.parametrize("error,status", [(DependencyError("The server background model could not start."),503), (ValidationError("This image could not be read."),400)])
-def test_background_route_preserves_actionable_failures(client, monkeypatch, error, status):
+@pytest.mark.parametrize("error,status,message", [(DependencyError("The server background model could not start."),503,"The service is temporarily unavailable. Please try again."), (ValidationError("This image could not be read."),400,"This image could not be read.")])
+def test_background_route_preserves_actionable_failures(client, monkeypatch, error, status, message):
     def fail(*args):
         raise error
     monkeypatch.setattr(bg_remover_service, "remove_background", fail)
     response = client.post('/api/remove-background', files={'file':('fixture.png', b'fixture', 'image/png')})
     assert response.status_code == status
-    assert response.json()['detail'] == str(error)
+    # A 5xx names its kind of failure; a 4xx keeps its own message.
+    assert response.json()['detail'] == message

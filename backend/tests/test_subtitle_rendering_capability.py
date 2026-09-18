@@ -59,7 +59,7 @@ def test_subtitle_route_preserves_dependency_status(client, monkeypatch):
     monkeypatch.setattr(video_tools_service, "burn_subtitles", unavailable)
     response = client.post("/api/add-subtitles", files={"file": ("clip.mp4", b"fixture", "video/mp4"), "srt": ("captions.srt", b"1\n00:00:00,000 --> 00:00:01,000\nHello\n", "text/plain")})
     assert response.status_code == 503
-    assert "libass" in response.json()["detail"]
+    assert response.json()["detail"] == "The service is temporarily unavailable. Please try again."
 
 
 @pytest.mark.skipif(not shutil.which("ffmpeg") or not shutil.which("ffprobe"), reason="Requires real FFmpeg")

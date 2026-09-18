@@ -35,6 +35,15 @@ _V1_SERVICE_MESSAGES = {
     "server_busy": "The API is busy. Retry shortly.",
     "admission_unavailable": "API admission is temporarily unavailable. Try again shortly.",
 }
+# A 5xx body names the kind of failure and nothing else, on every surface.
+# The detail a service or route raised with can carry stderr, exception text
+# or a server path (qpdf's stderr names the upload's temp file), so the
+# handlers log it, and the request id in the body finds that log line.
+_GENERIC_5XX = {
+    501: "This feature is not available.",
+    503: "The service is temporarily unavailable. Please try again.",
+    504: "The operation timed out. Try a smaller file.",
+}
 
 
 def _is_v1(request: Request | None) -> bool:
@@ -49,12 +58,8 @@ def _json(
     extra: dict[str, Any] | None = None,
     passthrough_headers: dict[str, str] | None = None,
 ) -> JSONResponse:
-    if _is_v1(request) and status >= 500:
-        detail = {
-            501: "This feature is not available.",
-            503: "The service is temporarily unavailable. Please try again.",
-            504: "The operation timed out. Try a smaller file.",
-        }.get(status, "Processing failed. Please try again.")
+    if status >= 500:
+        detail = _GENERIC_5XX.get(status, "Processing failed. Please try again.")
     body: dict[str, Any] = {"detail": detail}
     if extra:
         body.update(extra)
@@ -140,11 +145,11 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
     # Never echo internal exception text to clients on a 5xx. Many route
     # handlers raise HTTPException(500, detail=f"...{exc}"), which would leak
     # stack/path fragments and library internals. Log the specifics server-side
-    # (route handlers already logger.exception; this captures the rest) and
-    # return a generic message. 4xx detail is author-curated and passes through.
+    # (route handlers already logger.exception; this captures the rest); _json
+    # answers with a generic message. 4xx detail is author-curated and passes
+    # through.
     if exc.status_code >= 500:
         logger.warning("%d on %s: %s", exc.status_code, request.url.path, detail)
-        detail = "Processing failed. Please try again."
     return _json(
         exc.status_code, detail, request=request,
         passthrough_headers=getattr(exc, "headers", None) if exc.status_code < 500 else None,
