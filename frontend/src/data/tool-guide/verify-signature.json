@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a signed PDF",
+      "text": "Drop a PDF with one or more digital signatures."
+    },
+    {
+      "name": "PrivaTools verifies each signature",
+      "text": "Checks that the signed content hasn't been modified since signing, the certificate chain is intact, and the signing date is consistent."
+    },
+    {
+      "name": "Read the report",
+      "text": "For each signature: signer name, signing time, certificate authority, validity status (valid / modified / expired / untrusted CA)."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does this require uploading my certificates?",
+      "a": "No — verification uses the certificates embedded in the PDF itself, plus the system's trusted CA store."
+    },
+    {
+      "q": "What if a signature is invalid?",
+      "a": "The report says exactly why: content modified, certificate expired, untrusted issuer, or signature format unsupported. The PDF itself isn't rejected — just the signature."
+    },
+    {
+      "q": "Can I verify multiple signatures?",
+      "a": "Yes — PDFs can have multiple signatures (e.g. one per signing party). All are verified independently."
+    }
+  ]
+}

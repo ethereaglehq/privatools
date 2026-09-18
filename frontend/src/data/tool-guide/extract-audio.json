@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video file",
+      "text": "Drop an MP4/MOV/MKV/WebM file up to 500 MB."
+    },
+    {
+      "name": "Choose output format",
+      "text": "MP3 (universal), WAV (uncompressed), OGG (open), FLAC (lossless), AAC (high quality)."
+    },
+    {
+      "name": "Download the audio track",
+      "text": "FFmpeg extracts the audio stream and re-encodes (or copies, for matching formats) to the chosen format."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will quality be preserved?",
+      "a": "WAV/FLAC are lossless. MP3/AAC at 192 kbps+ is transparent for most listeners. Lower bitrates lose quality."
+    },
+    {
+      "q": "What if the video has multiple audio tracks?",
+      "a": "PrivaTools extracts the first/default audio track. Multi-track extraction is on the roadmap."
+    },
+    {
+      "q": "Can I extract just a section of the audio?",
+      "a": "Use Trim Media first to isolate the section, then extract audio from the trimmed video."
+    }
+  ]
+}

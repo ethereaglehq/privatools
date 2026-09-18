@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a WebP image",
+      "text": "Select a WebP file from your iPhone, Android, or any camera/browser export."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The image becomes a JPEG with the same dimensions and aspect ratio. Default quality is 85 — visually identical for most uses."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert WebP to JPG?",
+      "a": "WebP isn't supported by all software, email clients, or older browsers. JPG is universal — every image viewer can open it."
+    },
+    {
+      "q": "Will the quality be the same?",
+      "a": "Essentially yes. Default JPG quality is 85, which is visually indistinguishable from the WebP source at typical viewing sizes."
+    },
+    {
+      "q": "Does it preserve transparency?",
+      "a": "No — JPEG doesn't support transparency. Transparent pixels in the source render as white in the JPG. Use HEIC to PNG or WebP to PNG if you need transparency preserved."
+    }
+  ]
+}

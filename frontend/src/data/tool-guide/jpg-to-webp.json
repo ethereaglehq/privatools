@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a JPG",
+      "text": "Select a JPEG file from camera, phone, or web."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. PrivaTools encodes the image as WebP, typically saving 25–35% in file size at the same visual quality."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert JPG to WebP?",
+      "a": "WebP files are typically 25–35% smaller than JPGs at the same visual quality. That speeds up page loads and saves bandwidth, especially for image-heavy sites."
+    },
+    {
+      "q": "Will every browser display WebP?",
+      "a": "Yes — every major browser supports WebP since 2020 (Chrome, Firefox, Safari 14+, Edge). For maximum compatibility with very old browsers or email clients, use JPG."
+    },
+    {
+      "q": "Is WebP a lossy format?",
+      "a": "It can be either. Our default is lossy WebP for best compression. Lossless WebP is also supported but produces larger files."
+    }
+  ]
+}

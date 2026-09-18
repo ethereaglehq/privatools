@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB. The page count is automatically padded to a multiple of 4 with blanks if needed."
+    },
+    {
+      "name": "PrivaTools reorders pages for saddle-stitch",
+      "text": "For an 8-page booklet, the output order is 8,1, 2,7, 6,3, 4,5 — so when printed double-sided and folded in half, the pages read in sequence."
+    },
+    {
+      "name": "Download and print double-sided",
+      "text": "Print the result two pages per sheet, double-sided, then fold in half. You get a perfect-bound booklet."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why is the order so strange?",
+      "a": "Saddle-stitch binding folds the sheets in half — the front cover of sheet 1 carries pages 8 and 1, the back carries pages 2 and 7. The math is fixed by binding geometry."
+    },
+    {
+      "q": "What if my page count isn't a multiple of 4?",
+      "a": "PrivaTools pads with blank pages at the end before computing the imposition order, so the booklet always works."
+    },
+    {
+      "q": "Can I use this for thick books?",
+      "a": "Saddle-stitch caps at about 80 pages (20 sheets) because the inner pages start to creep. For longer documents use perfect binding (no imposition needed)."
+    }
+  ]
+}

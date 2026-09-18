@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF that contains form fields, annotations, or layers you want to flatten."
+    },
+    {
+      "name": "Choose flattening options",
+      "text": "Decide whether to flatten form fields only, annotations only, or everything. Flattening converts interactive elements into static page content."
+    },
+    {
+      "name": "Download the flattened PDF",
+      "text": "Click Flatten. The result is a clean PDF where all content is baked into the pages, preventing further edits."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What does flattening a PDF mean?",
+      "a": "Flattening converts interactive elements like form fields, annotations, and layers into static page content. The visual appearance stays the same but the elements can no longer be edited."
+    },
+    {
+      "q": "When should I flatten a PDF?",
+      "a": "Flatten before sharing filled forms (to prevent edits), before printing (to avoid rendering issues), or when a recipient's PDF viewer does not display annotations correctly."
+    },
+    {
+      "q": "Does flattening reduce file size?",
+      "a": "Sometimes. Removing form field metadata and annotation data can slightly reduce file size, but the effect depends on the document."
+    }
+  ]
+}

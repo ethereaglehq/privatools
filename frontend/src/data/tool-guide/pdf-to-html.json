@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. PyMuPDF's HTML exporter preserves fonts and positioning."
+    },
+    {
+      "name": "Download the HTML",
+      "text": "Click Convert. The result is a single self-contained HTML file with inline styles — open it in any browser without needing the PDF."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How accurate is the conversion?",
+      "a": "PyMuPDF preserves text positioning and fonts via inline styles. Layout is faithful for simple documents; complex multi-column or floating-element layouts may need manual cleanup."
+    },
+    {
+      "q": "Are images included?",
+      "a": "Yes. Embedded images come through as base64-encoded inline data URLs, so the HTML is fully self-contained — no external image files needed."
+    },
+    {
+      "q": "Why convert PDF to HTML?",
+      "a": "Web archiving, accessibility (screen readers handle HTML better than complex PDFs), republishing offline documents online, or any use where you need the content as a web page."
+    }
+  ]
+}

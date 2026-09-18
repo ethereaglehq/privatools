@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste a timestamp",
+      "text": "Enter a Unix epoch (seconds or milliseconds — auto-detected) or an ISO 8601 date string. Click Now to insert the current time."
+    },
+    {
+      "name": "Read all formats side-by-side",
+      "text": "The tool displays Unix seconds, Unix milliseconds, ISO 8601 (UTC), UTC string, local timezone, and a relative phrase ('in 3 hours', '2 days ago')."
+    },
+    {
+      "name": "Copy what you need",
+      "text": "Click Copy on any row. Useful for filling Cron entries, debugging API timestamps, or formatting logs."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How does it know if a number is seconds or milliseconds?",
+      "a": "By magnitude. Numbers larger than 10^12 (Sep 2001 onward in milliseconds) are treated as milliseconds; smaller as seconds. You can also paste an ISO 8601 string explicitly."
+    },
+    {
+      "q": "Why is the local time different from the UTC time?",
+      "a": "Your browser's timezone offset is applied. The UTC value is what's actually stored in the timestamp; local is just for human convenience."
+    },
+    {
+      "q": "Can I generate a future timestamp?",
+      "a": "Yes. Type or paste any past or future ISO date and you'll get the corresponding epoch. The relative phrase will say 'in X days' for the future."
+    }
+  ]
+}

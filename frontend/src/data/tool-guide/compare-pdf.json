@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload two PDFs",
+      "text": "The first is the baseline; the second is the revised version."
+    },
+    {
+      "name": "Choose comparison mode",
+      "text": "Text: word-level diff. Visual: side-by-side rendered pages with changes highlighted."
+    },
+    {
+      "name": "Download or view the diff",
+      "text": "PrivaTools returns a report PDF with additions in green and deletions in red, plus a summary of changed pages and word counts."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does this work on scanned PDFs?",
+      "a": "Only with OCR. Run OCR PDF on both files first so the text layer is present, then compare."
+    },
+    {
+      "q": "How accurate is the text diff?",
+      "a": "Word-level diff handles reordering, insertion, deletion, and formatting changes. Diffs based on character runs would be noisier."
+    },
+    {
+      "q": "Can I compare more than two files?",
+      "a": "Run Compare twice (A vs B, then B vs C) to chain a multi-revision comparison."
+    }
+  ]
+}

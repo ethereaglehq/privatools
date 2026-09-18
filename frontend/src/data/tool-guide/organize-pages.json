@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB. Each page renders as a thumbnail."
+    },
+    {
+      "name": "Drag and rearrange",
+      "text": "Reorder, rotate, or delete pages visually. Use Duplicate to repeat a page."
+    },
+    {
+      "name": "Apply and download",
+      "text": "Click Save. The output PDF has pages in your specified order."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I rotate individual pages independently?",
+      "a": "Yes — each thumbnail has its own rotate button. Rotations are 90° clockwise / counter-clockwise / 180°."
+    },
+    {
+      "q": "How is this different from Extract Pages?",
+      "a": "Extract keeps a subset in original order. Organize lets you reorder, duplicate, rotate, and delete all in one pass."
+    },
+    {
+      "q": "Does it preserve bookmarks?",
+      "a": "Bookmarks targeting deleted pages are removed; targeting reordered pages, they follow to the new position."
+    }
+  ]
+}

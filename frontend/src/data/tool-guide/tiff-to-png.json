@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a TIFF",
+      "text": "Select a .tif or .tiff file."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The image is decoded with libtiff and written as a lossless PNG with full color depth preserved."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert TIFF to PNG?",
+      "a": "TIFF is excellent for archival but heavyweight and not browser-friendly. PNG is universally supported and still lossless — perfect for sharing scanned documents online."
+    },
+    {
+      "q": "Is the conversion lossless?",
+      "a": "Yes. Both TIFF and PNG are lossless image formats, so no pixel data is lost. The PNG is typically 30–60% smaller because PNG's compression is more efficient for typical scan content."
+    },
+    {
+      "q": "Will multi-page TIFFs be handled?",
+      "a": "Only the first page is converted. For multi-page TIFF archives, use our TIFF to PDF tool to preserve every page."
+    }
+  ]
+}

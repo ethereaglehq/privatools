@@ -1,0 +1,54 @@
+{
+  "howto": [
+    {
+      "name": "Drop your PDF",
+      "text": "Select a PDF up to 500 MB that contains tables or tabular data. Scanned PDFs need OCR first via the OCR PDF tool."
+    },
+    {
+      "name": "Choose pages to scan",
+      "text": "Pick specific pages with tables, or let the tool auto-detect tables across the whole document using Camelot and Tabula libraries."
+    },
+    {
+      "name": "Tune detection (optional)",
+      "text": "For borderless or unusual tables, switch detection mode (lattice for ruled tables, stream for whitespace-separated). Default auto-selects the best."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Each detected table becomes a separate sheet in the resulting .xlsx file, with rows and columns preserved. Multiple tables across pages are combined into one workbook."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does it convert the entire PDF or just tables?",
+      "a": "The tool focuses on extracting tabular data. Each detected table becomes a separate sheet in the Excel file. Non-table text (paragraphs, headers, footers) is not included — use PDF to Word or PDF to Text for that."
+    },
+    {
+      "q": "Can I choose which tables to extract?",
+      "a": "Yes. Select specific pages, or let the tool auto-detect all tables across the document. Auto-detect uses Camelot and Tabula libraries which identify ruled lines and text-alignment patterns."
+    },
+    {
+      "q": "What if my PDF has no visible table borders?",
+      "a": "The tool can detect tables based on text alignment even without ruled borders, but results are more reliable on clearly bordered tables. For borderless tables with very irregular spacing, manual page selection plus column-position hints in the advanced settings give better accuracy."
+    },
+    {
+      "q": "Is it safe to upload a confidential financial PDF?",
+      "a": "Yes. The PDF and the generated .xlsx are held in temporary per-request storage inside an isolated Docker container for the conversion pass only — both are unlinked the moment your download begins. Nothing is logged, indexed, or sent to a third-party API. The conversion code is open source on GitHub."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. Large PDFs with many tables may take 15-30 seconds to extract."
+    },
+    {
+      "q": "Does it work on scanned PDFs?",
+      "a": "Scanned PDFs need OCR first. Run the OCR PDF tool (you can pick the language and deskew the pages), then convert the OCR'd PDF to Excel. The text layer added by OCR is what the table detector reads."
+    },
+    {
+      "q": "Can I batch-convert multiple PDFs to Excel?",
+      "a": "Yes — upload multiple PDFs and each is converted independently, then bundled into a ZIP of .xlsx files. Useful for processing a folder of monthly statements or invoices."
+    },
+    {
+      "q": "How is this different from Adobe Acrobat PDF to Excel?",
+      "a": "Comparable accuracy on standard tables. Adobe Acrobat handles complex merged-cell layouts slightly better; PrivaTools is faster, free with no daily limit, and doesn't require an Adobe ID or send your data to Adobe's cloud."
+    }
+  ]
+}

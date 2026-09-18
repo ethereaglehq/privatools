@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a WAV file",
+      "text": "Drop a .wav file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools compresses via FFmpeg",
+      "text": "FLAC is lossless: the audio is bit-for-bit identical to the WAV, typically 40-60% smaller."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. FLAC is lossless: the audio is bit-for-bit identical to the WAV and typically 40–60% smaller. This is the one audio conversion here that costs you nothing in quality."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is WAV to FLAC lossless?",
+      "a": "Yes — FLAC compresses WAV losslessly, typically to 40–60% of the size with zero quality loss. It's the ideal way to archive uncompressed audio."
+    },
+    {
+      "q": "Will the FLAC play everywhere?",
+      "a": "FLAC is widely supported on desktops and modern players, but not on every older or portable device. Keep WAV or use WAV→MP3 for those."
+    },
+    {
+      "q": "Are files kept?",
+      "a": "No — temporary input/output, removed after the download response."
+    }
+  ]
+}

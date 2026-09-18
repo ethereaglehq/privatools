@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload WebP images",
+      "text": "Drop one or many .webp files up to 500 MB total."
+    },
+    {
+      "name": "Choose page size",
+      "text": "Letter or A4. Transparency in WebP is rendered against a white page background."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "All images become one PDF in upload order. WebP's smaller size is reflected in a smaller PDF."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will the PDF be much smaller than from JPG?",
+      "a": "Slightly smaller — WebP-derived JPEGs inside PDF are similar to direct JPGs. The main benefit was at upload time (smaller WebP files)."
+    },
+    {
+      "q": "What about animated WebP?",
+      "a": "Only the first frame is used. PDF doesn't support animation."
+    },
+    {
+      "q": "Does this preserve transparency?",
+      "a": "PDF supports transparency but most readers render text-on-transparency oddly. We default to compositing over white for best compatibility."
+    }
+  ]
+}

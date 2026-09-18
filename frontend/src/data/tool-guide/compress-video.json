@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video",
+      "text": "Select an MP4, WebM, MOV, or AVI file up to 500 MB."
+    },
+    {
+      "name": "Choose compression preset",
+      "text": "Pick Light, Medium, or Heavy compression. Heavier settings reduce file size more but lower visual quality."
+    },
+    {
+      "name": "Compress and download",
+      "text": "Click Compress. The server re-encodes the video using FFmpeg with H.264/H.265. The result shows the file size reduction."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How much can a video be compressed?",
+      "a": "Typical results are 30-70% size reduction at Medium compression. Raw or high-bitrate videos see the largest savings."
+    },
+    {
+      "q": "Does compression change the video resolution?",
+      "a": "No. The resolution stays the same by default. Only the bitrate is reduced. You can optionally lower the resolution for even smaller files."
+    },
+    {
+      "q": "What output format is used?",
+      "a": "The output is MP4 with H.264 encoding, which is universally compatible with all devices and browsers."
+    }
+  ]
+}

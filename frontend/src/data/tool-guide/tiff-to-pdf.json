@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload TIFF images",
+      "text": "Drop .tif / .tiff files. Multi-page TIFFs are supported and each page becomes a PDF page."
+    },
+    {
+      "name": "Choose page size",
+      "text": "Letter or A4. Single-page TIFFs scale; multi-page TIFFs preserve their per-page sizes."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "All TIFFs become one PDF. Compression (LZW, Deflate, JPEG inside TIFF) is converted to PDF-native equivalents."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will quality be preserved?",
+      "a": "Yes — TIFF is lossless. PDF uses Flate (lossless) or JPEG (near-lossless) when embedding. Default is high-quality JPEG to keep file size reasonable."
+    },
+    {
+      "q": "What about CMYK TIFFs (for print)?",
+      "a": "CMYK is preserved through to the PDF. Use this workflow for prepress / professional printing pipelines."
+    },
+    {
+      "q": "How are multi-page TIFFs handled?",
+      "a": "Each TIFF page becomes a PDF page in order. Multiple multi-page TIFFs in one upload are concatenated."
+    }
+  ]
+}

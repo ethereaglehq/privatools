@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose DPI",
+      "text": "Higher DPI = sharper TIFF. 300 DPI is standard for archival; 600 for high-resolution professional output."
+    },
+    {
+      "name": "Download the TIFF",
+      "text": "PrivaTools produces a single multi-page TIFF (one image per PDF page) or a ZIP of individual TIFFs."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why TIFF for archival?",
+      "a": "TIFF supports lossless compression (LZW, Deflate) and is the format of choice for long-term preservation in libraries and government archives."
+    },
+    {
+      "q": "Single multi-page TIFF or one per page?",
+      "a": "Default is multi-page TIFF for compact archiving. Use the per-page option for compatibility with software that only reads single-page TIFFs."
+    },
+    {
+      "q": "Does it preserve text searchability?",
+      "a": "TIFF is raster only — the text layer is lost. Use Sanitize PDF or PDF/A for archive while keeping text searchable."
+    }
+  ]
+}

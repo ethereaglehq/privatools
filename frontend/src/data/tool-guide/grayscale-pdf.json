@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Convert all content to grayscale",
+      "text": "PrivaTools renders each page at the source DPI, converts to single-channel grayscale, and re-embeds. Text, images, and vector content all become greyscale."
+    },
+    {
+      "name": "Download the grayscale PDF",
+      "text": "File size typically drops 30–50% because color channels are eliminated."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will text still be searchable?",
+      "a": "Yes — the text layer is preserved. Only the rendered visuals change to grayscale."
+    },
+    {
+      "q": "Why convert to grayscale?",
+      "a": "Cheaper printing on black-and-white printers, smaller file size, accessibility for color-blind readers, archival storage."
+    },
+    {
+      "q": "How does this differ from black-and-white?",
+      "a": "Grayscale preserves shading (256 grey levels). True black-and-white (1-bit) is harsher but smaller — not currently offered as a separate option."
+    }
+  ]
+}

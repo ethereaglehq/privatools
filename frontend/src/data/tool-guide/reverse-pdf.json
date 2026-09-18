@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Reverse the page order",
+      "text": "Page N becomes page 1, page N-1 becomes page 2, etc."
+    },
+    {
+      "name": "Download the reversed PDF",
+      "text": "Useful for fixing back-to-front scans, creating countdown documents, or reverse-chronological annual reports."
+    }
+  ],
+  "faq": [
+    {
+      "q": "When would I use this?",
+      "a": "Most common: rescue a scan where pages came out in reverse order. Also: countdown PDFs (10, 9, 8…), reverse-chronological logs."
+    },
+    {
+      "q": "Are bookmarks updated?",
+      "a": "Yes — bookmarks pointing to page N are rewritten to point to page (total - N + 1)."
+    },
+    {
+      "q": "Will visible page numbers update?",
+      "a": "Page numbers stamped with the Page Numbers tool are part of page content; they don't auto-update. Reverse first, then re-add page numbers."
+    }
+  ]
+}

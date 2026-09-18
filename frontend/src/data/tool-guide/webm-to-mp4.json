@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a WebM video",
+      "text": "Drop a WebM file (VP8 or VP9). Browser screen recorders and many web exports use WebM by default."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The video is re-encoded as H.264 MP4 for compatibility with iOS, older Android, and most editing software."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert WebM to MP4?",
+      "a": "WebM (VP8/VP9 codecs) isn't supported on iOS Safari, older Android, or in many editing programs. MP4 with H.264 is universal."
+    },
+    {
+      "q": "Does the audio survive?",
+      "a": "Yes. WebM's Opus or Vorbis audio is re-encoded to AAC inside the MP4 container."
+    },
+    {
+      "q": "Will I lose quality?",
+      "a": "Re-encoding always sacrifices a tiny amount of quality, but at high bitrates the result is visually identical to the source."
+    }
+  ]
+}

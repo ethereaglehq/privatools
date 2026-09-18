@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an SVG",
+      "text": "Drop a .svg file up to 500 MB."
+    },
+    {
+      "name": "Choose scale factor",
+      "text": "1x = SVG native size. 2x, 3x, 4x for higher-resolution exports."
+    },
+    {
+      "name": "Download the PNG",
+      "text": "PrivaTools rasterizes the vector via cairosvg at the chosen scale with anti-aliasing."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert SVG to PNG?",
+      "a": "PNG is universally supported (email, legacy apps, social media uploads). SVG can break in tools that don't render it (Gmail, some Slack clients)."
+    },
+    {
+      "q": "How large should the output be?",
+      "a": "For social media: 1200×630 (use Resize Crop Image after). For app icons: 1024×1024 base. For web retina: 2x your design size."
+    },
+    {
+      "q": "Does it preserve transparency?",
+      "a": "Yes — SVG transparency translates to PNG alpha. The PNG is fully alpha-channel."
+    }
+  ]
+}

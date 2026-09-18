@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an Office document",
+      "text": "Select a Word (.docx), Excel (.xlsx), or PowerPoint (.pptx) file up to 500 MB."
+    },
+    {
+      "name": "Convert via LibreOffice",
+      "text": "The server uses LibreOffice in headless mode for high-fidelity conversion, preserving fonts, tables, charts, and layouts."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Click Convert. The resulting PDF is ready within seconds for most documents."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Which Office formats are supported?",
+      "a": "Word (.doc, .docx), Excel (.xls, .xlsx), PowerPoint (.ppt, .pptx), and OpenDocument formats (.odt, .ods, .odp)."
+    },
+    {
+      "q": "Are charts and images preserved?",
+      "a": "Yes. The conversion uses LibreOffice, which preserves charts, images, tables, headers, footers, and most formatting accurately."
+    },
+    {
+      "q": "How long does conversion take?",
+      "a": "Most documents convert in 2-10 seconds. Large files with many images or complex layouts may take up to 30 seconds."
+    }
+  ]
+}

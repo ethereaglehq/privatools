@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload up to 100 PDFs",
+      "text": "Drag up to 100 PDF files. The tool reads only metadata, not content — page counts come back almost instantly."
+    },
+    {
+      "name": "Read the per-file count",
+      "text": "Each filename appears with its page count. The total across all files appears at the bottom — ideal for print quotes."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How is this faster than opening each PDF?",
+      "a": "The tool reads only the PDF's page metadata, not the page content. For 100 PDFs the total scan time is typically under a second."
+    },
+    {
+      "q": "Does it work on encrypted PDFs?",
+      "a": "Yes for most. Password-protected PDFs that block metadata access return as invalid."
+    },
+    {
+      "q": "Useful for print pricing?",
+      "a": "Yes — print shops use this exact tool to count total pages across multi-file print jobs for instant quotes."
+    }
+  ]
+}

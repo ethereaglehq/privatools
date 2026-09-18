@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an EPUB file",
+      "text": "Select an .epub e-book file up to 500 MB."
+    },
+    {
+      "name": "Choose page layout",
+      "text": "Select a page size (A4, Letter, or custom dimensions). The tool reflows text and embeds images to match the chosen layout."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Chapters, formatting, and embedded images are preserved in the output PDF."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Are images and formatting preserved?",
+      "a": "Yes. Chapter headings, bold/italic text, embedded images, and basic CSS styling are preserved in the PDF output."
+    },
+    {
+      "q": "Can I convert DRM-protected EPUBs?",
+      "a": "No. DRM-protected e-books cannot be converted. The tool only works with DRM-free EPUB files."
+    },
+    {
+      "q": "What page size options are available?",
+      "a": "A4, Letter, and custom dimensions. The text is reflowed to fit the chosen page size while keeping chapter breaks."
+    }
+  ]
+}

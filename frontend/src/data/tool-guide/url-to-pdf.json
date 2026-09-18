@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Enter the URL to convert",
+      "text": "Any public web page — no file upload needed for this one."
+    },
+    {
+      "name": "PrivaTools fetches and renders",
+      "text": "WeasyPrint loads the page (with CSS, images, fonts) and renders it as a print-quality PDF."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Click Convert. Pagination follows print CSS rules; links remain clickable."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will JavaScript-rendered content show up?",
+      "a": "WeasyPrint doesn't execute JS — only the server-rendered HTML is converted. For JS-heavy SPAs (React, Vue), use the site's print stylesheet or a server-side rendered version."
+    },
+    {
+      "q": "Can I convert pages behind a login?",
+      "a": "Not currently — only public pages. Authenticated capture is on the roadmap."
+    },
+    {
+      "q": "Does it use my browser cookies?",
+      "a": "No — the fetch is server-side from a clean session. Anonymous, no cookies."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an AVI file",
+      "text": "Drop an .avi file up to 500 MB. AVI is a legacy container, often carrying DivX or Xvid video."
+    },
+    {
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "The legacy stream, often DivX or Xvid, is re-encoded as VP9."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The video is re-encoded as VP9 WebM, which plays natively in modern browsers and is usually far smaller than the AVI it replaces."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert AVI to WebM?",
+      "a": "To turn an old AVI clip into a small, web-ready, open-format video. WebM (VP9/Opus) re-encodes the AVI for efficient browser playback."
+    },
+    {
+      "q": "Will it shrink the file?",
+      "a": "Usually significantly — modern WebM is far more efficient than typical legacy AVI codecs."
+    },
+    {
+      "q": "Is it private?",
+      "a": "Yes — local FFmpeg conversion; files deleted after the response."
+    }
+  ]
+}

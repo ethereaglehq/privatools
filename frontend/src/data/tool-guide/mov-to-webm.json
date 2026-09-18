@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a MOV file",
+      "text": "Drop a .mov file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "VP9 WebM is smaller than the MOV at comparable quality and needs no QuickTime."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. VP9 WebM is the right output for the open web: smaller than the MOV at comparable quality, and playable without QuickTime."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert MOV to WebM?",
+      "a": "WebM (VP9/Opus) is the open format for fast-loading HTML5 video and is well-supported in browsers. MOV→WebM always re-encodes because the codecs differ."
+    },
+    {
+      "q": "Will the file get smaller?",
+      "a": "Usually yes — WebM/VP9 is efficient for the web and is often smaller than the source MOV at similar quality."
+    },
+    {
+      "q": "Is it processed privately?",
+      "a": "Yes — local FFmpeg on the PrivaTools backend; files removed after the response."
+    }
+  ]
+}

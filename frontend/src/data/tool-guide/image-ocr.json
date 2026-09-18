@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "JPG, PNG, TIFF, WebP up to 500 MB."
+    },
+    {
+      "name": "Select OCR language",
+      "text": "17 Tesseract languages available: English, French, German, Spanish, Italian, Portuguese, Dutch, Russian, Polish, Turkish, Japanese, Korean, Chinese Simplified, Chinese Traditional, Arabic, Hindi, Vietnamese."
+    },
+    {
+      "name": "Download as text or JSON",
+      "text": "Plain text: all detected text. JSON: text + per-word bounding boxes for layout-aware processing."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How accurate is the OCR?",
+      "a": "Tesseract handles clean printed text very well (98%+). Handwriting, low-resolution, or low-contrast images are harder."
+    },
+    {
+      "q": "Should I preprocess the image first?",
+      "a": "Deskew helps a lot for tilted scans. Convert to grayscale doesn't help (Tesseract converts internally)."
+    },
+    {
+      "q": "What about handwriting?",
+      "a": "Tesseract is trained on print. Use a specialized handwriting OCR for cursive."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF (or image)",
+      "text": "Drop a PDF up to 500 MB. PrivaTools renders each page and detects the background color."
+    },
+    {
+      "name": "Set threshold",
+      "text": "How close to pure white (or off-white) should be treated as background. 240 (default) catches most scanned documents."
+    },
+    {
+      "name": "Download with transparency",
+      "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will text be affected?",
+      "a": "Black text is preserved. Light grey or low-contrast text near the threshold may become semi-transparent — lower the threshold (e.g. 220) to be more aggressive about preserving content."
+    },
+    {
+      "q": "What's the output format?",
+      "a": "PDF with transparent regions where the background was. Open in a reader to see the underlying canvas show through."
+    },
+    {
+      "q": "Can I use this on photos?",
+      "a": "It works best on text/diagram documents with clean backgrounds. Photos with light skies become weirdly transparent — use Remove Background (rembg) for photos."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Draw white-out rectangles",
+      "text": "Specify region(s) per page to cover with white (or chosen color). Content underneath is permanently hidden from view."
+    },
+    {
+      "name": "Download the cleaned PDF",
+      "text": "Hidden regions are covered with the chosen color in the rendered output."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is whiteout the same as redaction?",
+      "a": "No — whiteout covers content visually but the underlying text remains in the file. For permanent redaction (text removed), use Redact PDF or Smart Redact."
+    },
+    {
+      "q": "Can I use any color, not just white?",
+      "a": "Yes — color is configurable. Black for blackout style, white for whiteout, any custom hex color for matching background."
+    },
+    {
+      "q": "Does it work on scanned PDFs?",
+      "a": "Yes — the cover rectangle is added on top of the rendered page. Behind, the original pixels are still in the file."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Enter header and footer text",
+      "text": "Optional left/center/right slots for both header and footer. Use placeholders like {page}, {total}, {date} for dynamic content."
+    },
+    {
+      "name": "Apply and download",
+      "text": "Click Apply. The text is stamped at the top and bottom of every page in the chosen font size."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will the header/footer overlap existing content?",
+      "a": "It might if your pages have content close to the edges. Use the Crop or Resize tool first to add margin space if needed."
+    },
+    {
+      "q": "Can I exclude the cover page?",
+      "a": "Pages-to-affect parameter accepts ranges like '2-' to skip the first page or '2-N-1' to skip first + last."
+    },
+    {
+      "q": "Are these editable annotations or baked-in?",
+      "a": "Baked into the page content. They can't be removed without re-editing — use Whiteout to cover them if needed later."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an audio or video file",
+      "text": "Select an MP4, MP3, WAV, WebM, or other media file up to 500 MB."
+    },
+    {
+      "name": "Set the trim range",
+      "text": "Use the waveform/timeline to set precise start and end times, or type timestamps manually (e.g. 00:30 to 02:15)."
+    },
+    {
+      "name": "Trim and download",
+      "text": "Click Trim. The server extracts the selected segment without re-encoding when possible, preserving original quality."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I trim audio files too?",
+      "a": "Yes. The tool supports both audio (MP3, WAV, OGG, FLAC) and video (MP4, WebM, MOV, AVI) files."
+    },
+    {
+      "q": "Is the trimmed file re-encoded?",
+      "a": "When possible, the tool uses lossless cutting (no re-encoding) to preserve original quality. Some format combinations require re-encoding."
+    },
+    {
+      "q": "How precise is the trimming?",
+      "a": "Precision depends on the format. MP4 can be cut to the nearest keyframe (typically within 0.5 seconds). Re-encoded output is frame-accurate."
+    }
+  ]
+}

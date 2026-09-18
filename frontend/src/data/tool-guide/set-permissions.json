@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Set an owner password and permissions",
+      "text": "Choose which operations are allowed for users without the owner password: print, copy text, modify, annotate."
+    },
+    {
+      "name": "Download the protected PDF",
+      "text": "Anyone without the owner password is limited to the allowed operations. The PDF itself still opens without a password (use Protect PDF if you want a user password too)."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's the difference between owner password and user password?",
+      "a": "User password = required to OPEN. Owner password = required to override permissions (print, edit). Use Protect PDF for both; this tool sets only the owner password + permission flags."
+    },
+    {
+      "q": "How strong is the protection?",
+      "a": "It's enforced by readers as a courtesy — Adobe Acrobat respects it strictly, some open-source readers ignore it. For real security, encrypt with a user password."
+    },
+    {
+      "q": "Can users still copy text?",
+      "a": "Only if allow_copy is true. If false, the reader disables text selection. Note: screenshots still work (no PDF protection can prevent that)."
+    }
+  ]
+}

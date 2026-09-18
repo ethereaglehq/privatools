@@ -36,10 +36,13 @@ def test_top_50_tool_pages_have_required_geo_content():
         body = seo_meta._build_ssr_content(path, *seo_meta.get_meta_for_path(path))
         types = _jsonld_types(path)
         checks = {
-            "800_words": _word_count(body) >= 800,
-            "tldr": 'class="tool-tldr"' in body,
-            "deep_content": 'class="tool-depth"' in body,
+            "150_words": _word_count(body) >= 150,
+            "intro": 'class="tool-intro"' in body,
+            "steps": 'class="tool-steps"' in body,
+            "faq": 'class="tool-faq"' in body,
+            "no_template_depth": 'class="tool-depth"' not in body,
             "visible_review": "Last reviewed" in body,
+            "related": body.count('class="tool-related"') == 1,
             "howto_schema": "HowTo" in types,
             "faq_schema": "FAQPage" in types,
             "software_schema": "SoftwareApplication" in types,

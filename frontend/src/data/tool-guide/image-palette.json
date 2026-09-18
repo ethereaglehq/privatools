@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "Drop a JPG, PNG, WebP, BMP, TIFF, or GIF — up to 50 MB."
+    },
+    {
+      "name": "Set the color count",
+      "text": "Drag the slider from 2 to 24 colors. 6 is a good default for most brand/UI work."
+    },
+    {
+      "name": "Copy any color",
+      "text": "The dominant colors appear as swatches with HEX, rgb(), and coverage percentage. Click Copy on the one you want."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How are the colors picked?",
+      "a": "We downsize the image to 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."
+    },
+    {
+      "q": "Will it find the brand color from a logo?",
+      "a": "Usually yes — logos have a few dominant colors that octree picks up well. For logos on white backgrounds, asking for 6 colors typically gives 1 white + the actual brand colors."
+    },
+    {
+      "q": "Can I get more than 24 colors?",
+      "a": "Not in this tool — beyond 24 the palette becomes too noisy to be useful. For full palette analysis, export the image to a design tool."
+    }
+  ]
+}

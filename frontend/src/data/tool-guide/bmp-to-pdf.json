@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload BMP images",
+      "text": "Drop one or many .bmp files. BMP is the legacy Windows bitmap format — uncompressed and lossless."
+    },
+    {
+      "name": "Choose page size",
+      "text": "Letter (8.5 × 11 in) or A4 (210 × 297 mm). Each BMP scales to fit the page while preserving aspect ratio."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Click Convert. All input images are combined into a single PDF, one image per page in upload order."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why is the output PDF so much smaller than the BMPs?",
+      "a": "BMP is uncompressed; PDF stores images in DCT (JPEG) or Flate format. A 5 MB BMP usually becomes a few hundred KB inside the PDF."
+    },
+    {
+      "q": "Will quality degrade?",
+      "a": "By default the conversion is near-lossless using high-quality JPEG. For 100% lossless, convert via PNG first (PNG-to-PDF) — slightly larger output."
+    },
+    {
+      "q": "How many BMPs can I convert at once?",
+      "a": "Up to the 500 MB total file limit. Several dozen images is routine."
+    }
+  ]
+}

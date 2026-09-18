@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload files",
+      "text": "Drop multiple files of any type, up to 500 MB per file."
+    },
+    {
+      "name": "Choose compression level",
+      "text": "Use Store for speed, Balanced for everyday ZIPs, or Maximum for the smallest output."
+    },
+    {
+      "name": "Download the ZIP",
+      "text": "All files are bundled into a single .zip with their original filenames and extensions."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I password-protect the ZIP?",
+      "a": "Not yet. Create ZIP currently produces standard unencrypted ZIP archives; password-protected ZIP creation is on the roadmap."
+    },
+    {
+      "q": "Will it preserve folder structure?",
+      "a": "Uploaded files are placed at the root of the archive. To preserve a folder structure, upload them folder-by-folder using the multi-folder option."
+    },
+    {
+      "q": "What compression level should I choose?",
+      "a": "Balanced is best for most files. Store is fastest for already-compressed files like JPG, MP4, and PDF. Maximum can shrink text-heavy files more but takes longer."
+    }
+  ]
+}

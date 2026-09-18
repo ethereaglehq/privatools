@@ -1,0 +1,38 @@
+{
+  "howto": [
+    {
+      "name": "Upload the image",
+      "text": "Drop a JPG, PNG or WebP that carries a watermark."
+    },
+    {
+      "name": "Mark the watermark",
+      "text": "Select the area covering it. The tool reconstructs that region from the pixels around it."
+    },
+    {
+      "name": "Download the result",
+      "text": "Works best on watermarks over flat or gently textured backgrounds. Over busy detail the repair will be visible — and only remove watermarks from images you have the right to alter."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How does the removal actually work?",
+      "a": "The selected area is reconstructed from the pixels surrounding it. Nothing underneath the watermark was ever stored, so the result is a plausible fill, not a recovery of hidden detail."
+    },
+    {
+      "q": "When does it look convincing?",
+      "a": "Over flat or gently textured backgrounds such as sky, walls, paper or a blurred backdrop. Over fine detail, faces or text, the reconstruction will be visible under any real scrutiny."
+    },
+    {
+      "q": "Which formats can I use?",
+      "a": "JPG, PNG and WebP. Transparency is preserved where the source format has it."
+    },
+    {
+      "q": "Does the image leave my device?",
+      "a": "Only to the same isolated processing container every server-side tool here uses, and it is deleted after the response. It is never stored, never inspected, and never used for training."
+    },
+    {
+      "q": "Is it legal to remove a watermark?",
+      "a": "That depends entirely on the image. A watermark is usually an ownership mark, and stripping one from a stock photo or someone else's work to avoid licensing it is copyright infringement. Use this on your own images, or where you hold the rights."
+    }
+  ]
+}

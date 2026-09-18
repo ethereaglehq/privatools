@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Enter the data to encode",
+      "text": "URL, contact card (vCard), wifi credentials, plain text, or any string up to ~2,500 characters."
+    },
+    {
+      "name": "Choose size and format",
+      "text": "Pixel dimensions of the output QR. Format: PNG (raster) or SVG (vector, scales infinitely)."
+    },
+    {
+      "name": "Download the QR",
+      "text": "PrivaTools generates a QR code with error correction level L (default; supports up to 7% damage)."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I customize colors?",
+      "a": "Currently black-on-white only. Custom colors and logos in the center are on the roadmap."
+    },
+    {
+      "q": "How do I encode a URL with parameters?",
+      "a": "Just paste the full URL. Special characters are encoded automatically inside the QR."
+    },
+    {
+      "q": "What's the maximum data I can encode?",
+      "a": "Around 2,500 alphanumeric characters or 4,000 numeric digits at error correction level L. Higher EC levels reduce capacity."
+    }
+  ]
+}

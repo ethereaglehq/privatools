@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an animated GIF",
+      "text": "Drop a .gif file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools converts via FFmpeg",
+      "text": "GIF frames become MP4 frames at the source frame rate. H.264 codec for universal compatibility."
+    },
+    {
+      "name": "Download the MP4",
+      "text": "Typically 5-10x smaller than the source GIF, with smoother playback."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert GIF to MP4?",
+      "a": "MP4 is dramatically smaller (better compression), supports audio, and plays smoother. Most social platforms now auto-convert uploaded GIFs to MP4 anyway."
+    },
+    {
+      "q": "Will the loop work in MP4?",
+      "a": "MP4 doesn't have built-in loop info — players decide. Embed with <video loop autoplay muted> to mimic GIF behavior on the web."
+    },
+    {
+      "q": "Does it preserve transparency?",
+      "a": "MP4 doesn't support transparency. Transparent pixels render against a black background. Use WebM with VP9 if you need alpha."
+    }
+  ]
+}

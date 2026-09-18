@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a fillable PDF form",
+      "text": "Drop a PDF with AcroForm fields up to 500 MB. The tool detects form fields automatically."
+    },
+    {
+      "name": "Fill in the values",
+      "text": "Provide a JSON object mapping field names to values: text strings for text fields, true/false for checkboxes, option labels for radio buttons / dropdowns."
+    },
+    {
+      "name": "Download the filled form",
+      "text": "Click Fill. The PDF is returned with values populated. Field structure is preserved so the form can be filled again later."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How do I know what the form field names are?",
+      "a": "Use the /api/fill-form/fields endpoint (or paste-then-inspect): PrivaTools returns the list of field names, types, and current values without filling anything."
+    },
+    {
+      "q": "Can I flatten the filled form?",
+      "a": "Yes — run the Flatten tool afterwards to bake the values into the page content so they can't be edited."
+    },
+    {
+      "q": "Does this work on signed forms?",
+      "a": "Filling a signed form invalidates the signature. Sign last, after filling."
+    }
+  ]
+}

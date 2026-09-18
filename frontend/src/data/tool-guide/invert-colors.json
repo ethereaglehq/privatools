@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose DPI for rendering",
+      "text": "Higher DPI gives sharper output but larger file size. 150 DPI is the default; 300 for archival, 96 for web previews."
+    },
+    {
+      "name": "Download the inverted PDF",
+      "text": "Each page is rendered, inverted (white↔black, colors mapped to complements), and re-embedded."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why would I invert colors?",
+      "a": "Dark-mode reading on tablets, contrast-flipped scanning of light text on dark backgrounds, or accessibility for users sensitive to bright whites."
+    },
+    {
+      "q": "Will the text still be searchable after?",
+      "a": "Inverted pages become images, so the text layer is lost. To preserve searchability, OCR the inverted PDF afterwards."
+    },
+    {
+      "q": "Can I invert only certain pages?",
+      "a": "Currently inversion applies to all pages. Run Extract Pages → Invert → Merge to apply selectively."
+    }
+  ]
+}

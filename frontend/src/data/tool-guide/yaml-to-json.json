@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Paste YAML",
+      "text": "Drop any YAML document into the left textarea — a Kubernetes manifest, GitHub Actions workflow, Docker Compose file, or any configuration."
+    },
+    {
+      "name": "Read JSON instantly",
+      "text": "Equivalent JSON appears on the right, pretty-printed and validated. Click Copy to grab it. 100% in your browser — your config never touches our servers."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is it 100% in my browser?",
+      "a": "Yes. The YAML never leaves your device — no server roundtrip, no logs, no analytics on the content."
+    },
+    {
+      "q": "Which YAML features are supported?",
+      "a": "All common config features: scalars, lists, nested maps, quoted strings, comments, multi-line strings, and flow-style arrays and objects. Anchors, tags, and multi-doc streams are not supported — those are rare in practice."
+    },
+    {
+      "q": "What if my YAML has a parse error?",
+      "a": "The error message appears in the output area with line context. Fix the YAML and the conversion updates instantly."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "PrivaTools pulls out every image",
+      "text": "Each embedded image (raster or vector) is extracted at its native resolution, with original format preserved (JPEG, PNG, TIFF, etc.)."
+    },
+    {
+      "name": "Download as ZIP",
+      "text": "All extracted images are bundled into a ZIP archive, named by page and order."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will the images be the original resolution?",
+      "a": "Yes. PDF embeds images at the resolution set when the PDF was created — extraction recovers them unchanged."
+    },
+    {
+      "q": "What if the same image appears multiple times?",
+      "a": "Each visual occurrence is extracted, even if it's the same underlying image data. Use deduplication after if needed."
+    },
+    {
+      "q": "Does it work on scanned PDFs?",
+      "a": "Yes — each page of a scanned PDF is one big image. The tool extracts that page-image directly."
+    }
+  ]
+}

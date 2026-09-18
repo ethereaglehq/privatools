@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Pick stack templates",
+      "text": "Choose templates such as Node, Python, Vite, Docker, Terraform, Go, Rust, macOS, or Windows."
+    },
+    {
+      "name": "Review the generated file",
+      "text": "The selected templates are combined into one readable .gitignore with section comments."
+    },
+    {
+      "name": "Copy or download",
+      "text": "Copy the text or download it directly as .gitignore for your repository root."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does it call the toptal/gitignore API?",
+      "a": "No. The templates are bundled in the app so the generator works offline and does not leak your selected stack."
+    },
+    {
+      "q": "Can I combine multiple templates?",
+      "a": "Yes. Select any combination and the generated .gitignore groups each template under a comment header."
+    },
+    {
+      "q": "Can I download the file directly?",
+      "a": "Yes. You can copy the text or download a .gitignore file from the browser."
+    }
+  ]
+}

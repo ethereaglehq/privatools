@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload images",
+      "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF). Each image can be up to 500 MB."
+    },
+    {
+      "name": "Arrange and configure",
+      "text": "Reorder images by dragging thumbnails. Set page size (A4, Letter, or fit-to-image) and orientation."
+    },
+    {
+      "name": "Convert to PDF",
+      "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What image formats are supported?",
+      "a": "JPG, PNG, WebP, BMP, and TIFF. Each image can be up to 500 MB."
+    },
+    {
+      "q": "Can I control the page size?",
+      "a": "Yes. Choose A4, Letter, or fit-to-image (where the page matches the image dimensions exactly). You can also set landscape or portrait orientation."
+    },
+    {
+      "q": "Are multiple images combined into one PDF?",
+      "a": "Yes. All uploaded images become pages in a single PDF. Drag to reorder them before converting."
+    }
+  ]
+}

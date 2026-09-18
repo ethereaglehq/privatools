@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload an M4A audio file",
+      "text": "Drop a .m4a file (iTunes purchases, GarageBand exports, iPhone voice memos)."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. FFmpeg re-encodes the AAC audio inside the M4A container as a 192 kbps MP3, compatible with every player on earth."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert M4A to MP3?",
+      "a": "M4A (AAC inside an MP4 container) isn't universally supported — older car stereos, some Android players, and many legacy devices won't play it. MP3 works everywhere."
+    },
+    {
+      "q": "Will the audio quality drop?",
+      "a": "Slightly. M4A's AAC codec is more efficient than MP3, so at the same bitrate AAC sounds better. Our 192 kbps default produces a result that's indistinguishable from the source for casual listening."
+    },
+    {
+      "q": "Does it work for iPhone voice memos?",
+      "a": "Yes — voice memos export as M4A and convert cleanly to MP3 here."
+    }
+  ]
+}

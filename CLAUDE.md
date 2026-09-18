@@ -140,9 +140,11 @@ load-bearing.
 - **npm lockfile rule:** regenerate only with `npx -y npm@11.19.0` (CI's npm).
   Local npm 11.6 prunes `@emnapi/*` platform entries and breaks CI's `npm ci`.
 - **Registering a tool slug touches ~14 places** — registries, ToolPage or
-  NonPdfToolPage, ToolIllustration, review dates, palette synonyms, FAQ via
-  `tool_content.py` (then regenerate `tool-faq.json` from it — Python is
-  authoritative, `test_tool_faq_export`), `seo_meta.py`, `sitemap.py`, CSP
+  NonPdfToolPage, ToolIllustration, review dates, palette synonyms, FAQ and
+  steps via `tool_content.py`, then run
+  `.venv/bin/python scripts/seo/export-tool-guides.py` to regenerate
+  `frontend/src/data/tool-guide/*.json` (Python is authoritative,
+  `test_tool_guide_export`), `seo_meta.py`, `sitemap.py`, CSP
   sets, `gen-llms.mjs` run, and the public count literals
   (manifest/opensearch/samples + blog copy). The count tests enforce most of
-  it; the CSP walker and FAQ export tests catch the rest.
+  it; the CSP walker and guide export tests catch the rest.

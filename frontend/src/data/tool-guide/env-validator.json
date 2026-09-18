@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste a .env file",
+      "text": "Drop environment variable lines into the browser-only editor."
+    },
+    {
+      "name": "Review warnings",
+      "text": "The validator catches missing equals signs, invalid names, duplicate keys, empty values, unquoted spaces, and short-looking secrets."
+    },
+    {
+      "name": "Fix and copy",
+      "text": "Update your .env file until the report is clean, then copy the corrected content back to your project."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does this replace secret scanning?",
+      "a": "No. It is a fast syntax and hygiene check. Use dedicated secret scanning before committing any real credentials."
+    },
+    {
+      "q": "Will it reveal my secrets to PrivaTools?",
+      "a": "No. The .env text stays in browser memory and is never sent to the backend."
+    },
+    {
+      "q": "What checks are included?",
+      "a": "Missing equals signs, invalid variable names, duplicate keys, empty values, unquoted spaces, and short-looking secret values."
+    }
+  ]
+}

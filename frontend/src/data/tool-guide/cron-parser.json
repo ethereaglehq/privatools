@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste a cron expression",
+      "text": "Enter a standard 5-field cron schedule: minute, hour, day of month, month, and weekday."
+    },
+    {
+      "name": "Read the explanation",
+      "text": "The tool validates each field and explains the schedule in plain language."
+    },
+    {
+      "name": "Preview upcoming runs",
+      "text": "Next run times are calculated locally in your browser timezone so you can verify the schedule before shipping it."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does it support Quartz cron with seconds?",
+      "a": "No. This tool intentionally supports standard 5-field cron because that is what Linux crontab, many schedulers, and most deployment platforms use."
+    },
+    {
+      "q": "Which timezone is used for next runs?",
+      "a": "Your browser's local timezone. The expression itself is not uploaded or evaluated on the server."
+    },
+    {
+      "q": "Can it validate ranges and steps?",
+      "a": "Yes. It catches invalid ranges, bad steps, out-of-bounds values, and expressions with the wrong number of fields."
+    }
+  ]
+}

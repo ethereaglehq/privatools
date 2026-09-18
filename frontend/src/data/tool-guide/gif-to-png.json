@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a GIF",
+      "text": "Drop a GIF — single-frame GIFs convert cleanly with transparency preserved."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The first frame becomes a lossless PNG, perfect for icons and animated avatars converted to stills."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What about animated GIFs?",
+      "a": "Only the first frame is converted to PNG. For animated GIFs, consider converting to a video format like MP4 or WebM using our GIF to MP4 tool."
+    },
+    {
+      "q": "Will transparency be preserved?",
+      "a": "Yes — PNG fully supports transparency, so transparent areas of the GIF come through cleanly."
+    },
+    {
+      "q": "Is the conversion lossless?",
+      "a": "Yes. Both GIF and PNG are lossless formats, so the first frame is reproduced pixel-perfectly."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "Select a JPG, PNG, or WebP image. The tool shows the current dimensions."
+    },
+    {
+      "name": "Choose the scale",
+      "text": "Select 2x (double) or 4x (quadruple) enlargement. The tool uses Lanczos resampling for sharp, artifact-free results."
+    },
+    {
+      "name": "Download the upscaled image",
+      "text": "Click Upscale. The enlarged image downloads in the same format as the original with the scale factor in the filename."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What upscaling methods are available?",
+      "a": "The tool uses Lanczos resampling, a high-quality interpolation algorithm that produces sharp, artifact-free results. Choose 2x or 4x enlargement."
+    },
+    {
+      "q": "What image formats are supported?",
+      "a": "JPG, PNG, and WebP images are supported. The output format matches the input — upload a JPG, get a JPG back."
+    },
+    {
+      "q": "Is there a maximum image size?",
+      "a": "The upscaled result cannot exceed 100 megapixels. For a 4x upscale, this means input images up to about 2500x2500 pixels."
+    }
+  ]
+}

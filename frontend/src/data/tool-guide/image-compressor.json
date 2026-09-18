@@ -1,0 +1,42 @@
+{
+  "howto": [
+    {
+      "name": "Upload images",
+      "text": "Select one or more images (JPG, PNG, WebP). Each file can be up to 500 MB."
+    },
+    {
+      "name": "Set compression level",
+      "text": "Choose a quality target or let the tool auto-optimize. For PNG, lossless compression is applied; for JPG, you can set the quality percentage."
+    },
+    {
+      "name": "Download compressed images",
+      "text": "Click Compress. The tool shows the original and compressed sizes side by side. Multiple files are returned in a ZIP."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is PNG compression lossless?",
+      "a": "Yes — PNG compression here is lossless. The pixels are byte-identical to the original; only the encoding is optimized via zlib levels and palette reduction. Verify with `cmp` or a pixel-diff tool: zero difference."
+    },
+    {
+      "q": "How much can I expect a JPG to shrink?",
+      "a": "JPGs typically shrink 40–70% at quality 75 with no visible difference for photos. Screenshots and graphics with flat colors shrink more aggressively. Quality 60 still looks good on most photos and gets you 60–80% reduction."
+    },
+    {
+      "q": "Will compression strip my EXIF / GPS data?",
+      "a": "By default EXIF is preserved. If you want to strip it (for privacy when sharing photos), use the dedicated Remove EXIF tool after compressing — or use Strip Metadata for a one-step solution."
+    },
+    {
+      "q": "Can I batch-compress dozens of images?",
+      "a": "Yes. Drop as many as you want; each is compressed with the same settings, then bundled into a single ZIP. There is no daily cap on the number of files."
+    },
+    {
+      "q": "Is it safe to compress photos with sensitive content?",
+      "a": "Yes. Each image is held in temporary per-request storage only for the duration of the request, then unlinked. No image is written to permanent storage, none is logged, and none is used to train any model. The codec runs server-side in an isolated container; the entire codebase is open source for verification."
+    },
+    {
+      "q": "How is this different from TinyPNG or Squoosh?",
+      "a": "TinyPNG caps free use at 20 images/month and uploads to their servers. Squoosh is browser-only but doesn't support batch. PrivaTools is unlimited, batch-friendly, server-processed for speed on large files, and the server-side code is self-hostable so you can run it on your own infrastructure."
+    }
+  ]
+}

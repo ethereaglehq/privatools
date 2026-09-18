@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. Existing bookmarks, if any, are listed automatically."
+    },
+    {
+      "name": "Edit the bookmark tree",
+      "text": "Add, rename, reorder, or delete bookmarks. Set the target page number for each entry. You can nest bookmarks to create a multi-level table of contents."
+    },
+    {
+      "name": "Save and download",
+      "text": "Click Save. The updated bookmark tree is embedded into the PDF for easy navigation in any reader."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I create a multi-level bookmark tree?",
+      "a": "Yes. You can nest bookmarks under parent entries to create a hierarchical table of contents with multiple levels."
+    },
+    {
+      "q": "Do bookmarks work in all PDF readers?",
+      "a": "Yes. The bookmarks use the standard PDF outline format supported by Adobe Reader, Preview, Chrome, Firefox, and all major PDF viewers."
+    },
+    {
+      "q": "Can I import a bookmark structure from a text file?",
+      "a": "Currently, bookmarks are created manually in the editor. You can copy-paste titles and set page numbers individually."
+    }
+  ]
+}

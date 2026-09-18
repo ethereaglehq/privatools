@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MP3",
+      "text": "Drop an .mp3 file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops. As a lossy-to-lossy transcode, encode generously if the MP3 was already low bitrate."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will MP3 to OGG sound better?",
+      "a": "No — both are lossy, and the source MP3's lost detail can't be recovered. OGG Vorbis can be slightly more efficient at the same bitrate, which is useful for open-format projects and games."
+    },
+    {
+      "q": "Why use OGG?",
+      "a": "It's a royalty-free, open format favored by game engines (Godot, Unity) and open-source software."
+    },
+    {
+      "q": "Is the conversion private?",
+      "a": "Yes — local FFmpeg on the PrivaTools backend; files removed after the response."
+    }
+  ]
+}

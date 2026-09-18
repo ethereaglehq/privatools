@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. The tool displays a page-count summary."
+    },
+    {
+      "name": "Configure output settings",
+      "text": "Choose the image format (PNG, JPG, or WebP), resolution (72–600 DPI), and which pages to convert."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Each page becomes a separate image file, delivered in a ZIP archive."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What DPI should I use?",
+      "a": "150 DPI is good for on-screen viewing. Use 300 DPI for printing. Higher values like 600 DPI produce large files but maximum detail."
+    },
+    {
+      "q": "Which image formats are available?",
+      "a": "PNG (lossless, best for text-heavy pages), JPG (smaller files, good for photos), and WebP (modern format with excellent compression)."
+    },
+    {
+      "q": "Can I convert just specific pages?",
+      "a": "Yes. Enter individual page numbers or ranges (e.g. 1-3, 7) to convert only the pages you need."
+    }
+  ]
+}

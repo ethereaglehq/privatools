@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a CSV file",
+      "text": "Select a .csv or .tsv file up to 500 MB. The first row is treated as column headers by default."
+    },
+    {
+      "name": "Customize table appearance",
+      "text": "Set font size, enable zebra striping, choose landscape or portrait orientation. Wide tables automatically wrap or scale to fit."
+    },
+    {
+      "name": "Convert to PDF",
+      "text": "Click Convert. The data is rendered into a clean, paginated table in the output PDF."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does the tool auto-detect delimiters?",
+      "a": "Yes. Comma, semicolon, tab, and pipe delimiters are automatically detected. You can also specify the delimiter manually."
+    },
+    {
+      "q": "How are wide tables handled?",
+      "a": "Wide tables can be rendered in landscape orientation. If they still exceed the page width, columns are scaled to fit or split across pages."
+    },
+    {
+      "q": "Is the first row treated as a header?",
+      "a": "By default yes — the first row is bolded as a header. You can disable this if your data has no header row."
+    }
+  ]
+}

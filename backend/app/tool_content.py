@@ -928,7 +928,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the converted subtitles", "text": "Runs entirely in your browser."},
     ],
     "svg-to-png": [
-        {"name": "Upload an SVG", "text": "Drop a .svg file."},
+        {"name": "Upload an SVG", "text": "Drop a .svg file up to 500 MB."},
         {"name": "Choose scale factor", "text": "1x = SVG native size. 2x, 3x, 4x for higher-resolution exports."},
         {"name": "Download the PNG", "text": "PrivaTools rasterizes the vector via cairosvg at the chosen scale with anti-aliasing."},
     ],
@@ -938,7 +938,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Copy the result", "text": "Runs entirely in your browser."},
     ],
     "url-to-pdf": [
-        {"name": "Enter the URL to convert", "text": "Any public web page."},
+        {"name": "Enter the URL to convert", "text": "Any public web page — no file upload needed for this one."},
         {"name": "PrivaTools fetches and renders", "text": "WeasyPrint loads the page (with CSS, images, fonts) and renders it as a print-quality PDF."},
         {"name": "Download the PDF", "text": "Click Convert. Pagination follows print CSS rules; links remain clickable."},
     ],
@@ -996,7 +996,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Click Convert. AAC is more efficient than MP3 at the same bitrate, but re-encoding one lossy format as another always loses a little more. It is worth doing for Apple devices and for streaming, not for archiving.'},
     ],
     "mp3-to-flac": [
-        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file.'},
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
         {"name": 'PrivaTools rewraps via FFmpeg', "text": 'The decoded audio is stored losslessly. Nothing further is lost, and nothing is restored: the output sounds identical to the MP3 and is larger.'},
         {"name": 'Convert and download', "text": 'Click Convert. FLAC wraps the decoded audio losslessly, so nothing further is lost — but nothing is restored either. The output is larger than the MP3 and sounds identical to it. Use this when a workflow demands FLAC input, not to improve quality.'},
     ],
@@ -1006,7 +1006,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Click Convert. Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops. As a lossy-to-lossy transcode, encode generously if the MP3 was already low bitrate.'},
     ],
     "mp3-to-wav": [
-        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file.'},
+        {"name": 'Upload an MP3', "text": 'Drop an .mp3 file up to 500 MB.'},
         {"name": 'PrivaTools decodes via FFmpeg', "text": 'The MP3 is decoded to uncompressed PCM, which is what editors, samplers and DAWs want to work from.'},
         {"name": 'Convert and download', "text": 'Click Convert. The MP3 is decoded to uncompressed PCM, which is what most editors, samplers and DAWs want to work from. Files grow roughly tenfold — a 5 MB MP3 lands near 50 MB.'},
     ],
@@ -1026,7 +1026,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Click Convert. Expect roughly a 10:1 reduction. Keep the WAV if it is your master — MP3 is a delivery format, not an archive one.'},
     ],
     "wav-to-ogg": [
-        {"name": 'Upload a WAV file', "text": 'Drop a .wav file.'},
+        {"name": 'Upload a WAV file', "text": 'Drop a .wav file up to 500 MB.'},
         {"name": 'PrivaTools encodes via FFmpeg', "text": 'Encoded straight from uncompressed source, so quality is as good as the chosen bitrate allows.'},
         {"name": 'Convert and download', "text": 'Click Convert. Ogg Vorbis is patent-free and a good fit for games and web audio, encoded here straight from uncompressed source so quality is as good as the bitrate allows.'},
     ],
@@ -1061,7 +1061,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Click Convert. VP9 WebM is the right output for the open web: smaller than the MOV at comparable quality, and playable without QuickTime.'},
     ],
     "mp4-to-avi": [
-        {"name": 'Upload an MP4', "text": 'Drop an .mp4 file.'},
+        {"name": 'Upload an MP4', "text": 'Drop an .mp4 file up to 500 MB.'},
         {"name": 'PrivaTools rewraps via FFmpeg', "text": 'AVI is an older, less efficient container, so the file will usually grow rather than shrink.'},
         {"name": 'Convert and download', "text": 'Click Convert. AVI is only worth choosing for genuinely old software or hardware that refuses MP4; the container is less efficient and the file will usually grow.'},
     ],
@@ -1076,7 +1076,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Click Convert. Frames are reduced to a 256-colour palette. GIF trades size and colour depth for the ability to autoplay in email and old chat clients.'},
     ],
     "webm-to-mov": [
-        {"name": 'Upload a WebM file', "text": 'Drop a .webm file.'},
+        {"name": 'Upload a WebM file', "text": 'Drop a .webm file up to 500 MB.'},
         {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'VP9 is re-encoded into a stream QuickTime and Final Cut will actually open.'},
         {"name": 'Convert and download', "text": 'Click Convert. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM.'},
     ],
@@ -1091,7 +1091,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Click Convert. TIFF is the format archives, print shops and scanning workflows ask for. It cannot restore detail the JPG already discarded — it preserves exactly what is there, without adding another lossy generation.'},
     ],
     "png-to-bmp": [
-        {"name": 'Upload a PNG', "text": 'Drop a .png file.'},
+        {"name": 'Upload a PNG', "text": 'Drop a .png file up to 500 MB.'},
         {"name": 'PrivaTools converts via Pillow', "text": 'BMP has no practical transparency support, so any alpha channel is composited onto white.'},
         {"name": 'Convert and download', "text": 'Click Convert. BMP has no practical transparency support, so any alpha channel is composited onto a white background. Keep the PNG if transparency matters.'},
     ],
@@ -1101,7 +1101,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Click Convert. Both formats are lossless, so this is a faithful conversion, and TIFF keeps the alpha channel — the right choice for archival and print pipelines that will not take PNG.'},
     ],
     "webp-to-bmp": [
-        {"name": 'Upload a WebP image', "text": 'Drop a .webp file.'},
+        {"name": 'Upload a WebP image', "text": 'Drop a .webp file up to 500 MB.'},
         {"name": 'PrivaTools converts via Pillow', "text": 'Uncompressed output, with transparency flattened onto white.'},
         {"name": 'Convert and download', "text": 'Click Convert. BMP is uncompressed and drops transparency to a white background; it is worth using only when some older tool insists on it.'},
     ],

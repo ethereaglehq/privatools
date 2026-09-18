@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Add annotations",
+      "text": "Use the toolbar to add highlights, underlines, strikethroughs, sticky notes, and text boxes. Each annotation has a position, page, content, and color."
+    },
+    {
+      "name": "Save and download",
+      "text": "Click Save. Annotations are added as standard PDF annotation objects — they appear in every PDF reader and can be edited later."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Are annotations flattened?",
+      "a": "By default no — they remain as editable annotations. If you want them permanently baked into the page, run the Flatten tool afterwards."
+    },
+    {
+      "q": "Can I attach sticky-note comments?",
+      "a": "Yes. Add a note annotation with author + content; readers display it as an icon that opens a popup with the text on click."
+    },
+    {
+      "q": "Do annotations survive PDF/A conversion?",
+      "a": "Some do (text, highlight, square) but interactive ones (file attachments, popup notes) get flattened or stripped depending on the PDF/A profile."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB. Best for scanned documents with intermittent blank pages."
+    },
+    {
+      "name": "Set sensitivity",
+      "text": "1-99. Higher values delete only entirely-blank pages; lower values also delete pages with very little content (good for scanner artifacts)."
+    },
+    {
+      "name": "Download the cleaned PDF",
+      "text": "PrivaTools removes pages whose content density is below the threshold."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How does it detect 'blank'?",
+      "a": "Each page is rendered to a low-res raster and analysed for pixel density. Pages with less than (100 - sensitivity)% non-white pixels are marked for removal."
+    },
+    {
+      "q": "Will pages with only a page number get deleted?",
+      "a": "Depends on sensitivity. At sensitivity 95 (default), pages with isolated tiny content like page numbers are kept. At sensitivity 80, they may be removed."
+    },
+    {
+      "q": "What if a page has only a watermark?",
+      "a": "The watermark counts as content. Use sensitivity 99 to only remove pages with no content at all."
+    }
+  ]
+}

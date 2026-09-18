@@ -1,0 +1,42 @@
+{
+  "howto": [
+    {
+      "name": "Add PDF files",
+      "text": "Drop or select two or more PDF files into the upload area. There is no page-count limit; the max per file is 500 MB."
+    },
+    {
+      "name": "Reorder the files",
+      "text": "Drag the thumbnail cards to set the order in which the PDFs will be joined."
+    },
+    {
+      "name": "Merge and download",
+      "text": "Click Merge. The server concatenates the files, preserving bookmarks and links, and returns a single PDF."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How many PDFs can I merge at once?",
+      "a": "There is no hard cap on the number of files. Each individual file must be under 500 MB. We routinely handle merges of 30–50 files in one call; if you need more, run the merge twice."
+    },
+    {
+      "q": "Are bookmarks and hyperlinks preserved?",
+      "a": "Yes. Existing bookmarks, internal links, and external hyperlinks from every input file are preserved in the merged output. Bookmarks are renamed with a numeric prefix so two PDFs with the same chapter titles don't collide."
+    },
+    {
+      "q": "Will PrivaTools watermark the merged PDF?",
+      "a": "No. The output has zero watermarks, no PrivaTools tag in the metadata, and no header/footer added. iLovePDF and Smallpdf both add a watermark or limit free merges to 2 files; PrivaTools has no such limit."
+    },
+    {
+      "q": "Is it safe to upload sensitive PDFs to be merged?",
+      "a": "Yes. Files enter an isolated Docker container, are processed in temporary per-request storage, and are unlinked the moment the response is delivered. They are never written to permanent storage, never logged, and never used to train any model. The merger code is open source on GitHub."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no per-day or per-month quota. The merged output can be any size — the only constraint is each input file."
+    },
+    {
+      "q": "Do I need to create an account to merge PDFs?",
+      "a": "No. No account, no email, no sign-up. Drop the files, drag to reorder, click Merge, and download. The privacy guarantees come from the architecture, not from a user profile."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Set crop margins",
+      "text": "Specify top / bottom / left / right margins to remove, in PDF points (1 pt = 1/72 inch)."
+    },
+    {
+      "name": "Download the cropped PDF",
+      "text": "Click Crop. Each page's MediaBox + CropBox is shrunk by the specified margins."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Difference between Crop and Auto-Crop?",
+      "a": "Crop uses your manual margins (same on every page). Auto-Crop detects each page's actual content bounding box automatically."
+    },
+    {
+      "q": "Will the cropped content be deleted from the file?",
+      "a": "No — only the visible region changes. The full page content is still in the file. To permanently remove the cropped data, run Flatten or Sanitize afterwards."
+    },
+    {
+      "q": "How do I undo a crop?",
+      "a": "Re-open the PDF in PrivaTools Crop with negative margins to expand the box, or run Flatten which bakes the current crop in."
+    }
+  ]
+}

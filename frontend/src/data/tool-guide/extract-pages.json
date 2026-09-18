@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Specify pages to keep",
+      "text": "Comma-separated list and/or ranges, e.g. '1, 3-5, 10'. Only those pages will be in the output."
+    },
+    {
+      "name": "Download the extract",
+      "text": "Click Extract. The output PDF contains only the specified pages in their original order."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How is this different from Delete Pages?",
+      "a": "Extract keeps the listed pages; Delete removes them. They're complementary — use whichever produces less typing."
+    },
+    {
+      "q": "Can I extract pages into separate files?",
+      "a": "For one-file-per-page splitting, use the Split PDF tool with 'individual' mode."
+    },
+    {
+      "q": "Does this preserve bookmarks?",
+      "a": "Bookmarks pointing to kept pages are preserved; those pointing to dropped pages are removed."
+    }
+  ]
+}

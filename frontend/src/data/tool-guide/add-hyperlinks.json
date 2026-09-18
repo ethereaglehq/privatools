@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload your PDF",
+      "text": "Select a PDF up to 500 MB."
+    },
+    {
+      "name": "Define each link",
+      "text": "Specify the page, rectangle coordinates (x, y, width, height in PDF points), and target URL. Coordinates use the PDF coordinate system where (0,0) is bottom-left."
+    },
+    {
+      "name": "Download the linked PDF",
+      "text": "Click Add Links. PrivaTools embeds clickable hyperlink annotations at each rectangle, opening the target URL on click in any PDF reader."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I link to other pages in the same PDF?",
+      "a": "Currently the tool supports external URLs. For internal page jumps, use the Bookmarks tool instead."
+    },
+    {
+      "q": "Are the links visible to the user?",
+      "a": "The clickable rectangle is invisible by default. To add visible underlined link text, use the Edit PDF tool to draw the underline first."
+    },
+    {
+      "q": "Will hyperlinks survive printing or PDF/A conversion?",
+      "a": "Hyperlinks don't print (they're interactive annotations) but they're preserved through most PDF/A conversions. PDF/A-1a strips them; PDF/A-2 keeps them."
+    }
+  ]
+}

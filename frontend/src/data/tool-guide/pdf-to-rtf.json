@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB."
+    },
+    {
+      "name": "Download the RTF",
+      "text": "Click Convert. The RTF file opens in WordPad, Microsoft Word, Pages, LibreOffice, and any other RTF-aware editor. Unicode is preserved via RTF escape sequences."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's RTF good for?",
+      "a": "Rich Text Format opens in every word processor (Word, Pages, LibreOffice, WordPad) without the bloat of .docx and with better text fidelity than .txt. Useful for legacy or cross-platform document exchange."
+    },
+    {
+      "q": "Are images preserved?",
+      "a": "No. The current implementation focuses on text and structure. For full visual fidelity, use PDF to Word instead."
+    },
+    {
+      "q": "Does it handle Unicode?",
+      "a": "Yes. Non-ASCII characters are encoded via the standard RTF \\uN escape mechanism."
+    }
+  ]
+}

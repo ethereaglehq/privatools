@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an audio file",
+      "text": "Drop MP3, WAV, AAC, FLAC, OGG, or M4A — up to 200 MB."
+    },
+    {
+      "name": "Set start and end",
+      "text": "Type the start and end timestamps in HH:MM:SS format (e.g. 00:01:30 to 00:02:45)."
+    },
+    {
+      "name": "Click Trim audio",
+      "text": "Stream-copy preserves the original quality — no re-encoding."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How precise are the start/end times?",
+      "a": "To 1-second precision via stream-copy. For frame-accurate trimming, use the Trim Media tool which re-encodes."
+    },
+    {
+      "q": "Will trimming reduce audio quality?",
+      "a": "No — we use stream-copy mode which preserves the original bytes. The trimmed file is identical quality to the source."
+    },
+    {
+      "q": "What format does it output?",
+      "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC. No re-encoding."
+    }
+  ]
+}

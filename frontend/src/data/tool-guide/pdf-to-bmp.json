@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose DPI",
+      "text": "Higher DPI gives sharper output. 150 DPI for screen, 300 for print, 600 for archival."
+    },
+    {
+      "name": "Download a ZIP of BMPs",
+      "text": "Each page becomes one BMP file. BMP is uncompressed so files are LARGE — typically 5-30 MB per page at 300 DPI."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why are BMPs so much larger than PNG?",
+      "a": "BMP stores every pixel uncompressed. PNG losslessly compresses to ~20% the size. Use BMP only when you specifically need uncompressed pixel data."
+    },
+    {
+      "q": "What's BMP good for?",
+      "a": "Legacy Windows software that doesn't support modern formats; embedded systems; precise pixel manipulation."
+    },
+    {
+      "q": "Can I get just one page as BMP?",
+      "a": "Extract that page first with Extract Pages, then convert."
+    }
+  ]
+}

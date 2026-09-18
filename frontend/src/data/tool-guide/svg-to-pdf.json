@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload SVG images",
+      "text": "Drop one or many .svg files. Vector content scales infinitely."
+    },
+    {
+      "name": "Choose page size",
+      "text": "Letter or A4. Each SVG scales proportionally to fit while preserving aspect ratio."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "All SVGs become one PDF, one per page. Vector content stays vector — no rasterization."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will my SVG stay as vector inside the PDF?",
+      "a": "Yes — PDF natively supports vector content, so paths, text, and gradients remain editable at any zoom level."
+    },
+    {
+      "q": "What about embedded raster images inside SVG?",
+      "a": "Embedded raster images (data URLs, external image refs) are preserved as raster within the PDF."
+    },
+    {
+      "q": "Does it handle CSS styles inside SVG?",
+      "a": "Standard SVG CSS (fill, stroke, opacity, transform) is honored. External stylesheet refs are inlined first."
+    }
+  ]
+}

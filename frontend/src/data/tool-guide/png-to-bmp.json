@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PNG",
+      "text": "Drop a .png file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools converts via Pillow",
+      "text": "BMP has no practical transparency support, so any alpha channel is composited onto white."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. BMP has no practical transparency support, so any alpha channel is composited onto a white background. Keep the PNG if transparency matters."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is PNG transparency kept in BMP?",
+      "a": "Standard BMP has no alpha channel, so transparent areas are flattened (to white by default). If you need to keep transparency, use PNG→TIFF instead."
+    },
+    {
+      "q": "Why convert to BMP?",
+      "a": "For legacy Windows software, embedded displays, and tools that only accept uncompressed bitmap input."
+    },
+    {
+      "q": "Is the conversion private?",
+      "a": "Yes — local processing on the PrivaTools backend; files removed immediately after the response."
+    }
+  ]
+}

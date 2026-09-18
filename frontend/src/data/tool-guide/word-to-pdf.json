@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the Word document",
+      "text": "Select a .doc or .docx file up to 500 MB."
+    },
+    {
+      "name": "Conversion runs automatically",
+      "text": "LibreOffice converts the document server-side, preserving formatting, images, headers, footers, and table-of-contents links."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Click Convert and save the result. Hyperlinks and bookmarks from the original document are preserved."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is formatting preserved during conversion?",
+      "a": "Yes. LibreOffice preserves fonts, styles, tables, images, headers, footers, and table-of-contents links. Minor differences may occur with uncommon fonts."
+    },
+    {
+      "q": "Are .doc (legacy) files supported?",
+      "a": "Yes. Both the older .doc format and the modern .docx format are supported."
+    },
+    {
+      "q": "What about tracked changes and comments?",
+      "a": "Tracked changes and comments visible in the document will appear in the PDF. Accept or reject changes in Word first if you want a clean output."
+    }
+  ]
+}

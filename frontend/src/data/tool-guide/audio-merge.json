@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload audio files",
+      "text": "Drop 2 or more audio files (MP3, WAV, OGG, FLAC, AAC). Maximum 200 MB per file."
+    },
+    {
+      "name": "Reorder if needed",
+      "text": "Drag thumbnails to set the concatenation order."
+    },
+    {
+      "name": "Download the merged audio",
+      "text": "FFmpeg concatenates the files into one output. Format defaults to the first input's format."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What if my files have different sample rates?",
+      "a": "FFmpeg resamples to a common rate (usually 44.1 kHz) automatically. There may be a tiny re-encoding loss; for lossless concatenation use FLAC inputs."
+    },
+    {
+      "q": "Are gaps between tracks added?",
+      "a": "No — files are concatenated seamlessly. To add silence, prepare it as a separate file with the same format and insert it in the order."
+    },
+    {
+      "q": "Maximum total length?",
+      "a": "Practical limit is whatever fits inside the 500 MB output. Hours of MP3 at moderate bitrate is fine."
+    }
+  ]
+}

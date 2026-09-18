@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Enter the current version",
+      "text": "Use a SemVer value such as 1.2.3 or v1.2.3-beta.1."
+    },
+    {
+      "name": "Compare bump types",
+      "text": "Patch, minor, major, and prerelease candidates are calculated side-by-side."
+    },
+    {
+      "name": "Copy the release version",
+      "text": "Use the chosen value in package manifests, tags, changelogs, and release notes."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does it handle prerelease versions?",
+      "a": "Yes. Versions like 1.2.3-beta.1 are accepted, and the prerelease bump increments the trailing number when present."
+    },
+    {
+      "q": "Does it edit package.json?",
+      "a": "No. It only calculates version strings so you can copy the value into your release workflow."
+    },
+    {
+      "q": "What rules does it follow?",
+      "a": "Patch increments the third number, minor increments the second and resets patch, major increments the first and resets minor and patch."
+    }
+  ]
+}

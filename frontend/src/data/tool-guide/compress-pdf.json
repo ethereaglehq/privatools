@@ -1,0 +1,42 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. Large scanned documents benefit the most from compression."
+    },
+    {
+      "name": "Pick a compression level",
+      "text": "Choose Low (best quality, modest reduction), Medium (balanced), or High (smallest file, some quality loss on images)."
+    },
+    {
+      "name": "Download the compressed file",
+      "text": "Click Compress. The result shows the new file size and the percentage saved compared to the original."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How much smaller will my PDF actually get?",
+      "a": "Most PDFs shrink 50–75%. Scanned PDFs with large embedded images often see 70–90% reduction; text-heavy PDFs with vector graphics may only shrink 5–15% because the text is already minimally encoded."
+    },
+    {
+      "q": "Will I lose quality when I compress?",
+      "a": "Text and vector graphics are always lossless — you cannot tell them apart from the original. Only embedded raster images are recompressed, and only at the Recommended or Extreme presets. Use the Light preset to keep images untouched."
+    },
+    {
+      "q": "Is it safe to upload a sensitive PDF here?",
+      "a": "Yes. The compressed file is processed in an isolated Docker container, held in temporary per-request storage for the duration of the request, and unlinked the moment the response is delivered. The file is never written to permanent storage, never logged, and never used to train any model. The entire stack is open source so you can verify this on GitHub."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file. There is no daily, weekly, or monthly quota — you can compress unlimited files. If you need to compress dozens of files at once, use the Batch Compress PDF tool which accepts up to 50 PDFs in one go."
+    },
+    {
+      "q": "Can I compress a password-protected PDF?",
+      "a": "Not directly — encryption prevents the compressor from rewriting the content streams. Use the Unlock PDF tool first (you'll need the password), compress the unlocked version, then re-protect with the Protect PDF tool if needed."
+    },
+    {
+      "q": "How is this different from iLovePDF or Smallpdf?",
+      "a": "Free with no daily quota (iLovePDF and Smallpdf cap free tier at 2 files/day), no watermark, no account required, no file size limit beyond 500 MB, and the entire compressor is open source under the MIT license so you can self-host it."
+    }
+  ]
+}

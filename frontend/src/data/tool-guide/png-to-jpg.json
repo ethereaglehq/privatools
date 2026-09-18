@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PNG image",
+      "text": "Drop one or more PNG files — up to 200 MB total."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Transparency is flattened to white and the result is saved as a JPEG at quality 85 — typically 70–90% smaller than the source PNG."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert PNG to JPG?",
+      "a": "JPG files are 70–90% smaller than equivalent PNGs for photographs — perfect when you need to email, upload, or post images without bandwidth penalties."
+    },
+    {
+      "q": "What happens to transparency?",
+      "a": "JPG doesn't support transparency. Transparent pixels are flattened to white. If you need to preserve transparency, use PNG to WebP instead."
+    },
+    {
+      "q": "Will I lose quality?",
+      "a": "JPG is lossy, but at quality 85 (our default) the difference is essentially invisible. Re-saving the same JPG repeatedly does degrade — convert once, then keep the original PNG as a master."
+    }
+  ]
+}

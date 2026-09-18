@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a WebM clip",
+      "text": "Drop a .webm file. Keep it short — every GIF frame is stored as its own image."
+    },
+    {
+      "name": "PrivaTools samples frames via FFmpeg",
+      "text": "Every GIF frame is stored as its own image, which is why short clips work and long ones do not."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Frames are reduced to a 256-colour palette. GIF trades size and colour depth for the ability to autoplay in email and old chat clients."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why is the GIF larger than the WebM?",
+      "a": "GIF stores every frame as a separate image and is capped at 256 colors, so it's inefficient — a short WebM can become a much larger GIF. Trim the clip first to keep the size down."
+    },
+    {
+      "q": "Will the GIF have sound?",
+      "a": "No — GIF is a silent image-animation format and cannot contain audio."
+    },
+    {
+      "q": "What clip length works best?",
+      "a": "Keep it under about 6–10 seconds; longer clips produce very large GIFs."
+    }
+  ]
+}

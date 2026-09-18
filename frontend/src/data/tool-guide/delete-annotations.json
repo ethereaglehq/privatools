@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Strip annotations",
+      "text": "Click Delete. PrivaTools removes every annotation object (highlights, comments, sticky notes, form fields, links)."
+    },
+    {
+      "name": "Download the cleaned PDF",
+      "text": "The visible page content is unchanged; all interactive annotations are gone."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will this remove form fields too?",
+      "a": "Yes — form fields are a type of annotation. To preserve form structure but clear values, use the Fill Form tool with empty values instead."
+    },
+    {
+      "q": "Are hyperlinks deleted?",
+      "a": "Yes — hyperlinks are link annotations. Use this to make a PDF completely 'read-only' as a static document."
+    },
+    {
+      "q": "Does this remove signatures?",
+      "a": "Yes, signature annotations are removed too — which invalidates the cryptographic signature."
+    }
+  ]
+}

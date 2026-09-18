@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a video",
+      "text": "MP4 / MOV / MKV / WebM up to 500 MB."
+    },
+    {
+      "name": "Choose number of frames",
+      "text": "3-30. PrivaTools picks evenly-spaced keyframes across the video."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "Each frame becomes one PDF page. Useful for storyboards, content review, or accessibility."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert video to PDF?",
+      "a": "Storyboarding, content moderation review, video summarisation for accessibility, lecture notes from recorded talks."
+    },
+    {
+      "q": "Can I get just keyframes (scene changes)?",
+      "a": "Evenly-spaced frames are the default. Smart scene-change detection is on the roadmap."
+    },
+    {
+      "q": "What resolution are the frames?",
+      "a": "Native video resolution. The PDF page size matches."
+    }
+  ]
+}

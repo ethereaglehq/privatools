@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload an MP4 video",
+      "text": "Drop an .mp4 file (H.264 or H.265)."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The video is re-encoded as VP9 WebM — smaller files at the same quality, ideal for HTML5 video on the open web."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert MP4 to WebM?",
+      "a": "WebM uses VP9, which is royalty-free and often produces smaller files than H.264 at the same quality. Ideal for hosting video on the open web."
+    },
+    {
+      "q": "Will every browser play it?",
+      "a": "Every modern desktop browser plays WebM. Safari on iOS supports it from iOS 16 onward. For maximum compatibility, MP4 is still safer."
+    },
+    {
+      "q": "How much smaller will it be?",
+      "a": "Typically 20–40% smaller than the equivalent MP4 at the same visible quality."
+    }
+  ]
+}

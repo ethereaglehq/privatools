@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image with a QR code",
+      "text": "JPG, PNG, WebP, or BMP. The QR code should be reasonably in-focus."
+    },
+    {
+      "name": "PrivaTools decodes via pyzbar",
+      "text": "Detects the QR code anywhere in the image, regardless of orientation or partial occlusion (up to ~30%)."
+    },
+    {
+      "name": "Read the decoded data",
+      "text": "Plain text, URL, vCard, WiFi credentials, or whatever the QR encoded."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can it read damaged QR codes?",
+      "a": "QR codes have built-in error correction (up to 30%). Slightly damaged codes still read; heavily damaged ones fail."
+    },
+    {
+      "q": "Multiple QR codes in one image?",
+      "a": "All detected QR codes are returned with their position. Useful for batch scanning of labels."
+    },
+    {
+      "q": "What about other barcode types?",
+      "a": "pyzbar also reads Code 128, Code 39, EAN-13, UPC-A, etc. The decoder identifies the type automatically."
+    }
+  ]
+}

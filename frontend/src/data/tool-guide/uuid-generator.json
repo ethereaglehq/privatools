@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Choose UUID version",
+      "text": "v4 (random — most common). v1 (time + MAC — rare). v7 (time-sortable random — modern recommendation)."
+    },
+    {
+      "name": "Choose bulk count",
+      "text": "1 to 1000 UUIDs at once."
+    },
+    {
+      "name": "Copy or download as text",
+      "text": "Runs entirely in your browser using Web Crypto API."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What's the difference between v4 and v7?",
+      "a": "v4 is purely random — unsortable. v7 (new in 2024) embeds a timestamp prefix so UUIDs sort chronologically. Use v7 for database primary keys."
+    },
+    {
+      "q": "How likely is a collision?",
+      "a": "v4 collision after generating 2^61 ≈ 2.3 quintillion UUIDs. Practically impossible."
+    },
+    {
+      "q": "Are they cryptographically random?",
+      "a": "v4 uses Web Crypto's getRandomValues — yes, cryptographically secure."
+    }
+  ]
+}

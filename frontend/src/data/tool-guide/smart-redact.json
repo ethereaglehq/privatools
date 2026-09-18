@@ -1,0 +1,54 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. The first visit downloads a BERT NER model (~250 MB) into your browser; cached for future use."
+    },
+    {
+      "name": "Wait for the NER scan",
+      "text": "The model scans your document for names, emails, phone numbers, addresses, SSNs, credit cards, and other PII. Entirely client-side."
+    },
+    {
+      "name": "Review and uncheck false positives",
+      "text": "Proposed redactions are grouped by entity type. Uncheck anything that shouldn't be redacted."
+    },
+    {
+      "name": "Apply redactions",
+      "text": "Click Redact. The backend applies real PyMuPDF redactions — permanently removing the underlying content, not just covering it."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What entities does it detect?",
+      "a": "Names (persons and organizations), emails, phone numbers, postal addresses, SSNs and other government IDs, credit card numbers, dates, locations, and IP addresses. The BERT-base-NER model also catches custom patterns via regex hooks — useful for proprietary identifiers like case numbers or patient IDs."
+    },
+    {
+      "q": "Where does the NER scan run?",
+      "a": "Entity detection runs in your browser using @huggingface/transformers WebAssembly. The PDF text never leaves your machine during scanning. When you click Apply, the PDF and selected strings are sent to the isolated backend so PyMuPDF can permanently bake in the redactions; temporary files are unlinked after the response."
+    },
+    {
+      "q": "Is the redaction reversible?",
+      "a": "No. The backend applies real PyMuPDF redactions which permanently destroy the underlying glyphs and image pixels under each redaction rectangle. The redacted file cannot be 'unredacted' even with forensic tools — there is nothing left to recover."
+    },
+    {
+      "q": "How is this different from regular Redact?",
+      "a": "Regular Redact PDF requires you to draw rectangles manually over each piece of sensitive content. Smart Redact auto-detects PII entities so you only need to review the model's suggestions and click 'apply' on the ones to redact. For known-pattern data (SSNs, credit cards) accuracy is near-perfect; for free-text names, you should review."
+    },
+    {
+      "q": "Is it safe to use on a confidential legal or medical document?",
+      "a": "Yes — and arguably safer than manual redaction because the model catches PII you'd miss. Detection runs in-browser (the document text never uploads); only the final redacted file is sent to the server for the permanent-redaction pass, then unlinked immediately. The whole pipeline is open source for verification."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "Detection runs in-browser so it's bounded by browser memory (typically 500 MB practical). The server-side redaction pass accepts up to 500 MB. No daily or monthly quota."
+    },
+    {
+      "q": "What languages are supported for entity detection?",
+      "a": "The default BERT-base-NER model is English-only with strong coverage. Multilingual NER models are on the roadmap. For non-English documents, you can use Smart Redact for the pattern-based entities (numbers, emails, dates) which work across languages, plus regular Redact PDF for free-text."
+    },
+    {
+      "q": "Do I need an account?",
+      "a": "No — no account, no email, no sign-up. The tool loads in your browser; privacy guarantees are architectural."
+    }
+  ]
+}

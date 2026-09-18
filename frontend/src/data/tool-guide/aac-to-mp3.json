@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an AAC file",
+      "text": "Drop an .aac or .m4a file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "AAC is decoded and re-encoded as MP3. Both are lossy, so encode at 192 kbps or higher when the source was already compressed."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. AAC and MP3 are both lossy, so this is a transcode rather than a lossless change: encode at 192 kbps or higher if the source was already compressed. MP3 is the safer choice for car stereos, gym equipment and older players that never learned AAC."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does AAC to MP3 reduce quality?",
+      "a": "Both are lossy, so transcoding AAC→MP3 loses a little detail. Use 256–320 kbps to keep it near-transparent. Convert for devices that don't support AAC/M4A."
+    },
+    {
+      "q": "Why isn't my AAC playing everywhere?",
+      "a": "AAC (often in an .m4a wrapper) has excellent quality-per-byte, but some older or non-Apple devices prefer MP3."
+    },
+    {
+      "q": "Are files kept?",
+      "a": "No — temporary input/output, deleted after the download response."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload 2+ videos",
+      "text": "MP4 / MOV / MKV / WebM, up to 500 MB each."
+    },
+    {
+      "name": "Reorder if needed",
+      "text": "Drag to set concatenation order."
+    },
+    {
+      "name": "Download the merged video",
+      "text": "FFmpeg concatenates the videos. If audio formats differ, audio is re-encoded to AAC."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Do the videos need the same resolution?",
+      "a": "PrivaTools resizes inputs to a common resolution (the smallest source). For pixel-perfect quality, pre-resize all sources to the same dimensions first."
+    },
+    {
+      "q": "What about audio-less videos?",
+      "a": "Silent audio is added (anullsrc) for missing tracks so concatenation succeeds."
+    },
+    {
+      "q": "Can I add a transition between clips?",
+      "a": "Not currently — clips are concatenated directly. Crossfade transitions are on the roadmap."
+    }
+  ]
+}

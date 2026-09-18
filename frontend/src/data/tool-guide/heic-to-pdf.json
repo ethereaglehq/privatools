@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload HEIC images",
+      "text": "Drop one or many .heic / .heif files (e.g. from iPhone photos)."
+    },
+    {
+      "name": "Choose page size",
+      "text": "Letter or A4. Each HEIC is decoded via libheif and scaled to fit."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "All images become one PDF, one photo per page. EXIF metadata is stripped by default."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will the PDF be much larger than the HEIC?",
+      "a": "Yes — HEIC is more efficient than JPEG. The PDF uses JPEG internally and is typically 2-3x the size of the source HEICs."
+    },
+    {
+      "q": "Does this preserve image quality?",
+      "a": "Default JPEG quality is 90, which is visually indistinguishable. Lossless would require PNG-to-PDF and produce much larger files."
+    },
+    {
+      "q": "What happens to GPS metadata?",
+      "a": "Stripped during conversion. Use View EXIF first if you want to record GPS coordinates before they're gone."
+    }
+  ]
+}

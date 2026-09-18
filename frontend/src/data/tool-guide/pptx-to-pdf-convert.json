@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a .pptx file",
+      "text": "Drop a PowerPoint presentation up to 500 MB."
+    },
+    {
+      "name": "Each slide becomes one PDF page",
+      "text": "PrivaTools renders fonts, animations (first state), embedded images, and SmartArt diagrams."
+    },
+    {
+      "name": "Download the PDF",
+      "text": "The output preserves slide aspect ratio (16:9 or 4:3 as designed)."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Will animations be preserved?",
+      "a": "PDF doesn't support animation. Each slide renders in its initial state. For animation, export to video first."
+    },
+    {
+      "q": "How are speaker notes handled?",
+      "a": "Notes are not included in the PDF by default. We don't currently offer a 'with notes' option but it's on the roadmap."
+    },
+    {
+      "q": "What about embedded videos?",
+      "a": "Videos render as a poster frame (the first frame). Use Extract Audio + Video to PDF for video-centric conversion."
+    }
+  ]
+}

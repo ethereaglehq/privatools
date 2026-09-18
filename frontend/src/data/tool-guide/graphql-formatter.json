@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste GraphQL",
+      "text": "Enter a query, mutation, fragment, or selection set in compact form."
+    },
+    {
+      "name": "Format the operation",
+      "text": "Braces, arguments, arrays, and comma-separated fields are indented in a readable shape."
+    },
+    {
+      "name": "Copy the formatted query",
+      "text": "Paste the result into your app, GraphiQL, Apollo Studio, or pull request."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Does it need my GraphQL schema?",
+      "a": "No. The formatter only structures the query text and does not introspect or validate against a schema."
+    },
+    {
+      "q": "Can it format mutations and fragments?",
+      "a": "Yes. Queries, mutations, fragments, arguments, arrays, and nested selection sets are handled."
+    },
+    {
+      "q": "Is it private?",
+      "a": "Yes. The GraphQL text is formatted locally in your browser."
+    }
+  ]
+}

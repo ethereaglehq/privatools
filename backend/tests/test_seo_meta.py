@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import json
 import os
+import re
+from html import escape
 
 from backend.app import seo_meta
 from backend.app.seo_meta import TOOL_META, get_jsonld_for_path, get_meta_for_path, inject_seo
@@ -96,9 +98,13 @@ def test_tool_jsonld_has_application_howto_faq_and_breadcrumbs():
     assert app["creator"]["sameAs"] == ["https://github.com/ethereaglehq/privatools"]
 
     howto = next(node for node in graph if node.get("@type") == "HowTo")
-    assert howto["name"] == "How to use the Merge PDF tool on PrivaTools"
+    assert howto["name"] == "How to use Merge PDF"
     assert len(howto["step"]) >= 3
     assert all(step["@type"] == "HowToStep" for step in howto["step"])
+
+    html = "<html><head><title>Old</title></head><body><div id='root'></div></body></html>"
+    injected = inject_seo(html, "/tool/merge-pdf")
+    assert f"<h2>{howto['name']}</h2>" in injected
 
     faq = next(node for node in graph if node.get("@type") == "FAQPage")
     assert len(faq["mainEntity"]) >= 3
@@ -181,7 +187,7 @@ def test_create_zip_faq_does_not_claim_password_encryption_support():
 def test_noun_tool_howto_names_are_readable_in_jsonld_and_ssr_html():
     graph = _graph_for("/tools/generate-barcode")
     howto = next(node for node in graph if node.get("@type") == "HowTo")
-    expected = "How to use the Barcode Generator tool on PrivaTools"
+    expected = "How to use Barcode Generator"
 
     assert howto["name"] == expected
     assert "How to Barcode Generator" not in howto["name"]
@@ -291,17 +297,11 @@ def test_compare_tool_count_claims_match_catalog_size():
         [seo_meta._PRIVATOOLS_FEATURES, seo_meta._COMPARE_DATA],
         sort_keys=True,
     )
-    non_pdf_html = inject_seo(
-        '<html><head></head><body><div id="root"></div></body></html>',
-        "/tools/image-compressor",
-    )
 
     assert seo_meta._TOTAL_TOOL_COUNT == total
     assert breadth_feature in comparison_copy
     assert f"Yes ({total} tools)" in comparison_copy
-    assert f"all {total} tools" in non_pdf_html
     assert "175+" not in comparison_copy
-    assert "all 175+ tools" not in non_pdf_html
 
 
 def test_public_tool_count_claims_match_catalog_size():
@@ -427,9 +427,98 @@ def test_tools_hub_is_known_and_renders_full_directory():
     assert 'rel="canonical" href="https://privatools.me/tools"' in out
 
 
-def test_deep_tool_content_has_no_citation_ready_boilerplate():
-    """The self-referential 'citation-ready' section was removed (filler that
-    duplicated across all 213 tools)."""
-    html = "<html><head></head><body><div id='root'></div></body></html>"
-    out = inject_seo(html, "/tool/merge-pdf")
-    assert "citation-ready" not in out
+def test_tool_body_matches_visible_blocks_in_order():
+    """The trimmed SSR body keeps only current blocks, in the order the visible page renders them.
+
+    Related-tools content itself (which tools, in which order) is pinned
+    exhaustively by test_related_tools_and_blog_links_match_client_construction
+    below — this test only guards structure/ordering, so it no longer asserts
+    on the related-tools slugs themselves.
+    """
+    body = seo_meta._build_ssr_content("/tool/merge-pdf", *seo_meta.get_meta_for_path("/tool/merge-pdf"))
+    assert "compare-cta" not in body and "tool-depth" not in body and "TL;DR" not in body
+    assert body.index('class="tool-steps"') < body.index('class="tool-faq"') < body.index("Last reviewed")
+
+
+def test_related_tools_and_blog_links_match_client_construction():
+    """Server related-tools and blog-link blocks must match the client's construction.
+
+    `SkinApp.tsx` builds `related` as: same category, exclude self, sort by
+    the registry `popularity` field ascending (stable, so equal popularity
+    keeps registry order), first three. `postsForTool(slug, 4)` sorts
+    mentioning posts by `publishedAt` descending and caps at four. Both are
+    reconstructed here directly from the build-owned manifest/blog artifacts
+    — the same source of truth the client's registry is generated from — for
+    *every* tool, not a sample, and compared against what `_build_ssr_content`
+    actually renders.
+    """
+    manifest = seo_meta._load_manifest(str(seo_meta._TOOL_JSON), seo_meta.blog_content_mtime_ns())
+    assert manifest, "tool-content.json manifest not found — run `npm run build` in frontend/ first"
+    rows = list(manifest.items())  # preserves the manifest's own iteration/tiebreak order
+
+    checked_related = 0
+    checked_guides = 0
+    for slug, row in rows:
+        category = row.get("category")
+        candidates = [(s, r) for s, r in rows if s != slug and r.get("category") == category]
+        candidates.sort(key=lambda item: item[1].get("popularity", 999))
+        expected_related_hrefs = [r["path"] for _, r in candidates[:3]]
+
+        title, description = seo_meta.get_meta_for_path(row["path"])
+        body = seo_meta._build_ssr_content(row["path"], title, description)
+
+        related_html = (
+            body.split('class="tool-related"', 1)[1].split("</ul>", 1)[0]
+            if 'class="tool-related"' in body
+            else ""
+        )
+        actual_related_hrefs = re.findall(r'<li><a href="([^"]+)">', related_html)
+        assert actual_related_hrefs == expected_related_hrefs, (
+            f"{slug}: related tools must match the client's same-category popularity sort "
+            f"(got {actual_related_hrefs}, expected {expected_related_hrefs})"
+        )
+        if expected_related_hrefs:
+            checked_related += 1
+
+        mentioning = seo_meta._tool_to_blogs().get(slug, [])
+        assert len(mentioning) <= 4, f"{slug}: server blog links must be capped at 4 like postsForTool(slug, 4)"
+        published = [post.get("publishedAt", "") for post in mentioning]
+        assert published == sorted(published, reverse=True), f"{slug}: blog links must be newest-first"
+
+        guide_html = (
+            body.split('class="tool-guides"', 1)[1].split("</ul>", 1)[0]
+            if 'class="tool-guides"' in body
+            else ""
+        )
+        actual_guide_hrefs = re.findall(r'<li><a href="([^"]+)">', guide_html)
+        assert actual_guide_hrefs == [f"/blog/{post['slug']}" for post in mentioning], (
+            f"{slug}: rendered blog links must match _tool_to_blogs() order exactly"
+        )
+        if mentioning:
+            checked_guides += 1
+
+    # Sanity: the manifest actually exercises both branches, so a vacuous
+    # pass (e.g. an empty/broken manifest) can't slip through.
+    assert checked_related > 50, "expected most of the 221 tools to have same-category peers"
+    assert checked_guides > 10, "expected multiple tools to have blog mentions capped by this test"
+
+
+def test_tool_guide_text_and_names_are_html_escaped_in_ssr_body():
+    """Hand-written guide prose and tool names can contain literal `<tag>`
+    examples or a bare `&` — both must render as HTML entities in the SSR
+    body, or the "literal tag" breaks the page's real markup for crawlers.
+    JSON-LD is untouched by this (it is JSON, not HTML)."""
+    body = seo_meta._build_ssr_content("/tools/gif-to-mp4", *seo_meta.get_meta_for_path("/tools/gif-to-mp4"))
+    assert "&lt;video" in body
+    assert "<video" not in body
+
+    pdf_registry, _ = seo_meta._tool_registries()
+    name = pdf_registry["header-footer"][0]
+    assert "&" in name, "header-footer is the fixture for the bare-& regression; update this if its name changes"
+    pdf_body = seo_meta._build_ssr_content("/tool/header-footer", *seo_meta.get_meta_for_path("/tool/header-footer"))
+    assert escape(name) in pdf_body
+    assert name not in pdf_body
+
+    # _howto_name_for() feeds both the JSON-LD HowTo.name and this visible
+    # <h2> — they must stay readable-text-identical modulo HTML escaping.
+    assert f"<h2>{escape(seo_meta._howto_name_for(name))}</h2>" in pdf_body

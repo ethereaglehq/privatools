@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Enter the data to encode",
+      "text": "The string or number you want to encode. Format limits vary (e.g. EAN-13 needs exactly 12-13 digits)."
+    },
+    {
+      "name": "Choose barcode type",
+      "text": "Code 128 (most flexible), Code 39, EAN-13 (retail), UPC-A (US retail), QR code (also available via the QR tool)."
+    },
+    {
+      "name": "Download as PNG",
+      "text": "Configurable size; ready for printing on labels or embedding in documents."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What barcode type for a URL?",
+      "a": "Use QR code — barcodes like Code 128 work for text but are much wider for the same content."
+    },
+    {
+      "q": "Will it scan reliably?",
+      "a": "Yes — barcodes are rendered at the standard 2D module size. Printed at 100% on a regular printer, any standard scanner reads them."
+    },
+    {
+      "q": "Can I include a check digit?",
+      "a": "EAN-13 and UPC-A auto-calculate the check digit. Code 128 has a built-in checksum. Code 39 supports optional checksums."
+    }
+  ]
+}

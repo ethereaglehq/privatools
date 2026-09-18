@@ -30,6 +30,7 @@ export const FEATURES: Feature[] = [
     { id: "home", label: "Home", path: "/", why: "entry point" },
     { id: "tools", label: "All tools", path: "/tools", why: "the 219-tool catalogue" },
     { id: "tool", label: "Tool page", path: "/tool/:slug", why: "where nearly all traffic lands" },
+    { id: "guide", label: "Tool guide", path: "/tool/:slug#guide", why: "the steps and answers visitors and crawlers both see" },
     { id: "pipeline", label: "Pipeline", path: "/pipeline", why: "chain tools in sequence" },
     { id: "batch", label: "Batch", path: "/batch", why: "one tool over many files" },
     { id: "ai", label: "AI studio", path: "/ai", why: "configure providers and downloaded models" },
@@ -74,7 +75,7 @@ export const NATIVE_SURFACES: Record<string, string[]> = {
     daylight: [
         // Hand-written, so every surface is native except the three whose
         // behavior comes from the mixins in its extension file.
-        "home", "tools", "tool", "pipeline", "batch", "my-stuff",
+        "home", "tools", "tool", "guide", "pipeline", "batch", "my-stuff",
         "compare", "blog", "about", "privacy", "security", "terms",
         "status", "support", "ai", "api", "trust", "settings",
     ],

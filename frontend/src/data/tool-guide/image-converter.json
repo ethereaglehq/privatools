@@ -1,0 +1,50 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "PNG, JPG, WebP, BMP, TIFF, GIF, HEIC."
+    },
+    {
+      "name": "Choose target format",
+      "text": "Convert to any other supported format. Quality slider available for JPG output."
+    },
+    {
+      "name": "Download the converted image",
+      "text": "Dimensions preserved; metadata stripped by default."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Which format is best for what?",
+      "a": "PNG for graphics with transparency or crisp text/UI elements. JPG for photos (smaller files at near-identical quality). WebP for web delivery (smaller than JPG at the same quality, supported by all modern browsers). TIFF for archival or print workflows. HEIC for iPhone-style storage (limited compatibility outside Apple). AVIF for cutting-edge web (smallest of all, but newer browsers only)."
+    },
+    {
+      "q": "Does it preserve EXIF metadata?",
+      "a": "EXIF is stripped during conversion by default for privacy (GPS, camera model, timestamps removed). Use View EXIF first to record any metadata you want to keep, or use the 'preserve metadata' toggle in advanced options if your destination workflow needs the original EXIF."
+    },
+    {
+      "q": "Can I batch-convert?",
+      "a": "Yes — upload multiple images and all are converted to the chosen format, then bundled into a ZIP. For format-specific batch workflows you can also use the dedicated tools (jpg-to-png, heic-to-jpg, webp-to-png, etc.) which preselect the input/output formats."
+    },
+    {
+      "q": "Is it safe to convert sensitive images?",
+      "a": "Yes. The images are held in temporary per-request storage inside an isolated Docker container for the conversion pass only — both input and output are unlinked the moment your download begins. Nothing is logged, no thumbnail is kept, no copy is sent to any third-party API. The conversion uses libvips/Pillow locally."
+    },
+    {
+      "q": "What's the file size limit?",
+      "a": "500 MB per file with no daily or monthly quota. Maximum image dimensions are 100 megapixels (about 10000x10000 pixels) — sufficient for full-resolution DSLR RAW conversions."
+    },
+    {
+      "q": "Will I lose quality?",
+      "a": "Format-to-format quality depends on the codec. PNG → PNG, PNG → TIFF: lossless. JPG → PNG, HEIC → PNG: lossless (no re-encoding). JPG → JPG at quality 90+: imperceptibly lossy. JPG → WebP at quality 80: typically indistinguishable. Avoid stacked lossy conversions (JPG → JPG → JPG) which compound artifacts."
+    },
+    {
+      "q": "Do I need an account?",
+      "a": "No — no account, no email, no sign-up. Upload, convert, download. Privacy guarantees are architectural."
+    },
+    {
+      "q": "How is this different from iLovePDF Image Converter or Convertio?",
+      "a": "Free with no daily limit (Convertio caps free use to 100 MB/day), no account required, no watermark on the output, and we support more formats than the freemium converters (HEIC, AVIF, JPEG XL in addition to the standard set). The conversion pipeline is open source and self-hostable."
+    }
+  ]
+}

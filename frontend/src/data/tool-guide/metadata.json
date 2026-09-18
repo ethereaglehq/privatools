@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "View the metadata",
+      "text": "PrivaTools displays the document's Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, and any custom XMP fields."
+    },
+    {
+      "name": "Decide what to do next",
+      "text": "If you want to strip the metadata, use Strip Metadata. To set new values, use Update Metadata."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What metadata does a typical PDF carry?",
+      "a": "At minimum: producer (the software that created it) and creation date. Often also: author name, original filename, software version. Scanned PDFs may carry scanner model + driver."
+    },
+    {
+      "q": "Why does this matter for privacy?",
+      "a": "Producer + Creator + Author fields can identify the person or machine that created a document — useful in forensics, problematic for whistleblowers."
+    },
+    {
+      "q": "Is XMP metadata shown too?",
+      "a": "Yes — both the Info dictionary (old format) and XMP stream (new format) are inspected."
+    }
+  ]
+}

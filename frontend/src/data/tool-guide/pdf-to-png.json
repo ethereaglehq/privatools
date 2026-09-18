@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PDF",
+      "text": "Drop a PDF up to 500 MB."
+    },
+    {
+      "name": "Choose DPI",
+      "text": "Higher DPI = sharper PNG. 96 for screen, 150 default, 300 for print archival."
+    },
+    {
+      "name": "Download a ZIP of PNGs",
+      "text": "Each page becomes one PNG file with lossless compression. PNG preserves transparency if present."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why PNG instead of JPG?",
+      "a": "PNG is lossless — text and graphics stay crisp. JPG compresses better for photos but introduces compression artifacts on text."
+    },
+    {
+      "q": "How big are the PNGs?",
+      "a": "Roughly 200-500 KB per page at 150 DPI for typical text content; up to 2-3 MB at 300 DPI."
+    },
+    {
+      "q": "Does this preserve PDF transparency?",
+      "a": "PDF transparency layers flatten during rasterization but the result PNG has alpha if the PDF page had transparent regions over the page background."
+    }
+  ]
+}

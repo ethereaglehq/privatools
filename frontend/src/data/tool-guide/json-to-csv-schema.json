@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Paste JSON",
+      "text": "Enter a JSON object or array of objects. Nested objects are flattened to dot-notation columns."
+    },
+    {
+      "name": "Inspect the inferred schema",
+      "text": "Each column shows its inferred type and how many rows contain a value."
+    },
+    {
+      "name": "Copy or download CSV",
+      "text": "Export the flattened CSV for spreadsheets, BI tools, QA fixtures, or one-off data migrations."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How are nested objects handled?",
+      "a": "Nested keys are flattened with dot notation, such as user.email or billing.address.city."
+    },
+    {
+      "q": "What schema is inferred?",
+      "a": "The tool infers simple column types: empty, boolean, number, date, or string, plus value coverage per column."
+    },
+    {
+      "q": "Does large JSON get uploaded?",
+      "a": "No. Parsing, schema inference, and CSV generation all run in your browser."
+    }
+  ]
+}

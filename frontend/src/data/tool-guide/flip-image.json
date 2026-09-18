@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "Drop a JPG, PNG, WEBP, HEIC, BMP, GIF, or TIFF up to 50 MB."
+    },
+    {
+      "name": "Pick horizontal or vertical",
+      "text": "Horizontal flips left↔right (mirror). Vertical flips top↔bottom (upside down)."
+    },
+    {
+      "name": "Click Flip",
+      "text": "The mirrored copy downloads instantly. Original quality and transparency are preserved."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Horizontal vs vertical — when do I use which?",
+      "a": "Horizontal flip mirrors left↔right — the most common use is fixing selfies that come out mirrored. Vertical flip turns the image upside down — used for design layouts or correcting scans that were placed face-down."
+    },
+    {
+      "q": "Does flipping change the file size?",
+      "a": "Effectively no — flipping is a pure pixel rearrangement, so the encoded output is similar in size to the input (sometimes 1-3% larger because compression heuristics work slightly differently on the new orientation)."
+    },
+    {
+      "q": "Is metadata preserved?",
+      "a": "We strip EXIF orientation hints on save, so the saved image bytes match what you see. If you need the original metadata kept, use Remove EXIF + this tool together."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload images",
+      "text": "Select one or more JPG, PNG, or WebP images containing EXIF metadata."
+    },
+    {
+      "name": "Preview metadata",
+      "text": "The tool displays found metadata: GPS coordinates, camera model, date taken, software, and more."
+    },
+    {
+      "name": "Strip metadata and download",
+      "text": "Click Remove. All EXIF, IPTC, and XMP metadata is permanently stripped. The pixel data is untouched."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What metadata is removed?",
+      "a": "All EXIF, IPTC, and XMP metadata — including GPS coordinates, camera model, date/time, software used, and thumbnail previews."
+    },
+    {
+      "q": "Does removing EXIF data change image quality?",
+      "a": "No. Only the metadata bytes are removed. The actual image pixels are not re-encoded or modified in any way."
+    },
+    {
+      "q": "Why should I remove EXIF data?",
+      "a": "EXIF data can contain your GPS location, device identifiers, and timestamps. Removing it before sharing photos online protects your privacy."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "howto": [
+    {
+      "name": "Open the tool and pick your languages",
+      "text": "Choose a source and target language. The matching translation model downloads once into this browser the first time you use that pair."
+    },
+    {
+      "name": "Upload the PDF",
+      "text": "Select the PDF. The text is extracted in your browser; the file itself is never uploaded."
+    },
+    {
+      "name": "Translate and download",
+      "text": "Translation runs on your device through the downloaded model, so the document never reaches a server — the reason this tool exists rather than pointing you at a cloud translator."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is my PDF uploaded anywhere?",
+      "a": "No. This is the one translation tool here that runs entirely in your browser. The text is extracted locally, the model runs on your device, and the document never reaches a server, ours or anyone else's."
+    },
+    {
+      "q": "Why does the first translation take a while?",
+      "a": "Because the model for that language pair downloads once, the first time you use it. After that it is cached in your browser and works on every later visit, including offline."
+    },
+    {
+      "q": "How good is the translation?",
+      "a": "Good enough to read and understand a document. These are compact models chosen so they can run in a browser, so they will not match a large cloud translator on nuance or long, complex sentences. That is the deliberate trade: privacy over polish."
+    },
+    {
+      "q": "Does it keep the original layout?",
+      "a": "Text is translated, not typeset. Expect the meaning to carry over and the formatting to be simplified, especially where translated text runs longer than the original."
+    },
+    {
+      "q": "Which languages are supported?",
+      "a": "The common pairs, downloaded per direction as you pick them. Each pair is its own model, so translating English to French does not also fetch French to English."
+    }
+  ]
+}

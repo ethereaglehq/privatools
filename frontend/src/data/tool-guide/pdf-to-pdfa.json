@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a standard PDF you want to convert into the PDF/A archival format."
+    },
+    {
+      "name": "Choose the conformance level",
+      "text": "Select PDF/A-1b (basic), PDF/A-2b (supports transparency and JPEG2000), or PDF/A-3b (allows embedded files)."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The tool embeds fonts, converts color spaces to sRGB, and validates compliance before returning the PDF/A file."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What is PDF/A and why would I need it?",
+      "a": "PDF/A is an ISO-standardized archival format that ensures documents remain viewable long-term. Government agencies, courts, and archives often require PDF/A submissions."
+    },
+    {
+      "q": "What changes does the conversion make?",
+      "a": "The tool embeds all fonts, converts color spaces to sRGB, removes JavaScript and multimedia, and adds the required PDF/A metadata."
+    },
+    {
+      "q": "Will the document look different after conversion?",
+      "a": "Visually the document should look the same. Transparency may be flattened in PDF/A-1b, and embedded multimedia will be removed since PDF/A does not allow it."
+    }
+  ]
+}

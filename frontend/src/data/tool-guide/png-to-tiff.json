@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PNG",
+      "text": "Drop a .png file up to 500 MB."
+    },
+    {
+      "name": "PrivaTools converts via Pillow",
+      "text": "Both formats are lossless, so the conversion is faithful and the alpha channel survives."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. Both formats are lossless, so this is a faithful conversion, and TIFF keeps the alpha channel — the right choice for archival and print pipelines that will not take PNG."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Is PNG transparency preserved in the TIFF?",
+      "a": "Alpha transparency is preserved where the target TIFF profile supports it. For print/archival TIFF without an alpha channel, transparent areas are flattened to white."
+    },
+    {
+      "q": "Why convert PNG to TIFF?",
+      "a": "TIFF is the standard for print prepress, scanning, and long-term archival. PNG→TIFF is lossless, so no image detail is lost in the conversion."
+    },
+    {
+      "q": "Are my images uploaded to a third party?",
+      "a": "No. Processing is local to the PrivaTools backend; files are temporary and removed right after download."
+    }
+  ]
+}

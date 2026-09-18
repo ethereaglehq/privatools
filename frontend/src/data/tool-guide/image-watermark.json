@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an image",
+      "text": "JPG, PNG, WebP up to 500 MB."
+    },
+    {
+      "name": "Enter watermark text and styling",
+      "text": "Text, opacity (0-1), position (corners or center), font size."
+    },
+    {
+      "name": "Download the watermarked image",
+      "text": "PrivaTools overlays the text at the chosen position with the chosen opacity. Original is unchanged."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Can I watermark with an image instead of text?",
+      "a": "Currently text-only watermarks. Image watermarks (logo overlay) are on the roadmap."
+    },
+    {
+      "q": "Is the watermark removable?",
+      "a": "Depends on placement. Watermarks over high-detail areas are harder to remove than over solid backgrounds. AI inpainting tools can sometimes erase them — for stronger protection, use diagonal repeating patterns."
+    },
+    {
+      "q": "Does it affect image quality?",
+      "a": "Negligibly. Output is at the same JPEG quality as input."
+    }
+  ]
+}

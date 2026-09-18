@@ -1,0 +1,34 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF up to 500 MB. Best for batch-style documents: monthly statements, multi-invoice exports, chapter-divided manuscripts."
+    },
+    {
+      "name": "Enter the search phrase",
+      "text": "Type the keyword that appears at the start of each section (e.g. 'Invoice #', 'Statement of', 'Chapter')."
+    },
+    {
+      "name": "Toggle case sensitivity",
+      "text": "Enable case-sensitive matching if your keyword's capitalization matters."
+    },
+    {
+      "name": "Split and download",
+      "text": "Click Split. Every page containing the keyword starts a new chunk. The result is a ZIP of part1.pdf, part2.pdf, etc."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How does it decide where to split?",
+      "a": "It scans every page for your search term. Every page that contains the term becomes the start of a new chunk. The chunk runs until the next match-page or the end of the document."
+    },
+    {
+      "q": "Can I use a regex?",
+      "a": "Not in the current version — the search is a literal string match (case-sensitive optional). For regex splits, use the dev API directly."
+    },
+    {
+      "q": "What if my keyword doesn't appear at all?",
+      "a": "The tool returns a 400 error with a clear message. Make sure your search exactly matches the casing if you have case-sensitive enabled."
+    }
+  ]
+}

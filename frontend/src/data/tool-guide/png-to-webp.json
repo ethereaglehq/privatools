@@ -1,0 +1,26 @@
+{
+  "howto": [
+    {
+      "name": "Upload a PNG",
+      "text": "Drop a PNG — transparency is preserved in the WebP output."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The result is a WebP that is usually 60–80% smaller than the source PNG."
+    }
+  ],
+  "faq": [
+    {
+      "q": "Why convert PNG to WebP?",
+      "a": "Lossless WebP is typically 25% smaller than PNG; lossy WebP is dramatically smaller. Either way, you save bandwidth — useful for web assets, icons, and product images."
+    },
+    {
+      "q": "Is transparency preserved?",
+      "a": "Yes. WebP supports an alpha channel exactly like PNG, so transparent areas come through unchanged."
+    },
+    {
+      "q": "When should I stay with PNG?",
+      "a": "If you need maximum compatibility with very old software, PDF generators, or print pipelines — PNG is supported everywhere."
+    }
+  ]
+}

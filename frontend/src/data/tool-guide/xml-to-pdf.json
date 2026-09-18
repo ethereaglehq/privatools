@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload an XML file",
+      "text": "Select an .xml file up to 500 MB. Common schemas like RSS, Atom, and XHTML are supported."
+    },
+    {
+      "name": "Choose display format",
+      "text": "Select tree view (collapsible hierarchy) or formatted table view for structured data."
+    },
+    {
+      "name": "Convert and download",
+      "text": "Click Convert. The XML is rendered into a readable, paginated PDF document."
+    }
+  ],
+  "faq": [
+    {
+      "q": "What XML schemas are supported?",
+      "a": "Any well-formed XML file is supported. The tool renders the structure as a readable tree or table — it does not apply XSL transforms."
+    },
+    {
+      "q": "Is syntax highlighting included?",
+      "a": "Yes. Element names, attributes, and values are color-coded for readability in the PDF output."
+    },
+    {
+      "q": "Can I convert large XML files?",
+      "a": "Files up to 500 MB are supported. Very deeply nested structures may produce many pages."
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "howto": [
+    {
+      "name": "Upload the PDF",
+      "text": "Select a PDF file up to 500 MB that you want to split into smaller chunks."
+    },
+    {
+      "name": "Set the target chunk size",
+      "text": "Enter the maximum file size per chunk in megabytes (e.g. 10 MB). The tool will split at page boundaries to stay under the limit."
+    },
+    {
+      "name": "Download the parts",
+      "text": "Click Split. The server breaks the PDF into parts that respect your size target and delivers them in a ZIP archive."
+    }
+  ],
+  "faq": [
+    {
+      "q": "How does size-based splitting work?",
+      "a": "The tool splits at page boundaries to keep each chunk under your target size. It cannot split in the middle of a page, so some chunks may be slightly under the target."
+    },
+    {
+      "q": "What is the minimum chunk size I can set?",
+      "a": "The minimum is effectively the size of the largest single page. If one page is 5 MB, you cannot create chunks smaller than 5 MB."
+    },
+    {
+      "q": "Is this useful for email attachment limits?",
+      "a": "Yes. Set the chunk size to your email provider's attachment limit (e.g. 25 MB for Gmail) and each part will be small enough to attach."
+    }
+  ]
+}
