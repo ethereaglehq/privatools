@@ -1,10 +1,22 @@
 version: 2
 updates:
+  # Minor and patch updates arrive as one PR per run, as the uv ecosystem's do.
+  # Majors still arrive one per PR, each needing its own checks, and the ignore
+  # rules below hold the known migrations. Without the group, each run filled
+  # the five open-PR slots with single-package PRs, and because a PR merges
+  # only on a head that includes current main, every merge meant rebasing the
+  # others and rerunning their CI. Runs come weekly and also whenever this file
+  # changes on main. Weekly is kept: Dependabot security updates are off for
+  # this repository, so this schedule is also how patched versions arrive, and
+  # a longer interval would delay them and put more changes into each group.
   - package-ecosystem: npm
     directory: /frontend
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      npm-minor-and-patch:
+        update-types: ["minor", "patch"]
     ignore:
       # A React major has to move as one: react, react-dom, @types/react and
       # @types/react-dom together, with every React-dependent library checked

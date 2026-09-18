@@ -315,6 +315,11 @@ CSP-walker and guide-export tests catch most misses.
   regenerated the locks, so every one of its PRs failed the lock test. Minor
   and patch updates arrive as one grouped PR, because each regenerates the
   same locks.
+- **npm minor and patch updates arrive as one grouped PR per run too;** majors
+  come one per PR. Every change to `.github/dependabot.yml` on `main` starts an
+  immediate run of every ecosystem, besides the weekly schedule: on 2026-09-18
+  six such changes set off five waves of single-package npm PRs, 24 in all,
+  each wave refilling whatever of the five open-PR slots had been freed.
 - **Held majors.** `.github/dependabot.yml` ignores these until a dedicated
   migration, with the reason beside each rule; delete the rule when that work
   starts.
