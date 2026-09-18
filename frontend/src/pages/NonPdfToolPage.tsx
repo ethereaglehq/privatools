@@ -4,6 +4,7 @@ import { nonPdfToolBySlug, nonPdfTools, nonPdfCategoryMeta, type NonPdfCategory 
 import { postsForTool } from "@/data/blog";
 import { formatReviewedDate, getToolLastReviewed } from "@/data/tool-review-dates";
 import { cn } from "@/lib/utils";
+import { toolSeo } from "@/lib/tool-seo";
 import { Shield, ChevronRight, ArrowLeft, Github, ArrowUpRight, ArrowRight, Lock, Star } from "lucide-react";
 import { useHistory } from "@/hooks/useHistory";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -376,7 +377,7 @@ export default function NonPdfToolPage() {
 
   useEffect(() => {
     if (tool) {
-      document.title = `${tool.name} — PrivaTools`;
+      document.title = toolSeo(tool).title;
       let m = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
       if (!m) {
         m = document.createElement("meta");

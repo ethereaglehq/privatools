@@ -23,3 +23,10 @@ describe("tool processing disclosure", () => {
     expect(document.querySelector(".tw-questions")).toBeNull();
   });
 });
+
+describe("tool page heading", () => {
+  it("uses the search title as the page heading", async () => {
+    await act(async () => { render(<ToolWorkspace tool={{ slug: "compress-pdf", name: "Compress PDF", seoTitle: "Compress PDF Online Free – Shrink Files, Keep Quality", description: "A smaller file", category: "pdf" }} categoryLabel="PDF" related={[]} onFindTool={() => undefined}><div>File picker</div></ToolWorkspace>); });
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Compress PDF Online Free – Shrink Files, Keep Quality");
+  });
+});
