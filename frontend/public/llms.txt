@@ -141,7 +141,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Remove EXIF Data](https://privatools.me/tools/remove-exif): Strip GPS, camera, and timestamp metadata from photos
 - [Resize & Crop Image](https://privatools.me/tools/resize-crop-image): Resize or crop an image to exact pixel dimensions
 - [Video / Audio to GIF](https://privatools.me/tools/video-to-gif): Convert short video clips into animated GIFs
-- [Image OCR](https://privatools.me/tools/image-ocr): Read text from images with local OCR or your AI provider
+- [Image OCR](https://privatools.me/tools/image-ocr): Read text from images with server OCR, browser OCR, or your AI provider
 - [Extract Audio from Video](https://privatools.me/tools/extract-audio): Strip the MP3/WAV audio track from a video file
 - [Cut / Trim Video & Audio](https://privatools.me/tools/trim-media): Trim the start and end of video or audio files
 - [Compress Video](https://privatools.me/tools/compress-video): Reduce video file size for email or messaging
@@ -167,7 +167,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [SVG to PNG](https://privatools.me/tools/svg-to-png): Convert vector SVG files to crisp PNG images
 - [Remove Image Watermark](https://privatools.me/tools/remove-image-watermark): Erase a watermark from a photo or graphic
 - [Image Watermark](https://privatools.me/tools/image-watermark): Add text watermarks to photos and images
-- [Favicon Generator](https://privatools.me/tools/generate-favicon): Create .ico favicons from any image
+- [Favicon Generator](https://privatools.me/tools/generate-favicon): Create .ico favicons from PNG, JPG, WebP, or BMP images
 - [Photo Collage](https://privatools.me/tools/make-collage): Combine multiple images into a beautiful grid
 - [Barcode Generator](https://privatools.me/tools/generate-barcode): Generate QR or linear barcodes from valid data
 - [URL to PDF](https://privatools.me/tools/url-to-pdf): Save any webpage as a PDF document
@@ -247,7 +247,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Video Speed Changer](https://privatools.me/tools/video-speed): Speed up or slow down a video, 0.25× to 4×
 - [Audio Trimmer](https://privatools.me/tools/audio-trim): Cut a clip out of any audio file
 - [Image Color Palette](https://privatools.me/tools/image-palette): Extract dominant colors from any image
-- [Pixelate / Blur Image](https://privatools.me/tools/pixelate-image): Censor part of an image with mosaic or Gaussian blur
+- [Pixelate / Blur Image](https://privatools.me/tools/pixelate-image): Censor a whole image with mosaic or Gaussian blur
 - [Rotate Image](https://privatools.me/tools/rotate-image): Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
 - [Flip Image](https://privatools.me/tools/flip-image): Mirror an image horizontally or vertically
 

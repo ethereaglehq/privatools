@@ -10,11 +10,11 @@
     },
     {
       "name": "Choose the grid",
-      "text": "By default the tool finds a balanced, roughly square grid for the number of images, up to six columns. Switch that off to set the columns yourself, anywhere from 1 to 10."
+      "text": "By default the tool finds a balanced, roughly square grid for the number of images, up to six columns. Switch that off to set the columns yourself, anywhere from 1 to 6."
     },
     {
       "name": "Adjust spacing and background",
-      "text": "Spacing between the tiles runs from 0 to 200 pixels and starts at 10. The background colour shows through that gap and around the edges, and starts as white."
+      "text": "Spacing between the tiles runs from 0 to 100 pixels and starts at 10. The background colour shows through that gap and around the edges, and starts as white."
     },
     {
       "name": "Build and download",
@@ -32,7 +32,7 @@
     },
     {
       "q": "What does the spacing setting do?",
-      "a": "It sets the gap between tiles in pixels, from none at all up to 200. Zero produces a seamless block; a wider gap with a contrasting background colour gives the framed, scrapbook look."
+      "a": "It sets the gap between tiles in pixels, from none at all up to 100. Zero produces a seamless block; a wider gap with a contrasting background colour gives the framed, scrapbook look."
     },
     {
       "q": "Can I change the background colour?",

@@ -2,25 +2,25 @@
   "howto": [
     {
       "name": "Upload a square image",
-      "text": "PNG, JPG, or SVG. PrivaTools resizes to favicon dimensions automatically."
+      "text": "PNG, JPG, WebP or BMP. PrivaTools resizes it to favicon dimensions automatically; a rectangular image is centred on a transparent square instead of being stretched."
     },
     {
-      "name": "PrivaTools generates the favicon bundle",
-      "text": "Multiple resolutions (16×16, 32×32, 48×48, 192×192, 512×512) plus Apple Touch Icon + manifest.json + meta tags HTML snippet."
+      "name": "PrivaTools generates the favicon",
+      "text": "One .ico file that holds three sizes: 16×16, 32×32 and 48×48 pixels. Transparency in the source image is kept."
     },
     {
-      "name": "Download the bundle",
-      "text": "Drop the files into your site's public folder and paste the meta tags into the head section of your pages."
+      "name": "Download the icon",
+      "text": "Rename the downloaded file to favicon.ico and put it at the root of your website, where browsers look for it by default, or point to it with an icon link in the head section of your pages."
     }
   ],
   "faq": [
     {
-      "q": "Do I need all those sizes?",
-      "a": "Yes — different browsers and devices use different sizes (16×16 for tabs, 192×192 for Android home screen, 512×512 for PWA install)."
+      "q": "Which sizes are in the icon?",
+      "a": "16×16, 32×32 and 48×48, packed into one .ico file so the browser can pick the size it needs, such as 16×16 for a tab. Larger icons for phone home screens or installed web apps, such as 192×192 or 512×512, are not included; make those as separate PNG files."
     },
     {
-      "q": "Should I use PNG or SVG source?",
-      "a": "SVG is best — it stays sharp at every size. PNG works if you only have a raster logo. JPG loses some sharpness from compression."
+      "q": "Which source image works best?",
+      "a": "A square PNG with a transparent background. SVG files are not accepted, so convert a vector logo with SVG to PNG first. JPG works too, but it has no transparency and loses some sharpness from compression."
     },
     {
       "q": "Will my logo become circular?",

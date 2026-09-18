@@ -10,13 +10,13 @@
     },
     {
       "name": "Copy any color",
-      "text": "The dominant colors appear as swatches with HEX, rgb(), and coverage percentage. Click Copy on the one you want."
+      "text": "The dominant colors appear as swatches with HEX, RGB, and coverage percentage. Click a color to copy its HEX code, or copy them all at once."
     }
   ],
   "faq": [
     {
       "q": "How are the colors picked?",
-      "a": "We downsize the image to 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."
+      "a": "We shrink the image to fit within 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."
     },
     {
       "q": "Will it find the brand color from a logo?",

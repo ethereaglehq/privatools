@@ -929,9 +929,9 @@ Convert video to GIF online for free — upload an MP4, MOV, or WebM clip up to 
 
 URL: https://privatools.me/tools/image-ocr
 
-Read text from images with local OCR or your AI provider
+Read text from images with server OCR, browser OCR, or your AI provider
 
-Extract text from document images, screenshots, and receipts. Browser OCR offers 13 language choices and downloads language data when needed; a vision-capable AI provider is optional and receives your image directly. Accuracy depends on the scan, typography, and chosen engine. Review the text carefully, especially handwriting.
+Extract text from document images, screenshots, and receipts. Server OCR is the default; browser OCR runs on your device and downloads language data when needed. Both offer 13 language choices, and a vision-capable AI provider is optional and receives your image directly. Accuracy depends on the scan, typography, and chosen engine. Review the text carefully, especially handwriting.
 
 ### Extract Audio from Video
 
@@ -1137,9 +1137,9 @@ Add watermark to images online for free — protect your photos with customizabl
 
 URL: https://privatools.me/tools/generate-favicon
 
-Create .ico favicons from any image
+Create .ico favicons from PNG, JPG, WebP, or BMP images
 
-Generate favicon from image online for free — upload any image and create a multi-size ICO file (16x16, 32x32, 48x48) ready for your website. Instant favicon creator, no design skills needed.
+Generate favicon from image online for free — upload a PNG, JPG, WebP, or BMP image and create a multi-size ICO file (16x16, 32x32, 48x48) ready for your website. Instant favicon creator, no design skills needed.
 
 ### Photo Collage
 
@@ -1219,7 +1219,7 @@ URL: https://privatools.me/tools/qr-reader
 
 Decode QR codes from an uploaded image
 
-Read a QR code from an uploaded image and inspect its decoded text or link. The image uses temporary server processing. This tool reads QR codes; linear barcode formats such as Code128, EAN, and UPC are not supported by this reader.
+Read a QR code or barcode from an uploaded image and inspect its decoded text or link. The image uses temporary server processing. Linear barcodes such as Code 128, Code 39, EAN, and UPC are read too, and each result is labelled with its type.
 
 ### Merge Images
 
@@ -1777,9 +1777,9 @@ Upload an image and instantly get its dominant color palette as HEX codes with r
 
 URL: https://privatools.me/tools/pixelate-image
 
-Censor part of an image with mosaic or Gaussian blur
+Censor a whole image with mosaic or Gaussian blur
 
-Pixelate or blur an image to obscure sensitive content before sharing — block faces, license plates, addresses, screenshots. Choose mosaic-style pixelation or smooth Gaussian blur, adjust strength 1-100. Runs server-side; the image is cleaned up from temporary storage after the response.
+Pixelate or blur an entire image to obscure its content before sharing, such as a screenshot or photo that should not be readable. Choose mosaic-style pixelation or smooth Gaussian blur, adjust strength 1-100. The effect covers the whole image; it cannot target one area. Runs server-side; the image is cleaned up from temporary storage after the response.
 
 ### Rotate Image
 
@@ -1787,7 +1787,7 @@ URL: https://privatools.me/tools/rotate-image
 
 Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
 
-Rotate any image left, right, or upside down — JPG, PNG, WEBP, HEIC, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). Output is downscaled losslessly when possible; transparency is preserved for PNG and WEBP.
+Rotate any image left, right, or upside down — JPG, PNG, WEBP, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). JPG, PNG, and WEBP keep their format and the others come back as PNG; transparency is preserved for PNG and WEBP.
 
 ### Flip Image
 
@@ -1795,7 +1795,7 @@ URL: https://privatools.me/tools/flip-image
 
 Mirror an image horizontally or vertically
 
-Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.
+Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.
 
 ## Guides
 

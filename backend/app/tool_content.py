@@ -500,7 +500,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "image-palette": [
         {"name": "Upload an image", "text": "Drop a JPG, PNG, WebP, BMP, TIFF, or GIF — up to 50 MB."},
         {"name": "Set the color count", "text": "Drag the slider from 2 to 24 colors. 6 is a good default for most brand/UI work."},
-        {"name": "Copy any color", "text": "The dominant colors appear as swatches with HEX, rgb(), and coverage percentage. Click Copy on the one you want."},
+        {"name": "Copy any color", "text": "The dominant colors appear as swatches with HEX, RGB, and coverage percentage. Click a color to copy its HEX code, or copy them all at once."},
     ],
     "pixelate-image": [
         {"name": "Upload an image", "text": "Drop a JPG, PNG, WebP, or BMP file with sensitive content you want to obscure."},
@@ -508,14 +508,14 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the result", "text": "The processed image downloads once the effect has been applied. Response cleanup then removes the uploaded original and the result from the server's temporary storage."},
     ],
     "rotate-image": [
-        {"name": "Upload an image", "text": "Drop a JPG, PNG, WEBP, HEIC, BMP, GIF, or TIFF — up to 50 MB."},
+        {"name": "Upload an image", "text": "Drop a JPG, PNG, WEBP, BMP, GIF, or TIFF — up to 50 MB."},
         {"name": "Pick a rotation angle", "text": "Click 90° (left/right), 180°, 270°, or enter any custom angle (e.g. 13° to straighten a tilted scan). The canvas auto-expands so nothing is cropped off."},
-        {"name": "Click Rotate", "text": "Output downloads as the same format you uploaded; transparency is preserved for PNG and WEBP."},
+        {"name": "Rotate and download", "text": "JPG, PNG and WEBP files download in the same format; BMP, GIF and TIFF come back as PNG. Transparency is preserved for PNG and WEBP."},
     ],
     "flip-image": [
-        {"name": "Upload an image", "text": "Drop a JPG, PNG, WEBP, HEIC, BMP, GIF, or TIFF up to 50 MB."},
-        {"name": "Pick horizontal or vertical", "text": "Horizontal flips left↔right (mirror). Vertical flips top↔bottom (upside down)."},
-        {"name": "Click Flip", "text": "The mirrored copy downloads instantly. Original quality and transparency are preserved."},
+        {"name": "Upload an image", "text": "Drop a JPG, PNG, WEBP, BMP, GIF, or TIFF up to 50 MB."},
+        {"name": "Pick horizontal or vertical", "text": "Horizontal flips left↔right (mirror). Vertical flips top↔bottom, like a reflection in water."},
+        {"name": "Flip and download", "text": "The mirrored copy downloads as soon as it is ready. Transparency is preserved; PNG stays lossless, while JPG and WEBP are re-saved at quality 92. BMP, GIF and TIFF come back as PNG."},
     ],
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
@@ -865,9 +865,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download as PNG", "text": "Configurable size; ready for printing on labels or embedding in documents."},
     ],
     "generate-favicon": [
-        {"name": "Upload a square image", "text": "PNG, JPG, or SVG. PrivaTools resizes to favicon dimensions automatically."},
-        {"name": "PrivaTools generates the favicon bundle", "text": "Multiple resolutions (16×16, 32×32, 48×48, 192×192, 512×512) plus Apple Touch Icon + manifest.json + meta tags HTML snippet."},
-        {"name": "Download the bundle", "text": "Drop the files into your site's public folder and paste the meta tags into the head section of your pages."},
+        {"name": "Upload a square image", "text": "PNG, JPG, WebP or BMP. PrivaTools resizes it to favicon dimensions automatically; a rectangular image is centred on a transparent square instead of being stretched."},
+        {"name": "PrivaTools generates the favicon", "text": "One .ico file that holds three sizes: 16×16, 32×32 and 48×48 pixels. Transparency in the source image is kept."},
+        {"name": "Download the icon", "text": "Rename the downloaded file to favicon.ico and put it at the root of your website, where browsers look for it by default, or point to it with an icon link in the head section of your pages."},
     ],
     "gif-to-mp4": [
         {"name": "Upload an animated GIF", "text": "Drop a .gif file up to 500 MB."},
@@ -886,8 +886,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "image-ocr": [
         {"name": "Upload an image", "text": "JPG, PNG, TIFF, WebP up to 500 MB."},
-        {"name": "Select OCR language", "text": "17 Tesseract languages available: English, French, German, Spanish, Italian, Portuguese, Dutch, Russian, Polish, Turkish, Japanese, Korean, Chinese Simplified, Chinese Traditional, Arabic, Hindi, Vietnamese."},
-        {"name": "Download as text or JSON", "text": "Plain text: all detected text. JSON: text + per-word bounding boxes for layout-aware processing."},
+        {"name": "Choose the engine", "text": "On our server (the default) runs Tesseract on the PrivaTools server. My own AI key sends the image straight to a vision model at the provider you choose. In this browser runs tesseract.js on your device and downloads the language data when it is first needed."},
+        {"name": "Select OCR language", "text": "Pick one of 13 languages: English, French, German, Spanish, Italian, Portuguese, Chinese (Simplified), Chinese (Traditional), Japanese, Korean, Arabic, Hindi and Russian. A vision model detects the language itself, so the picker is hidden for that engine."},
+        {"name": "Copy or download the text", "text": "The recognized text appears in a box you can copy from, or save as a .txt file."},
     ],
     "image-watermark": [
         {"name": "Add the images", "text": "Drop or select JPG, PNG, WebP or BMP pictures up to 500 MB each. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."},
@@ -909,8 +910,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "make-collage": [
         {"name": "Add your images", "text": "Drop or select the pictures for the collage. They fill the grid left to right, top to bottom."},
         {"name": "Arrange the tiles", "text": "Drag the thumbnails to change their order. What you see in the preview is the order the finished collage uses."},
-        {"name": "Choose the grid", "text": "By default the tool finds a balanced, roughly square grid for the number of images, up to six columns. Switch that off to set the columns yourself, anywhere from 1 to 10."},
-        {"name": "Adjust spacing and background", "text": "Spacing between the tiles runs from 0 to 200 pixels and starts at 10. The background colour shows through that gap and around the edges, and starts as white."},
+        {"name": "Choose the grid", "text": "By default the tool finds a balanced, roughly square grid for the number of images, up to six columns. Switch that off to set the columns yourself, anywhere from 1 to 6."},
+        {"name": "Adjust spacing and background", "text": "Spacing between the tiles runs from 0 to 100 pixels and starts at 10. The background colour shows through that gap and around the edges, and starts as white."},
         {"name": "Build and download", "text": "Create the collage and save the single combined image."},
     ],
     "markdown-html": [
@@ -920,8 +921,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "merge-images": [
         {"name": "Upload 2+ images", "text": "JPG, PNG, WebP — at least 2 files."},
-        {"name": "Choose direction", "text": "Vertical: top-to-bottom (good for screenshots in sequence). Horizontal: side-by-side (good for before/after)."},
-        {"name": "Download the merged image", "text": "Each input is scaled to a common dimension and concatenated."},
+        {"name": "Choose direction", "text": "Vertical: top-to-bottom (good for screenshots in sequence). Horizontal: side-by-side (good for before/after). A grid places them in equal cells, with the number of columns picked for you."},
+        {"name": "Download the merged image", "text": "Each input is scaled to a common dimension and joined into one PNG, which keeps any transparency. The grid option returns a JPG instead."},
     ],
     "password-generator": [
         {"name": "Choose length and character classes", "text": "Length 8-100. Include uppercase / lowercase / digits / symbols / exclude ambiguous (1lI0O)."},
@@ -930,7 +931,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "qr-reader": [
         {"name": "Upload an image with a QR code", "text": "JPG, PNG, WebP, or BMP. The QR code should be reasonably in-focus."},
-        {"name": "PrivaTools decodes via pyzbar", "text": "Detects the QR code anywhere in the image, regardless of orientation or partial occlusion (up to ~30%)."},
+        {"name": "PrivaTools decodes via pyzbar", "text": "Detects the QR code anywhere in the image and at any angle. A damaged or partly covered code can still read when the damage stays within the code's built-in error correction, which tops out at about 30%."},
         {"name": "Read the decoded data", "text": "Plain text, URL, vCard, WiFi credentials, or whatever the QR encoded."},
     ],
     "resize-crop-image": [
@@ -1100,27 +1101,27 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "jpg-to-bmp": [
         {"name": 'Upload a JPG', "text": 'Drop a .jpg or .jpeg file.'},
         {"name": 'PrivaTools converts via Pillow', "text": 'Every pixel is written uncompressed, which is why the output dwarfs the JPG.'},
-        {"name": 'Convert and download', "text": 'Click Convert. BMP stores every pixel uncompressed, so the file will be many times larger than the JPG. It exists for legacy Windows software and imaging hardware that reads nothing else.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. BMP stores every pixel uncompressed, so the file will be many times larger than the JPG. It exists for legacy Windows software and imaging hardware that reads nothing else.'},
     ],
     "jpg-to-tiff": [
         {"name": 'Upload a JPG', "text": 'Drop a .jpg or .jpeg file up to 500 MB.'},
         {"name": 'PrivaTools converts via Pillow', "text": 'The existing pixels are rewritten into TIFF without a further lossy generation.'},
-        {"name": 'Convert and download', "text": 'Click Convert. TIFF is the format archives, print shops and scanning workflows ask for. It cannot restore detail the JPG already discarded — it preserves exactly what is there, without adding another lossy generation.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. TIFF is the format archives, print shops and scanning workflows ask for. It cannot restore detail the JPG already discarded — it preserves exactly what is there, without adding another lossy generation.'},
     ],
     "png-to-bmp": [
         {"name": 'Upload a PNG', "text": 'Drop a .png file up to 500 MB.'},
-        {"name": 'PrivaTools converts via Pillow', "text": 'BMP has no practical transparency support, so any alpha channel is composited onto white.'},
-        {"name": 'Convert and download', "text": 'Click Convert. BMP has no practical transparency support, so any alpha channel is composited onto a white background. Keep the PNG if transparency matters.'},
+        {"name": 'PrivaTools converts via Pillow', "text": 'BMP has no practical transparency support, so the alpha channel is dropped and transparent areas usually come out black.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Transparent areas are not filled with white; they usually come out black, so place the image on a background first if you need one. Keep the PNG if transparency matters.'},
     ],
     "png-to-tiff": [
         {"name": 'Upload a PNG', "text": 'Drop a .png file up to 500 MB.'},
         {"name": 'PrivaTools converts via Pillow', "text": 'Both formats are lossless, so the conversion is faithful and the alpha channel survives.'},
-        {"name": 'Convert and download', "text": 'Click Convert. Both formats are lossless, so this is a faithful conversion, and TIFF keeps the alpha channel — the right choice for archival and print pipelines that will not take PNG.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Both formats are lossless, so this is a faithful conversion, and TIFF keeps the alpha channel — the right choice for archival and print pipelines that will not take PNG.'},
     ],
     "webp-to-bmp": [
         {"name": 'Upload a WebP image', "text": 'Drop a .webp file up to 500 MB.'},
-        {"name": 'PrivaTools converts via Pillow', "text": 'Uncompressed output, with transparency flattened onto white.'},
-        {"name": 'Convert and download', "text": 'Click Convert. BMP is uncompressed and drops transparency to a white background; it is worth using only when some older tool insists on it.'},
+        {"name": 'PrivaTools converts via Pillow', "text": 'Uncompressed output; the alpha channel is dropped, so transparent areas usually come out black.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. BMP is uncompressed and drops transparency, which usually leaves those areas black; it is worth using only when some older tool insists on it.'},
     ],
     "webp-to-tiff": [
         {"name": 'Upload a WebP image', "text": 'Drop a .webp file up to 500 MB.'},
@@ -1780,24 +1781,24 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What format does it output?", "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC. No re-encoding."},
     ],
     "image-palette": [
-        {"q": "How are the colors picked?", "a": "We downsize the image to 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."},
+        {"q": "How are the colors picked?", "a": "We shrink the image to fit within 400×400 for speed, then run a fast octree quantization to find the N most-dominant colors. Percentages are based on pixel coverage."},
         {"q": "Will it find the brand color from a logo?", "a": "Usually yes — logos have a few dominant colors that octree picks up well. For logos on white backgrounds, asking for 6 colors typically gives 1 white + the actual brand colors."},
         {"q": "Can I get more than 24 colors?", "a": "Not in this tool — beyond 24 the palette becomes too noisy to be useful. For full palette analysis, export the image to a design tool."},
     ],
     "pixelate-image": [
-        {"q": "Pixelate vs blur — which should I use?", "a": "Pixelate is reversible (depixelization attacks can sometimes recover content) but reads clearly as 'censored'. Blur is harder to reverse but can look like a normal photo defect. For true privacy on serious content, use both: blur first then pixelate."},
+        {"q": "Pixelate vs blur — which should I use?", "a": "Pixelate reads clearly as 'censored'; blur looks softer and can pass for an out-of-focus photo. Neither is a guaranteed redaction: pixelated or blurred text can sometimes be reconstructed, especially at low strength. For content that must never be recovered, cover it with a solid box instead."},
         {"q": "Can I select a specific region?", "a": "This tool applies the effect to the whole image. For region-selective censoring, upload to an image editor first (e.g. our Edit PDF for documents) and white-out or rectangle over the area."},
         {"q": "Does the original get stored?", "a": "No. The image is uploaded over HTTPS, processed in isolated temporary per-request storage, and removed by response cleanup after the result is sent; a background sweep clears anything left behind by an interrupted request. It is not added to an account or file library."},
     ],
     "rotate-image": [
-        {"q": "Will rotation lose quality?", "a": "For 90°/180°/270° rotations no — they're lossless transpositions of pixels. Arbitrary angles re-sample using bicubic interpolation which is visually near-lossless but technically introduces sub-pixel smoothing."},
+        {"q": "Will rotation lose quality?", "a": "90°, 180° and 270° rotations move pixels without resampling, so a PNG comes out lossless. JPG and WEBP files are re-saved at quality 92, which adds a little compression loss. Arbitrary angles re-sample using bicubic interpolation which is visually near-lossless but technically introduces sub-pixel smoothing."},
         {"q": "Why is my output bigger than the input?", "a": "For non-90° angles, the rotated rectangle no longer fits in the original bounding box. The canvas auto-expands so the whole rotated image is visible (corners get transparent/white padding)."},
-        {"q": "Does PNG/WEBP transparency carry over?", "a": "Yes — the alpha channel is preserved, and rotated corners are transparent (not white) for PNG and WEBP. For JPG the corners get white since JPG has no alpha."},
+        {"q": "Does PNG/WEBP transparency carry over?", "a": "Yes — if the image has an alpha channel, it is preserved and rotated corners are transparent. Images without transparency, including every JPG, get white corners."},
     ],
     "flip-image": [
-        {"q": "Horizontal vs vertical — when do I use which?", "a": "Horizontal flip mirrors left↔right — the most common use is fixing selfies that come out mirrored. Vertical flip turns the image upside down — used for design layouts or correcting scans that were placed face-down."},
-        {"q": "Does flipping change the file size?", "a": "Effectively no — flipping is a pure pixel rearrangement, so the encoded output is similar in size to the input (sometimes 1-3% larger because compression heuristics work slightly differently on the new orientation)."},
-        {"q": "Is metadata preserved?", "a": "We strip EXIF orientation hints on save, so the saved image bytes match what you see. If you need the original metadata kept, use Remove EXIF + this tool together."},
+        {"q": "Horizontal vs vertical — when do I use which?", "a": "Horizontal flip mirrors left↔right — the most common use is fixing selfies that come out mirrored. Vertical flip mirrors top↔bottom, like a reflection in water, which suits design layouts. It is not the same as turning a picture upside down: for an upside-down scan, use Rotate Image at 180°."},
+        {"q": "Does flipping change the file size?", "a": "It can. Flipping is a pure pixel rearrangement, and a PNG comes out close to its original size. JPG and WEBP files are re-encoded at quality 92, so a photo that was saved at a lower quality can grow noticeably."},
+        {"q": "Is metadata preserved?", "a": "No. The flipped copy is saved without the original EXIF data, such as camera details and location. A camera orientation tag is not applied first, so a phone photo that relies on one can come out turned on its side; Rotate Image can put it upright."},
     ],
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
@@ -2175,8 +2176,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I include a check digit?", "a": "EAN-13 and UPC-A auto-calculate the check digit. Code 128 has a built-in checksum. Code 39 supports optional checksums."},
     ],
     "generate-favicon": [
-        {"q": "Do I need all those sizes?", "a": "Yes — different browsers and devices use different sizes (16×16 for tabs, 192×192 for Android home screen, 512×512 for PWA install)."},
-        {"q": "Should I use PNG or SVG source?", "a": "SVG is best — it stays sharp at every size. PNG works if you only have a raster logo. JPG loses some sharpness from compression."},
+        {"q": "Which sizes are in the icon?", "a": "16×16, 32×32 and 48×48, packed into one .ico file so the browser can pick the size it needs, such as 16×16 for a tab. Larger icons for phone home screens or installed web apps, such as 192×192 or 512×512, are not included; make those as separate PNG files."},
+        {"q": "Which source image works best?", "a": "A square PNG with a transparent background. SVG files are not accepted, so convert a vector logo with SVG to PNG first. JPG works too, but it has no transparency and loses some sharpness from compression."},
         {"q": "Will my logo become circular?", "a": "No — favicons render exactly as uploaded. To get a circular look, upload a circular PNG with transparency."},
     ],
     "gif-to-mp4": [
@@ -2200,7 +2201,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my images after I upload them?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."},
     ],
     "image-ocr": [
-        {"q": "How accurate is the OCR?", "a": "Tesseract handles clean printed text very well (98%+). Handwriting, low-resolution, or low-contrast images are harder."},
+        {"q": "How accurate is the OCR?", "a": "Tesseract handles clean printed text well. Handwriting, low-resolution, or low-contrast images are harder."},
         {"q": "Should I preprocess the image first?", "a": "Deskew helps a lot for tilted scans. Convert to grayscale doesn't help (Tesseract converts internally)."},
         {"q": "What about handwriting?", "a": "Tesseract is trained on print. Use a specialized handwriting OCR for cursive."},
     ],
@@ -2226,7 +2227,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "make-collage": [
         {"q": "How are the images arranged?", "a": "In a grid, filled left to right and top to bottom. The automatic setting picks a near-square layout; set the columns yourself for a different shape — one column for a vertical strip, or a high number for a wide banner."},
         {"q": "Do the pictures need to be the same size?", "a": "No, but a set of similar shapes produces a tidier grid. Mixing portrait and landscape shots leaves uneven tiles, so resizing them to a common size first with Resize and Crop Image gives a cleaner result."},
-        {"q": "What does the spacing setting do?", "a": "It sets the gap between tiles in pixels, from none at all up to 200. Zero produces a seamless block; a wider gap with a contrasting background colour gives the framed, scrapbook look."},
+        {"q": "What does the spacing setting do?", "a": "It sets the gap between tiles in pixels, from none at all up to 100. Zero produces a seamless block; a wider gap with a contrasting background colour gives the framed, scrapbook look."},
         {"q": "Can I change the background colour?", "a": "Yes. It defaults to white and shows in the gaps and borders. Black or a brand colour makes a set of photographs look deliberate rather than accidental."},
         {"q": "Can I rearrange the tiles?", "a": "Yes. Drag the thumbnails in the preview to reorder them before you build the collage; the finished image follows that order."},
         {"q": "What do I get back?", "a": "A single image containing the whole grid, which you can then treat like any other picture — compress it, resize it, or add a watermark."},
@@ -2238,9 +2239,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is the conversion lossless?", "a": "HTML → Markdown can lose nesting fidelity (deeply-nested divs flatten). Markdown → HTML is exact."},
     ],
     "merge-images": [
-        {"q": "Will images be cropped?", "a": "No — they're scaled to a common dimension (width for vertical, height for horizontal). Smaller images upscale; larger images downscale."},
-        {"q": "What if my images have different aspect ratios?", "a": "They get letterboxed (transparent padding) to fit. Use Resize Crop Image first to force a common aspect ratio."},
-        {"q": "Difference from Make Collage?", "a": "Merge concatenates in a single row or column. Collage arranges in a grid with configurable columns."},
+        {"q": "Will images be cropped?", "a": "No — they're scaled to a common dimension (width for vertical, height for horizontal). Every image is brought up to the height of the tallest (side by side) or the width of the widest (top to bottom), so smaller images are enlarged and none are shrunk."},
+        {"q": "What if my images have different aspect ratios?", "a": "Each image keeps its own shape and nothing is padded: side by side, a wider image simply takes more of the row; top to bottom, a taller one takes more of the column. The grid option instead fits each image inside an equal cell on a white background. Use Resize Crop Image first to force a common aspect ratio."},
+        {"q": "Difference from Make Collage?", "a": "Merge joins images in a single row or column, or in a grid whose columns are chosen for you. Make Collage lets you set the number of columns, the spacing and the background colour yourself."},
     ],
     "password-generator": [
         {"q": "How strong is the password?", "a": "Length 20 with mixed classes ≈ 130 bits of entropy — uncrackable by brute force. Length 12 ≈ 78 bits — still very strong."},
@@ -2352,7 +2353,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "remove-image-watermark": [
         {"q": 'How does the removal actually work?', "a": 'The selected area is reconstructed from the pixels surrounding it. Nothing underneath the watermark was ever stored, so the result is a plausible fill, not a recovery of hidden detail.'},
         {"q": 'When does it look convincing?', "a": 'Over flat or gently textured backgrounds such as sky, walls, paper or a blurred backdrop. Over fine detail, faces or text, the reconstruction will be visible under any real scrutiny.'},
-        {"q": 'Which formats can I use?', "a": 'JPG, PNG and WebP. Transparency is preserved where the source format has it.'},
+        {"q": 'Which formats can I use?', "a": 'JPG, PNG, WebP and BMP, and the result comes back in the same format. Transparency is not kept: see-through areas usually turn black, so place a transparent PNG on a background first if that matters.'},
         {"q": "Does the image leave my device?", "a": "Yes, for the repair step. It is uploaded over HTTPS to the PrivaTools server, processed in isolated temporary per-request storage, and removed by response cleanup after the result is sent; a background sweep clears anything left behind by an interrupted request. It is not passed to a third-party service or used for model training."},
         {"q": 'Is it legal to remove a watermark?', "a": "That depends entirely on the image. A watermark is usually an ownership mark, and stripping one from a stock photo or someone else's work to avoid licensing it is copyright infringement. Use this on your own images, or where you hold the rights."},
     ],

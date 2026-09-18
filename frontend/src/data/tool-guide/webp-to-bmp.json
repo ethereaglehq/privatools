@@ -6,11 +6,11 @@
     },
     {
       "name": "PrivaTools converts via Pillow",
-      "text": "Uncompressed output, with transparency flattened onto white."
+      "text": "Uncompressed output; the alpha channel is dropped, so transparent areas usually come out black."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. BMP is uncompressed and drops transparency to a white background; it is worth using only when some older tool insists on it."
+      "text": "Run the conversion. BMP is uncompressed and drops transparency, which usually leaves those areas black; it is worth using only when some older tool insists on it."
     }
   ],
   "faq": [

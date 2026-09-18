@@ -6,7 +6,7 @@
     },
     {
       "name": "PrivaTools decodes via pyzbar",
-      "text": "Detects the QR code anywhere in the image, regardless of orientation or partial occlusion (up to ~30%)."
+      "text": "Detects the QR code anywhere in the image and at any angle. A damaged or partly covered code can still read when the damage stays within the code's built-in error correction, which tops out at about 30%."
     },
     {
       "name": "Read the decoded data",

@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Both formats are lossless, so this is a faithful conversion, and TIFF keeps the alpha channel — the right choice for archival and print pipelines that will not take PNG."
+      "text": "Run the conversion. Both formats are lossless, so this is a faithful conversion, and TIFF keeps the alpha channel — the right choice for archival and print pipelines that will not take PNG."
     }
   ],
   "faq": [

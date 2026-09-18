@@ -6,11 +6,11 @@
     },
     {
       "name": "PrivaTools converts via Pillow",
-      "text": "BMP has no practical transparency support, so any alpha channel is composited onto white."
+      "text": "BMP has no practical transparency support, so the alpha channel is dropped and transparent areas usually come out black."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. BMP has no practical transparency support, so any alpha channel is composited onto a white background. Keep the PNG if transparency matters."
+      "text": "Run the conversion. Transparent areas are not filled with white; they usually come out black, so place the image on a background first if you need one. Keep the PNG if transparency matters."
     }
   ],
   "faq": [

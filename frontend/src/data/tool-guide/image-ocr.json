@@ -5,18 +5,22 @@
       "text": "JPG, PNG, TIFF, WebP up to 500 MB."
     },
     {
-      "name": "Select OCR language",
-      "text": "17 Tesseract languages available: English, French, German, Spanish, Italian, Portuguese, Dutch, Russian, Polish, Turkish, Japanese, Korean, Chinese Simplified, Chinese Traditional, Arabic, Hindi, Vietnamese."
+      "name": "Choose the engine",
+      "text": "On our server (the default) runs Tesseract on the PrivaTools server. My own AI key sends the image straight to a vision model at the provider you choose. In this browser runs tesseract.js on your device and downloads the language data when it is first needed."
     },
     {
-      "name": "Download as text or JSON",
-      "text": "Plain text: all detected text. JSON: text + per-word bounding boxes for layout-aware processing."
+      "name": "Select OCR language",
+      "text": "Pick one of 13 languages: English, French, German, Spanish, Italian, Portuguese, Chinese (Simplified), Chinese (Traditional), Japanese, Korean, Arabic, Hindi and Russian. A vision model detects the language itself, so the picker is hidden for that engine."
+    },
+    {
+      "name": "Copy or download the text",
+      "text": "The recognized text appears in a box you can copy from, or save as a .txt file."
     }
   ],
   "faq": [
     {
       "q": "How accurate is the OCR?",
-      "a": "Tesseract handles clean printed text very well (98%+). Handwriting, low-resolution, or low-contrast images are harder."
+      "a": "Tesseract handles clean printed text well. Handwriting, low-resolution, or low-contrast images are harder."
     },
     {
       "q": "Should I preprocess the image first?",
