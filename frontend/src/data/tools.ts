@@ -51,7 +51,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "merge-pdf", icon: Merge, name: "Merge PDF",
     description: "Combine multiple PDFs into one",
-    longDescription: "Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. Up to 500 MB per file, no sign-up, no watermarks. Your files are processed securely and never stored.",
+    longDescription: "Merge PDF files online for free — combine multiple PDF documents into a single file in seconds. Drag, drop, and reorder pages before merging. Up to 500 MB per file, no sign-up, no watermarks. Files are processed in temporary storage and cleaned up after the response.",
     seoTitle: "Merge PDF Files Online Free – Combine PDFs Privately",
     metaDescription: "Merge PDF combines multiple PDF files into one document in seconds. It is free, requires no sign-up, and adds no watermark to the result.",
     synonyms: "join combine concat unite stitch put together",
@@ -62,7 +62,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "split-pdf", icon: Scissors, name: "Split PDF",
     description: "Split by selecting specific page ranges",
-    longDescription: "Split PDF online for free — divide a PDF into separate files by page range. Extract specific pages or split every page into individual PDFs. No installation, no registration required. Privacy-first: files are never stored on our servers.",
+    longDescription: "Split PDF online for free — divide a PDF into separate files by page range. Extract specific pages or split every page into individual PDFs. No installation, no registration required. Files are processed in temporary storage and cleaned up after the response.",
     seoTitle: "Split PDF Online Free – Divide Pages by Range",
     metaDescription: "Split PDF divides a document into separate files by page range or pulls out specific pages you choose. Free tool, no sign-up, no watermark.",
     synonyms: "separate divide cut slice break pdf splitter",
@@ -117,7 +117,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "delete-pages", icon: Trash2, name: "Delete Pages",
     description: "Remove specific pages from a PDF",
-    longDescription: "Remove pages from PDF online for free. Select specific pages or ranges to permanently delete. Preview thumbnails and choose exactly which pages to remove. No sign-up, no watermarks, files never stored.",
+    longDescription: "Remove pages from PDF online for free. Select specific pages or ranges to permanently delete. Preview thumbnails and choose exactly which pages to remove. No sign-up, no watermarks; files are cleaned up after processing.",
     seoTitle: "Delete Pages from PDF Online – Free and Fast",
     metaDescription: "Delete Pages removes chosen pages or ranges from a document using thumbnails as your guide. Free tool, no sign-up, no watermark added.",
     synonyms: "remove drop discard",
@@ -152,9 +152,9 @@ const _toolsRaw: Tool[] = [
   {
     slug: "sign-pdf", icon: Stamp, name: "Sign PDF",
     description: "Add a visual signature image to a PDF",
-    longDescription: "Add signature to PDF online for free. Draw, type, or upload your signature image and place it anywhere on the document. Create legally-binding electronic signatures without printing. No account required.",
-    seoTitle: "Sign PDF Online Free – Draw or Type Your Name",
-    metaDescription: "Sign PDF adds a drawn, typed, or uploaded signature anywhere on a document without printing it first. Free to use and requires no account.",
+    longDescription: "Add signature to PDF online for free. Draw or upload your signature image and place it anywhere on the document. Sign without printing; the signature is placed as an image, not as a certificate-based digital signature. No account required.",
+    seoTitle: "Sign PDF Online Free – Draw or Upload Your Signature",
+    metaDescription: "Sign PDF adds a drawn or uploaded signature anywhere on a document without printing it first. Free to use and requires no account.",
     synonyms: "signature handwritten signature sign electronic add signature",
     popularity: 8,
     category: "edit", accepts: ".pdf", outputLabel: "signed.pdf",
@@ -321,7 +321,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "protect-pdf", icon: Shield, name: "Protect PDF",
     description: "Encrypt a PDF with a password or set permissions",
-    longDescription: "Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set open passwords, permission passwords, and control printing, copying, and editing access. Military-grade security, no sign-up.",
+    longDescription: "Password protect PDF online for free — encrypt your PDF with AES-256 encryption. Set open passwords, permission passwords, and control printing, copying, and editing access. No sign-up needed.",
     seoTitle: "Password Protect PDF Online – Encrypt and Lock It",
     metaDescription: "Protect PDF encrypts a document with a password and lets you limit printing, copying, or editing. Free tool, no sign-up required.",
     synonyms: "password encrypt secure lock",
@@ -411,9 +411,9 @@ const _toolsRaw: Tool[] = [
   {
     slug: "jpg-to-pdf", icon: FileImage, name: "JPG to PDF",
     description: "Convert JPG / JPEG photos into a single PDF",
-    longDescription: "Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document with adjustable page size, orientation, and margins. Bulk convert phone photos, scans, or screenshots in seconds. No file size limit, no watermarks, no sign-up.",
+    longDescription: "Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 500 MB per file, no watermarks, no sign-up.",
     seoTitle: "Convert JPG to PDF Online Free – Batch in Seconds",
-    metaDescription: "JPG to PDF combines one or many JPEG photos into a single document with adjustable size and margins. Free tool, batch conversion, no watermark.",
+    metaDescription: "JPG to PDF combines one or many JPEG photos into a single document, sized to each photo or to A4 or Letter pages. Free tool, batch conversion, no watermark.",
     synonyms: "jpeg to pdf image to pdf photo to pdf convert jpg",
     popularity: 6,
     category: "to-pdf", accepts: ".jpg,.jpeg", outputLabel: "images.pdf",
@@ -545,7 +545,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "pdf-to-long-image", icon: FileImage, name: "PDF to Long Image",
     description: "Stitch every PDF page into one tall image",
-    longDescription: "Turn a whole PDF into a single long image online for free — every page is rendered and stacked vertically into one tall PNG or JPG, ready to share or scroll. Unlike PDF-to-Image (one file per page), this gives you the entire document as a single picture. Runs on your own server; the file is deleted right after.",
+    longDescription: "Turn a whole PDF into a single long image online for free — every page is rendered and stacked vertically into one tall PNG or JPG, ready to share or scroll. Unlike PDF-to-Image (one file per page), this gives you the entire document as a single picture. Runs on the PrivaTools server; the file is cleaned up after the response.",
     seoTitle: "Convert PDF to One Long Image – Stack Every Page",
     metaDescription: "PDF to Long Image stitches every page into a single tall picture instead of one file per page. Free tool, ready to share or scroll through.",
     synonyms: "stitch combine pages single tall scroll screenshot one image",
@@ -1118,7 +1118,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "accessibility-check", icon: Accessibility, name: "PDF Accessibility Checker",
     description: "Audit a PDF against PDF/UA and WCAG",
-    longDescription: "Check PDF accessibility online for free \u2014 audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks, no limits.",
+    longDescription: "Check PDF accessibility online for free \u2014 audit any PDF against PDF/UA (ISO 14289) and WCAG 2.2. Reports tagging, document language, heading order, image alt text, table headers, form-field labels, reading order and colour contrast, with a plain-English fix for every issue. Read-only: your file is never modified. No sign-up, no watermarks; standard upload and rate limits apply.",
     seoTitle: "Check PDF Accessibility Online – PDF/UA and WCAG",
     metaDescription: "Audit tagging, heading order, alt text, table headers, and color contrast with a plain-English fix for each issue. Free, read-only, no sign-up.",
     synonyms: "accessibility a11y pdfua pdf/ua wcag section 508 ada screen reader tagged alt text compliance audit",

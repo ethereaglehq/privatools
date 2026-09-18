@@ -136,10 +136,10 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Split by Text](https://privatools.me/tool/split-by-text): Split a PDF every time a keyword appears
 - [PDF to HTML](https://privatools.me/tool/pdf-to-html): Convert PDF to a web-viewable HTML file
 - [PDF to RTF](https://privatools.me/tool/pdf-to-rtf): Extract PDF text into a Rich Text Format file
-- [Image Compressor](https://privatools.me/tools/image-compressor): Reduce JPEG/PNG/WebP size without losing quality
-- [Image Format Converter](https://privatools.me/tools/image-converter): Convert between WebP, PNG, JPG, TIFF, and HEIC
+- [Image Compressor](https://privatools.me/tools/image-compressor): Reduce the file size of JPEG, PNG, and WebP images
+- [Image Format Converter](https://privatools.me/tools/image-converter): Convert between WebP, PNG, JPG, BMP, and TIFF
 - [Remove EXIF Data](https://privatools.me/tools/remove-exif): Strip GPS, camera, and timestamp metadata from photos
-- [Resize & Crop Image](https://privatools.me/tools/resize-crop-image): Bulk resize or crop images to any dimension
+- [Resize & Crop Image](https://privatools.me/tools/resize-crop-image): Resize or crop an image to exact pixel dimensions
 - [Video / Audio to GIF](https://privatools.me/tools/video-to-gif): Convert short video clips into animated GIFs
 - [Image OCR](https://privatools.me/tools/image-ocr): Read text from images with local OCR or your AI provider
 - [Extract Audio from Video](https://privatools.me/tools/extract-audio): Strip the MP3/WAV audio track from a video file
