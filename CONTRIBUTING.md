@@ -7,10 +7,12 @@ test your changes, and open a pull request.
 ## Ground rules
 
 - **Privacy first.** The product promise is that files are processed
-  privately (in isolated temporary storage, deleted on response) and never
-  sent to third parties. Don't add third-party uploads, trackers, or
-  client-side calls to external services without an explicit, disclosed
-  reason. In-tool copy must match what the code actually does.
+  privately and never sent to third parties: server tools keep uploads in
+  temporary files that response cleanup deletes, with a background sweep for
+  leftovers, and many tools never upload at all. Don't add third-party
+  uploads, trackers, or client-side calls to external services without an
+  explicit, disclosed reason. In-tool copy must match what the code actually
+  does.
 - **MIT licensed.** By contributing you agree your contribution is licensed
   under the [MIT License](LICENSE).
 - **Be respectful.** Assume good faith; keep discussion technical and kind.
@@ -153,6 +155,8 @@ when a check fails, opens a tracking issue or comments on the open one.
 
 ## Releases & deploys
 
-Production auto-deploys via a release-tag gate (see `deploy/README.md`): once a
-`v*` tag exists, only tagged commits ship. Merging to `main` does not deploy on
+Production deploys only signed `v*` release tags (see `deploy/README.md`).
+Pushing a tag runs `release.yml`: the whole `test.yml` suite, then an arm64
+image that is pushed to GHCR, scanned and signed with cosign, and finally a
+GitHub Release. Merging to `main` does not deploy on
 its own — a maintainer cuts a release tag when a set of changes is ready.

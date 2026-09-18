@@ -168,13 +168,12 @@ jobs:
           platforms: linux/amd64
           cache-from: type=gha
           cache-to: type=gha,mode=max
-      # A clean build can still ship a broken image. Without tool-content.json
-      # the app boots on its hand-written fallback copy, which /readyz cannot
-      # see; if a missing manifest fails at import instead, the deploy's
-      # /readyz gate is the first thing to notice. This boots the image from
-      # docker-compose.yml with the deploy's own command (read-only root, /tmp
-      # tmpfs, both volumes) and checks what it serves. Release gates on this
-      # job through workflow_call.
+      # A clean build can still ship a broken image. Without a readable
+      # tool-content.json the app refuses to start (#179), and without this job
+      # the deploy's /readyz gate would be the first thing to notice. This boots
+      # the image from docker-compose.yml with the deploy's own command
+      # (read-only root, /tmp tmpfs, both volumes) and checks what it serves.
+      # Release gates on this job through workflow_call.
       - name: Boot the image as production does and probe it
         timeout-minutes: 5
         run: python3 scripts/ci/probe-image.py "$PROBE_IMAGE"

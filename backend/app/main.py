@@ -214,9 +214,10 @@ _WASM_EVAL_PATHS = {
     "/ai",
     "/tool/summarize-pdf",
     "/tool/smart-redact",
-    # On-device OPUS-MT / RMBG models run on onnxruntime-web, which needs
-    # wasm-unsafe-eval just like the two above. Translate shipped without
-    # this and its local model would have been blocked by prod CSP.
+    # On-device OPUS-MT (Translate), U²-Net-P (Remove Background) and Whisper
+    # (Transcribe) models run on onnxruntime-web, which needs wasm-unsafe-eval
+    # just like the two above. Translate shipped without this and its local
+    # model would have been blocked by prod CSP.
     "/tool/translate-pdf",
     "/tools/remove-background",
     "/tools/transcribe-audio",
@@ -231,7 +232,7 @@ _WASM_EVAL_PATHS = {
 # self+nonce.
 _TESSERACT_PATHS = {"/tool/ocr-pdf", "/tools/image-ocr"}
 
-# Transformers 3.x configures ONNX Runtime to import its JS glue from
+# transformers.js configures ONNX Runtime to import its JS glue from
 # jsDelivr. With multiple threads, ONNX first fetches that module and imports
 # a same-origin blob URL. These script sources belong only to these model
 # pages, never to ordinary file tools or the homepage.

@@ -1,5 +1,7 @@
 # Account settings release validation
 
+> **Shipped in v2.4.1** (#166, 14 September 2026).
+
 Requested alongside the API onboarding rollout: make account settings, password changes and passkeys accessible in production, and improve the account pages on desktop/mobile in both Air and Play.
 
 ## Confirmed before implementation

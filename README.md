@@ -23,9 +23,9 @@ PrivaTools never passes your files to third parties. No account needed. No water
 
 | Feature | PrivaTools | iLovePDF / Smallpdf / Adobe |
 |---|---|---|
-| **Truly free** | 100%, no quota | Limited free / paid tier |
+| **Truly free** | No paid tier and no daily quota on the website (fair-use rate limits apply); the API has a free daily allowance | Limited free / paid tier |
 | **No account** | Just open and use | Email / sign-up required |
-| **Privacy** | Files processed in an isolated container, deleted on response; many tools never leave your browser | Uploaded to vendor cloud |
+| **Privacy** | Server tools delete their temporary files after the response, and a sweep clears leftovers; many tools never leave your browser | Uploaded to vendor cloud |
 | **Tool range** | PDF, image, video, audio and developer tools in one place ([full list](https://privatools.me/tools)) | 20–95 tools, PDF only |
 | **On-device AI** | 6 models (summarize, PII detection, translation, background removal, 2× Whisper speech-to-text) download once into the browser cache, then run offline without uploading their input | Cloud APIs |
 | **Bring your own AI key** | Chat with PDF, vision OCR, translation, redaction, transcription through *your* Anthropic/OpenAI/Gemini/Groq/Mistral/OpenRouter/DeepSeek/Together or self-hosted key — requests go browser → provider, never through PrivaTools | Not offered |
@@ -413,11 +413,11 @@ new slug touches.
 
 ## 🔒 Privacy promise
 
-- ✅ Files processed in an **isolated Docker container**, unlinked from disk immediately after the response
+- ✅ Server tools write uploads and results to **temporary files** with unique names; response cleanup deletes them once the result is sent, and a background sweep removes leftovers older than ten minutes. An interrupted request or a failed cleanup leaves a file until that sweep, so deletion is not instant erasure
 - ✅ Many tools (JWT Decoder, Regex Tester, Password Generator, Hash Generator, Base64, JSON/XML Formatter, and others) **run entirely in your browser** — no upload at all. Summarize PDF does too with its on-device model; its optional bring-your-own-key mode sends the PDF's text to the provider you choose. Smart Redact finds personal data in your browser, then uploads the PDF and your selected terms to apply the redaction
 - ✅ **No account, sign-up, email or payment needed to use any tool**
-- ✅ **No watermarks, no daily quota, no premium tier**
-- ✅ **500 MB upload limit per file**, unlimited files per day
+- ✅ **No watermarks, no premium tier, no daily quota on the website** — fair-use rate limits apply, such as five runs a minute per IP on the heaviest tools
+- ✅ **Uploads are capped at 500 MB per request.** Most tool pages currently send each file twice in that request, so the largest single file they take is about 250 MB; tools that send several files in one request, such as Merge, share the 500 MB between them
 - ✅ On-device AI (Summarize PDF, Smart Redact detection, Translate PDF, Transcribe Audio) runs via WebAssembly **in your browser** by default — models download once, cache locally, and work offline; no AI provider is involved. Background Remover and the OCR tools default to PrivaTools' own server and offer an in-browser engine; Chat with PDF always uses the provider you choose
 - ✅ Optional **bring-your-own-key** AI sends requests from **your browser straight to the provider you chose**, authenticated with your key (stored encrypted on your device) — PrivaTools is never in the path, and CSP confines provider egress to the AI tool pages
 - ✅ Saved PDF passwords live in a **device-local encrypted vault** (WebCrypto, non-extractable key) — never synced; Unlock tries them in your browser and sends only the one that works, with the PDF, to unlock it

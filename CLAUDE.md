@@ -22,8 +22,18 @@ learned by getting it wrong first.
 - **CI does not run on a plain branch.** `test.yml` and `security.yml` trigger
   on pull requests and pushes to `main`. To verify a branch without a PR:
   `gh workflow run test.yml --ref <branch>`.
-- **OpenSSF Scorecard always fails off `main`** — "Only the default branch main
-  is supported". Not a code problem.
+- **Five checks are required on `main`:** "Backend tests (pytest)", "Frontend
+  tests (vitest)" and "Image builds and serves (docker)" from `test.yml`,
+  "Frontend audit and build" and "Python dependency audit" from `security.yml`.
+  Two steps inside the vitest job fail it on their own: "Check generated
+  content is current" (reruns `npm run gen:llms`, fails on any diff) and, on
+  pull requests only, "Check tool review dates". The image job boots the built
+  image with `scripts/ci/probe-image.py`, and `release.yml` gates on the whole
+  of `test.yml`.
+- **OpenSSF Scorecard fails on a `workflow_dispatch` run from any branch but
+  `main`** — "Only the default branch main is supported". On pull requests its
+  job passes and the "Scorecard" code-scanning check shows as skipped. Neither
+  is a code problem.
 
 ## Current UI and product context
 
@@ -40,9 +50,16 @@ learned by getting it wrong first.
 
 ## Counts come from the registry
 
-The tool total is `tools.length + nonPdfTools.length`. Never write it as a
-literal — the site once advertised 221 when it had 219. A test fails on a
-three-digit count appearing in rendered text in any shell component.
+The tool total is `tools.length + nonPdfTools.length` (`TOTAL_TOOL_COUNT` in
+`frontend/src/data/site-stats.ts`). Never write it as a literal — the site once
+advertised 221 when it had 219. The guards are narrower than they look:
+`src/test/skins.test.ts` fails on a number before "tools" in rendered text or
+a string only in `skins/daylight/SkinApp.tsx`; the Air/Play shells in
+`skins/experience/` and the README are not scanned. The few literals that must
+exist — `public/manifest.json`, `public/opensearch.xml`,
+`public/samples/sample.json` and any "NNN tools" in blog copy — are checked
+against `TOTAL_TOOL_COUNT` by `tool-registry.test.ts` and `seo-static.test.ts`,
+so a new tool means editing them by hand.
 
 ## Accounts
 
@@ -137,36 +154,53 @@ load-bearing.
 - **`useMultiFileProcessor` reads state through a ref mirror** (`mutate()`).
   Never read state by capturing values inside a `setState` updater — React
   defers updaters and the hook silently processed zero files for months.
-- **npm lockfile rule:** regenerate only with `npx -y npm@11.19.0` (CI's npm).
-  Local npm 11.6 prunes `@emnapi/*` platform entries and breaks CI's `npm ci`.
-- **Registering a tool slug touches ~14 places** — registries, ToolPage or
-  NonPdfToolPage, ToolIllustration, `lastReviewed` on the registry entry
-  (move it only when that tool's own copy changes; never bulk-bump, because a
-  sitemap where every date moves together is discounted), palette synonyms,
-  FAQ and steps via `tool_content.py`, then run
-  `.venv/bin/python scripts/seo/export-tool-guides.py` to regenerate
+
+## Registering a tool
+
+A new slug touches about a dozen places. The count, registry, route-coverage,
+CSP-walker and guide-export tests catch most misses.
+
+- **Registry entry** in `frontend/src/data/tools.ts` (PDF, `/tool/<slug>`) or
+  `non-pdf-tools.ts` (`/tools/<slug>`), with a `seoTitle` (40–60 chars,
+  query-first, no brand, unique), a `metaDescription` (120–160 chars, ends
+  with a period, unique), `synonyms` and `lastReviewed`, all enforced by
+  `frontend/src/test/tool-registry.test.ts`. Search reads the entry's
+  `synonyms`; the old `SYNONYMS` map in `components/CommandPalette.tsx` is not
+  mounted anywhere.
+- **UI:** `ToolUI` in `pages/ToolPage.tsx` / `NonPdfToolPage.tsx` falls back to
+  `GenericUI`, so add a case only for a dedicated component. `ToolIllustration`
+  is imported there but rendered nowhere; it needs no entry. A backend path
+  other than `/<slug>` goes in `frontend/src/lib/tool-endpoints.ts`.
+- **Backend:** the route's router is included in `backend/app/main.py` under
+  `/api`, and in the `api_v1.mount` list to appear under `/api/v1`.
+  `test_route_coverage.py` fails when a server-backed tool has no route, when
+  a declared route is not included in the app, and on a POST that is neither a
+  registered tool nor a named helper or account endpoint.
+- **Guide:** steps and FAQ in `backend/app/tool_content.py`, then
+  `.venv/bin/python scripts/seo/export-tool-guides.py` regenerates
   `frontend/src/data/tool-guide/*.json` (Python is authoritative,
-  `test_tool_guide_export`), CSP
-  sets, `gen-llms.mjs` run, and the public count literals
-  (manifest/opensearch/samples + blog copy). The sitemap reads the build
-  manifest, so nothing in `sitemap.py` is edited per slug. `seo_meta.py`'s
-  fallback tool tables are read from the committed
-  `frontend/public/tool-content.json` that run writes; never hand-copy
-  registry text into Python (a hand copy drifted on most tools). Without a
-  build, `seo_meta` reads that committed copy as its tool manifest, so a
-  worktree runs the tool-manifest tests too; the blog-link test still needs
-  `npm run build`. `test_tool_registry_parity.py` compares the tables with the
-  registry source; in CI the build regenerates that file before pytest, so a
-  stale commit is caught instead by the frontend job's "Check generated
-  content is current" step, which reruns gen-llms and fails on any change.
-  The count tests enforce most of it; the CSP walker and guide export tests
-  catch the rest.
-  Every tool also needs a `seoTitle` (40–60 chars, query-first, no brand,
-  unique) and a `metaDescription` (120–160 chars, ends with a period,
-  unique), enforced by `frontend/src/test/tool-registry.test.ts`. The
-  `lastReviewed` rule is enforced on every pull request by
+  `test_tool_guide_export`).
+- **CSP sets** for a page that runs a model or a BYOK provider (AI stack above).
+- **Generated files:** run `npm run gen:llms` in `frontend/` and commit what it
+  writes (the llms, sitemap, feed and content JSON in `public/`, plus
+  `src/data/tool-blog-links.json`). The vitest job's "Check generated content
+  is current" step reruns it and fails on any diff (#178).
+- **`seo_meta.py` holds no tool copy (#179).** Its `_PDF_TOOLS`/`_NONPDF_TOOLS`
+  are built at import from the manifest gen-llms writes: the build's
+  `tool-content.json`, or the committed `frontend/public/tool-content.json`
+  without a build. With neither readable the app refuses to start. Never
+  hand-copy registry text into Python (a hand copy drifted on most tools). So
+  a worktree without a build runs the tool-manifest tests too; the blog-link
+  test still needs `npm run build`. `test_tool_registry_parity.py` compares
+  the manifest with the registry source, but in CI the backend job's build
+  regenerates the manifest before pytest, so only the frontend job's step
+  above catches a stale commit. The sitemap reads the manifest as well, so
+  nothing in `sitemap.py` is edited per slug.
+- **Count literals:** the hand-kept totals in "Counts come from the registry".
+- **`lastReviewed`** moves only when that tool's own copy changes; never
+  bulk-bump, because a sitemap where every date moves together is discounted.
   `frontend/scripts/check-review-dates.mjs`, a `pull_request`-only step in
-  `test.yml` that fails when a tool's `seoTitle`, `metaDescription`,
+  `test.yml`, fails when a tool's `seoTitle`, `metaDescription`,
   `longDescription` or `description` changed without its date moving, unless
   that date already falls on or after the day before the change began (the
   author date of the branch's oldest commit touching a registry, or today for
@@ -174,7 +208,67 @@ load-bearing.
   on its own line (the first text on a line) of the PR title or a commit
   message; a mid-sentence mention does not count. Its limit: a long-lived
   branch can pass with a date a few days old.
-  `frontend/src/data/sitemap-priority.json` lists the tools that get sitemap
-  priority 0.8 — head PDF tools plus developer tools chosen because their
-  search results are winnable niches; keep it short and reviewed, not a wish
-  list.
+- **Sitemap priority:** `frontend/src/data/sitemap-priority.json` lists the
+  tools that get priority 0.8 — head PDF tools plus developer tools chosen
+  because their search results are winnable niches; keep it short and
+  reviewed, not a wish list.
+
+## Dependencies (changed 2026-09-18)
+
+- **Python pins live in `requirements*.in`; `requirements*.txt` are hashed
+  locks compiled from them (#208).** The image installs `requirements.txt`;
+  CI and `npm run setup:backend` install `requirements-dev.txt`, which starts
+  with `-r requirements.in`; CI's own tools come from `requirements-ci.txt`.
+  All install with `--require-hashes`, so editing a `.in` alone ships nothing.
+  To add or bump a package, edit its pin in the `.in` and rerun the
+  `uv pip compile --generate-hashes --universal --python-version 3.12 …`
+  command from the header of every lock that includes it (a runtime pin is in
+  both `requirements.txt` and `requirements-dev.txt`), with
+  `-P <package>==<version>` so uv moves nothing else.
+  `test_requirements_lock_sync.py` fails when a pin and its lock disagree, a
+  lock lacks hashes or its exact header, or Dependabot is not on `uv`;
+  `test_declared_dependencies.py` fails when code imports a package that
+  `requirements.in` does not declare.
+- **Check arm64 before bumping a native package.** The release image is arm64
+  and PR CI builds only amd64. `pip download --only-binary=:all: --platform
+  manylinux_2_28_aarch64 --python-version 3.12 --no-deps <pkg>==<version>`
+  must find a wheel; ask for manylinux_2_28, because pikepdf, onnxruntime and
+  pillow-heif ship no manylinux2014 wheels and that platform finds nothing.
+- **Dependabot updates Python through its `uv` ecosystem,** which edits the
+  `.in` pin and reruns each lock's header command. The `pip` ecosystem never
+  regenerated the locks, so every one of its PRs failed the lock test. Minor
+  and patch updates arrive as one grouped PR, because each regenerates the
+  same locks.
+- **Held majors.** `.github/dependabot.yml` ignores these until a dedicated
+  migration, with the reason beside each rule; delete the rule when that work
+  starts.
+  - **React 19:** `react`, `react-dom`, `@types/react` and `@types/react-dom`
+    must move together, with every React-dependent library checked in a
+    browser; `react-dom` 19 alone cannot even install (#225).
+  - **eslint-plugin-react-hooks 7:** from 6 on, its recommended set carries the
+    React Compiler rules: 77 errors in 54 files here, `useMultiFileProcessor`
+    among them. Switching the rules off is not the fix (#225).
+  - **Tailwind CSS 4 with tailwind-merge 3:** the PostCSS plugin moved,
+    configuration moves into CSS and utilities the UI uses are renamed, so it
+    needs visual checks of Air and Play; tailwind-merge 3 supports only
+    Tailwind 4 (#231).
+  - **pdf.js 6** (`pdfjs-dist`): it removes APIs the PDF tools call, such as
+    `PDFDocumentProxy.destroy`, and every tool that renders or reads PDFs in
+    the browser needs a browser check (#236).
+  - **The `python` base image** ignores minor and major updates: moving Python
+    is a migration, because the locks are compiled for 3.12. Without the rule
+    Dependabot targeted only the newest tag and proposed no digest refresh at
+    all (#203).
+- **Don't `@dependabot rebase` a Docker digest PR within three days of the
+  tag's last push.** Dependabot's default 3-day cooldown then reports the image
+  as up to date and closes the PR (#152); merge it as it is, or wait (#203).
+- **Releases are signed with cosign v2.6.5** (`cosign-release` in
+  `release.yml`). cosign-installer v4 defaults to cosign v3, which signs in the
+  bundle format; a verifier older than v2.6.3 on the server finds no signature
+  and the deploy refuses the release. Drop the pin once `cosign version` on the
+  server reports v3 (v3.1.3 or later also fixes GHSA-fx35-mq7g-6g98) (#184).
+- **npm lockfile rule:** regenerate `package-lock.json` with the npm CI runs,
+  not a local one. CI pins Node 26 and uses its bundled npm, which a job log
+  shows under "Environment details" (11.19.1 on 2026-09-18), e.g.
+  `npx -y npm@11.19.1 install --package-lock-only`. Local npm 11.6 prunes
+  `@emnapi/*` platform entries and breaks CI's `npm ci`.

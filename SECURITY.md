@@ -44,7 +44,7 @@ We aim to acknowledge security reports within 72 hours. Fix timing depends on se
 
 ## Supported Version
 
-PrivaTools is deployed continuously from the main public codebase. Security fixes are applied to the live service and the repository rather than backported to older versions.
+The live service runs the latest signed `v*` release tag on the public repository's `main` branch; merging a fix to `main` alone does not deploy it. Security fixes ship in a new release rather than being backported to older versions.
 
 ## Safe Harbor
 

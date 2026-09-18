@@ -8,6 +8,55 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 ## [Unreleased]
 
+Merged to `main` since v2.6.1, not yet in a release.
+
+### Tool fixes
+
+- Rotate Image and Flip Image apply a photo's EXIF orientation before turning or flipping it, so a phone photo stored sideways no longer comes out on its side. They keep the DPI and an RGB colour profile; other EXIF, XMP and the JPEG comment are still left out. (#210)
+- View EXIF lists exposure time, aperture, ISO, lens and capture time, shows exposure as photographers write it (`1/160`), decodes text fields, and returns the other metadata instead of a 500 when the EXIF block is damaged. (#210)
+- Flatten bakes annotations, form fields or both into the page, chosen by `scope` (`all` by default, `annotations` or `forms`). It used to return 500 for any PDF with annotations and only made form fields read-only. (#219)
+- Form Creator turns a radio entry into a real radio group instead of returning 500. Field names must now be unique across field types, and each radio option counts toward the 300-field limit. (#219)
+- Fill Form shows the chosen radio option, ticks checkboxes whose widget is separate from the field and detects radio options; a radio value that is not one of the options returns 400. It also sets `/NeedAppearances`, which never worked on pikepdf 8. (#219, #182)
+- Video Speed accepts its whole range, 0.25× to 4×, and changes the speed of videos without an audio track. (#223)
+- Merge Videos merges clips of different sizes: each clip is scaled to fit the first clip's frame as players show it, centred between black bars. Merging two or more clips without audio no longer returns 500. (#223)
+- WebM output encodes in about the CPU time of MP4 instead of seven to eleven times as long, so roughly three minutes of 720p fits the three-minute processing limit instead of 15–20 seconds. At the unchanged 1 Mbit/s target the quality is slightly lower, and WebM trims come out larger. (#223)
+
+### Tool copy
+
+- Tool copy was checked sentence by sentence against the code and corrected where it described features, defaults, limits or behaviour the code does not have: every non-PDF tool outside the most popular 50 (#186), every PDF tool outside them (#204), and the top-50 PDF tools that #204 had not re-checked (#222). Copy narrowed around the bugs above came back with their fixes. (#210, #219, #223)
+- Tool-page structured data says where each tool's files go (the browser, or temporary server storage removed after the response) instead of promising immediate deletion, and `llms.txt` and `llms-full.txt` describe the default-on Google Analytics. (#206)
+
+### Errors and headers
+
+- Every 5xx from the website's routes now carries the same short, status-keyed message as `/api/v1` instead of the text the service raised; the original detail is logged under the response's request id. (#211)
+- 413 and 504 responses carry the same security headers as every other response. (#211)
+
+### For API users
+
+- `/api/v1` error bodies are unchanged. The fixed tools above are all in the v1 catalogue, so `flatten`, `form-creator`, `fill-form`, `video-speed`, `video-merge`, `rotate-image`, `flip-image` and `view-exif` change behaviour as described, including new 400s from Form Creator and Fill Form validation. (#210, #219, #223)
+- PDFs that ReportLab writes whole, from TXT, JSON, XML, RTF, EPUB, Word, Excel, PowerPoint, images, video frames or a QR code, now carry `Creator: anonymous` and `Producer: ReportLab PDF Library - (opensource)`; pages render identically. (#221)
+
+### Dependencies
+
+- Python: pikepdf 8.12.0 → 10.13.0.post1, pypdf 6.19.0, pillow-heif 1.7.0 and cairosvg 2.9.1 (security releases), pyjwt 2.14.0 (security release; Clerk key fetching refuses redirects), onnxruntime 1.30.0, reportlab 5.0.1, rembg 2.0.84, uvicorn 0.53.0, anyio 4.15.1, slowapi 0.1.10, cryptography 50.0.1, numpy 2.5.3; pytest 9.1.1 for development. (#182, #208, #218, #221, #220)
+- The Python dependencies are now `requirements*.in` sources compiled by `uv pip compile` into the hashed `requirements*.txt` locks, which Dependabot's `uv` ecosystem can regenerate; Python minor and patch updates arrive as one grouped PR. (#208)
+- Base images: `python:3.12-slim` and the `node:26-slim` build stage move to current digests, and Dependabot proposes digest refreshes of the current Python tag again. (#203, #185)
+- The on-device AI tools run transformers.js 4.3.0. Its runtime files stay in the browser's HTTP cache, so the AI hub lists and deletes only model files. (#209)
+- Frontend: onnxruntime-web 1.30.0 for background removal, sonner 2.0.8, next-themes 0.4.6, react-router-dom 7.18.4, Radix dialog and tooltip, and dev tooling (typescript-eslint 8.70.0, eslint-plugin-react-refresh 0.5.7, @vitejs/plugin-react-swc 4.3.3). (#192, #194, #134, #217, #230, #190, #226, #216, #212)
+- Unused frontend packages and three dead `components/ui` wrappers are removed, among them recharts, react-hook-form, cmdk, vaul and date-fns; `esbuild` becomes a direct dev dependency. The production bundle is unchanged apart from 242 bytes of CSS. Earlier bumps of removed packages went with them. (#205, #235; #137, #140, #142, #146, #215)
+- Majors held for dedicated migrations in `.github/dependabot.yml`: React 19, eslint-plugin-react-hooks 7, Tailwind CSS 4 with tailwind-merge 3, and pdf.js 6. (#225, #231, #236)
+
+### CI
+
+- CodeQL runs `init`, `analyze` and `upload-sarif` on v4.38.0, grouped so they update together. (#183)
+- cosign-installer v4.1.2 keeps signing with cosign v2.6.5, the signature format the server's verification reads. (#184)
+- The Python audit reads the hashed runtime lock itself (`pip-audit -r requirements.txt --disable-pip`). (#208)
+- Workflow actions updated: dependency-review-action 5.0.0, upload-artifact 7.0.1, github-script 9.0.0 and the docker login, metadata, buildx and build-push actions. (#143, #145, #199, #224, #198, #200, #201, #202)
+
+### Docs
+
+- The documentation catches up with v2.6.1: changelog entries for every release since 1.6.0, the README checked against the code, the required checks in CONTRIBUTING, a complete docs index and status notes on the 2026-09-17 plans. (#197)
+
 ## [2.6.1] — 2026-09-18 — Accurate tool copy, lighter pages, stricter CI
 
 ### Content

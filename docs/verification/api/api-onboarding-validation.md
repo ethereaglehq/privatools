@@ -1,5 +1,7 @@
 # API onboarding validation
 
+> **Shipped in v2.4.0** (#165, 14 September 2026).
+
 Implementation covers the playground, downloadable integration recipes, and account usage/activity on the existing infrastructure. Release deployment is tracked separately once the signed candidate is available.
 
 ## Verified locally

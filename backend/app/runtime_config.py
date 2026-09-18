@@ -95,8 +95,10 @@ def inject_runtime_config(html: str, api_base: str, *, analytics_enabled: bool =
 def google_analytics_enabled_for_path(path: str) -> bool:
     """Operator attestation that automatic collection settings were verified safe.
 
-    Off by default. This only permits loading; the browser separately requires
-    an affirmative visitor choice and respects DNT/GPC. Account and local
+    Off by default. When on, public documents get the Google origins and the
+    runtime flag, and the browser loads the tag for every visitor who has not
+    turned it off on the Privacy page; there is no consent prompt, and DNT and
+    GPC are not read (deploy/analytics.md). Account and local
     personal-workspace documents never receive Google origins or the flag.
     """
     if os.environ.get("GA_BROWSER_TAG_ENABLED", "").strip().lower() != "true":
