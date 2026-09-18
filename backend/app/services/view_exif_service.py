@@ -40,10 +40,12 @@ def _jsonable(v: Any) -> Any:
     if isinstance(v, str):
         return v.rstrip("\x00")  # text fields are often NUL-padded
     try:
-        json.dumps(v)
+        # allow_nan=False: JSON has no NaN or Infinity, and the response
+        # encoder rejects them, so a crafted DOUBLE would otherwise be a 500.
+        json.dumps(v, allow_nan=False)
         return v
     except (TypeError, ValueError):
-        # bytes, IFDRational, etc.
+        # bytes, IFDRational, NaN, infinity, etc.
         if isinstance(v, bytes):
             return _text(v)
         return str(v)[:500]

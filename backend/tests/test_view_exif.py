@@ -150,3 +150,27 @@ def test_unreadable_exif_still_returns_the_rest(client):
     body = _view(client, "screenshot.png", buf.getvalue())
 
     assert (body["format"], body["size"], body["exif"], body["gps"]) == ("PNG", [64, 48], {}, {})
+
+
+def test_a_nan_or_infinite_camera_value_is_shown_not_a_server_error(client):
+    # JSON has no NaN or Infinity, so the response encoder rejects them and the
+    # request failed with a 500. Hand-built big-endian EXIF: the Exif IFD holds
+    # FNumber and ExposureBiasValue typed DOUBLE, as NaN and +infinity.
+    exif_ifd = 8 + 2 + 12 + 4
+    values = exif_ifd + 2 + 2 * 12 + 4
+    block = (
+        b"MM\x00\x2a" + struct.pack(">I", 8)
+        + struct.pack(">HHHII", 1, ExifTags.IFD.Exif, 4, 1, exif_ifd) + struct.pack(">I", 0)
+        + struct.pack(">H", 2)
+        + struct.pack(">HHII", ExifTags.Base.FNumber, 12, 1, values)
+        + struct.pack(">HHII", ExifTags.Base.ExposureBiasValue, 12, 1, values + 8)
+        + struct.pack(">I", 0)
+        + struct.pack(">d", float("nan")) + struct.pack(">d", float("inf"))
+    )
+    buf = io.BytesIO()
+    Image.new("RGB", (64, 48), (90, 120, 150)).save(buf, "JPEG", exif=b"Exif\x00\x00" + block)
+
+    body = _view(client, "IMG_0001.jpg", buf.getvalue())
+
+    assert body["exif"]["FNumber"] == "nan"
+    assert body["exif"]["ExposureBiasValue"] == "inf"
