@@ -35,7 +35,7 @@
 #       --python-version 3.12 --no-deps <package>==<version> -d <scratch-dir>
 fastapi==0.141.1
 # Used directly for cancellation-safe database work and reservation cleanup.
-anyio==4.14.2
+anyio==4.15.1
 uvicorn[standard]==0.52.3
 python-multipart==0.0.32
 pikepdf==10.12.0
