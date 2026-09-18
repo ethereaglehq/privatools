@@ -146,10 +146,16 @@ load-bearing.
   FAQ and steps via `tool_content.py`, then run
   `.venv/bin/python scripts/seo/export-tool-guides.py` to regenerate
   `frontend/src/data/tool-guide/*.json` (Python is authoritative,
-  `test_tool_guide_export`), `seo_meta.py`, CSP
+  `test_tool_guide_export`), CSP
   sets, `gen-llms.mjs` run, and the public count literals
   (manifest/opensearch/samples + blog copy). The sitemap reads the build
-  manifest, so nothing in `sitemap.py` is edited per slug. The count tests
+  manifest, so nothing in `sitemap.py` is edited per slug. `seo_meta.py`'s
+  fallback tool tables are read from the committed
+  `frontend/public/tool-content.json` that run writes; never hand-copy
+  registry text into Python (a hand copy drifted on most tools).
+  `test_tool_registry_parity.py` compares them with the registry source, but
+  CI's build regenerates that file before pytest, so only a run without a
+  build catches a stale commit. The count tests
   enforce most of it; the CSP walker and guide export tests catch the rest.
   Every tool also needs a `seoTitle` (40–60 chars, query-first, no brand,
   unique) and a `metaDescription` (120–160 chars, ends with a period,
