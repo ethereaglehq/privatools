@@ -1827,8 +1827,8 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             f"<p>Every one of the {len(_PDF_TOOLS) + len(_NONPDF_TOOLS)} PrivaTools utilities, grouped by category. "
             "Free and open source under the MIT license. File tools need no account; server limits and developer API quotas apply. "
-            "Browser-only where possible; server-side tools run in an isolated container and delete your file "
-            "immediately after the response.</p>"
+            "Browser-only where possible; server tools process files in temporary storage and remove them "
+            "after the response, with a background sweep for leftovers.</p>"
         )
         parts.append(f"<h2>PDF Tools ({len(_PDF_TOOLS)})</h2><ul>")
         for slug, (name, desc) in _by_popularity(_PDF_TOOLS.items()):
@@ -1954,14 +1954,15 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     # ── Privacy page ───────────────────────────────────────────────────────
     if path == "/privacy":
         parts.append("<h1>Privacy Policy</h1>")
-        parts.append("<p><strong>Last updated:</strong> September 14, 2026</p>")
+        parts.append("<p><strong>Last updated:</strong> September 17, 2026</p>")
         parts.append(
-            "<p>Your files are private. Server-side tools use isolated temporary storage and delete files "
-            "immediately after the response is delivered — never kept in permanent storage, never inspected, "
-            "never retained. Optional Google Analytics measures public page visits, browser sessions, time spent, "
-            "and selected tool actions. It uses pseudonymous browser identifiers and cookies. It requires opt-in "
-            "unless a reviewed regional policy permits an opt-out default. Unknown regions require opt-in. "
-            "Do Not Track, Global Privacy Control, and the Privacy page control keep analytics off.</p>"
+            "<p>Browser tools process files on your device. Server tools upload files for temporary processing: "
+            "response cleanup removes them, and a background sweep removes files left by interrupted requests. "
+            "Google Analytics is on by default and measures public page visits, sessions, engagement and each "
+            "tool run: which tool, how it ran, how many files and whether it succeeded. It uses pseudonymous "
+            "browser identifiers and cookies, and it never receives file contents, filenames, document text or "
+            "account identity. Advertising features and Google Signals are off. Turn analytics off at any time "
+            "with the switch on this page.</p>"
         )
         parts.append("<h2>1. Files You Upload</h2>")
         parts.append(
@@ -2005,9 +2006,10 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append("<h2>2. Description of Service</h2>")
         parts.append(
             "<p>PrivaTools provides browser-based file processing for PDF, image, video, audio, "
-            "and developer workflows. Server-side tools use isolated temporary storage and delete "
-            "files immediately after the response. Many tools run entirely in your browser with no "
-            "server interaction. Free, no limits, no registration.</p>"
+            "and developer workflows. Server-side tools use isolated temporary storage and remove "
+            "files after the response, with a background sweep for leftovers. Many tools run entirely "
+            "in your browser with no server interaction. Free to use with fair-use limits; the tools "
+            "need no registration.</p>"
         )
         parts.append("<h2>3. Acceptable Use</h2>")
         parts.append(

@@ -7,7 +7,7 @@ import { FileText, ArrowLeft, ArrowUp, Link2, Check, List, History, Mail, Github
 
 
 
-const LAST_UPDATED = "March 29, 2026";
+const LAST_UPDATED = "September 18, 2026";
 const GIT_HISTORY_URL = "https://github.com/ethereaglehq/privatools/commits/main/frontend/src/pages/TermsPage.tsx";
 
 interface Section { id: string; title: string; flag?: boolean }
@@ -40,9 +40,10 @@ export default function TermsPage() {
               <p>
                 PrivaTools provides browser-based file processing tools for PDF, image, video, and
                 developer workflows. Server-side tools use isolated temporary per-request storage and
-                immediately delete files after processing. Some tools run entirely in your browser with
-                no server interaction. The service is free, has no usage limits, and requires no
-                registration.
+                remove files after processing, with a background sweep for leftovers. Some tools run
+                entirely in your browser with no server interaction. The service is free to use with
+                fair-use limits, such as per-IP rate limits and a 500 MB request cap. The tools need no
+                registration; the developer API has a free daily allowance.
               </p>
             </div>
 

@@ -25,6 +25,7 @@ Merged to `main` since v2.6.1, not yet in a release.
 
 - Tool copy was checked sentence by sentence against the code and corrected where it described features, defaults, limits or behaviour the code does not have: every non-PDF tool outside the most popular 50 (#186), every PDF tool outside them (#204), and the top-50 PDF tools that #204 had not re-checked (#222). Copy narrowed around the bugs above came back with their fixes. (#210, #219, #223)
 - Tool-page structured data says where each tool's files go (the browser, or temporary server storage removed after the response) instead of promising immediate deletion, and `llms.txt` and `llms-full.txt` describe the default-on Google Analytics. (#206)
+- The server-rendered Privacy page, read by crawlers and without JavaScript, now describes the default-on Google Analytics instead of the old opt-in policy, and its date matches the September 17 change. The tools list, Privacy and Terms no longer promise immediate deletion, and Terms no longer claims there are no usage limits. The Summarize PDF model is labelled at its measured size, about 275 MB.
 
 ### Errors and headers
 

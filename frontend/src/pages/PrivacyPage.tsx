@@ -13,7 +13,7 @@ import {
   type AnalyticsPrivacyPreference,
 } from "@/lib/analyticsPrivacy";
 
-const LAST_UPDATED = "September 14, 2026";
+const LAST_UPDATED = "September 17, 2026";
 const GIT_HISTORY_URL = "https://github.com/ethereaglehq/privatools/commits/main/frontend/src/pages/PrivacyPage.tsx";
 
 interface Section { id: string; title: string; flag?: boolean }
