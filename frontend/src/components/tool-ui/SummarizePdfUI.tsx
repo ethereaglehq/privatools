@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { formatFileSize, downloadBlob } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
+import { configureTransformers } from "@/lib/transformersEnv";
 import { useByok } from "@/hooks/useByok";
 import { ByokPanel } from "@/components/byok/ByokPanel";
 import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
@@ -63,9 +64,7 @@ async function getPipeline(onProgress: (p: number) => void) {
     pipelinePromise = (async () => {
         // Dynamic import keeps the 1.6MB transformers bundle out of the main chunk.
         const { pipeline, env } = await import("@huggingface/transformers");
-        // Use the official CDN for model files (cached in IndexedDB after first load).
-        env.allowLocalModels = false;
-        env.allowRemoteModels = true;
+        configureTransformers(env);
         return pipeline("summarization", MODEL_ID, {
             progress_callback: modelProgress(onProgress, 250 * 1024 * 1024),
         });

@@ -25,6 +25,7 @@ import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { transcribe } from "@/lib/byok/client";
 import { providerById, supportsTranscription, TRANSCRIBE_MODELS } from "@/lib/byok/providers";
 import { ByokError } from "@/lib/byok/errors";
+import { configureTransformers } from "@/lib/transformersEnv";
 
 type WhisperSize = "tiny" | "base";
 const WHISPER: Record<WhisperSize, { hfId: string; label: string; size: string }> = {
@@ -41,8 +42,7 @@ async function getAsr(hfId: string, onProgress: (pct: number) => void) {
     if (cached) { onProgress(100); return cached; }
     const promise = (async () => {
         const { pipeline, env } = await import("@huggingface/transformers");
-        env.allowLocalModels = false;
-        env.allowRemoteModels = true;
+        configureTransformers(env);
         return pipeline("automatic-speech-recognition", hfId, {
             progress_callback: modelProgress(onProgress, 41 * 1024 * 1024),
         } as never);

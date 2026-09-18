@@ -39,6 +39,7 @@ import { getBaseUrl, getKey } from "@/lib/byok/keyStore";
 import { providerById } from "@/lib/byok/providers";
 import { translateWithByok } from "@/lib/byok/tasks";
 import { ByokError } from "@/lib/byok/errors";
+import { configureTransformers } from "@/lib/transformersEnv";
 
 /** Targets offered on the BYOK engine — an LLM translates any of these, far
  *  beyond the one-directional OPUS pairs, and detects the source itself. */
@@ -69,8 +70,7 @@ async function getTranslator(modelId: string, onProgress: (pct: number) => void)
     const promise = (async () => {
         // Dynamic import keeps the transformers bundle out of the main chunk.
         const { pipeline, env } = await import("@huggingface/transformers");
-        env.allowLocalModels = false;
-        env.allowRemoteModels = true;
+        configureTransformers(env);
         return pipeline("translation", modelId, {
             progress_callback: modelProgress(onProgress, 107 * 1024 * 1024),
         });

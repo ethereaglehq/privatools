@@ -12,6 +12,8 @@
  * browser profile, not to us.
  */
 
+import { configureTransformers } from "./transformersEnv";
+
 export interface LocalModelInfo {
     id: string;
     hfId: string;
@@ -28,8 +30,7 @@ const TRANSFORMERS_CACHE = "transformers-cache";
 
 async function pipelinePredownload(task: string, hfId: string, onProgress: (pct: number) => void, approxBytes: number) {
     const { pipeline, env } = await import("@huggingface/transformers");
-    env.allowLocalModels = false;
-    env.allowRemoteModels = true;
+    configureTransformers(env);
     // transformers.js reports progress PER FILE, and a model is many files —
     // naively forwarding `info.progress` makes the number jump between files
     // (70% for the tokenizer, then 65% for the weights). Aggregate bytes across
