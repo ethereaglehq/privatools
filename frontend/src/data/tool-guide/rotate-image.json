@@ -25,6 +25,10 @@
     {
       "q": "Does PNG/WEBP transparency carry over?",
       "a": "Yes — if the image has an alpha channel, it is preserved and rotated corners are transparent. Images without transparency, including every JPG, get white corners."
+    },
+    {
+      "q": "Is metadata preserved?",
+      "a": "Partly. The rotated copy keeps the DPI setting and, for an RGB image such as a phone photo, the colour profile, so colours and print resolution stay the same. Other metadata is not carried over, including the EXIF data with camera details, the date taken and location. The orientation tag a phone or camera records is applied to the pixels before rotating, so the angle you pick turns the photo as your phone shows it."
     }
   ]
 }

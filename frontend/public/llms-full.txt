@@ -1259,7 +1259,7 @@ URL: https://privatools.me/tools/view-exif
 
 Inspect GPS, camera, and metadata stored in an image
 
-View EXIF data online for free — see the main metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, the stored date and time, software, and more. Exposure settings such as ISO and lens details are not listed. Counterpart to Remove EXIF — see what you'd be stripping out.
+View EXIF data online for free — see the metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, lens info, ISO, exposure, timestamps, software, and more. Counterpart to Remove EXIF — see what you'd be stripping out.
 
 ### WebP to JPG
 
@@ -1787,7 +1787,7 @@ URL: https://privatools.me/tools/rotate-image
 
 Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
 
-Rotate any image left, right, or upside down — JPG, PNG, WEBP, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). JPG, PNG, and WEBP keep their format and the others come back as PNG; transparency is preserved for PNG and WEBP.
+Rotate any image left, right, or upside down — JPG, PNG, WEBP, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). A phone photo stored sideways is put upright first, as the phone shows it. JPG, PNG, and WEBP keep their format and the others come back as PNG; transparency is preserved for PNG and WEBP.
 
 ### Flip Image
 
@@ -1795,7 +1795,7 @@ URL: https://privatools.me/tools/flip-image
 
 Mirror an image horizontally or vertically
 
-Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.
+Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. A phone photo stored sideways is put upright before it is flipped. Transparency is preserved for PNG and WEBP.
 
 ## Guides
 

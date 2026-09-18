@@ -307,7 +307,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "view-exif": [
         {"name": "Add the photo", "text": "Drop or select an image up to 500 MB. Photos straight from a camera or phone carry the most metadata; anything already processed by a social platform has usually had it stripped."},
-        {"name": "Read what it carries", "text": "The metadata is listed for you: camera make and model, software, the date and time in the main EXIF block and, where the device recorded it, GPS coordinates. Exposure settings, lens details and the original capture time sit in a separate EXIF section that this viewer does not list."},
+        {"name": "Read what it carries", "text": "The metadata is listed for you: camera and lens, exposure settings, the capture timestamp and, where the device recorded it, GPS coordinates."},
         {"name": "Decide what to do next", "text": "If the image is going to be published and the metadata should not, run Remove EXIF on the original to write a clean copy."},
     ],
     "jwt-decoder": [
@@ -1794,11 +1794,12 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will rotation lose quality?", "a": "90°, 180° and 270° rotations move pixels without resampling, so a PNG comes out lossless. JPG and WEBP files are re-saved at quality 92, which adds a little compression loss. Arbitrary angles re-sample using bicubic interpolation which is visually near-lossless but technically introduces sub-pixel smoothing."},
         {"q": "Why is my output bigger than the input?", "a": "For non-90° angles, the rotated rectangle no longer fits in the original bounding box. The canvas auto-expands so the whole rotated image is visible (corners get transparent/white padding)."},
         {"q": "Does PNG/WEBP transparency carry over?", "a": "Yes — if the image has an alpha channel, it is preserved and rotated corners are transparent. Images without transparency, including every JPG, get white corners."},
+        {"q": "Is metadata preserved?", "a": "Partly. The rotated copy keeps the DPI setting and, for an RGB image such as a phone photo, the colour profile, so colours and print resolution stay the same. Other metadata is not carried over, including the EXIF data with camera details, the date taken and location. The orientation tag a phone or camera records is applied to the pixels before rotating, so the angle you pick turns the photo as your phone shows it."},
     ],
     "flip-image": [
         {"q": "Horizontal vs vertical — when do I use which?", "a": "Horizontal flip mirrors left↔right — the most common use is fixing selfies that come out mirrored. Vertical flip mirrors top↔bottom, like a reflection in water, which suits design layouts. It is not the same as turning a picture upside down: for an upside-down scan, use Rotate Image at 180°."},
         {"q": "Does flipping change the file size?", "a": "It can. Flipping is a pure pixel rearrangement, and a PNG comes out close to its original size. JPG and WEBP files are re-encoded at quality 92, so a photo that was saved at a lower quality can grow noticeably."},
-        {"q": "Is metadata preserved?", "a": "No. The flipped copy is saved without the original EXIF data, such as camera details and location. A camera orientation tag is not applied first, so a phone photo that relies on one can come out turned on its side; Rotate Image can put it upright."},
+        {"q": "Is metadata preserved?", "a": "Partly. The flipped copy keeps the DPI setting and, for an RGB image such as a phone photo, the colour profile, so colours and print resolution stay the same. Other metadata is not carried over, including the EXIF data with camera details, the date taken and location. The orientation tag a phone or camera records is applied to the pixels before the flip, so a photo stored sideways comes out upright."},
     ],
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
