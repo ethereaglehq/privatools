@@ -100,7 +100,7 @@ describe("API sample playground", () => {
         await screen.findByRole("link", { name: "Download extracted-text.json" });
         expect(screen.getByText("Sample text [redacted] <script>unsafe()</script>")).toBeInTheDocument();
         expect(document.querySelector(".pt-playground-preview script")).toBeNull();
-        const artifact = JSON.parse(await readBlob(createUrl.mock.calls.at(-1)![0] as Blob));
+        const artifact = JSON.parse(await readBlob(createUrl.mock.lastCall![0] as Blob));
         expect(Object.keys(artifact)).toEqual(["text", "pages", "characters"]);
         expect(artifact.pages).toEqual([{ page: 1, text: "Page [redacted]" }]);
         expect(artifact.characters).toBe(artifact.text.length);
