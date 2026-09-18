@@ -120,13 +120,12 @@ RUN ffmpeg -hide_banner -filters 2>/dev/null | grep -E '^[ .A-Z|]+ subtitles[[:s
 WORKDIR /app
 
 # Install Python dependencies from the fully-pinned, hashed lockfile.
-# --require-hashes verifies every wheel/sdist against requirements.lock, so a
+# --require-hashes verifies every wheel/sdist against requirements.txt, so a
 # compromised index or a typosquat can't slip a bad artifact into the image
-# (research DEP1/DEP4). The lock is universal (both arm64 + amd64 hashes) and was
-# dry-run validated under --require-hashes for both arches; regenerate with
-#   uv pip compile requirements.txt --generate-hashes --universal --python-version 3.12 -o requirements.lock
-COPY requirements.txt requirements.lock ./
-RUN pip install --no-cache-dir --require-hashes -r requirements.lock \
+# (research DEP1/DEP4). The lock is universal (both arm64 + amd64 hashes) and is
+# compiled from requirements.in by the command in its header.
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --require-hashes -r requirements.txt \
     && python -c "import fitz; print('PyMuPDF OK:', fitz.version)"
 
 # The frontend build stages and SHA-256 verifies U²-Net-P. The backend uses

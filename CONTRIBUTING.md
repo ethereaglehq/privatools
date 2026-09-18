@@ -57,7 +57,7 @@ sudo apt-get install -y \
 
 # From the repo root: Python 3.12 virtual environment from the hashed lock
 # (needs uv). CI installs the same lock with
-# `pip install --require-hashes -r requirements-dev.lock`.
+# `pip install --require-hashes -r requirements-dev.txt`.
 npm run setup:backend
 ```
 
@@ -132,7 +132,7 @@ Branch protection on `main` requires five checks:
 | Backend tests (pytest) | `test.yml` | The backend suite, plus the API starter build and tests |
 | Frontend tests (vitest) | `test.yml` | Generated-content check, type-check, lint, content tests, Vitest, review-date check |
 | Frontend audit and build | `security.yml` | `npm audit --audit-level=high`, type-check, production build, bundle budget |
-| Python dependency audit | `security.yml` | `pip-audit` on `requirements.txt` |
+| Python dependency audit | `security.yml` | `pip-audit` on the hashed runtime lock, `requirements.txt` |
 | Image builds and serves (docker) | `test.yml` | Builds the image and boots it with `scripts/ci/probe-image.py` |
 
 Two steps inside "Frontend tests (vitest)" fail it on their own:

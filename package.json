@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "setup:backend": "uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python --require-hashes -r requirements-dev.lock",
+    "setup:backend": "uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python --require-hashes -r requirements-dev.txt",
     "backend": "python3 scripts/dev/local-backend.py",
     "backend:dev": "python3 scripts/dev/local-backend.py --reload",
     "frontend": "npm --prefix frontend run dev -- --host 127.0.0.1 --port 5173",

@@ -1,0 +1,9 @@
+# Tooling installed by CI itself, not by the app.
+#
+# Kept separate from requirements.in (production) and requirements-dev.in
+# (test runner) because it is installed into the runner, not the image, and
+# should not drag CI-only packages into either of those graphs.
+#
+# Compiled into the hashed requirements-ci.txt the same way as the others; the
+# command is in that file's header, and requirements.in explains the layout.
+pip-audit==2.10.1

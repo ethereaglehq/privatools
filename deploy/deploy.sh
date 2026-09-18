@@ -8,8 +8,8 @@
 #     run `npm ci` MANUALLY before invoking this script — we deliberately
 #     skip dep install on the hot path to keep deploys fast.
 #   - The Python venv at /opt/privatool/.venv already has requirements.txt
-#     installed. If requirements.txt changed, run
-#     `/opt/privatool/.venv/bin/pip install -r requirements.txt` first.
+#     (the hashed lock) installed. If requirements.txt changed, run
+#     `/opt/privatool/.venv/bin/pip install --require-hashes -r requirements.txt` first.
 #
 # This script is intentionally minimal-blast-radius: pull, build, restart,
 # verify. No DB migrations, no schema changes, no destructive ops.
