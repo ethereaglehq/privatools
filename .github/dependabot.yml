@@ -5,6 +5,29 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      # A React major has to move as one: react, react-dom, @types/react and
+      # @types/react-dom together, with every React-dependent library checked
+      # in a browser. Dependabot offered react-dom 19 and @types/react-dom 19
+      # alone (#214), which cannot even install against react 18. A dedicated
+      # upgrade task does that; delete these four entries when it starts.
+      - dependency-name: "react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "react-dom"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@types/react-dom"
+        update-types: ["version-update:semver-major"]
+      # eslint-plugin-react-hooks 6 and later add the React Compiler rules to
+      # the recommended set this config spreads in. Here they report 77 errors
+      # in 54 files (set-state-in-effect, refs, purity, use-memo,
+      # static-components), core hooks such as useMultiFileProcessor among
+      # them. Fixing those is a behavioural refactor that needs its own task and
+      # browser checks; switching the rules off to go green is not an option
+      # (#213). Delete this entry when that task starts.
+      - dependency-name: "eslint-plugin-react-hooks"
+        update-types: ["version-update:semver-major"]
 
   # The root requirements*.in files, compiled by `uv pip compile` into the
   # hashed requirements*.txt locks that the image and CI install. The pip
