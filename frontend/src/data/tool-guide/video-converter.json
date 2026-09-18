@@ -24,7 +24,7 @@
     },
     {
       "q": "How long does it take?",
-      "a": "It depends on the length, the resolution and the format; WebM (VP9) encodes several times more slowly than the others. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."
+      "a": "It depends on the length, the resolution and the format. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."
     }
   ]
 }

@@ -6,7 +6,7 @@
     },
     {
       "name": "Reorder if needed",
-      "text": "Use the up and down arrows to set the order the clips play in."
+      "text": "Use the up and down arrows to set the order the clips play in. The first clip sets the frame size of the merged video."
     },
     {
       "name": "Download the merged video",
@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Do the videos need the same resolution?",
-      "a": "Yes. Clips are not resized, so every clip must have the same width and height; a mix of sizes makes the merge fail. Video Resizer can bring clips that share an aspect ratio to the same height first."
+      "a": "No. The merged video takes the first clip's frame size as players show it, so a portrait phone clip first gives a portrait video. Every other clip is scaled to fit inside that frame without being stretched, and black bars fill any gap. Put the clip whose size you want first."
     },
     {
       "q": "What about audio-less videos?",

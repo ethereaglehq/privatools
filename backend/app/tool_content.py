@@ -488,8 +488,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Click Reverse", "text": "Both video and audio are reversed in sync. Output is MP4 (H.264 + AAC), which almost every device plays."},
     ],
     "video-speed": [
-        {"name": "Upload a video", "text": "Drop an MP4/MOV/WebM/MKV/AVI file up to 200 MB. It needs an audio track: a video with no sound fails to process."},
-        {"name": "Pick a speed", "text": "Drag the slider or pick a preset. Speeds from 0.3× (slow-mo) to 3.95× (hyperlapse) work; the 0.25× end of the slider and the 4× preset are rejected. 1× is original speed."},
+        {"name": "Upload a video", "text": "Drop any MP4/MOV/WebM/MKV/AVI file up to 200 MB."},
+        {"name": "Pick a speed", "text": "Drag the slider from 0.25× (slow-mo) to 4× (hyperlapse) or pick a preset. 1× is original speed."},
         {"name": "Change the speed and download", "text": "FFmpeg's setpts filter handles the video and atempo filter handles audio pitch-correction so it doesn't sound like a chipmunk."},
     ],
     "audio-trim": [
@@ -972,7 +972,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "video-merge": [
         {"name": "Upload 2+ videos", "text": "MP4 / MOV / MKV / WebM / AVI, up to 20 clips; the whole upload has to fit within the 500 MB request limit."},
-        {"name": "Reorder if needed", "text": "Use the up and down arrows to set the order the clips play in."},
+        {"name": "Reorder if needed", "text": "Use the up and down arrows to set the order the clips play in. The first clip sets the frame size of the merged video."},
         {"name": "Download the merged video", "text": "FFmpeg joins the clips in that order and re-encodes the result as one MP4 with H.264 video and AAC audio."},
     ],
     "video-resizer": [
@@ -1702,7 +1702,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "mp4-to-webm": [
         {"q": "Why convert MP4 to WebM?", "a": "WebM uses VP9, which is royalty-free and often produces smaller files than H.264 at the same quality. Ideal for hosting video on the open web."},
         {"q": "Will every browser play it?", "a": "Every modern desktop browser plays WebM. Safari on iOS plays it from iOS 17.4 onward. For maximum compatibility, MP4 is still safer."},
-        {"q": "How much smaller will it be?", "a": "It depends on the source. The video is encoded at about 1 Mbit/s whatever the input, so a high-bitrate MP4 shrinks a lot while a low-bitrate one can come out larger. VP9 is also far slower to encode than H.264, so a long or high-resolution video can run into the three-minute processing limit."},
+        {"q": "How much smaller will it be?", "a": "It depends on the source. The video is encoded at about 1 Mbit/s whatever the input, so a high-bitrate MP4 shrinks a lot while a low-bitrate one can come out larger."},
     ],
     "yaml-to-json": [
         {"q": "Is it 100% in my browser?", "a": "Yes. The conversion runs in JavaScript on this page, so the YAML you paste is not uploaded to PrivaTools."},
@@ -1772,7 +1772,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "video-speed": [
         {"q": "Will fast-forward make voices sound chipmunky?", "a": "No — we use FFmpeg's atempo filter which pitch-corrects audio. A 2× speedup sounds like fast speech, not a chipmunk."},
-        {"q": "What's the maximum slowdown / speedup?", "a": "From 0.3× (a little under a third of normal speed) to 3.95× (almost four times faster). The slider's 0.25× end and the 4× preset are outside what the server accepts."},
+        {"q": "What's the maximum slowdown / speedup?", "a": "From 0.25× (four times slower) to 4× (four times faster)."},
         {"q": "Does it work for slow-motion footage?", "a": "Sort of — for true high-quality slow-motion you need video captured at higher FPS originally. This tool stretches the existing frames in time, so very slow speeds get a duplicated-frame look."},
     ],
     "audio-trim": [
@@ -2293,10 +2293,10 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "video-converter": [
         {"q": "Which format to choose?", "a": "MP4: most compatible. WebM: smaller, used for web embedding. MOV: works in Apple ecosystem and Final Cut. MKV: open-source flexible container."},
         {"q": "Will quality suffer?", "a": "Every output is re-encoded, so a small loss is normal. MP4, MOV and MKV use H.264 at CRF 23, WebM uses VP9 at about 1 Mbit/s, and AVI uses MPEG-4 with MP3 audio. None of the outputs is lossless, MKV included."},
-        {"q": "How long does it take?", "a": "It depends on the length, the resolution and the format; WebM (VP9) encodes several times more slowly than the others. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."},
+        {"q": "How long does it take?", "a": "It depends on the length, the resolution and the format. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."},
     ],
     "video-merge": [
-        {"q": "Do the videos need the same resolution?", "a": "Yes. Clips are not resized, so every clip must have the same width and height; a mix of sizes makes the merge fail. Video Resizer can bring clips that share an aspect ratio to the same height first."},
+        {"q": "Do the videos need the same resolution?", "a": "No. The merged video takes the first clip's frame size as players show it, so a portrait phone clip first gives a portrait video. Every other clip is scaled to fit inside that frame without being stretched, and black bars fill any gap. Put the clip whose size you want first."},
         {"q": "What about audio-less videos?", "a": "Silent audio is added (anullsrc) for missing tracks so concatenation succeeds."},
         {"q": "Can I add a transition between clips?", "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."},
     ],

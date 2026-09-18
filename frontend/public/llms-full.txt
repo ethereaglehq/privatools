@@ -1011,7 +1011,7 @@ URL: https://privatools.me/tools/video-merge
 
 Concatenate multiple videos into one
 
-Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips of the same resolution into a single video file, one after another. Re-encodes once for broad playback compatibility.
+Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file, one after another. Clips of other sizes are scaled to fit the first clip's frame. Re-encodes once for broad playback compatibility.
 
 ### Merge Audio
 
@@ -1753,9 +1753,9 @@ Reverse an MP4/MOV/WebM video so it plays backwards — useful for fun edits, tr
 
 URL: https://privatools.me/tools/video-speed
 
-Speed up or slow down a video, 0.3× to 3.95×
+Speed up or slow down a video, 0.25× to 4×
 
-Change the playback speed of a video with an audio track from 0.3× (slow-mo) to 3.95× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.
+Change the playback speed of any video from 0.25× (slow-mo) to 4× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.
 
 ### Audio Trimmer
 
