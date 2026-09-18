@@ -9,11 +9,34 @@ import logging
 
 import fitz  # PyMuPDF
 import pikepdf
+from pikepdf.exceptions import (
+    DataDecodingError,
+    ImageDecompressionError,
+    InvalidPdfImageError,
+    UnsupportedImageTypeError,
+)
 
 from ..utils.filenames import temp_output
 from ..utils.render import safe_get_pixmap
 
 logger = logging.getLogger(__name__)
+
+# An embedded image pikepdf cannot turn into pixels: skip it, convert the rest.
+# pikepdf 10 reports these with its own exception types, which derive from
+# Exception directly, where 8.x mostly raised NotImplementedError or returned a
+# partial image. Without them here, one image with a truncated stream failed
+# the whole request with a 500. A decompression bomb is deliberately absent:
+# it should stop the job, and the global handler answers it with a 413.
+_UNDECODABLE_IMAGE = (
+    ValueError,
+    RuntimeError,
+    OSError,
+    pikepdf.PdfError,
+    DataDecodingError,
+    ImageDecompressionError,
+    InvalidPdfImageError,
+    UnsupportedImageTypeError,
+)
 
 
 def convert_to_grayscale(input_path: str) -> str:
@@ -123,7 +146,11 @@ def _vector_grayscale(input_path: str, output_path: str) -> str:
                     if xobj.get("/Subtype") != "/Image":
                         continue
                     pdfimage = pikepdf.PdfImage(xobj)
-                    pil_image = pdfimage.as_pil_image()
+                    # Only the image's own samples are replaced; its /SMask
+                    # stays in the PDF and still applies. pikepdf 10.10+
+                    # composites the mask in by default, which here is wasted
+                    # work, and a mask it cannot decode would lose the image.
+                    pil_image = pdfimage.as_pil_image(apply_mask=False)
                     gray = pil_image.convert("L")
 
                     buf = io.BytesIO()
@@ -135,7 +162,7 @@ def _vector_grayscale(input_path: str, output_path: str) -> str:
                     xobj["/Width"] = gray.width
                     xobj["/Height"] = gray.height
                     xobj["/BitsPerComponent"] = 8
-                except (ValueError, RuntimeError, OSError) as exc:
+                except _UNDECODABLE_IMAGE as exc:
                     # PdfImage decode / unsupported color profile / corrupt
                     # stream — skip the image, keep going on the rest.
                     logger.debug("Skipping image %s: %s", key, exc)

@@ -93,7 +93,11 @@ def _decode_embedded_image(xobj: Any, raw: bytes) -> "Image.Image | None":
     PdfImage can't model.
     """
     try:
-        return pikepdf.PdfImage(xobj).as_pil_image()
+        # The image's own samples only: its /SMask stays in the PDF and still
+        # applies to the recompressed JPEG. pikepdf 10.10+ composites the mask
+        # in by default, which here is wasted work, and a mask it cannot decode
+        # would send a Flate image down the fallback below and leave it as is.
+        return pikepdf.PdfImage(xobj).as_pil_image(apply_mask=False)
     except Exception:
         pass
     try:
