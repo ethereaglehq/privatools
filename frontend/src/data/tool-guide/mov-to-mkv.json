@@ -5,22 +5,22 @@
       "text": "Drop a .mov file from QuickTime, an iPhone or a camera."
     },
     {
-      "name": "PrivaTools remuxes via FFmpeg",
-      "text": "Streams are moved into Matroska, which holds multiple audio and subtitle tracks comfortably."
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "The video is re-encoded as H.264 (CRF 23) and the audio as AAC, then stored in Matroska."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Matroska holds multiple audio and subtitle tracks comfortably, which makes it a better archive container than MOV."
+      "text": "Run the conversion. Matroska can hold multiple audio and subtitle tracks, though this conversion keeps one video and one audio track."
     }
   ],
   "faq": [
     {
       "q": "Why convert MOV to MKV?",
-      "a": "MKV is a flexible archival container that can hold multiple audio and subtitle tracks. If the MOV's codecs are MKV-compatible, the conversion remuxes losslessly."
+      "a": "MKV is a flexible archival container that can hold multiple audio and subtitle tracks. This tool re-encodes the streams rather than moving them across, so it is not a lossless remux."
     },
     {
       "q": "Is it lossless?",
-      "a": "When remuxing (same codecs), yes — no quality change, just a different container. Incompatible codecs are re-encoded."
+      "a": "No. The video is re-encoded as H.264 at CRF 23 and the audio as AAC, so there is a small quality loss."
     },
     {
       "q": "Are uploads kept?",

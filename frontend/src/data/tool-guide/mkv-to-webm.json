@@ -10,13 +10,13 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The result is VP9 WebM — open, royalty-free and suited to HTML5 video where MKV has no browser support at all."
+      "text": "Run the conversion. The result is VP9 WebM — open, royalty-free and suited to HTML5 video where MKV has no browser support at all."
     }
   ],
   "faq": [
     {
       "q": "Does MKV to WebM re-encode?",
-      "a": "Often partially — WebM requires VP8/VP9 video and Vorbis/Opus audio, so any stream not already in those codecs is re-encoded. Both are Matroska-based, so the container step itself is straightforward."
+      "a": "Yes, fully. The video is always re-encoded as VP9 at about 1 Mbit/s and the audio as Opus, even when the MKV already holds VP8, VP9, Vorbis or Opus."
     },
     {
       "q": "Why convert to WebM?",

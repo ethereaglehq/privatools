@@ -9,18 +9,18 @@
       "text": "Standard SubRip Text format with timestamps and dialogue."
     },
     {
-      "name": "Choose to burn-in or soft-encode and download",
-      "text": "Burn-in: subtitles are rendered into the video pixels (permanent, plays everywhere). Soft: subtitles are a separate track (toggleable in supporting players)."
+      "name": "Add the subtitles and download",
+      "text": "The subtitles are burned into the video pixels, so they show in every player and cannot be switched off. The result is an MP4 with H.264 video."
     }
   ],
   "faq": [
     {
-      "q": "Should I burn-in or use a soft subtitle track?",
-      "a": "Burn-in: best for social media (Twitter, Instagram) where players don't render subtitle tracks. Soft: best for accessibility — viewers can turn off."
+      "q": "Why burn subtitles in instead of using a soft track?",
+      "a": "Burned-in captions show on platforms and players that ignore separate subtitle tracks. The trade-off is that viewers cannot turn them off, and this tool does not create a soft, switchable track."
     },
     {
       "q": "What subtitle formats are supported?",
-      "a": "Input: SRT. Burn-in output: works in any video player. Soft track: MP4 with WebVTT or MKV with SRT — depending on output format."
+      "a": "SRT files. The captions are rendered into the picture, so the MP4 shows them in any player; no separate subtitle track is produced."
     },
     {
       "q": "Can I customize the font / size / color?",

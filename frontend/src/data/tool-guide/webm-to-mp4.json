@@ -6,13 +6,13 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The video is re-encoded as H.264 MP4 for compatibility with iOS, older Android, and most editing software."
+      "text": "Run the conversion. The video is re-encoded as H.264 MP4 for compatibility with iOS, older Android, and most editing software."
     }
   ],
   "faq": [
     {
       "q": "Why convert WebM to MP4?",
-      "a": "WebM (VP8/VP9 codecs) isn't supported on iOS Safari, older Android, or in many editing programs. MP4 with H.264 is universal."
+      "a": "WebM (VP8/VP9 codecs) isn't supported by Safari on iOS before 17.4, older Android, or many editing programs. MP4 with H.264 is universal."
     },
     {
       "q": "Does the audio survive?",
@@ -20,7 +20,7 @@
     },
     {
       "q": "Will I lose quality?",
-      "a": "Re-encoding always sacrifices a tiny amount of quality, but at high bitrates the result is visually identical to the source."
+      "a": "Re-encoding always sacrifices a little quality. The video is encoded as H.264 at CRF 23, the encoder's standard quality-based setting, rather than at a fixed bitrate."
     }
   ]
 }

@@ -212,13 +212,13 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "compress-video": [
         {"name": "Upload a video", "text": "Select an MP4, WebM, MOV, or AVI file up to 500 MB."},
-        {"name": "Choose compression preset", "text": "Pick Light, Medium, or Heavy compression. Heavier settings reduce file size more but lower visual quality."},
-        {"name": "Compress and download", "text": "Click Compress. The server re-encodes the video using FFmpeg with H.264/H.265. The result shows the file size reduction."},
+        {"name": "Choose compression preset", "text": "Pick Keep detail, Balanced (the default) or Small file, or set the compression level (CRF) anywhere from 18 to 40. Higher numbers make smaller files but lower the visual quality."},
+        {"name": "Compress and download", "text": "Run it. The server re-encodes each video as H.264 in an MP4 using FFmpeg, and each result shows its new file size."},
     ],
     "trim-media": [
-        {"name": "Upload an audio or video file", "text": "Select an MP4, MP3, WAV, WebM, or other media file up to 500 MB."},
-        {"name": "Set the trim range", "text": "Use the waveform/timeline to set precise start and end times, or type timestamps manually (e.g. 00:30 to 02:15)."},
-        {"name": "Trim and download", "text": "Click Trim. The server extracts the selected segment without re-encoding when possible, preserving original quality."},
+        {"name": "Upload an audio or video file", "text": "Select an MP4, MP3, WAV, WebM, or other media file up to 200 MB."},
+        {"name": "Set the trim range", "text": "Play or scrub the preview, then set the start and end with the sliders or the playhead buttons, or type timestamps in HH:MM:SS form (e.g. 00:00:30 to 00:02:15)."},
+        {"name": "Trim and download", "text": "Run the trim. Audio is cut without re-encoding (FLAC is rewritten losslessly); video is re-encoded so the cut starts on the exact frame you chose."},
     ],
 
     # ── Developer tools ───────────────────────────────────────────────
@@ -411,20 +411,20 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Extract audio and download", "text": "Click Convert. PrivaTools extracts the audio track and re-encodes it as MP3, perfect for offline listening on any device."},
     ],
     "mov-to-mp4": [
-        {"name": "Upload a MOV", "text": "Drop a QuickTime .mov file (the default format for iPhone/Mac screen recordings)."},
-        {"name": "Convert and download", "text": "Click Convert. FFmpeg remuxes (or re-encodes when needed) the streams into an MP4 with H.264 video — universally playable."},
+        {"name": "Upload a MOV", "text": "Drop a QuickTime .mov file, the format iPhone cameras and Mac screen recordings use."},
+        {"name": "Convert and download", "text": "Run the conversion. FFmpeg re-encodes the video as H.264 and the audio as AAC in an MP4 — widely playable."},
     ],
     "avi-to-mp4": [
         {"name": "Upload an AVI", "text": "Drop an .avi video — typical for older Windows captures."},
-        {"name": "Convert and download", "text": "Click Convert. The result is an MP4 with H.264 video and AAC audio, ready for streaming on phones, browsers, and modern TVs."},
+        {"name": "Convert and download", "text": "Run the conversion. The result is an MP4 with H.264 video and AAC audio, ready for streaming on phones, browsers, and modern TVs."},
     ],
     "webm-to-mp4": [
         {"name": "Upload a WebM video", "text": "Drop a WebM file (VP8 or VP9). Browser screen recorders and many web exports use WebM by default."},
-        {"name": "Convert and download", "text": "Click Convert. The video is re-encoded as H.264 MP4 for compatibility with iOS, older Android, and most editing software."},
+        {"name": "Convert and download", "text": "Run the conversion. The video is re-encoded as H.264 MP4 for compatibility with iOS, older Android, and most editing software."},
     ],
     "mp4-to-webm": [
         {"name": "Upload an MP4 video", "text": "Drop an .mp4 file (H.264 or H.265)."},
-        {"name": "Convert and download", "text": "Click Convert. The video is re-encoded as VP9 WebM — smaller files at the same quality, ideal for HTML5 video on the open web."},
+        {"name": "Convert and download", "text": "Run the conversion. The video is re-encoded as VP9 at about 1 Mbit/s with Opus audio, which suits HTML5 video on the open web."},
     ],
     "yaml-to-json": [
         {"name": "Paste YAML", "text": "Drop any YAML document into the left textarea — a Kubernetes manifest, GitHub Actions workflow, Docker Compose file, or any configuration."},
@@ -481,16 +481,16 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── Phase 7 — competitor-gap tools (v1.5.0) ──────────────────────────
     "mute-video": [
         {"name": "Upload your video", "text": "Drag-and-drop MP4, MOV, WebM, MKV, AVI, or M4V — up to 200 MB."},
-        {"name": "Click Mute Video", "text": "PrivaTools stream-copies the video and strips the audio track. The operation is lossless and takes about a second per minute of video."},
+        {"name": "Click Mute Video", "text": "PrivaTools stream-copies the video and strips the audio track. Nothing is re-encoded, so it is lossless and quick."},
     ],
     "reverse-video": [
-        {"name": "Upload a video", "text": "Drop an MP4/MOV/WebM/MKV/AVI file. Best with short clips — long files take exponentially longer."},
-        {"name": "Click Reverse", "text": "Both video and audio are reversed in sync. Output is universal MP4 (H.264 + AAC) playable on every device."},
+        {"name": "Upload a video", "text": "Drop an MP4/MOV/WebM/MKV/AVI file up to 200 MB. Best with short clips: every frame is held in memory while the clip is reversed, and a run longer than three minutes is stopped."},
+        {"name": "Click Reverse", "text": "Both video and audio are reversed in sync. Output is MP4 (H.264 + AAC), which almost every device plays."},
     ],
     "video-speed": [
-        {"name": "Upload a video", "text": "Drop any MP4/MOV/WebM/MKV/AVI file."},
-        {"name": "Pick a speed", "text": "Drag the slider from 0.25× (slow-mo) to 4× (hyperlapse). 1× is original speed."},
-        {"name": "Click Change speed", "text": "FFmpeg's setpts filter handles the video and atempo filter handles audio pitch-correction so it doesn't sound like a chipmunk."},
+        {"name": "Upload a video", "text": "Drop an MP4/MOV/WebM/MKV/AVI file up to 200 MB. It needs an audio track: a video with no sound fails to process."},
+        {"name": "Pick a speed", "text": "Drag the slider or pick a preset. Speeds from 0.3× (slow-mo) to 3.95× (hyperlapse) work; the 0.25× end of the slider and the 4× preset are rejected. 1× is original speed."},
+        {"name": "Change the speed and download", "text": "FFmpeg's setpts filter handles the video and atempo filter handles audio pitch-correction so it doesn't sound like a chipmunk."},
     ],
     "audio-trim": [
         {"name": "Upload an audio file", "text": "Drop MP3, WAV, AAC, FLAC, OGG, or M4A — up to 200 MB."},
@@ -827,7 +827,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "add-subtitles": [
         {"name": "Upload a video", "text": "Drop an MP4/MOV/MKV file up to 500 MB."},
         {"name": "Upload an SRT subtitle file", "text": "Standard SubRip Text format with timestamps and dialogue."},
-        {"name": "Choose to burn-in or soft-encode and download", "text": "Burn-in: subtitles are rendered into the video pixels (permanent, plays everywhere). Soft: subtitles are a separate track (toggleable in supporting players)."},
+        {"name": "Add the subtitles and download", "text": "The subtitles are burned into the video pixels, so they show in every player and cannot be switched off. The result is an MP4 with H.264 video."},
     ],
     "audio-merge": [
         {"name": "Upload audio files", "text": "Drop 2 or more audio files (MP3, WAV, OGG, FLAC, AAC). Maximum 200 MB per file."},
@@ -941,8 +941,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Process and download", "text": "Run it and save the result, which keeps the format of your original. Check the edges when cropping, since anything outside the centred box is removed."},
     ],
     "subtitle-converter": [
-        {"name": "Upload an SRT / VTT / ASS subtitle file", "text": "Auto-detects format from extension and content."},
-        {"name": "Choose target format", "text": "SRT (universal). VTT (web video). ASS (advanced styling)."},
+        {"name": "Upload an SRT / VTT / ASS subtitle file", "text": "The format is detected from the file's content."},
+        {"name": "Choose target format", "text": "SRT (universal) or VTT (web video). ASS files can be read but not written."},
         {"name": "Download the converted subtitles", "text": "Runs entirely in your browser."},
     ],
     "svg-to-png": [
@@ -971,23 +971,23 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the converted video", "text": "FFmpeg transcodes via the appropriate codec (H.264 for MP4, VP9/Opus for WebM, etc.)."},
     ],
     "video-merge": [
-        {"name": "Upload 2+ videos", "text": "MP4 / MOV / MKV / WebM, up to 500 MB each."},
-        {"name": "Reorder if needed", "text": "Drag to set concatenation order."},
-        {"name": "Download the merged video", "text": "FFmpeg concatenates the videos. If audio formats differ, audio is re-encoded to AAC."},
+        {"name": "Upload 2+ videos", "text": "MP4 / MOV / MKV / WebM / AVI, up to 20 clips; the whole upload has to fit within the 500 MB request limit."},
+        {"name": "Reorder if needed", "text": "Use the up and down arrows to set the order the clips play in."},
+        {"name": "Download the merged video", "text": "FFmpeg joins the clips in that order and re-encodes the result as one MP4 with H.264 video and AAC audio."},
     ],
     "video-resizer": [
         {"name": "Upload a video", "text": "MP4 / MOV / MKV / WebM up to 500 MB."},
-        {"name": "Choose preset", "text": "480p (SD), 720p (HD), 1080p (Full HD), 1440p (QHD), 2160p (4K)."},
+        {"name": "Choose preset", "text": "240p, 360p, 480p (SD), 720p (HD, the default), 1080p (Full HD) or 1440p (QHD)."},
         {"name": "Download the resized video", "text": "FFmpeg scales the video to the target height while preserving aspect ratio."},
     ],
     "video-thumbnail": [
         {"name": "Upload a video", "text": "MP4 / MOV / MKV / WebM up to 500 MB."},
-        {"name": "Choose timestamp", "text": "Time in seconds (e.g. 5.5 = 5.5 seconds in). Default is the middle of the video."},
-        {"name": "Download the frame as PNG", "text": "FFmpeg extracts the exact frame at that timestamp."},
+        {"name": "Choose timestamp", "text": "Drag the slider or type the time in seconds (e.g. 5.5 = 5.5 seconds in); the preview shows that frame. It starts at 1 second."},
+        {"name": "Download the frame as JPG", "text": "FFmpeg extracts the frame at that timestamp and saves it as a JPG."},
     ],
     "video-to-pdf": [
         {"name": "Upload a video", "text": "MP4 / MOV / MKV / WebM up to 500 MB."},
-        {"name": "Choose number of frames", "text": "3-30. PrivaTools picks evenly-spaced keyframes across the video."},
+        {"name": "Choose number of frames", "text": "Anywhere from 1 to 60 (12 by default). PrivaTools samples frames at even intervals across the video."},
         {"name": "Download the PDF", "text": "Each frame becomes one PDF page. Useful for storyboards, content review, or accessibility."},
     ],
     "word-counter": [
@@ -1051,52 +1051,52 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "avi-to-webm": [
         {"name": 'Upload an AVI file', "text": 'Drop an .avi file up to 500 MB. AVI is a legacy container, often carrying DivX or Xvid video.'},
         {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The legacy stream, often DivX or Xvid, is re-encoded as VP9.'},
-        {"name": 'Convert and download', "text": 'Click Convert. The video is re-encoded as VP9 WebM, which plays natively in modern browsers and is usually far smaller than the AVI it replaces.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. The video is re-encoded as VP9 WebM at about 1 Mbit/s, which plays natively in modern browsers; a high-bitrate AVI shrinks a lot.'},
     ],
     "mkv-to-mp4": [
         {"name": 'Upload an MKV file', "text": 'Drop an .mkv file. Matroska commonly holds H.264 or H.265 video.'},
-        {"name": 'PrivaTools remuxes via FFmpeg', "text": 'Where the MKV already holds H.264 or H.265, this is largely a container change and the video is preserved.'},
-        {"name": 'Convert and download', "text": 'Click Convert. MP4 is the container Safari, iOS, Windows and most TVs expect. Where the codecs already suit MP4 this is largely a container change, so quality is preserved.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The video is re-encoded as H.264 and the audio as AAC, even when the MKV already holds H.264.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. MP4 is the container Safari, iOS, Windows and most TVs expect. Because the video is re-encoded, expect a small quality loss and a different file size.'},
     ],
     "mkv-to-webm": [
         {"name": 'Upload an MKV file', "text": 'Drop an .mkv file up to 500 MB.'},
         {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The video is re-encoded as VP9, which browsers play natively and MKV never could.'},
-        {"name": 'Convert and download', "text": 'Click Convert. The result is VP9 WebM — open, royalty-free and suited to HTML5 video where MKV has no browser support at all.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. The result is VP9 WebM — open, royalty-free and suited to HTML5 video where MKV has no browser support at all.'},
     ],
     "mov-to-gif": [
-        {"name": 'Upload a MOV clip', "text": 'Drop a .mov file. Short clips work best; GIF has no audio and no real compression.'},
-        {"name": 'PrivaTools samples frames via FFmpeg', "text": 'Frames are sampled and mapped to a 256-colour palette. GIF has no audio and no real compression.'},
-        {"name": 'Convert and download', "text": 'Click Convert. Frames are sampled and mapped to a 256-colour palette. Expect the GIF to be considerably larger than the video — use MP4 or WebM if you can, and GIF only where autoplay everywhere matters more than size.'},
+        {"name": 'Upload a MOV clip', "text": 'Drop a .mov file. Short clips work best; GIF has no audio, and its compression is far weaker than a video codec\'s.'},
+        {"name": 'PrivaTools samples frames via FFmpeg', "text": 'Frames are sampled at 10 per second, scaled to 480 pixels wide and mapped to a 256-colour palette.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Frames are sampled and mapped to a 256-colour palette. Expect the GIF to be considerably larger than the video — use MP4 or WebM if you can, and GIF only where autoplay everywhere matters more than size.'},
     ],
     "mov-to-mkv": [
         {"name": 'Upload a MOV file', "text": 'Drop a .mov file from QuickTime, an iPhone or a camera.'},
-        {"name": 'PrivaTools remuxes via FFmpeg', "text": 'Streams are moved into Matroska, which holds multiple audio and subtitle tracks comfortably.'},
-        {"name": 'Convert and download', "text": 'Click Convert. Matroska holds multiple audio and subtitle tracks comfortably, which makes it a better archive container than MOV.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The video is re-encoded as H.264 (CRF 23) and the audio as AAC, then stored in Matroska.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Matroska can hold multiple audio and subtitle tracks, though this conversion keeps one video and one audio track.'},
     ],
     "mov-to-webm": [
         {"name": 'Upload a MOV file', "text": 'Drop a .mov file up to 500 MB.'},
-        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'VP9 WebM is smaller than the MOV at comparable quality and needs no QuickTime.'},
-        {"name": 'Convert and download', "text": 'Click Convert. VP9 WebM is the right output for the open web: smaller than the MOV at comparable quality, and playable without QuickTime.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The video is re-encoded as VP9 at about 1 Mbit/s with Opus audio, well below the bitrate of a typical phone or camera MOV, and it plays without QuickTime.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. VP9 WebM is the right output for the open web: usually much smaller than a camera MOV, and playable without QuickTime.'},
     ],
     "mp4-to-avi": [
         {"name": 'Upload an MP4', "text": 'Drop an .mp4 file up to 500 MB.'},
-        {"name": 'PrivaTools rewraps via FFmpeg', "text": 'AVI is an older, less efficient container, so the file will usually grow rather than shrink.'},
-        {"name": 'Convert and download', "text": 'Click Convert. AVI is only worth choosing for genuinely old software or hardware that refuses MP4; the container is less efficient and the file will usually grow.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The video is re-encoded as MPEG-4 Part 2 with MP3 audio. That codec is less efficient than H.264, so the file will usually grow rather than shrink.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. AVI is only worth choosing for genuinely old software or hardware that refuses MP4; its older codec is less efficient and the file will usually grow.'},
     ],
     "mp4-to-mov": [
         {"name": 'Upload an MP4', "text": 'Drop an .mp4 file up to 500 MB.'},
-        {"name": 'PrivaTools remuxes via FFmpeg', "text": 'The video stream is preserved where the codecs allow, so quality is unchanged.'},
-        {"name": 'Convert and download', "text": 'Click Convert. MOV is what QuickTime, Final Cut Pro and much of the macOS video world prefer. The video stream is preserved where the codecs allow.'},
+        {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'The video is re-encoded as H.264 (CRF 23) and the audio as AAC, even when the MP4 already holds H.264.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. MOV is what QuickTime, Final Cut Pro and much of the macOS video world prefer.'},
     ],
     "webm-to-gif": [
         {"name": 'Upload a WebM clip', "text": 'Drop a .webm file. Keep it short — every GIF frame is stored as its own image.'},
         {"name": 'PrivaTools samples frames via FFmpeg', "text": 'Every GIF frame is stored as its own image, which is why short clips work and long ones do not.'},
-        {"name": 'Convert and download', "text": 'Click Convert. Frames are reduced to a 256-colour palette. GIF trades size and colour depth for the ability to autoplay in email and old chat clients.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. Frames are reduced to a 256-colour palette. GIF trades size and colour depth for the ability to autoplay in email and old chat clients.'},
     ],
     "webm-to-mov": [
         {"name": 'Upload a WebM file', "text": 'Drop a .webm file up to 500 MB.'},
         {"name": 'PrivaTools re-encodes via FFmpeg', "text": 'VP9 is re-encoded into a stream QuickTime and Final Cut will actually open.'},
-        {"name": 'Convert and download', "text": 'Click Convert. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM.'},
+        {"name": 'Convert and download', "text": 'Run the conversion. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM.'},
     ],
     "jpg-to-bmp": [
         {"name": 'Upload a JPG', "text": 'Drop a .jpg or .jpeg file.'},
@@ -1415,14 +1415,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What happens to my video after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the video and the GIF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "compress-video": [
-        {"q": "How much can a video be compressed?", "a": "Typical results are 30-70% size reduction at Medium compression. Raw or high-bitrate videos see the largest savings."},
-        {"q": "Does compression change the video resolution?", "a": "No. The resolution stays the same by default. Only the bitrate is reduced. You can optionally lower the resolution for even smaller files."},
-        {"q": "What output format is used?", "a": "The output is MP4 with H.264 encoding, which is universally compatible with all devices and browsers."},
+        {"q": "How much can a video be compressed?", "a": "It depends on the source. High-bitrate recordings, such as phone and camera footage, shrink the most; a video that is already heavily compressed may barely change at the default level."},
+        {"q": "Does compression change the video resolution?", "a": "No. The resolution stays the same; only the bitrate is reduced. To lower the resolution too, run the video through Video Resizer."},
+        {"q": "What output format is used?", "a": "The output is MP4 with H.264 video, which almost every device and browser can play."},
     ],
     "trim-media": [
         {"q": "Can I trim audio files too?", "a": "Yes. The tool supports both audio (MP3, WAV, OGG, FLAC) and video (MP4, WebM, MOV, AVI) files."},
-        {"q": "Is the trimmed file re-encoded?", "a": "When possible, the tool uses lossless cutting (no re-encoding) to preserve original quality. Some format combinations require re-encoding."},
-        {"q": "How precise is the trimming?", "a": "Precision depends on the format. MP4 can be cut to the nearest keyframe (typically within 0.5 seconds). Re-encoded output is frame-accurate."},
+        {"q": "Is the trimmed file re-encoded?", "a": "Audio is not: MP3, WAV, AAC, OGG and M4A are cut without re-encoding, and FLAC is rewritten losslessly. Video always is — H.264 for MP4, MOV and MKV, VP9 for WebM, MPEG-4 for AVI — so the file keeps its format but not its exact original encoding."},
+        {"q": "How precise is the trimming?", "a": "Video cuts are frame-accurate, because the video is re-encoded. Audio is copied, so an audio cut lands on the nearest compressed-audio frame, within a few hundredths of a second."},
     ],
     "base64": [
         {"q": "Can I encode files (not just text)?", "a": "Yes. Upload any file — images, PDFs, binaries — and the tool returns the Base64-encoded string. Useful for embedding files in JSON, HTML, or CSS."},
@@ -1685,9 +1685,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is the video kept?", "a": "No — only the audio track is extracted. If you also need the video, keep the original MP4."},
     ],
     "mov-to-mp4": [
-        {"q": "Why convert MOV to MP4?", "a": "MOV is Apple's QuickTime format. While Macs play it natively, Windows, Android, and most streaming platforms prefer MP4. The codecs inside are often identical (H.264), so conversion is fast and lossless."},
-        {"q": "Will I lose quality?", "a": "Usually no — when streams are compatible, we remux the file (no re-encoding), preserving the original bytes exactly. If re-encoding is needed, we use high-quality settings."},
-        {"q": "Does it preserve audio?", "a": "Yes. The audio track (typically AAC) is kept intact."},
+        {"q": "Why convert MOV to MP4?", "a": "MOV is Apple's QuickTime format. While Macs play it natively, Windows, Android, and most streaming platforms prefer MP4. The codecs inside are often the same (H.264), but this tool re-encodes the video anyway rather than only changing the container."},
+        {"q": "Will I lose quality?", "a": "A little. Every file is re-encoded as H.264 at CRF 23 with AAC audio instead of being copied, so the result is not bit-for-bit the original."},
+        {"q": "Does it preserve audio?", "a": "Yes, re-encoded as AAC. If the file has several audio tracks, only one is kept."},
     ],
     "avi-to-mp4": [
         {"q": "Why convert AVI to MP4?", "a": "AVI is an old Microsoft container with poor support for modern codecs and metadata. MP4 is the universal standard — every modern device, browser, and editor plays it."},
@@ -1695,14 +1695,14 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will the file get bigger or smaller?", "a": "Usually similar or smaller. Old AVIs often used inefficient codecs; modern H.264 typically achieves the same quality at a smaller size."},
     ],
     "webm-to-mp4": [
-        {"q": "Why convert WebM to MP4?", "a": "WebM (VP8/VP9 codecs) isn't supported on iOS Safari, older Android, or in many editing programs. MP4 with H.264 is universal."},
+        {"q": "Why convert WebM to MP4?", "a": "WebM (VP8/VP9 codecs) isn't supported by Safari on iOS before 17.4, older Android, or many editing programs. MP4 with H.264 is universal."},
         {"q": "Does the audio survive?", "a": "Yes. WebM's Opus or Vorbis audio is re-encoded to AAC inside the MP4 container."},
-        {"q": "Will I lose quality?", "a": "Re-encoding always sacrifices a tiny amount of quality, but at high bitrates the result is visually identical to the source."},
+        {"q": "Will I lose quality?", "a": "Re-encoding always sacrifices a little quality. The video is encoded as H.264 at CRF 23, the encoder's standard quality-based setting, rather than at a fixed bitrate."},
     ],
     "mp4-to-webm": [
         {"q": "Why convert MP4 to WebM?", "a": "WebM uses VP9, which is royalty-free and often produces smaller files than H.264 at the same quality. Ideal for hosting video on the open web."},
-        {"q": "Will every browser play it?", "a": "Every modern desktop browser plays WebM. Safari on iOS supports it from iOS 16 onward. For maximum compatibility, MP4 is still safer."},
-        {"q": "How much smaller will it be?", "a": "Typically 20–40% smaller than the equivalent MP4 at the same visible quality."},
+        {"q": "Will every browser play it?", "a": "Every modern desktop browser plays WebM. Safari on iOS plays it from iOS 17.4 onward. For maximum compatibility, MP4 is still safer."},
+        {"q": "How much smaller will it be?", "a": "It depends on the source. The video is encoded at about 1 Mbit/s whatever the input, so a high-bitrate MP4 shrinks a lot while a low-bitrate one can come out larger. VP9 is also far slower to encode than H.264, so a long or high-resolution video can run into the three-minute processing limit."},
     ],
     "yaml-to-json": [
         {"q": "Is it 100% in my browser?", "a": "Yes. The conversion runs in JavaScript on this page, so the YAML you paste is not uploaded to PrivaTools."},
@@ -1761,9 +1761,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     # ── Phase 7 — competitor-gap tools (v1.5.0) ──────────────────────────
     "mute-video": [
-        {"q": "Is the video quality preserved?", "a": "100% — we stream-copy the video track without re-encoding. The output is bit-identical to the input minus the audio stream."},
-        {"q": "Will the file get smaller?", "a": "Yes, by the size of the audio track. For typical MP4s that's 5-15% smaller. The video portion is unchanged."},
-        {"q": "Can I just mute the audio instead of removing it?", "a": "This tool removes the audio track entirely. To replace with silence, use Video Converter and pick MP4 — that will re-encode and let you control audio."},
+        {"q": "Is the video quality preserved?", "a": "Yes. The video track is stream-copied without re-encoding, so its data is identical to the original; only the container is rewritten without the audio."},
+        {"q": "Will the file get smaller?", "a": "Yes, by the size of the audio track, which depends on the audio's bitrate and length. The video portion is unchanged."},
+        {"q": "Can I just mute the audio instead of removing it?", "a": "This tool removes the audio track entirely; it cannot put a silent track in its place. A video without an audio track simply plays silently."},
     ],
     "reverse-video": [
         {"q": "Why is reversing slow?", "a": "Reversing requires re-encoding the whole video — FFmpeg has to read every frame, store them, then write them out in reverse order. RAM usage grows with video length."},
@@ -1772,7 +1772,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "video-speed": [
         {"q": "Will fast-forward make voices sound chipmunky?", "a": "No — we use FFmpeg's atempo filter which pitch-corrects audio. A 2× speedup sounds like fast speech, not a chipmunk."},
-        {"q": "What's the maximum slowdown / speedup?", "a": "0.25× (4× slower) to 4× (4× faster). Beyond that the audio quality degrades noticeably and most viewers can't follow."},
+        {"q": "What's the maximum slowdown / speedup?", "a": "From 0.3× (a little under a third of normal speed) to 3.95× (almost four times faster). The slider's 0.25× end and the 4× preset are outside what the server accepts."},
         {"q": "Does it work for slow-motion footage?", "a": "Sort of — for true high-quality slow-motion you need video captured at higher FPS originally. This tool stretches the existing frames in time, so very slow speeds get a duplicated-frame look."},
     ],
     "audio-trim": [
@@ -2136,8 +2136,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does it work on scanned PDFs?", "a": "Yes — the cover rectangle is added on top of the rendered page. Behind, the original pixels are still in the file."},
     ],
     "add-subtitles": [
-        {"q": "Should I burn-in or use a soft subtitle track?", "a": "Burn-in: best for social media (Twitter, Instagram) where players don't render subtitle tracks. Soft: best for accessibility — viewers can turn off."},
-        {"q": "What subtitle formats are supported?", "a": "Input: SRT. Burn-in output: works in any video player. Soft track: MP4 with WebVTT or MKV with SRT — depending on output format."},
+        {"q": "Why burn subtitles in instead of using a soft track?", "a": "Burned-in captions show on platforms and players that ignore separate subtitle tracks. The trade-off is that viewers cannot turn them off, and this tool does not create a soft, switchable track."},
+        {"q": "What subtitle formats are supported?", "a": "SRT files. The captions are rendered into the picture, so the MP4 shows them in any player; no separate subtitle track is produced."},
         {"q": "Can I customize the font / size / color?", "a": "Not at the moment. Burned-in subtitles use fixed defaults — white text with a black outline in a sans-serif font — and custom styling is not supported."},
     ],
     "audio-merge": [
@@ -2183,7 +2183,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "gif-to-mp4": [
         {"q": "Why convert GIF to MP4?", "a": "MP4 is dramatically smaller (better compression), supports audio, and plays smoother. Most social platforms now auto-convert uploaded GIFs to MP4 anyway."},
         {"q": "Will the loop work in MP4?", "a": "MP4 doesn't have built-in loop info — players decide. Embed with <video loop autoplay muted> to mimic GIF behavior on the web."},
-        {"q": "Does it preserve transparency?", "a": "MP4 doesn't support transparency. Transparent pixels render against a black background. Use WebM with VP9 if you need alpha."},
+        {"q": "Does it preserve transparency?", "a": "MP4 doesn't support transparency. Transparent areas come out white, because the GIF is decoded onto white before encoding. Use WebM with VP9 if you need alpha."},
     ],
     "hash-generator": [
         {"q": "Is MD5 safe to use?", "a": "For non-security purposes (file integrity, deduplication): yes. For security (passwords, signatures): no — MD5 is broken. Use SHA-256 or SHA-512."},
@@ -2264,7 +2264,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "subtitle-converter": [
         {"q": "What's the difference between SRT and VTT?", "a": "SRT is the simplest format. VTT (WebVTT) is the one HTML5 video players load through their track element, and it supports styling. ASS (Advanced SubStation Alpha) allows rich styling such as karaoke colours, but fewer players support it."},
-        {"q": "Will styling carry over?", "a": "SRT → VTT: yes. VTT → SRT: styling is stripped (SRT has no style support). ASS → SRT: styling lost; text and timing preserved."},
+        {"q": "Will styling carry over?", "a": "Text and timing always carry over, and inline tags such as italics are copied as they are. WebVTT cue settings (position and alignment) and STYLE blocks are dropped, and ASS styling and override codes are removed."},
         {"q": "Is my subtitle file uploaded?", "a": "No — pure browser conversion."},
     ],
     "svg-to-png": [
@@ -2292,28 +2292,28 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "video-converter": [
         {"q": "Which format to choose?", "a": "MP4: most compatible. WebM: smaller, used for web embedding. MOV: works in Apple ecosystem and Final Cut. MKV: open-source flexible container."},
-        {"q": "Will quality suffer?", "a": "FFmpeg uses sensible default bitrates that preserve visual quality. For lossless conversion (rare), use the MKV output."},
-        {"q": "How long does it take?", "a": "Roughly real-time on the server (a 2-minute video = ~2 minutes to convert)."},
+        {"q": "Will quality suffer?", "a": "Every output is re-encoded, so a small loss is normal. MP4, MOV and MKV use H.264 at CRF 23, WebM uses VP9 at about 1 Mbit/s, and AVI uses MPEG-4 with MP3 audio. None of the outputs is lossless, MKV included."},
+        {"q": "How long does it take?", "a": "It depends on the length, the resolution and the format; WebM (VP9) encodes several times more slowly than the others. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."},
     ],
     "video-merge": [
-        {"q": "Do the videos need the same resolution?", "a": "PrivaTools resizes inputs to a common resolution (the smallest source). For pixel-perfect quality, pre-resize all sources to the same dimensions first."},
+        {"q": "Do the videos need the same resolution?", "a": "Yes. Clips are not resized, so every clip must have the same width and height; a mix of sizes makes the merge fail. Video Resizer can bring clips that share an aspect ratio to the same height first."},
         {"q": "What about audio-less videos?", "a": "Silent audio is added (anullsrc) for missing tracks so concatenation succeeds."},
         {"q": "Can I add a transition between clips?", "a": "No. Clips are joined directly, one after another; transitions such as crossfades are not supported."},
     ],
     "video-resizer": [
         {"q": "Will upscaling improve quality?", "a": "No — upscaling can't add detail. Use it to match a target resolution, not to improve quality."},
-        {"q": "Does this re-encode the audio?", "a": "Audio is copied unchanged when possible (saves time, no quality loss)."},
+        {"q": "Does this re-encode the audio?", "a": "Yes. The audio is always re-encoded as AAC, alongside the H.264 video."},
         {"q": "Can I crop to a different aspect ratio?", "a": "Not directly — the resizer preserves aspect ratio. For aspect-ratio crops, use a video editor."},
     ],
     "video-thumbnail": [
-        {"q": "How do I find a good thumbnail moment?", "a": "Trial and error — try different timestamps to find a visually interesting frame. For automated 'best' selection, use Video to PDF and pick from the keyframe samples."},
-        {"q": "What resolution will the PNG be?", "a": "Same as the source video's resolution. Use Resize Crop Image after if you need a specific size for social media."},
-        {"q": "Can I extract multiple thumbnails at once?", "a": "Yes — Video to PDF extracts multiple keyframes and lays them out as PDF pages."},
+        {"q": "How do I find a good thumbnail moment?", "a": "Scrub the preview to the moment you want; the slider shows that frame before you run it. To compare several moments at once, Video to PDF lays out evenly spaced frames as PDF pages."},
+        {"q": "What resolution will the JPG be?", "a": "1280 pixels wide, with the height set by the video's shape; smaller videos are scaled up to that width. Use Resize Crop Image after if you need a specific size for social media."},
+        {"q": "Can I extract multiple thumbnails at once?", "a": "Yes, in two ways: add several videos here to get one frame from each at the same timestamp, or use Video to PDF to lay out evenly spaced frames from one video as PDF pages."},
     ],
     "video-to-pdf": [
         {"q": "Why convert video to PDF?", "a": "Storyboarding, content moderation review, video summarisation for accessibility, lecture notes from recorded talks."},
         {"q": "Can I get just keyframes (scene changes)?", "a": "Frames are sampled at even intervals across the video. Picking frames at scene changes is not supported."},
-        {"q": "What resolution are the frames?", "a": "Native video resolution. The PDF page size matches."},
+        {"q": "What resolution are the frames?", "a": "Frames are scaled to 1280 pixels wide and placed one per US Letter page, fitted inside the margins."},
     ],
     "word-counter": [
         {"q": "What counts as a word?", "a": "Whitespace-separated tokens. Hyphenated words ('self-host') count as one. Apostrophes ('don't') keep the word as one."},
@@ -2492,22 +2492,22 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
     ],
     # ── Video ──────────────────────────────────────────────────────────
     "mkv-to-mp4": [
-        {"q": "Does MKV to MP4 re-encode the video?", "a": "When the MKV's streams are already MP4-compatible (e.g. H.264/H.265 video + AAC audio), PrivaTools remuxes the container without re-encoding — fast and lossless. Incompatible codecs are re-encoded with sensible defaults."},
+        {"q": "Does MKV to MP4 re-encode the video?", "a": "Yes. Every file is re-encoded to H.264 video (CRF 23) and AAC audio, even when the MKV's streams would already fit in an MP4, so it is not a lossless container swap. Only one audio track is kept, and subtitle tracks are dropped."},
         {"q": "Why MP4 instead of MKV?", "a": "MP4 plays natively on phones, browsers, TVs, and editors; MKV is a flexible container but far less universally supported."},
         {"q": "Are videos retained after conversion?", "a": "No. Uploaded videos and outputs are temporary and deleted after the response."},
     ],
     "mp4-to-mov": [
-        {"q": "Why convert MP4 to MOV?", "a": "MOV is Apple's QuickTime container, preferred by Final Cut Pro, iMovie, and some macOS/iOS workflows. If the codecs are compatible, the conversion is a fast, lossless remux."},
-        {"q": "Is quality lost?", "a": "If it remuxes (same codec), no. If re-encoding is required, defaults target compatibility with minimal visible loss."},
+        {"q": "Why convert MP4 to MOV?", "a": "MOV is Apple's QuickTime container, preferred by Final Cut Pro, iMovie, and some macOS/iOS workflows. This tool re-encodes the video rather than rewrapping it, even when the codecs would fit."},
+        {"q": "Is quality lost?", "a": "A little. Every file is re-encoded as H.264 at CRF 23 with AAC audio, so the MOV is not a bit-for-bit copy of the MP4's streams."},
         {"q": "Are files kept?", "a": "No — temporary input/output, deleted after the download."},
     ],
     "mov-to-webm": [
         {"q": "Why convert MOV to WebM?", "a": "WebM (VP9/Opus) is the open format for fast-loading HTML5 video and is well-supported in browsers. MOV→WebM always re-encodes because the codecs differ."},
-        {"q": "Will the file get smaller?", "a": "Usually yes — WebM/VP9 is efficient for the web and is often smaller than the source MOV at similar quality."},
+        {"q": "Will the file get smaller?", "a": "Usually yes. The video is encoded at about 1 Mbit/s, far below the bitrate of most phone and camera MOVs, so the file shrinks a lot; a MOV that is already small may not."},
         {"q": "Is it processed privately?", "a": "Yes — local FFmpeg on the PrivaTools backend; files removed after the response."},
     ],
     "mkv-to-webm": [
-        {"q": "Does MKV to WebM re-encode?", "a": "Often partially — WebM requires VP8/VP9 video and Vorbis/Opus audio, so any stream not already in those codecs is re-encoded. Both are Matroska-based, so the container step itself is straightforward."},
+        {"q": "Does MKV to WebM re-encode?", "a": "Yes, fully. The video is always re-encoded as VP9 at about 1 Mbit/s and the audio as Opus, even when the MKV already holds VP8, VP9, Vorbis or Opus."},
         {"q": "Why convert to WebM?", "a": "To embed open-format video on the web without proprietary codecs."},
         {"q": "Are uploads retained?", "a": "No — temporary files, deleted after the response."},
     ],
@@ -2518,7 +2518,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
     ],
     "avi-to-webm": [
         {"q": "Why convert AVI to WebM?", "a": "To turn an old AVI clip into a small, web-ready, open-format video. WebM (VP9/Opus) re-encodes the AVI for efficient browser playback."},
-        {"q": "Will it shrink the file?", "a": "Usually significantly — modern WebM is far more efficient than typical legacy AVI codecs."},
+        {"q": "Will it shrink the file?", "a": "It depends on the AVI's bitrate. The WebM video is encoded at about 1 Mbit/s, so a high-bitrate capture shrinks a lot, while a compact DivX or Xvid file may stay about the same size."},
         {"q": "Is it private?", "a": "Yes — local FFmpeg conversion; files deleted after the response."},
     ],
     "webm-to-mov": [
@@ -2527,8 +2527,8 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
         {"q": "Are files retained?", "a": "No — temporary files, deleted after the download."},
     ],
     "mov-to-mkv": [
-        {"q": "Why convert MOV to MKV?", "a": "MKV is a flexible archival container that can hold multiple audio and subtitle tracks. If the MOV's codecs are MKV-compatible, the conversion remuxes losslessly."},
-        {"q": "Is it lossless?", "a": "When remuxing (same codecs), yes — no quality change, just a different container. Incompatible codecs are re-encoded."},
+        {"q": "Why convert MOV to MKV?", "a": "MKV is a flexible archival container that can hold multiple audio and subtitle tracks. This tool re-encodes the streams rather than moving them across, so it is not a lossless remux."},
+        {"q": "Is it lossless?", "a": "No. The video is re-encoded as H.264 at CRF 23 and the audio as AAC, so there is a small quality loss."},
         {"q": "Are uploads kept?", "a": "No — temporary input/output, removed after the response."},
     ],
     # ── Video → GIF ────────────────────────────────────────────────────

@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM."
+      "text": "Run the conversion. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM."
     }
   ],
   "faq": [

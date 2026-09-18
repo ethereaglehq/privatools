@@ -6,21 +6,21 @@
     },
     {
       "name": "Click Mute Video",
-      "text": "PrivaTools stream-copies the video and strips the audio track. The operation is lossless and takes about a second per minute of video."
+      "text": "PrivaTools stream-copies the video and strips the audio track. Nothing is re-encoded, so it is lossless and quick."
     }
   ],
   "faq": [
     {
       "q": "Is the video quality preserved?",
-      "a": "100% — we stream-copy the video track without re-encoding. The output is bit-identical to the input minus the audio stream."
+      "a": "Yes. The video track is stream-copied without re-encoding, so its data is identical to the original; only the container is rewritten without the audio."
     },
     {
       "q": "Will the file get smaller?",
-      "a": "Yes, by the size of the audio track. For typical MP4s that's 5-15% smaller. The video portion is unchanged."
+      "a": "Yes, by the size of the audio track, which depends on the audio's bitrate and length. The video portion is unchanged."
     },
     {
       "q": "Can I just mute the audio instead of removing it?",
-      "a": "This tool removes the audio track entirely. To replace with silence, use Video Converter and pick MP4 — that will re-encode and let you control audio."
+      "a": "This tool removes the audio track entirely; it cannot put a silent track in its place. A video without an audio track simply plays silently."
     }
   ]
 }

@@ -2,15 +2,15 @@
   "howto": [
     {
       "name": "Upload a MOV clip",
-      "text": "Drop a .mov file. Short clips work best; GIF has no audio and no real compression."
+      "text": "Drop a .mov file. Short clips work best; GIF has no audio, and its compression is far weaker than a video codec's."
     },
     {
       "name": "PrivaTools samples frames via FFmpeg",
-      "text": "Frames are sampled and mapped to a 256-colour palette. GIF has no audio and no real compression."
+      "text": "Frames are sampled at 10 per second, scaled to 480 pixels wide and mapped to a 256-colour palette."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Frames are sampled and mapped to a 256-colour palette. Expect the GIF to be considerably larger than the video — use MP4 or WebM if you can, and GIF only where autoplay everywhere matters more than size."
+      "text": "Run the conversion. Frames are sampled and mapped to a 256-colour palette. Expect the GIF to be considerably larger than the video — use MP4 or WebM if you can, and GIF only where autoplay everywhere matters more than size."
     }
   ],
   "faq": [

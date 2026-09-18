@@ -2,14 +2,14 @@
   "howto": [
     {
       "name": "Upload a video",
-      "text": "Drop any MP4/MOV/WebM/MKV/AVI file."
+      "text": "Drop an MP4/MOV/WebM/MKV/AVI file up to 200 MB. It needs an audio track: a video with no sound fails to process."
     },
     {
       "name": "Pick a speed",
-      "text": "Drag the slider from 0.25× (slow-mo) to 4× (hyperlapse). 1× is original speed."
+      "text": "Drag the slider or pick a preset. Speeds from 0.3× (slow-mo) to 3.95× (hyperlapse) work; the 0.25× end of the slider and the 4× preset are rejected. 1× is original speed."
     },
     {
-      "name": "Click Change speed",
+      "name": "Change the speed and download",
       "text": "FFmpeg's setpts filter handles the video and atempo filter handles audio pitch-correction so it doesn't sound like a chipmunk."
     }
   ],
@@ -20,7 +20,7 @@
     },
     {
       "q": "What's the maximum slowdown / speedup?",
-      "a": "0.25× (4× slower) to 4× (4× faster). Beyond that the audio quality degrades noticeably and most viewers can't follow."
+      "a": "From 0.3× (a little under a third of normal speed) to 3.95× (almost four times faster). The slider's 0.25× end and the 4× preset are outside what the server accepts."
     },
     {
       "q": "Does it work for slow-motion footage?",

@@ -947,7 +947,7 @@ URL: https://privatools.me/tools/trim-media
 
 Trim the start and end of video or audio files
 
-Cut and trim video or audio online for free — use a visual timeline to set in/out points and export the trimmed clip at full quality without re-encoding. Supports MP4, MP3, WAV, and more.
+Cut and trim video or audio online for free — use a visual timeline to set in/out points and export the trimmed clip. Audio is cut without re-encoding; video is re-encoded so the cut is frame-accurate. Supports MP4, MP3, WAV, and more.
 
 ### Compress Video
 
@@ -955,7 +955,7 @@ URL: https://privatools.me/tools/compress-video
 
 Reduce video file size for email or messaging
 
-Compress video online for free — reduce video file size for email, messaging, and uploads. Choose quality presets from 'High Quality' to 'WhatsApp-ready'. Supports MP4, MOV, WebM, and AVI.
+Compress video online for free — reduce video file size for email, messaging, and uploads. Choose a preset from 'Keep detail' to 'Small file', or set the compression level yourself. Supports MP4, MOV, WebM, and AVI.
 
 ### Video to PDF
 
@@ -1001,9 +1001,9 @@ Convert GIF to MP4 online for free — turn animated GIFs into H.264 MP4 video. 
 
 URL: https://privatools.me/tools/add-subtitles
 
-Burn .srt or .vtt subtitles permanently into a video
+Burn .srt subtitles permanently into a video
 
-Add subtitles to video online for free — burn .srt or .vtt subtitle files permanently into a video so they show up everywhere, no matter the player. Perfect for social media uploads where soft subtitles aren't supported.
+Add subtitles to video online for free — burn an .srt subtitle file permanently into a video so it shows up everywhere, no matter the player. Perfect for social media uploads where soft subtitles aren't supported.
 
 ### Merge Videos
 
@@ -1011,7 +1011,7 @@ URL: https://privatools.me/tools/video-merge
 
 Concatenate multiple videos into one
 
-Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file with seamless transitions. Re-encodes once for perfect playback compatibility.
+Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips of the same resolution into a single video file, one after another. Re-encodes once for broad playback compatibility.
 
 ### Merge Audio
 
@@ -1025,9 +1025,9 @@ Merge audio online for free — combine multiple MP3, WAV, AAC, FLAC, or OGG fil
 
 URL: https://privatools.me/tools/subtitle-converter
 
-Convert between SRT, VTT, and ASS subtitle formats
+Convert SRT, VTT, and ASS subtitles to SRT or VTT
 
-Convert subtitles online for free — swap between SRT (SubRip), VTT (WebVTT), and ASS (SubStation Alpha) formats. Useful when your player supports one format but your subtitles are in another.
+Convert subtitles online for free — turn SRT (SubRip), VTT (WebVTT), and ASS (SubStation Alpha) files into SRT or VTT. Useful when your player supports one format but your subtitles are in another.
 
 ### JSON / XML Formatter
 
@@ -1419,7 +1419,7 @@ URL: https://privatools.me/tools/avi-to-mp4
 
 Convert legacy AVI video to modern MP4
 
-Convert AVI to MP4 online for free — AVI is the old Microsoft container that's poorly supported by modern devices. MP4 plays everywhere and is typically 30–50% smaller. Powered by FFmpeg with H.264 encoding.
+Convert AVI to MP4 online for free — AVI is the old Microsoft container that's poorly supported by modern devices. MP4 plays everywhere and is often smaller. Powered by FFmpeg with H.264 encoding.
 
 ### WebM to MP4
 
@@ -1427,7 +1427,7 @@ URL: https://privatools.me/tools/webm-to-mp4
 
 Convert WebM (Google) video to MP4
 
-Convert WebM to MP4 online for free — WebM is YouTube's web-streaming format; MP4 is needed for editing software, iMessage, social media uploads, and older devices. Quality preserved through H.264 encoding.
+Convert WebM to MP4 online for free — WebM is YouTube's web-streaming format; MP4 is needed for editing software, iMessage, social media uploads, and older devices. The video is re-encoded to H.264 with AAC audio.
 
 ### MP4 to WebM
 
@@ -1435,7 +1435,7 @@ URL: https://privatools.me/tools/mp4-to-webm
 
 Convert MP4 to WebM for web embedding
 
-Convert MP4 videos to WebM using the available server codecs. Output size, quality, and conversion time depend on the source and selected settings. Check that the destination browser or application supports the resulting video.
+Convert MP4 videos to WebM using the available server codecs. Output size, quality, and conversion time depend on the source; the video is encoded as VP9 at about 1 Mbit/s. Check that the destination browser or application supports the resulting video.
 
 ### JPG to TIFF
 
@@ -1753,9 +1753,9 @@ Reverse an MP4/MOV/WebM video so it plays backwards — useful for fun edits, tr
 
 URL: https://privatools.me/tools/video-speed
 
-Speed up or slow down a video, 0.25× to 4×
+Speed up or slow down a video, 0.3× to 3.95×
 
-Change the playback speed of any video from 0.25× (slow-mo) to 4× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.
+Change the playback speed of a video with an audio track from 0.3× (slow-mo) to 3.95× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.
 
 ### Audio Trimmer
 

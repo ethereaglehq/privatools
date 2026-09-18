@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload a video",
-      "text": "Drop an MP4/MOV/WebM/MKV/AVI file. Best with short clips — long files take exponentially longer."
+      "text": "Drop an MP4/MOV/WebM/MKV/AVI file up to 200 MB. Best with short clips: every frame is held in memory while the clip is reversed, and a run longer than three minutes is stopped."
     },
     {
       "name": "Click Reverse",
-      "text": "Both video and audio are reversed in sync. Output is universal MP4 (H.264 + AAC) playable on every device."
+      "text": "Both video and audio are reversed in sync. Output is MP4 (H.264 + AAC), which almost every device plays."
     }
   ],
   "faq": [

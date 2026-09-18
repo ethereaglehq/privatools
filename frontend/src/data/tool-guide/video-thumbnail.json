@@ -6,25 +6,25 @@
     },
     {
       "name": "Choose timestamp",
-      "text": "Time in seconds (e.g. 5.5 = 5.5 seconds in). Default is the middle of the video."
+      "text": "Drag the slider or type the time in seconds (e.g. 5.5 = 5.5 seconds in); the preview shows that frame. It starts at 1 second."
     },
     {
-      "name": "Download the frame as PNG",
-      "text": "FFmpeg extracts the exact frame at that timestamp."
+      "name": "Download the frame as JPG",
+      "text": "FFmpeg extracts the frame at that timestamp and saves it as a JPG."
     }
   ],
   "faq": [
     {
       "q": "How do I find a good thumbnail moment?",
-      "a": "Trial and error — try different timestamps to find a visually interesting frame. For automated 'best' selection, use Video to PDF and pick from the keyframe samples."
+      "a": "Scrub the preview to the moment you want; the slider shows that frame before you run it. To compare several moments at once, Video to PDF lays out evenly spaced frames as PDF pages."
     },
     {
-      "q": "What resolution will the PNG be?",
-      "a": "Same as the source video's resolution. Use Resize Crop Image after if you need a specific size for social media."
+      "q": "What resolution will the JPG be?",
+      "a": "1280 pixels wide, with the height set by the video's shape; smaller videos are scaled up to that width. Use Resize Crop Image after if you need a specific size for social media."
     },
     {
       "q": "Can I extract multiple thumbnails at once?",
-      "a": "Yes — Video to PDF extracts multiple keyframes and lays them out as PDF pages."
+      "a": "Yes, in two ways: add several videos here to get one frame from each at the same timestamp, or use Video to PDF to lay out evenly spaced frames from one video as PDF pages."
     }
   ]
 }

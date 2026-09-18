@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose preset",
-      "text": "480p (SD), 720p (HD), 1080p (Full HD), 1440p (QHD), 2160p (4K)."
+      "text": "240p, 360p, 480p (SD), 720p (HD, the default), 1080p (Full HD) or 1440p (QHD)."
     },
     {
       "name": "Download the resized video",
@@ -20,7 +20,7 @@
     },
     {
       "q": "Does this re-encode the audio?",
-      "a": "Audio is copied unchanged when possible (saves time, no quality loss)."
+      "a": "Yes. The audio is always re-encoded as AAC, alongside the H.264 video."
     },
     {
       "q": "Can I crop to a different aspect ratio?",

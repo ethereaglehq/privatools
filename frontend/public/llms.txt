@@ -150,10 +150,10 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Video Resizer](https://privatools.me/tools/video-resizer): Downscale a video to 240p, 360p, 480p, 720p, 1080p, or 1440p
 - [Video Thumbnail](https://privatools.me/tools/video-thumbnail): Extract a single frame from a video as a JPG image
 - [GIF to MP4](https://privatools.me/tools/gif-to-mp4): Convert animated GIF to MP4 for smaller file size
-- [Add Subtitles to Video](https://privatools.me/tools/add-subtitles): Burn .srt or .vtt subtitles permanently into a video
+- [Add Subtitles to Video](https://privatools.me/tools/add-subtitles): Burn .srt subtitles permanently into a video
 - [Merge Videos](https://privatools.me/tools/video-merge): Concatenate multiple videos into one
 - [Merge Audio](https://privatools.me/tools/audio-merge): Concatenate multiple audio tracks into one file
-- [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert between SRT, VTT, and ASS subtitle formats
+- [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert SRT, VTT, and ASS subtitles to SRT or VTT
 - [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify and validate JSON or XML offline
 - [Text Diff / Comparator](https://privatools.me/tools/text-diff): Highlight exact differences between two text blocks
 - [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text and files as Base64
@@ -244,7 +244,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [JSON to CSV Schema](https://privatools.me/tools/json-to-csv-schema): Infer JSON schema and export flattened CSV
 - [Mute Video](https://privatools.me/tools/mute-video): Strip the audio track from any video
 - [Reverse Video](https://privatools.me/tools/reverse-video): Play your video backwards (audio reversed too)
-- [Video Speed Changer](https://privatools.me/tools/video-speed): Speed up or slow down a video, 0.25× to 4×
+- [Video Speed Changer](https://privatools.me/tools/video-speed): Speed up or slow down a video, 0.3× to 3.95×
 - [Audio Trimmer](https://privatools.me/tools/audio-trim): Cut a clip out of any audio file
 - [Image Color Palette](https://privatools.me/tools/image-palette): Extract dominant colors from any image
 - [Pixelate / Blur Image](https://privatools.me/tools/pixelate-image): Censor a whole image with mosaic or Gaussian blur
