@@ -75,10 +75,15 @@ if (entryChunkLeaksToolGuide) {
 // imports), so none of them may contain it. Chunk names can change and the
 // data could be inlined anywhere, so match content: the longest plain run of
 // words in each post's body, which minification cannot rewrite.
-const htmlTags = [...readFileSync(new URL("../index.html", assetsDir), "utf8").matchAll(/<(?:script|link)\b[^>]*>/g)].map(([tag]) => tag);
-const assetOf = (tag) => tag.match(/\b(?:src|href)="\/assets\/([^"]+\.js)"/)?.[1];
-const entryScripts = htmlTags.filter((tag) => /\btype="module"/.test(tag)).map(assetOf).filter(Boolean);
-const preloaded = htmlTags.filter((tag) => /\brel="modulepreload"/.test(tag)).map(assetOf).filter(Boolean);
+// HTML tag and attribute names are case-insensitive, so the patterns are too.
+const htmlTags = [...readFileSync(new URL("../index.html", assetsDir), "utf8").matchAll(/<(?:script|link)\b[^>]*>/gi)].map(([tag]) => tag);
+const assetOf = (tag) => tag.match(/\b(?:src|href)="\/assets\/([^"]+\.js)"/i)?.[1];
+const entryScripts = htmlTags.filter((tag) => /\btype="module"/i.test(tag)).map(assetOf).filter(Boolean);
+const preloaded = htmlTags.filter((tag) => /\brel="modulepreload"/i.test(tag)).map(assetOf).filter(Boolean);
+if (entryScripts.length === 0) {
+  console.error("\nNo module script in dist/index.html; the blog-data check cannot run meaningfully.");
+  process.exit(1);
+}
 // Static imports only, the pattern public/sw.js precaches with; import() never matches.
 const staticImports = (name) => [...readFileSync(join(assetsDir.pathname, name), "utf8")
   .matchAll(/(?:\b(?:import|export)\s*[^;"'()]*?\bfrom\s*|\bimport\s*)["']\.\/([^"']+\.js)["']/g)].map((match) => match[1]);
