@@ -60,7 +60,7 @@
     "input-otp": "^1.5.0",
     "lucide-react": "^0.462.0",
     "next-themes": "^0.4.6",
-    "onnxruntime-web": "1.22.0-dev.20250409-89f8206ba4",
+    "onnxruntime-web": "1.30.0",
     "pdfjs-dist": "^5.5.207",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
