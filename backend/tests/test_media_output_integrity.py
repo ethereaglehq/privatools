@@ -1,6 +1,7 @@
 """Decode real tool outputs; a 200 and nonempty download are not sufficient."""
 import io
 import json
+import resource
 import shutil
 import subprocess
 from pathlib import Path
@@ -104,6 +105,7 @@ def test_audio_only_trim_preserves_container_and_codec(client, media_fixtures, t
     assert info["streams"][0]["codec_name"] == source_info["streams"][0]["codec_name"]
     assert 0.85 <= float(info["format"]["duration"]) <= 1.2
     assert response.headers["content-type"].startswith("audio/")
+
 
 def stream_seconds(info, kind):
     return float(next(stream for stream in info["streams"] if stream["codec_type"] == kind)["duration"])
@@ -235,3 +237,47 @@ def test_video_merge_rounds_an_odd_first_clip_down_to_an_even_frame(client, merg
     info = inspect_download(merge(client, merge_clips["odd"], merge_clips["small"]), tmp_path / "merged.mp4")
     assert frame_size(info) == (320, 180)
 
+
+def child_cpu_seconds():
+    usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+    return usage.ru_utime + usage.ru_stime
+
+
+@pytest.fixture(scope="module")
+def motion_clips(media_fixtures):
+    """The same five seconds of 640x360 motion as MP4 and as WebM."""
+    mp4, webm = media_fixtures / "motion.mp4", media_fixtures / "motion.webm"
+    subprocess.run(["ffmpeg", "-v", "error", "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=30:duration=5", "-f", "lavfi", "-i", "sine=frequency=440:duration=5", "-c:v", "libx264", "-c:a", "aac", "-shortest", str(mp4)], check=True, timeout=60)
+    subprocess.run(["ffmpeg", "-v", "error", "-i", str(mp4), "-c:v", "libvpx-vp9", "-deadline", "realtime", "-cpu-used", "8", "-c:a", "libopus", str(webm)], check=True, timeout=60)
+    return mp4, webm
+
+
+def cpu_seconds_for(client, endpoint, upload, data):
+    """CPU used by the route's encoder: load from other processes does not inflate it."""
+    before = child_cpu_seconds()
+    response = client.post(endpoint, files={"file": upload}, data=data)
+    assert response.status_code == 200, response.text[:300]
+    return child_cpu_seconds() - before, response
+
+
+# libvpx-vp9 at its default speed used several times the CPU of the H.264
+# path, so WebM output of more than about 15 s of 720p hit the 180 s limit.
+def test_webm_conversion_costs_about_as_much_cpu_as_mp4(client, motion_clips, tmp_path):
+    mp4, _ = motion_clips
+    upload = ("motion.mp4", mp4.read_bytes(), "video/mp4")
+    to_mp4, _ = cpu_seconds_for(client, "/api/video-converter", upload, {"target_format": "mp4"})
+    to_webm, response = cpu_seconds_for(client, "/api/video-converter", upload, {"target_format": "webm"})
+    assert to_webm < 3 * to_mp4, f"WebM took {to_webm:.1f} s of CPU, MP4 {to_mp4:.1f} s"
+    info = inspect_download(response, tmp_path / "converted.webm")
+    assert sorted(stream["codec_name"] for stream in info["streams"]) == ["opus", "vp9"]
+    assert abs(float(info["format"]["duration"]) - 5.0) <= 0.2
+
+
+def test_webm_trim_costs_about_as_much_cpu_as_mp4_trim(client, motion_clips, tmp_path):
+    mp4, webm = motion_clips
+    window = {"start": "00:00:00", "end": "00:00:05"}
+    as_mp4, _ = cpu_seconds_for(client, "/api/trim-media", ("motion.mp4", mp4.read_bytes(), "video/mp4"), window)
+    as_webm, response = cpu_seconds_for(client, "/api/trim-media", ("motion.webm", webm.read_bytes(), "video/webm"), window)
+    assert as_webm < 3 * as_mp4, f"WebM took {as_webm:.1f} s of CPU, MP4 {as_mp4:.1f} s"
+    info = inspect_download(response, tmp_path / "trimmed.webm")
+    assert sorted(stream["codec_name"] for stream in info["streams"]) == ["opus", "vp9"]

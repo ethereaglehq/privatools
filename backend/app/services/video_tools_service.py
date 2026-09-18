@@ -27,6 +27,13 @@ FFMPEG_TIMEOUT = 180  # seconds — covers ~10 min of input at preset speeds
 # Supported output formats per tool — kept lower-case for sanity.
 VIDEO_OUTPUT_FORMATS = {"mp4", "mov", "webm", "mkv", "avi"}
 
+# libvpx-vp9 at its default speed spent ~11 CPU-seconds per second of 720p30
+# camera footage (release image, 2-core Oracle ARM VM), so WebM output of more
+# than 15-20 s of 720p hit FFMPEG_TIMEOUT. Realtime speed 8 spends ~1, a
+# little less than the H.264 path, for a slightly lower SSIM at the same
+# bitrate target.
+VP9_SPEED = ["-deadline", "realtime", "-cpu-used", "8", "-row-mt", "1"]
+
 # ─── helpers ─────────────────────────────────────────────────────────────
 
 
@@ -137,7 +144,7 @@ def video_convert(input_path: str, target_format: str) -> str:
     # Sensible per-format codec choices:
     args = ["-i", input_path]
     if fmt == "webm":
-        args += ["-c:v", "libvpx-vp9", "-b:v", "1M", "-c:a", "libopus"]
+        args += ["-c:v", "libvpx-vp9", "-b:v", "1M", *VP9_SPEED, "-c:a", "libopus"]
     elif fmt == "mkv":
         args += ["-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac"]
     elif fmt == "avi":
