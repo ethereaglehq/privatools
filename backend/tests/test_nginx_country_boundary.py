@@ -186,7 +186,8 @@ def test_policy_endpoint_cannot_use_proxy_cache_or_override_backend_no_store(pat
     locations = [item for item in walk(parse_config(path)) if item.name == "location" and item.args == ["=", POLICY]]
     assert len(locations) == expected_count
     for location in locations:
-        assert direct(location, "proxy_pass") == [["http://127.0.0.1:8000"]], "Preserve the full /api path"
+        upstream = "http://privatools_app" if path == ORACLE else "http://127.0.0.1:8000"
+        assert direct(location, "proxy_pass") == [[upstream]], "Preserve the full /api path"
         assert direct(location, "proxy_cache") == [["off"]]
         assert direct(location, "proxy_cache_bypass") == [["1"]]
         assert direct(location, "proxy_no_cache") == [["1"]]
@@ -233,7 +234,7 @@ def test_api_document_exact_match_prevents_nginx_automatic_slash_redirect():
     default = next(location for location in locations if location.args == ["/"])
     for directive in ("proxy_pass", "proxy_set_header", "proxy_read_timeout", "proxy_connect_timeout"):
         assert direct(document, directive) == direct(default, directive)
-    assert direct(document, "proxy_pass") == [["http://127.0.0.1:8000"]], "Do not rewrite /api to /api/ upstream"
+    assert direct(document, "proxy_pass") == [["http://privatools_app"]], "Do not rewrite /api to /api/ upstream"
     assert not direct(document, "return")
     assert not direct(document, "rewrite")
     assert not direct(document, "add_header"), "Inherit all apex security headers"
@@ -259,13 +260,40 @@ def test_api_document_locations_do_not_capture_real_api_endpoints(route):
         (location for location in locations if len(location.args) == 1 and route.startswith(location.args[0])),
         key=lambda location: len(location.args[0]),
     )
-    assert direct(selected, "proxy_pass") == [["http://127.0.0.1:8000"]]
+    assert direct(selected, "proxy_pass") == [["http://privatools_app"]]
     assert not direct(selected, "return")
     if route != POLICY:
         assert selected.args == ["/api/"]
         assert direct(selected, "limit_req") == [["zone=api", "burst=20", "nodelay"]]
         assert direct(selected, "limit_conn") == [["apiconn", "24"]]
         assert direct(selected, "proxy_read_timeout") == [["300s"]]
+
+
+def test_every_oracle_location_proxies_through_the_switchable_upstream_with_the_real_host():
+    # One upstream name everywhere lets a deploy move all traffic with one
+    # checked reload. Without `Host $host` nginx would send "privatools_app",
+    # which the backend's TrustedHostMiddleware rejects.
+    nodes = parse_config(ORACLE)
+    assert [node.args for node in nodes if node.name == "include"] == [["/etc/nginx/privatools-upstream.conf"]]
+    proxied = [node for node in walk(nodes) if node.name == "location" and direct(node, "proxy_pass")]
+    assert len(proxied) >= 10
+    for location in proxied:
+        assert direct(location, "proxy_pass") == [["http://privatools_app"]], location.args
+        assert header(location, "Host") == "$host", location.args
+    assert not named(nodes, "upstream"), "The upstream lives only in the file the deploy helper writes"
+
+
+def test_shipped_upstream_file_and_helper_agree_on_the_steady_state():
+    upstream = parse_config(ROOT / "deploy/oracle-vm/privatools-upstream.conf")
+    assert [(node.name, node.args) for node in upstream] == [("upstream", ["privatools_app"])]
+    servers = [node.args for node in upstream[0].children]
+    # A single server and no keepalive: nginx never marks it down, and every
+    # request has its own connection, which is what draining counts.
+    assert servers == [["127.0.0.1:8000"]]
+    assert not named(upstream[0].children, "keepalive")
+    helper = (ROOT / "deploy/oracle-vm/nginx-upstream.sh").read_text()
+    assert 'ALLOWED_PORTS="8000 8001"' in helper
+    assert "upstream privatools_app {" in helper and "server 127.0.0.1:$1;" in helper
 
 
 def test_api_document_locations_are_not_added_to_the_direct_api_host():

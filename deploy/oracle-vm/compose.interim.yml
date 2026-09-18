@@ -1,0 +1,29 @@
+# Overlay for the temporary "interim" container of a zero-downtime deploy.
+#
+# Used only by deploy/oracle-vm/rollout.sh, as a second compose project
+# (privatools-interim) beside the live one:
+#
+#   docker compose -p privatools-interim \
+#     -f docker-compose.yml -f deploy/oracle-vm/compose.interim.yml up -d
+#
+# with PRIVATOOLS_HOST_PORT=8001 and the two volume names below taken from the
+# live container's mounts. The interim therefore runs the same image, command,
+# environment, read-only root, tmpfs, capabilities and resource limits as the
+# canonical container, and sees the same accounts database and temp files.
+#
+# Two containers on one SQLite database and one temp volume are safe: SQLite in
+# WAL mode is already shared by several processes per container, the temp
+# janitor only removes files older than ten minutes, and the job supervisors
+# hand their singleton lock over instead of running side by side (see
+# backend/app/api_v1/jobs/worker.py).
+#
+# external: true is load-bearing. It makes these volumes belong to nobody in
+# this project, so `docker compose -p privatools-interim down`, with or without
+# --volumes, can never delete the production data volume.
+volumes:
+  app-temp:
+    external: true
+    name: ${PRIVATOOLS_TEMP_VOLUME:?set by rollout.sh from the live container}
+  app-data:
+    external: true
+    name: ${PRIVATOOLS_DATA_VOLUME:?set by rollout.sh from the live container}

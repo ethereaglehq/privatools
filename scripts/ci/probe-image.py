@@ -2,6 +2,13 @@
 """Boot a built PrivaTools image the way production does, then probe it over HTTP.
 
     python3 scripts/ci/probe-image.py IMAGE
+    python3 scripts/ci/probe-image.py --running CONTAINER --url BASE_URL --sha BUILD_SHA
+
+The second form runs the same checks against a container that is already
+running and starts, stops and removes nothing. The zero-downtime deploy
+(deploy/oracle-vm/rollout.sh) uses it as its real-page probe: a release whose
+/readyz is ready but which cannot serve the homepage, a tool page or the
+sitemap never receives traffic.
 
 The container comes from the repository's docker-compose.yml, started with the
 deploy script's own command (`docker compose up -d --no-build --pull never`).
@@ -46,7 +53,8 @@ from urllib.parse import urlsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 from xml.etree import ElementTree
 
-USAGE = "usage: python3 scripts/ci/probe-image.py IMAGE"
+USAGE = ("usage: python3 scripts/ci/probe-image.py IMAGE\n"
+         "       python3 scripts/ci/probe-image.py --running CONTAINER --url BASE_URL --sha BUILD_SHA")
 REPO_ROOT = Path(__file__).resolve().parents[2]
 COMPOSE_YAML = REPO_ROOT / "docker-compose.yml"
 PROJECT = "privatools-probe"
@@ -172,9 +180,9 @@ def wait_until_ready(base_url: str, container: str) -> float:
     raise ProbeFailure(f"/readyz did not answer 200 within {READY_DEADLINE_SECONDS} s (last: {last})")
 
 
-def read_manifest() -> dict[str, dict]:
+def read_manifest(container: str) -> dict[str, dict]:
     """The tool manifest the server reads, read as the app user reads it, keyed by path."""
-    shown = compose("exec", "-T", SERVICE, "cat", MANIFEST_IN_IMAGE)
+    shown = run("docker", "exec", container, "cat", MANIFEST_IN_IMAGE)
     expect(shown.returncode == 0, f"cannot read {MANIFEST_IN_IMAGE}: {output_of(shown)}")
     try:
         rows = json.loads(shown.stdout)
@@ -262,14 +270,18 @@ def probe(image: str, build_sha: str) -> list[str]:
     base_url = published_url()
     print(f"container {container[:12]} runs {image} at {base_url}")
     print(f"ready after {wait_until_ready(base_url, container):.1f} s")
+    return check_serving(base_url, build_sha, container)
 
+
+def check_serving(base_url: str, build_sha: str, container: str) -> list[str]:
+    """Names of the checks that failed against a container that is ready."""
     failed: list[str] = []
     run_checks([
         ("GET /readyz", lambda: check_readyz(base_url, build_sha)),
         (f"GET {UNKNOWN_TOOL_PAGE}", lambda: check_unknown_tool(base_url)),
     ], failed)
     try:
-        manifest = read_manifest()
+        manifest = read_manifest(container)
     except CheckFailed as error:
         print(f"FAIL  tool manifest: {error}")
         print("skip  GET /, the tool pages and GET /sitemap.xml, whose expected values come from the manifest")
@@ -303,7 +315,26 @@ def remove() -> None:
         print(f"docker compose down failed: {output_of(down)}")
 
 
+def probe_running(arguments: list[str]) -> int:
+    """Check a running container in place: the deploy's real-page probe."""
+    options = dict(zip(arguments[::2], arguments[1::2]))
+    if len(arguments) != 6 or set(options) != {"--running", "--url", "--sha"} or not all(options.values()):
+        print(USAGE, file=sys.stderr)
+        return 2
+    container, base_url, build_sha = options["--running"], options["--url"].rstrip("/"), options["--sha"]
+    sys.stdout.reconfigure(line_buffering=True)
+    print(f"probing running container {container[:12]} at {base_url}")
+    failed = check_serving(base_url, build_sha, container)
+    if failed:
+        print("page probe FAILED: " + ", ".join(failed))
+        return 1
+    print("page probe passed")
+    return 0
+
+
 def main() -> int:
+    if sys.argv[1:2] == ["--running"]:
+        return probe_running(sys.argv[1:])
     if len(sys.argv) != 2 or sys.argv[1].startswith("-"):
         print(USAGE, file=sys.stderr)
         return 2

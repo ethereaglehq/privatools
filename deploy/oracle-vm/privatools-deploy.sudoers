@@ -1,0 +1,10 @@
+# /etc/sudoers.d/privatools-deploy (mode 0440), installed by install-auto-deploy.sh
+# after `visudo -cf` accepts it.
+#
+# The deploy service runs as ubuntu. Its only root action is pointing host
+# nginx at one of the two PrivaTools ports: 8000 (the canonical container) or
+# 8001 (the interim container of a zero-downtime deploy). The helper checks
+# the configuration with nginx -t before reloading and restores the previous
+# upstream on failure. Keep these ports in step with ALLOWED_PORTS in
+# nginx-upstream.sh and CANONICAL_PORT/INTERIM_PORT in rollout.sh.
+ubuntu ALL=(root) NOPASSWD: /usr/local/sbin/privatools-nginx-upstream set 8000, /usr/local/sbin/privatools-nginx-upstream set 8001
