@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Is PNG transparency preserved in the TIFF?",
-      "a": "Alpha transparency is preserved where the target TIFF profile supports it. For print/archival TIFF without an alpha channel, transparent areas are flattened to white."
+      "a": "Yes. The TIFF keeps the alpha channel, so transparent areas stay transparent. Some print and scanning workflows ignore TIFF transparency, so flatten the image onto a background first if the recipient needs an opaque file."
     },
     {
       "q": "Why convert PNG to TIFF?",

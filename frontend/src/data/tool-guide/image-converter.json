@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Which formats can I convert between?",
-      "a": "Anything the server's imaging library can read becomes JPG, PNG, WebP, BMP or TIFF. That covers the usual photo and graphic formats in both directions, so it doubles as a general repair tool for a file something else refuses to open."
+      "a": "JPG, PNG, WebP, BMP and TIFF, in any direction between them. Other formats are not accepted here: iPhone HEIC photos go through HEIC to JPG or HEIC to PNG, and GIFs through GIF to JPG or GIF to PNG."
     },
     {
       "q": "Which format should I choose?",
@@ -32,7 +32,7 @@
     },
     {
       "q": "Are animations and multi-page files handled?",
-      "a": "No. Only the first frame of an animated GIF or WebP, and only the first page of a multi-page TIFF, is converted. The remaining frames and pages are not included in the output."
+      "a": "No. Only the first frame of an animated WebP, and only the first page of a multi-page TIFF, is converted. The remaining frames and pages are not included in the output."
     },
     {
       "q": "Is EXIF metadata preserved?",

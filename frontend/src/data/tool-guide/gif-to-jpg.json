@@ -28,7 +28,7 @@
     },
     {
       "q": "What happens to a transparent GIF?",
-      "a": "JPEG has no transparency. The alpha channel is discarded rather than blended onto a white page, so anything that was see-through takes the colour stored underneath it, which is usually black. Convert to PNG, WebP or TIFF if you need transparency kept."
+      "a": "JPEG has no transparency. A GIF marks one palette colour as see-through, and after conversion that colour simply shows, so transparent areas take on whatever colour the GIF assigned to them. Convert to PNG if you need the transparency kept."
     },
     {
       "q": "Is the file smaller?",
