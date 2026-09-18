@@ -12,7 +12,7 @@ from ..services import flatten_service
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-VALID_SCOPES = {"all", "annotations", "forms"}
+VALID_SCOPES = set(flatten_service.SCOPES)
 
 
 @router.post("/flatten")
@@ -26,10 +26,7 @@ async def flatten_pdf(
     - ``scope=annotations``: only annotations; form fields stay interactive.
     - ``scope=forms``: only form widgets; comments/highlights stay editable.
 
-    The underlying service currently always flattens both, so for the partial
-    scopes we still need to call it — but accepting the parameter now means
-    the frontend can wire the UI today and the service can be tightened later
-    without another round of route changes.
+    Links stay clickable in every scope.
     """
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
@@ -51,7 +48,7 @@ async def flatten_pdf(
         validate_pdf_content(content)
         temp_path.write_bytes(content)
 
-        output_path = await asyncio.to_thread(flatten_service.flatten_pdf, str(temp_path))
+        output_path = await asyncio.to_thread(flatten_service.flatten_pdf, str(temp_path), scope)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
             path=output_path,
