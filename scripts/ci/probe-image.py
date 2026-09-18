@@ -118,10 +118,15 @@ def output_of(result: subprocess.CompletedProcess) -> str:
 
 
 def isolate_environment(image: str, build_sha: str) -> None:
-    """Clear what the compose file reads, so its defaults apply, then set what the deploy passes."""
+    """Clear what the compose file reads, so its defaults apply, then set what the deploy passes.
+
+    Async jobs are on, as in production: the image's job supervisor must take
+    the queue here before any release is tagged. The first deploy after the
+    zero-downtime cut-over can only hand it the queue after traffic has moved.
+    """
     for name in set(re.findall(r"\$\{(\w+)", COMPOSE_YAML.read_text(encoding="utf-8"))):
         os.environ.pop(name, None)
-    os.environ.update(PRIVATOOLS_IMAGE=image, GIT_SHA=build_sha)
+    os.environ.update(PRIVATOOLS_IMAGE=image, GIT_SHA=build_sha, API_V1_JOBS_ENABLED="true")
 
 
 def fetch(base_url: str, path: str, timeout: float = REQUEST_TIMEOUT_SECONDS) -> tuple[int, bytes]:
@@ -206,6 +211,29 @@ def check_readyz(base_url: str, build_sha: str) -> str:
     return f"ready, {len(checks)} dependency checks pass, build_sha matches"
 
 
+def check_supervisor_status(status: dict) -> str:
+    """The async job supervisor took the singleton lock and keeps its state fresh."""
+    expect(status.get("enabled"), "async jobs are not enabled in the container")
+    local = status.get("local") or {}
+    expect(local.get("role") == "active" and local.get("alive"),
+           f"the job supervisor does not hold the queue (role {local.get('role')!r}, alive {local.get('alive')!r})")
+    return "the job supervisor holds the job queue"
+
+
+def check_supervisor(container: str) -> str:
+    shown = run("docker", "exec", container, "python", "-m", "backend.app.job_handover", "--status")
+    expect(shown.returncode == 0, f"no job status: {output_of(shown)}")
+    deadline = time.monotonic() + READY_DEADLINE_SECONDS
+    while True:
+        try:
+            return check_supervisor_status(json.loads(shown.stdout))
+        except (CheckFailed, ValueError):
+            if time.monotonic() >= deadline:
+                raise
+        time.sleep(1)
+        shown = run("docker", "exec", container, "python", "-m", "backend.app.job_handover", "--status")
+
+
 def check_unknown_tool(base_url: str) -> str:
     status, _ = fetch(base_url, UNKNOWN_TOOL_PAGE)
     expect(status == 404, f"HTTP {status}, expected 404")
@@ -270,7 +298,9 @@ def probe(image: str, build_sha: str) -> list[str]:
     base_url = published_url()
     print(f"container {container[:12]} runs {image} at {base_url}")
     print(f"ready after {wait_until_ready(base_url, container):.1f} s")
-    return check_serving(base_url, build_sha, container)
+    failed: list[str] = []
+    run_checks([("async job supervisor", lambda: check_supervisor(container))], failed)
+    return failed + check_serving(base_url, build_sha, container)
 
 
 def check_serving(base_url: str, build_sha: str, container: str) -> list[str]:
