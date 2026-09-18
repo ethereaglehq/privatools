@@ -2,15 +2,15 @@
   "howto": [
     {
       "name": "Upload a WAV file",
-      "text": "Drop a .wav file up to 500 MB."
+      "text": "Drop a .wav file up to 200 MB."
     },
     {
       "name": "PrivaTools encodes via FFmpeg",
-      "text": "Encoded straight from uncompressed source, so quality is as good as the chosen bitrate allows."
+      "text": "Encoded straight from uncompressed source with a 192 kbps target, so quality is as good as that bitrate allows."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Ogg Vorbis is patent-free and a good fit for games and web audio, encoded here straight from uncompressed source so quality is as good as the bitrate allows."
+      "text": "Run the conversion. Ogg Vorbis is patent-free and a good fit for games and web audio, encoded here straight from uncompressed source so quality is as good as the bitrate allows."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "Is OGG lossy or lossless?",
-      "a": "OGG Vorbis here is lossy; pick a quality level that balances size and fidelity. For lossless, use WAV→FLAC instead."
+      "a": "OGG Vorbis here is lossy, encoded with a 192 kbps target and no quality setting on this page. For lossless, use WAV→FLAC instead."
     },
     {
       "q": "Is the conversion private?",

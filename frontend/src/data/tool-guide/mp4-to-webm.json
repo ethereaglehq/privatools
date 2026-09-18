@@ -6,7 +6,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The video is re-encoded as VP9 WebM — smaller files at the same quality, ideal for HTML5 video on the open web."
+      "text": "Run the conversion. The video is re-encoded as VP9 at about 1 Mbit/s with Opus audio, which suits HTML5 video on the open web."
     }
   ],
   "faq": [
@@ -16,11 +16,11 @@
     },
     {
       "q": "Will every browser play it?",
-      "a": "Every modern desktop browser plays WebM. Safari on iOS supports it from iOS 16 onward. For maximum compatibility, MP4 is still safer."
+      "a": "Every modern desktop browser plays WebM. Safari on iOS plays it from iOS 17.4 onward. For maximum compatibility, MP4 is still safer."
     },
     {
       "q": "How much smaller will it be?",
-      "a": "Typically 20–40% smaller than the equivalent MP4 at the same visible quality."
+      "a": "It depends on the source. The video is encoded at about 1 Mbit/s whatever the input, so a high-bitrate MP4 shrinks a lot while a low-bitrate one can come out larger. VP9 is also far slower to encode than H.264, so a long or high-resolution video can run into the three-minute processing limit."
     }
   ]
 }

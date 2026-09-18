@@ -2,15 +2,15 @@
   "howto": [
     {
       "name": "Upload an audio or video file",
-      "text": "Select an MP4, MP3, WAV, WebM, or other media file up to 500 MB."
+      "text": "Select an MP4, MP3, WAV, WebM, or other media file up to 200 MB."
     },
     {
       "name": "Set the trim range",
-      "text": "Use the waveform/timeline to set precise start and end times, or type timestamps manually (e.g. 00:30 to 02:15)."
+      "text": "Play or scrub the preview, then set the start and end with the sliders or the playhead buttons, or type timestamps in HH:MM:SS form (e.g. 00:00:30 to 00:02:15)."
     },
     {
       "name": "Trim and download",
-      "text": "Click Trim. The server extracts the selected segment without re-encoding when possible, preserving original quality."
+      "text": "Run the trim. Audio files are cut without re-encoding (FLAC is rewritten losslessly); video is re-encoded, sound included, so the cut starts on the exact frame you chose."
     }
   ],
   "faq": [
@@ -20,11 +20,11 @@
     },
     {
       "q": "Is the trimmed file re-encoded?",
-      "a": "When possible, the tool uses lossless cutting (no re-encoding) to preserve original quality. Some format combinations require re-encoding."
+      "a": "Audio is not: MP3, WAV, AAC, OGG and M4A are cut without re-encoding, and FLAC is rewritten losslessly. Video always is — H.264 for MP4, MOV and MKV, VP9 for WebM, MPEG-4 for AVI — so the file keeps its format but not its exact original encoding."
     },
     {
       "q": "How precise is the trimming?",
-      "a": "Precision depends on the format. MP4 can be cut to the nearest keyframe (typically within 0.5 seconds). Re-encoded output is frame-accurate."
+      "a": "Video cuts are frame-accurate, because the video is re-encoded. An audio file is copied, so its cut lands on the nearest compressed-audio frame, within a few hundredths of a second."
     }
   ]
 }

@@ -10,13 +10,13 @@
     },
     {
       "name": "Click Trim audio",
-      "text": "Stream-copy preserves the original quality — no re-encoding."
+      "text": "Stream-copy preserves the original quality — no re-encoding, except that FLAC is rewritten losslessly."
     }
   ],
   "faq": [
     {
       "q": "How precise are the start/end times?",
-      "a": "To 1-second precision via stream-copy. For frame-accurate trimming, use the Trim Media tool which re-encodes."
+      "a": "Times can be set to the millisecond. Because the audio is copied rather than re-encoded, a cut lands on the nearest compressed-audio frame, within a few hundredths of a second. Trim Media copies audio the same way."
     },
     {
       "q": "Will trimming reduce audio quality?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "What format does it output?",
-      "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC. No re-encoding."
+      "a": "Same format as input. Trim an MP3 → get an MP3. Trim a FLAC → get a FLAC, rewritten losslessly; every other format is copied without re-encoding."
     }
   ]
 }

@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Pixelate vs blur — which should I use?",
-      "a": "Pixelate is reversible (depixelization attacks can sometimes recover content) but reads clearly as 'censored'. Blur is harder to reverse but can look like a normal photo defect. For true privacy on serious content, use both: blur first then pixelate."
+      "a": "Pixelate reads clearly as 'censored'; blur looks softer and can pass for an out-of-focus photo. Neither is a guaranteed redaction: pixelated or blurred text can sometimes be reconstructed, especially at low strength. For content that must never be recovered, cover it with a solid box instead."
     },
     {
       "q": "Can I select a specific region?",

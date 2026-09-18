@@ -2,15 +2,15 @@
   "howto": [
     {
       "name": "Enter the data to encode",
-      "text": "The string or number you want to encode. Format limits vary (e.g. EAN-13 needs exactly 12-13 digits)."
+      "text": "The string or number you want to encode, up to 200 characters. Format limits vary (e.g. EAN-13 takes 12 digits and the check digit is added for you)."
     },
     {
       "name": "Choose barcode type",
-      "text": "Code 128 (most flexible), Code 39, EAN-13 (retail), UPC-A (US retail), QR code (also available via the QR tool)."
+      "text": "Code 128 (most flexible), Code 39, EAN-13 (retail), EAN-8 (small packs), UPC-A (US retail), ISBN-13 (books) or QR code (also available via the QR tool)."
     },
     {
       "name": "Download as PNG",
-      "text": "Configurable size; ready for printing on labels or embedding in documents."
+      "text": "The image comes out at a fixed size, ready for printing on labels or embedding in documents; there is no size setting."
     }
   ],
   "faq": [
@@ -20,11 +20,11 @@
     },
     {
       "q": "Will it scan reliably?",
-      "a": "Yes — barcodes are rendered at the standard 2D module size. Printed at 100% on a regular printer, any standard scanner reads them."
+      "a": "Usually. Linear barcodes are drawn at the python-barcode library's default size, and QR codes use 10-pixel modules with a four-module quiet zone. Test a printout with the scanner you will use, especially if you shrink it."
     },
     {
       "q": "Can I include a check digit?",
-      "a": "EAN-13 and UPC-A auto-calculate the check digit. Code 128 has a built-in checksum. Code 39 supports optional checksums."
+      "a": "EAN-13, EAN-8, UPC-A and ISBN-13 auto-calculate the check digit. Code 128 has a built-in checksum. Code 39 always gets a mod-43 check character added."
     }
   ]
 }

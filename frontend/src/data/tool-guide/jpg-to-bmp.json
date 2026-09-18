@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. BMP stores every pixel uncompressed, so the file will be many times larger than the JPG. It exists for legacy Windows software and imaging hardware that reads nothing else."
+      "text": "Run the conversion. BMP stores every pixel uncompressed, so the file will be many times larger than the JPG. It exists for legacy Windows software and imaging hardware that reads nothing else."
     }
   ],
   "faq": [

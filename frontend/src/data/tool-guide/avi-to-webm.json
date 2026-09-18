@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The video is re-encoded as VP9 WebM, which plays natively in modern browsers and is usually far smaller than the AVI it replaces."
+      "text": "Run the conversion. The video is re-encoded as VP9 WebM at about 1 Mbit/s, which plays natively in modern browsers; a high-bitrate AVI shrinks a lot."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "Will it shrink the file?",
-      "a": "Usually significantly — modern WebM is far more efficient than typical legacy AVI codecs."
+      "a": "It depends on the AVI's bitrate. The WebM video is encoded at about 1 Mbit/s, so a high-bitrate capture shrinks a lot, while a compact DivX or Xvid file may stay about the same size."
     },
     {
       "q": "Is it private?",

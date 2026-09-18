@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload a WAV file",
-      "text": "Drop a .wav file up to 500 MB."
+      "text": "Drop a .wav file up to 200 MB."
     },
     {
       "name": "PrivaTools compresses via FFmpeg",
@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. FLAC is lossless: the audio is bit-for-bit identical to the WAV and typically 40–60% smaller. This is the one audio conversion here that costs you nothing in quality."
+      "text": "Run the conversion. FLAC is lossless: the audio is bit-for-bit identical to the WAV and typically 40–60% smaller. This is the one audio conversion here that costs you nothing in quality."
     }
   ],
   "faq": [

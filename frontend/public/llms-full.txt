@@ -929,9 +929,9 @@ Convert video to GIF online for free — upload an MP4, MOV, or WebM clip up to 
 
 URL: https://privatools.me/tools/image-ocr
 
-Read text from images with local OCR or your AI provider
+Read text from images with server OCR, browser OCR, or your AI provider
 
-Extract text from document images, screenshots, and receipts. Browser OCR offers 13 language choices and downloads language data when needed; a vision-capable AI provider is optional and receives your image directly. Accuracy depends on the scan, typography, and chosen engine. Review the text carefully, especially handwriting.
+Extract text from document images, screenshots, and receipts. Server OCR is the default; browser OCR runs on your device and downloads language data when needed. Both offer 13 language choices, and a vision-capable AI provider is optional and receives your image directly. Accuracy depends on the scan, typography, and chosen engine. Review the text carefully, especially handwriting.
 
 ### Extract Audio from Video
 
@@ -947,7 +947,7 @@ URL: https://privatools.me/tools/trim-media
 
 Trim the start and end of video or audio files
 
-Cut and trim video or audio online for free — use a visual timeline to set in/out points and export the trimmed clip at full quality without re-encoding. Supports MP4, MP3, WAV, and more.
+Cut and trim video or audio online for free — use a visual timeline to set in/out points and export the trimmed clip. Audio files are cut without re-encoding; video is re-encoded so the cut is frame-accurate. Supports MP4, MP3, WAV, and more.
 
 ### Compress Video
 
@@ -955,7 +955,7 @@ URL: https://privatools.me/tools/compress-video
 
 Reduce video file size for email or messaging
 
-Compress video online for free — reduce video file size for email, messaging, and uploads. Choose quality presets from 'High Quality' to 'WhatsApp-ready'. Supports MP4, MOV, WebM, and AVI.
+Compress video online for free — reduce video file size for email, messaging, and uploads. Choose a preset from 'Keep detail' to 'Small file', or set the compression level yourself. Supports MP4, MOV, WebM, and AVI.
 
 ### Video to PDF
 
@@ -1001,9 +1001,9 @@ Convert GIF to MP4 online for free — turn animated GIFs into H.264 MP4 video. 
 
 URL: https://privatools.me/tools/add-subtitles
 
-Burn .srt or .vtt subtitles permanently into a video
+Burn .srt subtitles permanently into a video
 
-Add subtitles to video online for free — burn .srt or .vtt subtitle files permanently into a video so they show up everywhere, no matter the player. Perfect for social media uploads where soft subtitles aren't supported.
+Add subtitles to video online for free — burn an .srt subtitle file permanently into a video so it shows up everywhere, no matter the player. Perfect for social media uploads where soft subtitles aren't supported.
 
 ### Merge Videos
 
@@ -1011,7 +1011,7 @@ URL: https://privatools.me/tools/video-merge
 
 Concatenate multiple videos into one
 
-Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips into a single video file with seamless transitions. Re-encodes once for perfect playback compatibility.
+Merge videos online for free — concatenate multiple MP4, MOV, WebM, or MKV clips of the same resolution into a single video file, one after another. Re-encodes once for broad playback compatibility.
 
 ### Merge Audio
 
@@ -1025,9 +1025,9 @@ Merge audio online for free — combine multiple MP3, WAV, AAC, FLAC, or OGG fil
 
 URL: https://privatools.me/tools/subtitle-converter
 
-Convert between SRT, VTT, and ASS subtitle formats
+Convert SRT, VTT, and ASS subtitles to SRT or VTT
 
-Convert subtitles online for free — swap between SRT (SubRip), VTT (WebVTT), and ASS (SubStation Alpha) formats. Useful when your player supports one format but your subtitles are in another.
+Convert subtitles online for free — turn SRT (SubRip), VTT (WebVTT), and ASS (SubStation Alpha) files into SRT or VTT. Useful when your player supports one format but your subtitles are in another.
 
 ### JSON / XML Formatter
 
@@ -1043,23 +1043,23 @@ URL: https://privatools.me/tools/text-diff
 
 Highlight exact differences between two text blocks
 
-Compare text online for free — paste two versions of text or code side-by-side and get a line-by-line diff with additions in green and deletions in red. Perfect for code review, proofreading, and version comparison.
+Compare text online for free — paste two versions of text or code side-by-side and get a line-by-line diff with additions marked + and deletions marked −. Perfect for code review, proofreading, and version comparison.
 
 ### Base64 Encoder / Decoder
 
 URL: https://privatools.me/tools/base64
 
-Encode or decode text and files as Base64
+Encode or decode text as Base64
 
-Base64 encode and decode online for free — convert text strings or binary files to Base64, or decode Base64 back to the original content. Supports text, images, PDFs, and any file type. Runs entirely in your browser.
+Base64 encode and decode online for free — convert text to Base64, or decode Base64 back to readable text. Handles text in any language as UTF-8. Runs entirely in your browser.
 
 ### Hash Generator
 
 URL: https://privatools.me/tools/hash-generator
 
-Generate MD5, SHA-1, SHA-256 hashes of text or files
+Generate SHA-1, SHA-256, and SHA-512 hashes of text or files
 
-Generate MD5, SHA-1, SHA-256 hashes online for free — verify file integrity and create cryptographic checksums. Paste text or upload files to get instant hash digests. All processing happens in your browser.
+Generate SHA-1, SHA-256, and SHA-512 hashes online for free — verify file integrity and create cryptographic checksums. Paste text or choose a file to get instant hash digests. All processing happens in your browser.
 
 ### Extract ZIP / TAR
 
@@ -1067,7 +1067,7 @@ URL: https://privatools.me/tools/extract-archive
 
 Extract ZIP and TAR archives privately
 
-Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents in an isolated container. Download extracted files individually or as a new ZIP. Up to 500 MB per file, no sign-up.
+Extract ZIP and TAR files online for free — upload .zip, .tar, .tar.gz, .tgz archives and extract contents in an isolated container. Download the extracted files together as a new ZIP. Up to 500 MB per file, no sign-up.
 
 ### Create ZIP Archive
 
@@ -1075,7 +1075,7 @@ URL: https://privatools.me/tools/create-zip
 
 Bundle multiple files into a ZIP archive
 
-Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB per file, no sign-up.
+Create ZIP archives online for free — select multiple files and package them into a standard ZIP file. Fast compression in an isolated container, no third-party uploads. Up to 500 MB in total, no sign-up.
 
 ### CSV ↔ JSON Converter
 
@@ -1083,7 +1083,7 @@ URL: https://privatools.me/tools/csv-json
 
 Swap between CSV and JSON data formats instantly
 
-Convert CSV to JSON and JSON to CSV online for free — paste or upload data and instantly swap between formats. Perfect for data transformation, API testing, and spreadsheet-to-JSON conversion. Browser-only, no upload.
+Convert CSV to JSON and JSON to CSV online for free — paste your data and instantly swap between formats. Perfect for data transformation, API testing, and spreadsheet-to-JSON conversion. Browser-only, no upload.
 
 ### Markdown Editor & HTML
 
@@ -1091,7 +1091,7 @@ URL: https://privatools.me/tools/markdown-html
 
 Convert Markdown writing into web-ready HTML
 
-Convert Markdown to HTML online for free — paste or upload .md files and get clean, semantic HTML output with live preview and syntax highlighting. Perfect for blog posts, documentation, and README files.
+Convert Markdown to HTML online for free — paste or upload .md files and get clean, semantic HTML output with a live preview. Perfect for blog posts, documentation, and README files.
 
 ### HEIC to JPG
 
@@ -1137,9 +1137,9 @@ Add watermark to images online for free — protect your photos with customizabl
 
 URL: https://privatools.me/tools/generate-favicon
 
-Create .ico favicons from any image
+Create .ico favicons from PNG, JPG, WebP, or BMP images
 
-Generate favicon from image online for free — upload any image and create a multi-size ICO file (16x16, 32x32, 48x48) ready for your website. Instant favicon creator, no design skills needed.
+Generate favicon from image online for free — upload a PNG, JPG, WebP, or BMP image and create a multi-size ICO file (16x16, 32x32, 48x48) ready for your website. Instant favicon creator, no design skills needed.
 
 ### Photo Collage
 
@@ -1163,7 +1163,7 @@ URL: https://privatools.me/tools/url-to-pdf
 
 Save any webpage as a PDF document
 
-Save webpage as PDF online for free — enter any URL and convert the web page to a high-quality PDF document. Rendered on your server using WeasyPrint. Note: results may vary for JavaScript-heavy sites.
+Save webpage as PDF online for free — enter any URL and convert the web page to a high-quality PDF document. Rendered on the PrivaTools server using WeasyPrint. Note: results may vary for JavaScript-heavy sites.
 
 ### Password Generator
 
@@ -1179,7 +1179,7 @@ URL: https://privatools.me/tools/uuid-generator
 
 Bulk-generate UUID v4 or v7 in your browser
 
-Generate UUIDs online for free — bulk-generate up to 500 UUIDs (v4 random or v7-style timestamp-prefixed) using crypto.randomUUID(). Output is one per line, ready to copy. Runs entirely in your browser.
+Generate UUIDs online for free — bulk-generate up to 500 UUIDs (v4 random or v7-style timestamp-prefixed) using the browser's crypto API. Output is one per line, ready to copy. Runs entirely in your browser.
 
 ### Lorem Ipsum Generator
 
@@ -1201,9 +1201,9 @@ Count words, characters, sentences, paragraphs, and lines online for free. Inclu
 
 URL: https://privatools.me/tools/color-converter
 
-Convert between HEX, RGB, HSL, RGBA
+Convert a HEX color to RGB, RGBA, and HSL
 
-Convert colors between HEX, RGB, HSL, and RGBA online for free. Includes a color picker, live preview swatch, and copy-ready Tailwind / CSS-variable snippets. All math runs in your browser.
+Convert a HEX color to RGB, RGBA, and HSL online for free, or pick one with the color picker. Includes a live preview swatch, a contrast check, and copy-ready Tailwind / CSS-variable snippets. All math runs in your browser.
 
 ### URL Encoder / Decoder
 
@@ -1219,7 +1219,7 @@ URL: https://privatools.me/tools/qr-reader
 
 Decode QR codes from an uploaded image
 
-Read a QR code from an uploaded image and inspect its decoded text or link. The image uses temporary server processing. This tool reads QR codes; linear barcode formats such as Code128, EAN, and UPC are not supported by this reader.
+Read a QR code or barcode from an uploaded image and inspect its decoded text or link. The image uses temporary server processing. Linear barcodes such as Code 128, Code 39, EAN, and UPC are read too, and each result is labelled with its type.
 
 ### Merge Images
 
@@ -1259,7 +1259,7 @@ URL: https://privatools.me/tools/view-exif
 
 Inspect GPS, camera, and metadata stored in an image
 
-View EXIF data online for free — see every piece of metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, lens info, ISO, exposure, timestamps, software, and more. Counterpart to Remove EXIF — see what you'd be stripping out.
+View EXIF data online for free — see the main metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, the stored date and time, software, and more. Exposure settings such as ISO and lens details are not listed. Counterpart to Remove EXIF — see what you'd be stripping out.
 
 ### WebP to JPG
 
@@ -1395,7 +1395,7 @@ URL: https://privatools.me/tools/m4a-to-mp3
 
 Convert iPhone M4A voice memos and audio to MP3
 
-Convert M4A to MP3 online for free — M4A is Apple's audio format (used by iPhone Voice Memos and iTunes); MP3 plays everywhere. Powered by FFmpeg with configurable bitrate. Files up to 200 MB supported.
+Convert M4A to MP3 online for free — M4A is Apple's audio format (used by iPhone Voice Memos and iTunes); MP3 plays everywhere. Powered by FFmpeg, encoded at 192 kbps. Files up to 200 MB supported.
 
 ### MP4 to MP3
 
@@ -1403,7 +1403,7 @@ URL: https://privatools.me/tools/mp4-to-mp3
 
 Extract audio from MP4 video and save as MP3
 
-Convert MP4 to MP3 online for free — extract the audio track from any MP4 video and save it as an MP3 file. Useful for ripping music from YouTube downloads, podcast clips, or lecture recordings. Configurable bitrate.
+Convert MP4 to MP3 online for free — extract the audio track from any MP4 video and save it as an MP3 file. Useful for ripping music from YouTube downloads, podcast clips, or lecture recordings. Encoded at about 128 kbps.
 
 ### MOV to MP4
 
@@ -1419,7 +1419,7 @@ URL: https://privatools.me/tools/avi-to-mp4
 
 Convert legacy AVI video to modern MP4
 
-Convert AVI to MP4 online for free — AVI is the old Microsoft container that's poorly supported by modern devices. MP4 plays everywhere and is typically 30–50% smaller. Powered by FFmpeg with H.264 encoding.
+Convert AVI to MP4 online for free — AVI is the old Microsoft container that's poorly supported by modern devices. MP4 plays everywhere and is often smaller. Powered by FFmpeg with H.264 encoding.
 
 ### WebM to MP4
 
@@ -1427,7 +1427,7 @@ URL: https://privatools.me/tools/webm-to-mp4
 
 Convert WebM (Google) video to MP4
 
-Convert WebM to MP4 online for free — WebM is YouTube's web-streaming format; MP4 is needed for editing software, iMessage, social media uploads, and older devices. Quality preserved through H.264 encoding.
+Convert WebM to MP4 online for free — WebM is YouTube's web-streaming format; MP4 is needed for editing software, iMessage, social media uploads, and older devices. The video is re-encoded to H.264 with AAC audio.
 
 ### MP4 to WebM
 
@@ -1435,7 +1435,7 @@ URL: https://privatools.me/tools/mp4-to-webm
 
 Convert MP4 to WebM for web embedding
 
-Convert MP4 videos to WebM using the available server codecs. Output size, quality, and conversion time depend on the source and selected settings. Check that the destination browser or application supports the resulting video.
+Convert MP4 videos to WebM using the available server codecs. Output size, quality, and conversion time depend on the source; the video is encoded as VP9 at about 1 Mbit/s. Check that the destination browser or application supports the resulting video.
 
 ### JPG to TIFF
 
@@ -1499,7 +1499,7 @@ URL: https://privatools.me/tools/wav-to-mp3
 
 Convert WAV audio to smaller MP3 files
 
-Convert WAV to MP3 online for free — shrink uncompressed WAV recordings into widely-compatible MP3 files with a 192 kbps default bitrate.
+Convert WAV to MP3 online for free — shrink uncompressed WAV recordings into widely-compatible MP3 files at 192 kbps.
 
 ### FLAC to MP3
 
@@ -1651,7 +1651,7 @@ URL: https://privatools.me/tools/yaml-to-json
 
 Convert YAML to JSON entirely in your browser
 
-Convert YAML to JSON online for free — paste any YAML (Kubernetes manifest, GitHub Actions workflow, Docker Compose) and instantly get the equivalent JSON. Validates YAML syntax. Runs entirely in your browser — your config never touches a server.
+Convert YAML to JSON online for free — paste common YAML (Kubernetes manifest, GitHub Actions workflow, Docker Compose) and instantly get the equivalent JSON. Multi-line block strings, anchors, and tags are reported as errors rather than converted. Runs entirely in your browser — your config never touches a server.
 
 ### JSON to YAML
 
@@ -1753,9 +1753,9 @@ Reverse an MP4/MOV/WebM video so it plays backwards — useful for fun edits, tr
 
 URL: https://privatools.me/tools/video-speed
 
-Speed up or slow down a video, 0.25× to 4×
+Speed up or slow down a video, 0.3× to 3.95×
 
-Change the playback speed of any video from 0.25× (slow-mo) to 4× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.
+Change the playback speed of a video with an audio track from 0.3× (slow-mo) to 3.95× (hyperlapse). Audio is pitch-corrected via FFmpeg's atempo filter so it doesn't sound chipmunk-y. Output is universal MP4.
 
 ### Audio Trimmer
 
@@ -1777,9 +1777,9 @@ Upload an image and instantly get its dominant color palette as HEX codes with r
 
 URL: https://privatools.me/tools/pixelate-image
 
-Censor part of an image with mosaic or Gaussian blur
+Censor a whole image with mosaic or Gaussian blur
 
-Pixelate or blur an image to obscure sensitive content before sharing — block faces, license plates, addresses, screenshots. Choose mosaic-style pixelation or smooth Gaussian blur, adjust strength 1-100. Runs server-side; the image is cleaned up from temporary storage after the response.
+Pixelate or blur an entire image to obscure its content before sharing, such as a screenshot or photo that should not be readable. Choose mosaic-style pixelation or smooth Gaussian blur, adjust strength 1-100. The effect covers the whole image; it cannot target one area. Runs server-side; the image is cleaned up from temporary storage after the response.
 
 ### Rotate Image
 
@@ -1787,7 +1787,7 @@ URL: https://privatools.me/tools/rotate-image
 
 Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
 
-Rotate any image left, right, or upside down — JPG, PNG, WEBP, HEIC, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). Output is downscaled losslessly when possible; transparency is preserved for PNG and WEBP.
+Rotate any image left, right, or upside down — JPG, PNG, WEBP, BMP, GIF, TIFF. Choose 90°, 180°, 270°, or enter a custom angle for free rotation (the canvas auto-expands so nothing gets cropped). JPG, PNG, and WEBP keep their format and the others come back as PNG; transparency is preserved for PNG and WEBP.
 
 ### Flip Image
 
@@ -1795,7 +1795,7 @@ URL: https://privatools.me/tools/flip-image
 
 Mirror an image horizontally or vertically
 
-Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, HEIC, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.
+Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirror). Works on JPG, PNG, WEBP, BMP, GIF, and TIFF. Useful for selfies that come out mirrored, recreating reflections, or preparing assets for design layouts. Transparency is preserved for PNG and WEBP.
 
 ## Guides
 

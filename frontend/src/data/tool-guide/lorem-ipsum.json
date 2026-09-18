@@ -5,8 +5,8 @@
       "text": "Specify how much placeholder text you need."
     },
     {
-      "name": "Click Generate",
-      "text": "Standard Lorem Ipsum (Cicero's De Finibus, scrambled) — the publishing industry standard since the 1500s."
+      "name": "Generate or reroll",
+      "text": "Text appears as you change the options; Reroll shuffles it. The classic variant draws on Lorem Ipsum (Cicero's De Finibus, scrambled), the publishing industry's standard placeholder."
     },
     {
       "name": "Copy and use in your mockups",
@@ -20,7 +20,7 @@
     },
     {
       "q": "Can I get other languages?",
-      "a": "No. The generator produces classic Latin placeholder text only; placeholder text in other scripts is not supported."
+      "a": "Not other languages or scripts. Besides classic Latin, it offers three themed word lists in English: Cyberpunk, Pirate and Hacker."
     },
     {
       "q": "Is it copyrighted?",

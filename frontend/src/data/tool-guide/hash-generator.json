@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Type or paste your input",
-      "text": "Or upload a file. Files are read into the browser via FileReader."
+      "text": "Or choose a file. It is read in your browser, not uploaded."
     },
     {
-      "name": "Choose hash algorithm",
-      "text": "MD5, SHA-1, SHA-256, SHA-384, SHA-512. SHA-256 is the modern recommendation."
+      "name": "Calculate the hashes",
+      "text": "One click gives SHA-1, SHA-256 and SHA-512 side by side. SHA-256 is the modern recommendation."
     },
     {
       "name": "Copy the hex digest",
@@ -15,8 +15,8 @@
   ],
   "faq": [
     {
-      "q": "Is MD5 safe to use?",
-      "a": "For non-security purposes (file integrity, deduplication): yes. For security (passwords, signatures): no — MD5 is broken. Use SHA-256 or SHA-512."
+      "q": "Can it make MD5 hashes?",
+      "a": "No. The browser's Web Crypto API has no MD5, so this tool calculates SHA-1, SHA-256 and SHA-512. MD5 and SHA-1 are both broken for security uses such as signatures; use SHA-256 or SHA-512."
     },
     {
       "q": "Why are file hashes useful?",

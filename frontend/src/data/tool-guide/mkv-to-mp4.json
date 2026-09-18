@@ -5,18 +5,18 @@
       "text": "Drop an .mkv file. Matroska commonly holds H.264 or H.265 video."
     },
     {
-      "name": "PrivaTools remuxes via FFmpeg",
-      "text": "Where the MKV already holds H.264 or H.265, this is largely a container change and the video is preserved."
+      "name": "PrivaTools re-encodes via FFmpeg",
+      "text": "The video is re-encoded as H.264 and the audio as AAC, even when the MKV already holds H.264."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. MP4 is the container Safari, iOS, Windows and most TVs expect. Where the codecs already suit MP4 this is largely a container change, so quality is preserved."
+      "text": "Run the conversion. MP4 is the container Safari, iOS, Windows and most TVs expect. Because the video is re-encoded, expect a small quality loss and a different file size."
     }
   ],
   "faq": [
     {
       "q": "Does MKV to MP4 re-encode the video?",
-      "a": "When the MKV's streams are already MP4-compatible (e.g. H.264/H.265 video + AAC audio), PrivaTools remuxes the container without re-encoding — fast and lossless. Incompatible codecs are re-encoded with sensible defaults."
+      "a": "Yes. Every file is re-encoded to H.264 video (CRF 23) and AAC audio, even when the MKV's streams would already fit in an MP4, so it is not a lossless container swap. Only one audio track is kept."
     },
     {
       "q": "Why MP4 instead of MKV?",

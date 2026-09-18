@@ -6,25 +6,25 @@
     },
     {
       "name": "Choose direction",
-      "text": "Vertical: top-to-bottom (good for screenshots in sequence). Horizontal: side-by-side (good for before/after)."
+      "text": "Vertical: top-to-bottom (good for screenshots in sequence). Horizontal: side-by-side (good for before/after). A grid places them in equal cells, with the number of columns picked for you."
     },
     {
       "name": "Download the merged image",
-      "text": "Each input is scaled to a common dimension and concatenated."
+      "text": "Each input is scaled to a common dimension and joined into one PNG, which keeps any transparency. The grid option returns a JPG instead."
     }
   ],
   "faq": [
     {
       "q": "Will images be cropped?",
-      "a": "No — they're scaled to a common dimension (width for vertical, height for horizontal). Smaller images upscale; larger images downscale."
+      "a": "No — they're scaled to a common dimension (width for vertical, height for horizontal). Every image is brought up to the height of the tallest (side by side) or the width of the widest (top to bottom), so smaller images are enlarged and none are shrunk."
     },
     {
       "q": "What if my images have different aspect ratios?",
-      "a": "They get letterboxed (transparent padding) to fit. Use Resize Crop Image first to force a common aspect ratio."
+      "a": "Each image keeps its own shape and nothing is padded: side by side, a wider image simply takes more of the row; top to bottom, a taller one takes more of the column. The grid option instead fits each image inside an equal cell on a white background. Use Resize Crop Image first to force a common aspect ratio."
     },
     {
       "q": "Difference from Make Collage?",
-      "a": "Merge concatenates in a single row or column. Collage arranges in a grid with configurable columns."
+      "a": "Merge joins images in a single row or column, or in a grid whose columns are chosen for you. Make Collage lets you set the number of columns, the spacing and the background colour yourself."
     }
   ]
 }

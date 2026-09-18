@@ -6,7 +6,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. FFmpeg re-encodes the AAC audio inside the M4A container as a 192 kbps MP3, compatible with every player on earth."
+      "text": "Run the conversion. FFmpeg re-encodes the AAC audio inside the M4A container as a 192 kbps MP3, which almost every player supports."
     }
   ],
   "faq": [
@@ -16,7 +16,7 @@
     },
     {
       "q": "Will the audio quality drop?",
-      "a": "Slightly. M4A's AAC codec is more efficient than MP3, so at the same bitrate AAC sounds better. Our 192 kbps default produces a result that's indistinguishable from the source for casual listening."
+      "a": "Slightly. M4A's AAC codec is more efficient than MP3, so at the same bitrate AAC sounds better. This page always encodes at 192 kbps, which is hard to tell from the source in casual listening; for another bitrate, use Audio Converter."
     },
     {
       "q": "Does it work for iPhone voice memos?",

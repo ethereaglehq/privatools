@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the audio file",
-      "text": "Drop or select an audio file up to 500 MB."
+      "text": "Drop or select an audio file up to 200 MB."
     },
     {
       "name": "Choose the output format",
@@ -40,7 +40,7 @@
     },
     {
       "q": "What happens to my file after I upload it?",
-      "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the audio file and the result and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the audio file and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

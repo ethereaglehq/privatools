@@ -2,21 +2,21 @@
   "howto": [
     {
       "name": "Upload 2+ videos",
-      "text": "MP4 / MOV / MKV / WebM, up to 500 MB each."
+      "text": "MP4 / MOV / MKV / WebM / AVI, up to 20 clips; the whole upload has to fit within the 500 MB request limit."
     },
     {
       "name": "Reorder if needed",
-      "text": "Drag to set concatenation order."
+      "text": "Use the up and down arrows to set the order the clips play in."
     },
     {
       "name": "Download the merged video",
-      "text": "FFmpeg concatenates the videos. If audio formats differ, audio is re-encoded to AAC."
+      "text": "FFmpeg joins the clips in that order and re-encodes the result as one MP4 with H.264 video and AAC audio."
     }
   ],
   "faq": [
     {
       "q": "Do the videos need the same resolution?",
-      "a": "PrivaTools resizes inputs to a common resolution (the smallest source). For pixel-perfect quality, pre-resize all sources to the same dimensions first."
+      "a": "Yes. Clips are not resized, so every clip must have the same width and height; a mix of sizes makes the merge fail. Video Resizer can bring clips that share an aspect ratio to the same height first."
     },
     {
       "q": "What about audio-less videos?",

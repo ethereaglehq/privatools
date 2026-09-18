@@ -2,29 +2,29 @@
   "howto": [
     {
       "name": "Upload an image",
-      "text": "Drop a JPG, PNG, WEBP, HEIC, BMP, GIF, or TIFF up to 50 MB."
+      "text": "Drop a JPG, PNG, WEBP, BMP, GIF, or TIFF up to 50 MB."
     },
     {
       "name": "Pick horizontal or vertical",
-      "text": "Horizontal flips left↔right (mirror). Vertical flips top↔bottom (upside down)."
+      "text": "Horizontal flips left↔right (mirror). Vertical flips top↔bottom, like a reflection in water."
     },
     {
-      "name": "Click Flip",
-      "text": "The mirrored copy downloads instantly. Original quality and transparency are preserved."
+      "name": "Flip and download",
+      "text": "The mirrored copy downloads as soon as it is ready. Transparency is preserved; PNG stays lossless, while JPG and WEBP are re-saved at quality 92. BMP, GIF and TIFF come back as PNG."
     }
   ],
   "faq": [
     {
       "q": "Horizontal vs vertical — when do I use which?",
-      "a": "Horizontal flip mirrors left↔right — the most common use is fixing selfies that come out mirrored. Vertical flip turns the image upside down — used for design layouts or correcting scans that were placed face-down."
+      "a": "Horizontal flip mirrors left↔right — the most common use is fixing selfies that come out mirrored. Vertical flip mirrors top↔bottom, like a reflection in water, which suits design layouts. It is not the same as turning a picture upside down: for an upside-down scan, use Rotate Image at 180°."
     },
     {
       "q": "Does flipping change the file size?",
-      "a": "Effectively no — flipping is a pure pixel rearrangement, so the encoded output is similar in size to the input (sometimes 1-3% larger because compression heuristics work slightly differently on the new orientation)."
+      "a": "It can. Flipping is a pure pixel rearrangement, and a PNG comes out close to its original size. JPG and WEBP files are re-encoded at quality 92, so a photo that was saved at a lower quality can grow noticeably."
     },
     {
       "q": "Is metadata preserved?",
-      "a": "We strip EXIF orientation hints on save, so the saved image bytes match what you see. If you need the original metadata kept, use Remove EXIF + this tool together."
+      "a": "No. The flipped copy is saved without the original EXIF data, such as camera details and location. A camera orientation tag is not applied first, so a phone photo that relies on one can come out turned on its side; Rotate Image can put it upright."
     }
   ]
 }

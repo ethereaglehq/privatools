@@ -24,7 +24,7 @@
     },
     {
       "q": "What rules does it follow?",
-      "a": "Patch increments the third number, minor increments the second and resets patch, major increments the first and resets minor and patch."
+      "a": "Patch increments the third number, minor increments the second and resets patch, major increments the first and resets minor and patch. A prerelease is released instead of bumped: patch turns 1.2.3-beta.1 into 1.2.3. Build metadata is dropped."
     }
   ]
 }

@@ -24,7 +24,7 @@
     },
     {
       "q": "Does it preserve transparency?",
-      "a": "MP4 doesn't support transparency. Transparent pixels render against a black background. Use WebM with VP9 if you need alpha."
+      "a": "MP4 doesn't support transparency. Transparent areas come out white, because the GIF is decoded onto white before encoding. Use WebM with VP9 if you need alpha."
     }
   ]
 }

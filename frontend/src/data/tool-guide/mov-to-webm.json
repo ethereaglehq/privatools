@@ -6,11 +6,11 @@
     },
     {
       "name": "PrivaTools re-encodes via FFmpeg",
-      "text": "VP9 WebM is smaller than the MOV at comparable quality and needs no QuickTime."
+      "text": "The video is re-encoded as VP9 at about 1 Mbit/s with Opus audio, well below the bitrate of a typical phone or camera MOV, and it plays without QuickTime."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. VP9 WebM is the right output for the open web: smaller than the MOV at comparable quality, and playable without QuickTime."
+      "text": "Run the conversion. VP9 WebM is the right output for the open web: usually much smaller than a camera MOV, and playable without QuickTime."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "Will the file get smaller?",
-      "a": "Usually yes — WebM/VP9 is efficient for the web and is often smaller than the source MOV at similar quality."
+      "a": "Usually yes. The video is encoded at about 1 Mbit/s, far below the bitrate of most phone and camera MOVs, so the file shrinks a lot; a MOV that is already small may not."
     },
     {
       "q": "Is it processed privately?",

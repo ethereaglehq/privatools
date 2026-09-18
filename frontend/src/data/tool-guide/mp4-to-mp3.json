@@ -6,7 +6,7 @@
     },
     {
       "name": "Extract audio and download",
-      "text": "Click Convert. PrivaTools extracts the audio track and re-encodes it as MP3, perfect for offline listening on any device."
+      "text": "Run the conversion. PrivaTools extracts the audio track and re-encodes it as MP3, perfect for offline listening on any device."
     }
   ],
   "faq": [
@@ -16,7 +16,7 @@
     },
     {
       "q": "What about file size?",
-      "a": "MP3 audio is dramatically smaller than the original video. A 1 GB video file typically becomes a 5–15 MB MP3."
+      "a": "The MP3's size depends on the length, not on the video: it is encoded at about 128 kbps, close to 1 MB per minute of stereo audio. This page takes MP4 files up to 200 MB."
     },
     {
       "q": "Is the video kept?",

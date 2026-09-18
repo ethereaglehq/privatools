@@ -6,25 +6,25 @@
     },
     {
       "name": "Choose compression preset",
-      "text": "Pick Light, Medium, or Heavy compression. Heavier settings reduce file size more but lower visual quality."
+      "text": "Pick Keep detail, Balanced (the default) or Small file, or set the compression level (CRF) anywhere from 18 to 40. Higher numbers make smaller files but lower the visual quality."
     },
     {
       "name": "Compress and download",
-      "text": "Click Compress. The server re-encodes the video using FFmpeg with H.264/H.265. The result shows the file size reduction."
+      "text": "Run it. The server re-encodes each video as H.264 in an MP4 using FFmpeg, and each result shows its new file size."
     }
   ],
   "faq": [
     {
       "q": "How much can a video be compressed?",
-      "a": "Typical results are 30-70% size reduction at Medium compression. Raw or high-bitrate videos see the largest savings."
+      "a": "It depends on the source. High-bitrate recordings, such as phone and camera footage, shrink the most; a video that is already heavily compressed may barely change at the default level."
     },
     {
       "q": "Does compression change the video resolution?",
-      "a": "No. The resolution stays the same by default. Only the bitrate is reduced. You can optionally lower the resolution for even smaller files."
+      "a": "No. The resolution stays the same; only the bitrate is reduced. To lower the resolution too, run the video through Video Resizer."
     },
     {
       "q": "What output format is used?",
-      "a": "The output is MP4 with H.264 encoding, which is universally compatible with all devices and browsers."
+      "a": "The output is MP4 with H.264 video, which almost every device and browser can play."
     }
   ]
 }

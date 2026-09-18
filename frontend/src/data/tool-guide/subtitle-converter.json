@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload an SRT / VTT / ASS subtitle file",
-      "text": "Auto-detects format from extension and content."
+      "text": "The format is detected from the file's content."
     },
     {
       "name": "Choose target format",
-      "text": "SRT (universal). VTT (web video). ASS (advanced styling)."
+      "text": "SRT (universal) or VTT (web video). ASS files can be read but not written."
     },
     {
       "name": "Download the converted subtitles",
@@ -20,7 +20,7 @@
     },
     {
       "q": "Will styling carry over?",
-      "a": "SRT → VTT: yes. VTT → SRT: styling is stripped (SRT has no style support). ASS → SRT: styling lost; text and timing preserved."
+      "a": "Text and timing always carry over, and inline tags such as italics are copied as they are. WebVTT cue settings (position and alignment) and STYLE blocks are dropped, and ASS styling and override codes are removed."
     },
     {
       "q": "Is my subtitle file uploaded?",

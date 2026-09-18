@@ -24,7 +24,7 @@
     },
     {
       "q": "Which formats can I use?",
-      "a": "JPG, PNG and WebP. Transparency is preserved where the source format has it."
+      "a": "JPG, PNG, WebP and BMP, and the result comes back in the same format. Transparency is not kept: see-through areas usually turn black, so place a transparent PNG on a background first if that matters."
     },
     {
       "q": "Does the image leave my device?",

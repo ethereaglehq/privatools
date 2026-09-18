@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose number of frames",
-      "text": "3-30. PrivaTools picks evenly-spaced keyframes across the video."
+      "text": "Anywhere from 1 to 60 (12 by default). PrivaTools samples frames at even intervals across the video."
     },
     {
       "name": "Download the PDF",
@@ -24,7 +24,7 @@
     },
     {
       "q": "What resolution are the frames?",
-      "a": "Native video resolution. The PDF page size matches."
+      "a": "Frames are scaled to 1280 pixels wide and placed one per US Letter page, fitted inside the margins."
     }
   ]
 }

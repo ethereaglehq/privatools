@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose the scale",
-      "text": "Set how large to render, from 0.1 up to 8 times the SVG's own dimensions; the default is 2 for a crisp result on high-resolution screens."
+      "text": "Pick 1×, 2× (the default), 3× or 4× the SVG's own dimensions; the output size in pixels is shown before you convert. 2× gives a crisp result on high-resolution screens."
     },
     {
       "name": "Render and download",
@@ -20,7 +20,7 @@
     },
     {
       "q": "What scale should I pick?",
-      "a": "Work out the pixel size you actually need. The default of 2 renders at twice the SVG's own dimensions, which suits high-resolution displays. Raise it for print or large artwork, and drop below 1 when the SVG is already larger than you need."
+      "a": "Work out the pixel size you actually need. The default of 2 renders at twice the SVG's own dimensions, which suits high-resolution displays. Raise it to 3× or 4× for print or large artwork; 1× keeps the SVG's own size, the smallest option here."
     },
     {
       "q": "Is transparency preserved?",

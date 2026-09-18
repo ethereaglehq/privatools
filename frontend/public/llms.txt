@@ -141,7 +141,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Remove EXIF Data](https://privatools.me/tools/remove-exif): Strip GPS, camera, and timestamp metadata from photos
 - [Resize & Crop Image](https://privatools.me/tools/resize-crop-image): Resize or crop an image to exact pixel dimensions
 - [Video / Audio to GIF](https://privatools.me/tools/video-to-gif): Convert short video clips into animated GIFs
-- [Image OCR](https://privatools.me/tools/image-ocr): Read text from images with local OCR or your AI provider
+- [Image OCR](https://privatools.me/tools/image-ocr): Read text from images with server OCR, browser OCR, or your AI provider
 - [Extract Audio from Video](https://privatools.me/tools/extract-audio): Strip the MP3/WAV audio track from a video file
 - [Cut / Trim Video & Audio](https://privatools.me/tools/trim-media): Trim the start and end of video or audio files
 - [Compress Video](https://privatools.me/tools/compress-video): Reduce video file size for email or messaging
@@ -150,14 +150,14 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Video Resizer](https://privatools.me/tools/video-resizer): Downscale a video to 240p, 360p, 480p, 720p, 1080p, or 1440p
 - [Video Thumbnail](https://privatools.me/tools/video-thumbnail): Extract a single frame from a video as a JPG image
 - [GIF to MP4](https://privatools.me/tools/gif-to-mp4): Convert animated GIF to MP4 for smaller file size
-- [Add Subtitles to Video](https://privatools.me/tools/add-subtitles): Burn .srt or .vtt subtitles permanently into a video
+- [Add Subtitles to Video](https://privatools.me/tools/add-subtitles): Burn .srt subtitles permanently into a video
 - [Merge Videos](https://privatools.me/tools/video-merge): Concatenate multiple videos into one
 - [Merge Audio](https://privatools.me/tools/audio-merge): Concatenate multiple audio tracks into one file
-- [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert between SRT, VTT, and ASS subtitle formats
+- [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert SRT, VTT, and ASS subtitles to SRT or VTT
 - [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify and validate JSON or XML offline
 - [Text Diff / Comparator](https://privatools.me/tools/text-diff): Highlight exact differences between two text blocks
-- [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text and files as Base64
-- [Hash Generator](https://privatools.me/tools/hash-generator): Generate MD5, SHA-1, SHA-256 hashes of text or files
+- [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text as Base64
+- [Hash Generator](https://privatools.me/tools/hash-generator): Generate SHA-1, SHA-256, and SHA-512 hashes of text or files
 - [Extract ZIP / TAR](https://privatools.me/tools/extract-archive): Extract ZIP and TAR archives privately
 - [Create ZIP Archive](https://privatools.me/tools/create-zip): Bundle multiple files into a ZIP archive
 - [CSV ↔ JSON Converter](https://privatools.me/tools/csv-json): Swap between CSV and JSON data formats instantly
@@ -167,7 +167,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [SVG to PNG](https://privatools.me/tools/svg-to-png): Convert vector SVG files to crisp PNG images
 - [Remove Image Watermark](https://privatools.me/tools/remove-image-watermark): Erase a watermark from a photo or graphic
 - [Image Watermark](https://privatools.me/tools/image-watermark): Add text watermarks to photos and images
-- [Favicon Generator](https://privatools.me/tools/generate-favicon): Create .ico favicons from any image
+- [Favicon Generator](https://privatools.me/tools/generate-favicon): Create .ico favicons from PNG, JPG, WebP, or BMP images
 - [Photo Collage](https://privatools.me/tools/make-collage): Combine multiple images into a beautiful grid
 - [Barcode Generator](https://privatools.me/tools/generate-barcode): Generate QR or linear barcodes from valid data
 - [URL to PDF](https://privatools.me/tools/url-to-pdf): Save any webpage as a PDF document
@@ -175,7 +175,7 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [UUID Generator](https://privatools.me/tools/uuid-generator): Bulk-generate UUID v4 or v7 in your browser
 - [Lorem Ipsum Generator](https://privatools.me/tools/lorem-ipsum): Placeholder text — words, sentences, or paragraphs
 - [Word & Character Counter](https://privatools.me/tools/word-counter): Live counts of words, characters, sentences, lines
-- [Color Converter](https://privatools.me/tools/color-converter): Convert between HEX, RGB, HSL, RGBA
+- [Color Converter](https://privatools.me/tools/color-converter): Convert a HEX color to RGB, RGBA, and HSL
 - [URL Encoder / Decoder](https://privatools.me/tools/url-encoder): Percent-encode or decode URLs in your browser
 - [QR Code Reader](https://privatools.me/tools/qr-reader): Decode QR codes from an uploaded image
 - [Merge Images](https://privatools.me/tools/merge-images): Combine images side-by-side or top-to-bottom
@@ -244,10 +244,10 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [JSON to CSV Schema](https://privatools.me/tools/json-to-csv-schema): Infer JSON schema and export flattened CSV
 - [Mute Video](https://privatools.me/tools/mute-video): Strip the audio track from any video
 - [Reverse Video](https://privatools.me/tools/reverse-video): Play your video backwards (audio reversed too)
-- [Video Speed Changer](https://privatools.me/tools/video-speed): Speed up or slow down a video, 0.25× to 4×
+- [Video Speed Changer](https://privatools.me/tools/video-speed): Speed up or slow down a video, 0.3× to 3.95×
 - [Audio Trimmer](https://privatools.me/tools/audio-trim): Cut a clip out of any audio file
 - [Image Color Palette](https://privatools.me/tools/image-palette): Extract dominant colors from any image
-- [Pixelate / Blur Image](https://privatools.me/tools/pixelate-image): Censor part of an image with mosaic or Gaussian blur
+- [Pixelate / Blur Image](https://privatools.me/tools/pixelate-image): Censor a whole image with mosaic or Gaussian blur
 - [Rotate Image](https://privatools.me/tools/rotate-image): Rotate JPG, PNG, or WEBP by 90°, 180°, 270°, or any angle
 - [Flip Image](https://privatools.me/tools/flip-image): Mirror an image horizontally or vertically
 

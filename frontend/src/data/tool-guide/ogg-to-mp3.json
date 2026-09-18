@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. MP3 plays essentially everywhere, which Ogg still does not, at the cost of one more lossy generation."
+      "text": "Run the conversion. MP3 plays essentially everywhere, which Ogg still does not, at the cost of one more lossy generation. The MP3 is encoded at 192 kbps."
     }
   ],
   "faq": [
@@ -20,7 +20,7 @@
     },
     {
       "q": "Is there quality loss?",
-      "a": "Re-encoding one lossy format to another (transcoding) loses a little quality. Choose 256–320 kbps to keep it minimal."
+      "a": "Re-encoding one lossy format to another (transcoding) loses a little quality. This page encodes at 192 kbps; Audio Converter offers up to 320 kbps to keep the loss smaller."
     },
     {
       "q": "Is it processed privately?",

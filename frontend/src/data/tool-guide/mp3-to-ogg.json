@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload an MP3",
-      "text": "Drop an .mp3 file up to 500 MB."
+      "text": "Drop an .mp3 file up to 200 MB."
     },
     {
       "name": "PrivaTools re-encodes via FFmpeg",
@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops. As a lossy-to-lossy transcode, encode generously if the MP3 was already low bitrate."
+      "text": "Run the conversion. Ogg Vorbis is royalty-free and well supported by browsers, game engines and Linux desktops. As a lossy-to-lossy transcode, it loses a little more detail; the Ogg is encoded with a 192 kbps target."
     }
   ],
   "faq": [

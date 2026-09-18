@@ -1,26 +1,26 @@
 {
   "howto": [
     {
-      "name": "Enter a color in any format",
-      "text": "HEX (#FF5733), RGB (255, 87, 51), HSL (10, 100%, 60%), or named (coral, tomato, etc.)."
+      "name": "Enter a HEX color",
+      "text": "Type a HEX code (#FF5733, or the short #F53 form), or click the swatch to pick a color."
     },
     {
       "name": "PrivaTools shows the same color in every format",
-      "text": "Live conversion: HEX, RGB, RGBA, HSL, HSLA, HSV, CMYK, and named-color match (if any)."
+      "text": "Live conversion: HEX, RGB, RGBA, HSL, a Tailwind class and a CSS variable, plus a contrast rating against white or black text."
     },
     {
       "name": "Copy the value you need",
-      "text": "Click any value to copy. Runs entirely in your browser — no network roundtrip."
+      "text": "Use the Copy button on any row. Runs entirely in your browser — no network roundtrip."
     }
   ],
   "faq": [
     {
       "q": "Does it work with alpha (transparency)?",
-      "a": "Yes — paste #RRGGBBAA or rgba(...) and the alpha channel is preserved across all output formats."
+      "a": "No. Input is a 3- or 6-digit HEX code without alpha, and the RGBA row always shows an alpha of 1."
     },
     {
-      "q": "Why does my CMYK look different from print?",
-      "a": "CMYK conversion uses a sRGB → CMYK approximation. For exact print color, use your printer's color profile."
+      "q": "What does the contrast badge mean?",
+      "a": "It rates the color against white or black text, whichever contrasts more, with the WCAG formula: AAA at 7:1 or more, AA at 4.5:1, AA Large at 3:1, and Fail below that."
     },
     {
       "q": "Is the calculation done locally?",

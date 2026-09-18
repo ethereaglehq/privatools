@@ -20,11 +20,11 @@
     },
     {
       "q": "Will quality suffer?",
-      "a": "FFmpeg uses sensible default bitrates that preserve visual quality. For lossless conversion (rare), use the MKV output."
+      "a": "Every output is re-encoded, so a small loss is normal. MP4, MOV and MKV use H.264 at CRF 23, WebM uses VP9 at about 1 Mbit/s, and AVI uses MPEG-4 with MP3 audio. None of the outputs is lossless, MKV included."
     },
     {
       "q": "How long does it take?",
-      "a": "Roughly real-time on the server (a 2-minute video = ~2 minutes to convert)."
+      "a": "It depends on the length, the resolution and the format; WebM (VP9) encodes several times more slowly than the others. A conversion that runs longer than three minutes is stopped, so trim or resize long videos first."
     }
   ]
 }

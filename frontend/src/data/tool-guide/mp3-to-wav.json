@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload an MP3",
-      "text": "Drop an .mp3 file up to 500 MB."
+      "text": "Drop an .mp3 file up to 200 MB."
     },
     {
       "name": "PrivaTools decodes via FFmpeg",
@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. The MP3 is decoded to uncompressed PCM, which is what most editors, samplers and DAWs want to work from. Files grow roughly tenfold — a 5 MB MP3 lands near 50 MB."
+      "text": "Run the conversion. The MP3 is decoded to uncompressed PCM, which is what most editors, samplers and DAWs want to work from. Files grow roughly tenfold — a 5 MB MP3 lands near 50 MB."
     }
   ],
   "faq": [

@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Paste YAML",
-      "text": "Drop any YAML document into the left textarea — a Kubernetes manifest, GitHub Actions workflow, Docker Compose file, or any configuration."
+      "text": "Drop a YAML document into the left textarea — a Kubernetes manifest, GitHub Actions workflow, Docker Compose file, or other configuration that uses mappings, lists and plain values."
     },
     {
       "name": "Read JSON instantly",
@@ -16,7 +16,7 @@
     },
     {
       "q": "Which YAML features are supported?",
-      "a": "All common config features: scalars, lists, nested maps, quoted strings, comments, multi-line strings, and flow-style arrays and objects. Anchors, tags, and multi-doc streams are not supported — those are rare in practice."
+      "a": "Scalars, lists, nested maps, quoted strings, comments (left out of the JSON) and flow-style arrays. Inline objects work only with JSON-style quoted keys. Multi-line block strings (| and >), anchors, tags and multi-document streams are not supported and show an error instead of converting wrongly."
     },
     {
       "q": "What if my YAML has a parse error?",

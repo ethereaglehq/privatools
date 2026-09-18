@@ -2,15 +2,15 @@
   "howto": [
     {
       "name": "Upload an MP3",
-      "text": "Drop an .mp3 file up to 500 MB."
+      "text": "Drop an .mp3 file up to 200 MB."
     },
     {
-      "name": "PrivaTools rewraps via FFmpeg",
+      "name": "PrivaTools converts via FFmpeg",
       "text": "The decoded audio is stored losslessly. Nothing further is lost, and nothing is restored: the output sounds identical to the MP3 and is larger."
     },
     {
       "name": "Convert and download",
-      "text": "Click Convert. FLAC wraps the decoded audio losslessly, so nothing further is lost — but nothing is restored either. The output is larger than the MP3 and sounds identical to it. Use this when a workflow demands FLAC input, not to improve quality."
+      "text": "Run the conversion. FLAC stores the decoded audio losslessly, so nothing further is lost — but nothing is restored either. The output is larger than the MP3 and sounds identical to it. Use this when a workflow demands FLAC input, not to improve quality."
     }
   ],
   "faq": [

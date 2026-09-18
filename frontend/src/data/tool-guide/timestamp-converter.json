@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "How does it know if a number is seconds or milliseconds?",
-      "a": "By magnitude. Numbers larger than 10^12 (Sep 2001 onward in milliseconds) are treated as milliseconds; smaller as seconds. You can also paste an ISO 8601 string explicitly."
+      "a": "By magnitude: a number of 100,000,000,000 (10^11) or more is read as milliseconds, anything smaller as seconds. The 'Interpret numbers as' setting can force seconds or milliseconds, or you can paste an ISO 8601 string."
     },
     {
       "q": "Why is the local time different from the UTC time?",
