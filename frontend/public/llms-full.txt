@@ -643,7 +643,7 @@ URL: https://privatools.me/tool/whiteout-pdf
 
 Cover content on PDF with white boxes
 
-White-out content in PDF online — place white rectangles over text, images, or any content to permanently hide it. Works like digital correction tape. Free erasure tool for quick coverups.
+White-out content in PDF online — place white rectangles over text, images, or any content to cover it visually. Works like digital correction tape; the underlying text stays in the file, so use Redact PDF for true removal.
 
 ### Annotate PDF
 
@@ -1643,7 +1643,7 @@ URL: https://privatools.me/tools/mov-to-gif
 
 Convert MOV video clips to animated GIFs
 
-Convert MOV to GIF online for free — turn iPhone, macOS, and QuickTime MOV clips into looping GIFs with the existing video-to-GIF pipeline.
+Convert MOV to GIF online for free — turn iPhone, macOS, and QuickTime MOV clips into looping GIFs ready for chats, docs, and social posts.
 
 ### YAML to JSON
 

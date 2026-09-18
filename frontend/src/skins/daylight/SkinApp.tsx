@@ -5,6 +5,7 @@ import ApiActivity from "@/components/account/ApiActivity";
 import AccountWorkspaceHeader from "@/components/account/AccountWorkspaceHeader";
 import { accountsConfigured, usernameAccountsEnabled, passkeyAccountsEnabled } from "@/lib/auth-mode";
 import { canonicalPath, currentRoute, navigateTo } from "@/lib/navigation";
+import { toolSeo } from "@/lib/tool-seo";
 /**
  * Consumer application shell. Catalogue and counts derive from the registries.
  * withRealTools mounts the existing processing components; withVault and
@@ -849,7 +850,7 @@ export default class DaylightSkinApp extends React.Component {
     titleFor(r) {
         if (r.view === "tool") {
             const t = BY_SLUG.get(r.slug);
-            if (t) return `${t.name} Online Free — No Sign Up | PrivaTools`;
+            if (t) return toolSeo(t).title;
             return "Tool not found · PrivaTools";
         }
         if (r.view === "blog" && r.post) {

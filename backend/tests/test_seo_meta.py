@@ -290,6 +290,41 @@ def test_generated_blog_content_refreshes_by_mtime(tmp_path, monkeypatch):
     assert "First generated guide" not in second_tool
 
 
+def test_tool_pages_use_registry_search_copy(tmp_path, monkeypatch):
+    """Tool title/description/H1/og:title come from the registry's seoTitle
+    and metaDescription — not the old "<name> — Free Online | PrivaTools"
+    formula. `_tool_seo_fields` is the read path both `get_meta_for_path`
+    and the SSR `<h1>` share."""
+    manifest = {
+        "merge-pdf": {"slug": "merge-pdf", "name": "Merge PDF", "path": "/tool/merge-pdf", "category": "organize",
+                      "description": "Combine PDFs", "longDescription": "Long intro text for the page.",
+                      "seoTitle": "Merge PDF Files Online Free – Combine PDFs Privately",
+                      "metaDescription": "Combine PDF files in the order you choose. Free, no sign-up, temporary server processing."},
+        "image-compressor": {"slug": "image-compressor", "name": "Image Compressor", "path": "/tools/image-compressor", "category": "image",
+                             "description": "Shrink images", "longDescription": "Long intro for images.",
+                             "seoTitle": "Compress Images Online Free – Smaller JPG, PNG and WebP",
+                             "metaDescription": "Reduce JPG, PNG and WebP file size with a quality preset you control. Free, no sign-up, temporary server processing."},
+    }
+    path = tmp_path / "tool-content.json"
+    path.write_text(json.dumps(manifest), encoding="utf-8")
+    monkeypatch.setattr(seo_meta, "_TOOL_JSON", path)
+    seo_meta._load_manifest.cache_clear()
+
+    title, description = get_meta_for_path("/tool/merge-pdf")
+    assert title == "Merge PDF Files Online Free – Combine PDFs Privately"
+    assert description == manifest["merge-pdf"]["metaDescription"]
+    assert "| PrivaTools" not in title
+
+    # og:title comes from a real template with a pre-existing tag — inject_seo
+    # updates a meta tag's `content` in place and never invents a missing one.
+    from pathlib import Path
+
+    template = (Path(__file__).resolve().parents[2] / "frontend" / "index.html").read_text("utf-8")
+    html = inject_seo(template, "/tools/image-compressor")
+    assert "<h1>Compress Images Online Free – Smaller JPG, PNG and WebP</h1>" in html
+    assert '<meta property="og:title" content="Compress Images Online Free – Smaller JPG, PNG and WebP">' in html
+
+
 def test_compare_tool_count_claims_match_catalog_size():
     total = len(seo_meta._PDF_TOOLS) + len(seo_meta._NONPDF_TOOLS)
     breadth_feature = f"{total} tools (PDF, image, video, audio, dev)"
