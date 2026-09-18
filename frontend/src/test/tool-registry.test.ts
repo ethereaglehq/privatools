@@ -142,6 +142,14 @@ describe("tool registry quality", () => {
         expect(bad).toEqual([]);
         const titles = allTools.map(tool => tool.seoTitle.toLowerCase());
         expect(new Set(titles).size).toBe(titles.length);
+
+        // Exactly one " – " (space, en dash U+2013, space) separator between
+        // the query-first lead-in and the differentiator.
+        const badSeparator = allTools.filter(tool => {
+            const title = tool.seoTitle ?? "";
+            return title.split(" – ").length !== 2;
+        }).map(tool => `${tool.slug}: ${tool.seoTitle}`);
+        expect(badSeparator).toEqual([]);
     });
 
     it("gives every tool a meta description written to budget", () => {
