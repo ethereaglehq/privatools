@@ -91,11 +91,12 @@ jobs:
         working-directory: frontend
         run: npm ci
       # gen-llms writes committed files from src/data/: the llms, sitemap, feed
-      # and content JSON files in public/. Only the backend job's build
-      # regenerated them, so a registry edit committed without
-      # `npm run gen:llms` passed CI while the copies this job's tests read
-      # were stale. Nothing else has written to frontend/ since the checkout,
-      # and no output is dated from the clock, so any change here is real.
+      # and content JSON files in public/. CI only regenerated them inside
+      # `npm run build` and never compared the result with the commit, so a
+      # registry edit committed without `npm run gen:llms` passed while the
+      # copies this job's tests read were stale. Nothing else has written to
+      # frontend/ since the checkout, and no output is dated from the clock,
+      # so any change here is real.
       - name: Check generated content is current
         working-directory: frontend
         run: |
