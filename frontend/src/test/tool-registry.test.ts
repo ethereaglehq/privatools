@@ -131,4 +131,38 @@ describe("tool registry quality", () => {
 
         expect(mismatches).toEqual([]);
     });
+
+    const FORBIDDEN = [/no file size limits/i, /never written to disk/i, /unlimited/i, /100% safe/i];
+
+    it("gives every tool a query-first search title within budget", () => {
+        const bad = allTools.filter(tool => {
+            const title = tool.seoTitle ?? "";
+            return title.length < 40 || title.length > 60 || /PrivaTools/.test(title) || title.trim() !== title;
+        }).map(tool => `${tool.slug}: ${tool.seoTitle}`);
+        expect(bad).toEqual([]);
+        const titles = allTools.map(tool => tool.seoTitle.toLowerCase());
+        expect(new Set(titles).size).toBe(titles.length);
+    });
+
+    it("gives every tool a meta description written to budget", () => {
+        const bad = allTools.filter(tool => {
+            const text = tool.metaDescription ?? "";
+            const sentences = text.split(/(?<=\.)\s+/).filter(Boolean).length;
+            return text.length < 120 || text.length > 160 || !text.endsWith(".") || text.includes("…") || sentences > 2;
+        }).map(tool => `${tool.slug}: ${tool.metaDescription}`);
+        expect(bad).toEqual([]);
+        const descriptions = allTools.map(tool => tool.metaDescription.toLowerCase());
+        expect(new Set(descriptions).size).toBe(descriptions.length);
+    });
+
+    it("keeps search copy free of counts and forbidden claims", () => {
+        const bad = allTools.filter(tool => {
+            const copy = `${tool.seoTitle}\n${tool.metaDescription}`;
+            const browserClaim = /stays in your browser|in your browser/i.test(copy) && !tool.clientOnly;
+            return /\b\d{3,}\b/.test(copy) || FORBIDDEN.some(re => re.test(copy)) || browserClaim;
+        }).map(tool => tool.slug);
+        expect(bad).toEqual([]);
+        const createZip = nonPdfTools.find(tool => tool.slug === "create-zip");
+        expect(`${createZip?.seoTitle}\n${createZip?.metaDescription}`).not.toMatch(/password|encrypt|AES/i);
+    });
 });
