@@ -88,9 +88,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the flattened PDF", "text": "Click Flatten. The result is a clean PDF where all content is baked into the pages, preventing further edits."},
     ],
     "bookmarks": [
-        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Existing bookmarks, if any, are listed automatically."},
-        {"name": "Edit the bookmark tree", "text": "Add, rename, reorder, or delete bookmarks. Set the target page number for each entry. You can nest bookmarks to create a multi-level table of contents."},
-        {"name": "Save and download", "text": "Click Save. The updated bookmark tree is embedded into the PDF for easy navigation in any reader."},
+        {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB. Existing bookmarks are not loaded, and saving replaces them, so include any you want to keep."},
+        {"name": "Edit the bookmark tree", "text": "Add, rename, or delete rows, giving each bookmark a title and a target page. Or switch to the JSON view and paste an array of entries with a title and a page. Bookmarks are saved in list order, all on one level."},
+        {"name": "Save and download", "text": "Click Save. The bookmarks are written into the PDF as its outline for easy navigation in any reader; a page number past the end points to the last page."},
     ],
     "form-creator": [
         {"name": "Upload a PDF or start blank", "text": "Upload an existing PDF to add form fields on top, or start with a blank page."},
@@ -248,9 +248,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── v1.1.0 + v1.2.0 additions ─────────────────────────────────────────
     "highlight-pdf": [
         {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB containing the text you want to highlight."},
-        {"name": "Enter your search phrase", "text": "Type the word or phrase to highlight. Use the case-sensitive toggle for exact matches."},
+        {"name": "Enter your search phrase", "text": "Type the word or phrase to highlight. Matching ignores capitalisation, so invoice also finds Invoice and INVOICE; the Case sensitive switch does not change this at present."},
         {"name": "Pick a highlight color", "text": "Choose yellow, green, pink, blue, or orange. Highlights are added as real PDF annotations."},
-        {"name": "Download the highlighted PDF", "text": "Click Highlight. The tool finds every occurrence on every page and writes a new PDF with permanent highlight annotations."},
+        {"name": "Download the highlighted PDF", "text": "Click Highlight. The tool finds every occurrence on every page and writes a new PDF with a highlight annotation over each match."},
     ],
     "transcribe-audio": [
         {"name": "Add a recording", "text": "Select an audio file up to 500 MB, such as a voice memo, a meeting recording or an interview."},
@@ -521,17 +521,17 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
     "add-attachment": [
         {"name": "Upload the host PDF", "text": "Drop the PDF you want to embed a file inside (up to 500 MB)."},
-        {"name": "Add the file to attach", "text": "Drop any file — image, spreadsheet, .zip, even another PDF. PrivaTools embeds it without altering the visible content."},
+        {"name": "Add the file to attach", "text": "Drop any file up to 50 MB — image, spreadsheet, .zip, even another PDF. PrivaTools embeds it without altering the visible content."},
         {"name": "Download the result", "text": "Click Attach. The output PDF has your file embedded as an attachment; readers like Acrobat show it in the Attachments panel."},
     ],
     "add-hyperlinks": [
-        {"name": "Upload your PDF", "text": "Select a PDF up to 500 MB."},
-        {"name": "Define each link", "text": "Specify the page, rectangle coordinates (x, y, width, height in PDF points), and target URL. Coordinates use the PDF coordinate system where (0,0) is bottom-left."},
-        {"name": "Download the linked PDF", "text": "Click Add Links. PrivaTools embeds clickable hyperlink annotations at each rectangle, opening the target URL on click in any PDF reader."},
+        {"name": "Upload your PDF", "text": "Select one or more PDFs, up to 500 MB each. The PDF needs real text: a scanned page has no words to search."},
+        {"name": "Let it find the addresses", "text": "There is nothing to draw or type. PrivaTools reads the text of every page and picks out each web address that starts with http:// or https://. Addresses without that prefix, such as www.example.com, and email addresses stay plain text."},
+        {"name": "Download the linked PDF", "text": "Click Add hyperlinks. Each address found gets a clickable link over its text that opens the address when clicked in a PDF reader."},
     ],
     "add-shapes": [
         {"name": "Upload the PDF", "text": "Select a PDF up to 500 MB."},
-        {"name": "Define shapes", "text": "For each shape, specify type (rectangle, ellipse, line, polygon), page number, coordinates, color, and stroke width."},
+        {"name": "Define shapes", "text": "For each shape, choose the type (rectangle, circle, line or arrow), page number, coordinates, stroke color, optional fill color, and stroke width. A circle takes the smaller of its width and height as its diameter."},
         {"name": "Apply and download", "text": "Click Add Shapes. The shapes are drawn directly onto the page content; they survive copy-paste, printing, and PDF/A conversion."},
     ],
     "alternate-mix": [
@@ -541,7 +541,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "annotate-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Add annotations", "text": "Use the toolbar to add highlights, underlines, strikethroughs, sticky notes, and text boxes. Each annotation has a position, page, content, and color."},
+        {"name": "Add annotations", "text": "Draw a box on the page preview, or add an annotation from the list, then set its type (highlight, underline, strikethrough or sticky note), page, position and colour. A sticky note also takes a line of text."},
         {"name": "Save and download", "text": "Click Save. Annotations are added as standard PDF annotation objects — they appear in every PDF reader and can be edited later."},
     ],
     "auto-crop": [
@@ -550,7 +550,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the cropped PDF", "text": "Click Auto Crop. Each page's MediaBox is shrunk to the detected content bounding box, eliminating dead margins."},
     ],
     "bates-numbering": [
-        {"name": "Upload the PDF (or batch)", "text": "Drop a PDF up to 500 MB. The numbering is applied to one document per run."},
+        {"name": "Upload the PDF (or batch)", "text": "Drop one PDF, or up to 100 PDFs that make up one production. Several files are numbered as one continuous run, file after file, and come back as a ZIP with a bates-manifest.json listing each file's range. The whole upload can be up to 500 MB."},
         {"name": "Configure the Bates format", "text": "Set the prefix (e.g. BATES), starting number, padding digits (e.g. 0001), and position on the page (top/bottom × left/center/right)."},
         {"name": "Download with stamps", "text": "Click Apply. PrivaTools stamps each page with the next Bates number — e.g. BATES0001, BATES0002, etc."},
     ],
@@ -626,8 +626,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the grayscale PDF", "text": "File size typically drops 30–50% because color channels are eliminated."},
     ],
     "header-footer": [
-        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Enter header and footer text", "text": "Optional left/center/right slots for both header and footer. Use placeholders like {page}, {total}, {date} for dynamic content."},
+        {"name": "Upload your PDF", "text": "Drop one or more PDFs, up to 500 MB each. The same header and footer go on all of them."},
+        {"name": "Enter header and footer text", "text": "Type a header, a footer, or both, and set the font size (6-32 pt on the slider, 10 pt by default). The text is printed exactly as typed on every page; placeholders such as {page} or {date} are not filled in, so use Page Numbers for numbering."},
         {"name": "Apply and download", "text": "Click Apply. The text is stamped at the top and bottom of every page in the chosen font size."},
     ],
     "heic-to-pdf": [
@@ -678,8 +678,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Choose mode and download", "text": "Overlay: foreground on top. Underlay: behind. Stamp: applied to every page repeatedly. Output: a merged PDF with the overlay rendered onto each base page."},
     ],
     "page-numbers": [
-        {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Choose position and starting number", "text": "Position: top-left/top-center/top-right/bottom-left/bottom-center/bottom-right. Starting number: defaults to 1, but use any integer to continue a multi-document sequence."},
+        {"name": "Upload your PDF", "text": "Drop one or more PDFs, up to 500 MB each. The same settings apply to all of them."},
+        {"name": "Choose position and starting number", "text": "Position: top-left/top-center/top-right/bottom-left/bottom-center/bottom-right. Starting number: defaults to 1, but use any whole number from 1 upward to continue a multi-document sequence. Font size: 12 pt by default, 6-48 pt on the slider."},
         {"name": "Apply and download", "text": "PrivaTools stamps each page with its number in the chosen position and font size."},
     ],
     "pdf-to-bmp": [
@@ -787,7 +787,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "stamp-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
         {"name": "Choose a stamp", "text": "Preset: APPROVED, CONFIDENTIAL, COPY, DRAFT, FINAL, NOT APPROVED, SAMPLE, VOID. Or custom: your own text."},
-        {"name": "Set opacity and position", "text": "Opacity 0-1 (default 0.5). Position: top/middle/bottom × left/center/right. Click Apply."},
+        {"name": "Set opacity and position", "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers separated by commas. Click Apply."},
     ],
     "strip-metadata": [
         {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."},
@@ -805,9 +805,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "All TIFFs become one PDF. Compression (LZW, Deflate, JPEG inside TIFF) is converted to PDF-native equivalents."},
     ],
     "transparent-background": [
-        {"name": "Upload a PDF (or image)", "text": "Drop a PDF up to 500 MB. PrivaTools renders each page and detects the background color."},
-        {"name": "Set threshold", "text": "How close to pure white (or off-white) should be treated as background. 240 (default) catches most scanned documents."},
-        {"name": "Download with transparency", "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds."},
+        {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300)."},
+        {"name": "Set threshold", "text": "Set how close to pure white a pixel must be to count as background, from 180 to 255 (245 by default). A pixel whose red, green and blue values are all at or above the threshold becomes transparent."},
+        {"name": "Download with transparency", "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds. Each page becomes a single image, so its text can no longer be selected or searched."},
     ],
     "verify-signature": [
         {"name": "Upload a signed PDF", "text": "Drop a PDF with one or more digital signatures."},
@@ -821,8 +821,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "whiteout-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
-        {"name": "Draw white-out rectangles", "text": "Specify region(s) per page to cover with white (or chosen color). Content underneath is permanently hidden from view."},
-        {"name": "Download the cleaned PDF", "text": "Hidden regions are covered with the chosen color in the rendered output."},
+        {"name": "Draw white-out rectangles", "text": "Drag on the page preview to draw a box, or add one and set its page, position and size. Each box is filled with white; what is underneath is hidden from view but stays in the file."},
+        {"name": "Download the cleaned PDF", "text": "Apply the boxes and download the PDF. The regions are covered with white wherever the file is opened."},
     ],
     "add-subtitles": [
         {"name": "Upload a video", "text": "Drop an MP4/MOV/MKV file up to 500 MB."},
@@ -1144,7 +1144,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "remove-watermark": [
         {"name": 'Upload the watermarked PDF', "text": 'Select a PDF that carries a visible watermark.'},
-        {"name": 'Review the candidates', "text": 'The tool scans the page content for repeated text and image objects that behave like watermarks, and lists what it found.'},
+        {"name": 'Review the candidates', "text": 'The tool scans the pages for text that repeats across them and is see-through or set at an angle, as watermarks usually are, and lists what it found. Image watermarks such as logos are not detected.'},
         {"name": 'Remove and download', "text": 'Confirm which candidates to strip. Only those objects are removed, so the rest of the page survives intact. A watermark burned into a scanned image is part of the picture and cannot be lifted this way — use Remove Image Watermark for that.'},
     ],
     "remove-image-watermark": [
@@ -1271,9 +1271,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does flattening reduce file size?", "a": "Sometimes. Removing form field metadata and annotation data can slightly reduce file size, but the effect depends on the document."},
     ],
     "bookmarks": [
-        {"q": "Can I create a multi-level bookmark tree?", "a": "Yes. You can nest bookmarks under parent entries to create a hierarchical table of contents with multiple levels."},
+        {"q": "Can I create a multi-level bookmark tree?", "a": "No. Every bookmark is saved at the top level, in the order listed; nested entries are not supported."},
         {"q": "Do bookmarks work in all PDF readers?", "a": "Yes. The bookmarks use the standard PDF outline format supported by Adobe Reader, Preview, Chrome, Firefox, and all major PDF viewers."},
-        {"q": "Can I import a bookmark structure from a text file?", "a": "Currently, bookmarks are created manually in the editor. You can copy-paste titles and set page numbers individually."},
+        {"q": "Can I import a bookmark structure from a text file?", "a": "There is no file import, but the JSON view accepts a pasted array of entries, each with a title and a page, so a list prepared elsewhere goes in at once."},
     ],
     "form-creator": [
         {"q": "What field types can I add?", "a": "Text inputs, text areas, checkboxes, radio buttons, dropdowns, date pickers, and signature fields."},
@@ -1455,7 +1455,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "highlight-pdf": [
         {"q": "Are the highlights real PDF annotations or flattened images?", "a": "Real PDF annotations. They render in every PDF viewer and can be removed later if you reopen the file in an editor. Nothing about the underlying text is changed."},
         {"q": "Can I highlight multiple phrases at once?", "a": "Run the tool once per phrase. Each run preserves previous highlights, so you can layer different colors for different keywords."},
-        {"q": "Does the highlighter respect case?", "a": "Toggle case-sensitive matching for exact-case search; leave it off for case-insensitive flexible matching. Case-insensitive is the default."},
+        {"q": "Does the highlighter respect case?", "a": "No. Matches are found regardless of case, and the Case sensitive switch currently makes no difference, so check the result when capitalisation matters."},
     ],
     "transcribe-audio": [
         {"q": "Is my recording uploaded?", "a": "Not with the on-device engine: the audio is decoded and transcribed in your browser. What is downloaded is the Whisper model itself, fetched once from a public model host and cached. If you choose your own API key, the audio goes from your browser directly to that provider, not through PrivaTools."},
@@ -1803,18 +1803,18 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
     "add-attachment": [
         {"q": "What's the difference between an attachment and embedding?", "a": "An attachment is a file stored inside the PDF that the reader can open separately. Embedding means inlining content (images, fonts) into the page itself. Use attachments when you want recipients to access the supporting file but keep the visible PDF clean."},
-        {"q": "Will email clients flag attached PDFs as suspicious?", "a": "No, attachments inside a PDF aren't visible to email gateway scanners as separate attachments — the file is part of the PDF structure. Most spam filters don't flag them."},
-        {"q": "How big can the embedded file be?", "a": "Up to the 500 MB total file limit. The PDF size grows by approximately the embedded file's size."},
+        {"q": "Can I attach more than one file?", "a": "Yes, one per run: run the tool again on the result to add the next file. Earlier attachments stay in place."},
+        {"q": "How big can the embedded file be?", "a": "Up to 50 MB, and the PDF and the attachment together must fit within one 500 MB upload. The attachment is stored compressed, so the PDF grows by about its size, or much less for text-like files that compress well."},
     ],
     "add-hyperlinks": [
-        {"q": "Can I link to other pages in the same PDF?", "a": "Currently the tool supports external URLs. For internal page jumps, use the Bookmarks tool instead."},
-        {"q": "Are the links visible to the user?", "a": "The clickable rectangle is invisible by default. To add visible underlined link text, use the Edit PDF tool to draw the underline first."},
-        {"q": "Will hyperlinks survive printing or PDF/A conversion?", "a": "Hyperlinks don't print (they're interactive annotations) but they're preserved through most PDF/A conversions. PDF/A-1a strips them; PDF/A-2 keeps them."},
+        {"q": "Can I link to other pages in the same PDF?", "a": "No. It only links web addresses already written in the text. For jumps to pages within the document, add bookmarks with the Bookmarks tool."},
+        {"q": "Are the links visible to the user?", "a": "The clickable area is invisible and sits over the address text, which looks as it did before. To make links stand out, draw an underline with Edit PDF."},
+        {"q": "Will hyperlinks survive printing or PDF/A conversion?", "a": "A link has no printed appearance, so paper copies show only the address text. PrivaTools' PDF to PDF/A keeps the links: it re-saves the file with a PDF/A-2b label and does not remove annotations."},
     ],
     "add-shapes": [
         {"q": "Are shapes flattened into the page?", "a": "Yes — shapes become part of the page's content stream, not annotations. They can't be moved or deleted afterwards without re-editing the PDF."},
-        {"q": "Can I draw filled or only outlined shapes?", "a": "Both. Set fillColor for a filled shape; omit it and only the stroke renders. Set both for an outlined fill."},
-        {"q": "What about transparency?", "a": "Use a color with alpha (e.g., rgba(255,0,0,0.5)) or pass an opacity value (0–1)."},
+        {"q": "Can I draw filled or only outlined shapes?", "a": "Both. Pick a fill color for a filled shape; leave the fill empty and only the outline is drawn. Set both for an outlined fill."},
+        {"q": "What about transparency?", "a": "Not supported: shapes are drawn in solid colors. Leave the fill empty to keep the content inside a rectangle or circle visible."},
     ],
     "alternate-mix": [
         {"q": "When would I use this?", "a": "The classic case is double-sided scanning on a single-sided scanner: scan the odd pages, flip the stack, scan the even pages in reverse, then alternate-mix them with reverse-alternate."},
@@ -1822,9 +1822,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does this preserve bookmarks?", "a": "No. Bookmarks from the originals are dropped because they would point to incorrect pages after interleaving."},
     ],
     "annotate-pdf": [
-        {"q": "Are annotations flattened?", "a": "By default no — they remain as editable annotations. If you want them permanently baked into the page, run the Flatten tool afterwards."},
-        {"q": "Can I attach sticky-note comments?", "a": "Yes. Add a note annotation with author + content; readers display it as an icon that opens a popup with the text on click."},
-        {"q": "Do annotations survive PDF/A conversion?", "a": "Some do (text, highlight, square) but interactive ones (file attachments, popup notes) get flattened or stripped depending on the PDF/A profile."},
+        {"q": "Are annotations flattened?", "a": "No. They stay as separate annotations, so anyone with a PDF editor can move, change or delete them."},
+        {"q": "Can I attach sticky-note comments?", "a": "Yes. Choose Sticky note and type its text; readers display it as an icon that opens a popup with the text on click. No author name is set."},
+        {"q": "Do annotations survive PDF/A conversion?", "a": "They survive PrivaTools' PDF to PDF/A, which re-saves the file with a PDF/A-2b label and leaves annotations, notes included, in place."},
     ],
     "auto-crop": [
         {"q": "Will this make text run off the page?", "a": "No — the algorithm leaves a small safety margin around detected content. If a page has no content (blank), the original MediaBox is kept."},
@@ -1919,8 +1919,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How does this differ from black-and-white?", "a": "Grayscale preserves shading (256 grey levels). True black-and-white (1-bit) is harsher but smaller — not currently offered as a separate option."},
     ],
     "header-footer": [
-        {"q": "Will the header/footer overlap existing content?", "a": "It might if your pages have content close to the edges. Use the Crop or Resize tool first to add margin space if needed."},
-        {"q": "Can I exclude the cover page?", "a": "Pages-to-affect parameter accepts ranges like '2-' to skip the first page or '2-N-1' to skip first + last."},
+        {"q": "Will the header/footer overlap existing content?", "a": "It can. The header sits about 20 points below the top edge and the footer about 20 points above the bottom edge, drawn on top of whatever is already there, and each line starts at the middle of the page and runs to the right. Check pages whose content comes close to the edges, and keep the text short or the font small."},
+        {"q": "Can I exclude the cover page?", "a": "Not in one pass: the header and footer go on every page. To leave the cover plain, split it off with Split PDF, add the header and footer to the rest, then join the two files again with Merge PDF."},
         {"q": "Are these editable annotations or baked-in?", "a": "Baked into the page content. They can't be removed without re-editing — use Whiteout to cover them if needed later."},
     ],
     "heic-to-pdf": [
@@ -1978,7 +1978,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "page-numbers": [
         {"q": "Can I use Roman numerals or letters?", "a": "No. Page numbers are Arabic digits only; Roman numerals and letters are not supported."},
         {"q": "How is this different from Bates numbering?", "a": "Page numbers are simple sequential digits. Bates numbers have a prefix, configurable padding, and are used in legal contexts."},
-        {"q": "Can I start from a specific page?", "a": "Yes — pages-to-affect lets you specify a starting page (e.g. exclude cover + TOC)."},
+        {"q": "Can I start from a specific page?", "a": "Not directly: every page gets a number, and the first page gets the starting number you set. To leave a cover or contents pages unnumbered, split them off, number the rest from the right starting value, then merge the files back together."},
     ],
     "pdf-to-bmp": [
         {"q": "Why are BMPs so much larger than PNG?", "a": "BMP stores every pixel uncompressed. PNG losslessly compresses to ~20% the size. Use BMP only when you specifically need uncompressed pixel data."},
@@ -2096,8 +2096,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "stamp-pdf": [
         {"q": "Are stamps editable annotations or baked-in?", "a": "Baked into the page content. They survive copying, printing, and PDF/A conversion. To remove, use Whiteout to cover them."},
-        {"q": "Can I apply a stamp to only specific pages?", "a": "Yes — pages parameter accepts page ranges like '1-3' or 'all'."},
-        {"q": "How big is the stamp?", "a": "Auto-sized to roughly 60% of page width with the chosen opacity for visibility without obscuring content."},
+        {"q": "Can I apply a stamp to only specific pages?", "a": "Yes. Enter the page numbers separated by commas, such as 1,3,5, or leave it as all. Ranges such as 1-3 are rejected, so list each page."},
+        {"q": "How big is the stamp?", "a": "It is sized automatically from the page width and the length of the text, up to 72 pt: on an A4 page CONFIDENTIAL spans most of the width and VOID about a third of it. The size cannot be set by hand."},
     ],
     "strip-metadata": [
         {"q": "Why strip metadata?", "a": "Author / producer / original-filename fields can identify who created or owns a document — a privacy concern for whistleblowers, journalists, or before public release."},
@@ -2115,8 +2115,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How are multi-page TIFFs handled?", "a": "Each TIFF page becomes a PDF page in order. Multiple multi-page TIFFs in one upload are concatenated."},
     ],
     "transparent-background": [
-        {"q": "Will text be affected?", "a": "Black text is preserved. Light grey or low-contrast text near the threshold may become semi-transparent — lower the threshold (e.g. 220) to be more aggressive about preserving content."},
-        {"q": "What's the output format?", "a": "PDF with transparent regions where the background was. Open in a reader to see the underlying canvas show through."},
+        {"q": "Will text be affected?", "a": "Dark text is kept fully opaque. Each pixel is either kept or made fully transparent, with nothing in between, so light grey text at or above the threshold disappears. Raise the threshold toward 255 to remove only the purest white, or lower it to clear off-white backgrounds as well. The text also stops being selectable, because each page becomes an image."},
+        {"q": "What's the output format?", "a": "A PDF with transparent regions where the background was: each page holds one PNG image with transparency, on a page of the original size. Open it in a reader to see the underlying canvas show through."},
         {"q": "Can I use this on photos?", "a": "It works best on text/diagram documents with clean backgrounds. Photos with light skies become weirdly transparent — use Remove Background (rembg) for photos."},
     ],
     "verify-signature": [
@@ -2131,7 +2131,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "whiteout-pdf": [
         {"q": "Is whiteout the same as redaction?", "a": "No — whiteout covers content visually but the underlying text remains in the file. For permanent redaction (text removed), use Redact PDF or Smart Redact."},
-        {"q": "Can I use any color, not just white?", "a": "Yes — color is configurable. Black for blackout style, white for whiteout, any custom hex color for matching background."},
+        {"q": "Can I use any color, not just white?", "a": "No. The boxes are always white. To take text out of the file rather than just cover it, use Redact PDF."},
         {"q": "Does it work on scanned PDFs?", "a": "Yes — the cover rectangle is added on top of the rendered page. Behind, the original pixels are still in the file."},
     ],
     "add-subtitles": [
@@ -2343,8 +2343,8 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": 'Is there a page limit?', "a": 'No hard limit, but very long documents produce images some software will refuse to open. If you hit that, split the PDF first and stitch each part separately.'},
     ],
     "remove-watermark": [
-        {"q": 'What kind of watermarks can this actually remove?', "a": 'Watermarks that exist as objects in the PDF: repeated text like DRAFT or CONFIDENTIAL, and image stamps placed on each page. Those can be identified and deleted cleanly. A watermark flattened into a scanned page is part of the image and this tool will not find it.'},
-        {"q": 'Why does it show me candidates instead of removing everything?', "a": 'Because the repeated object on your page might be a logo, a letterhead or a footer you want to keep. The tool finds what behaves like a watermark and lets you decide, rather than silently stripping page furniture.'},
+        {"q": 'What kind of watermarks can this actually remove?', "a": 'Text watermarks such as DRAFT or CONFIDENTIAL that repeat across the pages and are see-through or rotated. Removal works when the mark is stored as a separate object, the way the PrivaTools Watermark tool stores it; if it is drawn straight into the page content, the tool reports that it cannot remove it. Image watermarks such as logos are not detected, and a watermark flattened into a scanned page is part of the image and this tool will not find it.'},
+        {"q": 'Why does it show me candidates instead of removing everything?', "a": 'Because the repeated text on your page might be a faint letterhead, a rotated margin note or a footer you want to keep. The tool finds what behaves like a watermark and lets you decide, rather than silently stripping page furniture.'},
         {"q": "Will the rest of the page survive?", "a": "Yes. Only the objects you confirm are removed. Surrounding text, images and layout are untouched, and the result is a new PDF, so your original file stays as it was."},
         {"q": 'My watermark is part of a scan. What now?', "a": 'Rasterised watermarks need pixel repair, not object removal. Convert the page to an image and use Remove Image Watermark, accepting that the repair is a reconstruction rather than a perfect recovery.'},
         {"q": 'Should I remove a watermark from a document I did not create?', "a": "Only where you have the right to. A watermark is often a copyright or confidentiality marker, and removing one from someone else's document can be a legal problem regardless of how easy a tool makes it."},

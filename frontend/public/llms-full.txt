@@ -121,17 +121,17 @@ Add watermark to PDF online for free. Apply text or image watermarks to every pa
 
 URL: https://privatools.me/tool/header-footer
 
-Add headers and footers to specified pages
+Add a header and footer to every page
 
-Add headers and footers to PDF online. Insert custom text, dates, page numbers, or company information in the header and footer of your PDF pages. Free tool with flexible formatting options.
+Add headers and footers to PDF online. Insert custom text, such as a title, a date, or company information, in the header and footer of every page of your PDF. The same text repeats on each page. Free tool with an adjustable font size.
 
 ### Page Numbers
 
 URL: https://privatools.me/tool/page-numbers
 
-Insert custom page numbers in your chosen format
+Insert page numbers in the position you choose
 
-Add page numbers to PDF online for free. Choose from multiple formats (1,2,3 / i,ii,iii / A,B,C), set starting page and number, position, font, and optional prefix. No watermarks, no sign-up.
+Add page numbers to PDF online for free. Choose one of six positions, the number to start counting from, and the font size; numbers are plain digits (1, 2, 3). No watermarks, no sign-up.
 
 ### Bates Numbering
 
@@ -145,9 +145,9 @@ Add Bates numbering to PDF for legal document indexing. Apply sequential Bates s
 
 URL: https://privatools.me/tool/bookmarks
 
-Add or edit bookmarks to navigate large files
+Add bookmarks to navigate large files
 
-Add bookmarks to PDF online — create, rename, reorder, and nest bookmarks for easier navigation in large documents. Build a clickable table of contents for your PDF. Free, no software installation.
+Add bookmarks to PDF online — give each entry a title and a page, or paste the whole list as JSON, for easier navigation in large documents. The new bookmarks replace any the PDF already has and appear as a clickable outline in the reader's sidebar. Free, no software installation.
 
 ### Compress PDF
 
@@ -163,7 +163,7 @@ URL: https://privatools.me/tool/remove-watermark
 
 Find and remove visible watermarks from a PDF
 
-Remove watermark from PDF online for free. Detects watermarks — diagonal stamps, CONFIDENTIAL and DRAFT marks, logos — shows you exactly what it found, and removes only what you confirm. Lossless where the PDF allows it: the rest of the page is left untouched. No sign-up.
+Remove watermark from PDF online for free. Detects text watermarks — diagonal stamps, CONFIDENTIAL and DRAFT marks — shows you exactly what it found, and removes only what you confirm. Lossless where the PDF allows it: the rest of the page is left untouched. No sign-up.
 
 ### Flatten PDF
 
@@ -611,7 +611,7 @@ URL: https://privatools.me/tool/stamp-pdf
 
 Add CONFIDENTIAL, DRAFT, or custom stamps
 
-Add stamps to PDF online for free — apply CONFIDENTIAL, DRAFT, APPROVED, COPY, VOID, or custom text stamps to any page. Adjustable opacity, position, and size. No sign-up, no watermarks.
+Add stamps to PDF online for free — apply CONFIDENTIAL, DRAFT, APPROVED, COPY, VOID, or custom text stamps to any page. Adjustable opacity and position; the size is set automatically from the page width. No sign-up, no watermarks.
 
 ### E-Sign PDF
 
@@ -659,7 +659,7 @@ URL: https://privatools.me/tool/highlight-pdf
 
 Highlight every match of a word or phrase
 
-Highlight PDF online for free — search for any word or phrase and apply a real PDF Highlight annotation to every occurrence at once. Pick from yellow, green, pink, blue, orange, or any custom hex color. Works on multi-page documents and preserves the highlight as a fully-editable annotation in any PDF reader.
+Highlight PDF online for free — search for any word or phrase and apply a real PDF Highlight annotation to every occurrence at once. Pick from yellow, green, pink, blue, or orange. Works on multi-page documents and preserves the highlight as a fully-editable annotation in any PDF reader.
 
 ### Summarize PDF (AI)
 
@@ -745,9 +745,9 @@ Convert RTF to PDF online for free — upload Rich Text Format files and get a c
 
 URL: https://privatools.me/tool/add-hyperlinks
 
-Draw clickable hyperlink areas over text or images
+Make the web addresses in a PDF clickable
 
-Add clickable links to PDF pages online — draw invisible hyperlink areas over any text or image and attach URLs. Perfect for making static PDFs interactive with navigation links. No software needed.
+Add clickable links to PDF pages online — PrivaTools finds every web address in the PDF's text that starts with http:// or https:// and turns it into a clickable link. Perfect for making static PDFs interactive. No software needed.
 
 ### Form Creator
 

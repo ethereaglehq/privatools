@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload the PDF (or batch)",
-      "text": "Drop a PDF up to 500 MB. The numbering is applied to one document per run."
+      "text": "Drop one PDF, or up to 100 PDFs that make up one production. Several files are numbered as one continuous run, file after file, and come back as a ZIP with a bates-manifest.json listing each file's range. The whole upload can be up to 500 MB."
     },
     {
       "name": "Configure the Bates format",

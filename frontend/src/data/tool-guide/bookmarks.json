@@ -2,21 +2,21 @@
   "howto": [
     {
       "name": "Upload the PDF",
-      "text": "Select a PDF up to 500 MB. Existing bookmarks, if any, are listed automatically."
+      "text": "Select a PDF up to 500 MB. Existing bookmarks are not loaded, and saving replaces them, so include any you want to keep."
     },
     {
       "name": "Edit the bookmark tree",
-      "text": "Add, rename, reorder, or delete bookmarks. Set the target page number for each entry. You can nest bookmarks to create a multi-level table of contents."
+      "text": "Add, rename, or delete rows, giving each bookmark a title and a target page. Or switch to the JSON view and paste an array of entries with a title and a page. Bookmarks are saved in list order, all on one level."
     },
     {
       "name": "Save and download",
-      "text": "Click Save. The updated bookmark tree is embedded into the PDF for easy navigation in any reader."
+      "text": "Click Save. The bookmarks are written into the PDF as its outline for easy navigation in any reader; a page number past the end points to the last page."
     }
   ],
   "faq": [
     {
       "q": "Can I create a multi-level bookmark tree?",
-      "a": "Yes. You can nest bookmarks under parent entries to create a hierarchical table of contents with multiple levels."
+      "a": "No. Every bookmark is saved at the top level, in the order listed; nested entries are not supported."
     },
     {
       "q": "Do bookmarks work in all PDF readers?",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Can I import a bookmark structure from a text file?",
-      "a": "Currently, bookmarks are created manually in the editor. You can copy-paste titles and set page numbers individually."
+      "a": "There is no file import, but the JSON view accepts a pasted array of entries, each with a title and a page, so a list prepared elsewhere goes in at once."
     }
   ]
 }

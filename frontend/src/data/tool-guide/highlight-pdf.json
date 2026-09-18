@@ -6,7 +6,7 @@
     },
     {
       "name": "Enter your search phrase",
-      "text": "Type the word or phrase to highlight. Use the case-sensitive toggle for exact matches."
+      "text": "Type the word or phrase to highlight. Matching ignores capitalisation, so invoice also finds Invoice and INVOICE; the Case sensitive switch does not change this at present."
     },
     {
       "name": "Pick a highlight color",
@@ -14,7 +14,7 @@
     },
     {
       "name": "Download the highlighted PDF",
-      "text": "Click Highlight. The tool finds every occurrence on every page and writes a new PDF with permanent highlight annotations."
+      "text": "Click Highlight. The tool finds every occurrence on every page and writes a new PDF with a highlight annotation over each match."
     }
   ],
   "faq": [
@@ -28,7 +28,7 @@
     },
     {
       "q": "Does the highlighter respect case?",
-      "a": "Toggle case-sensitive matching for exact-case search; leave it off for case-insensitive flexible matching. Case-insensitive is the default."
+      "a": "No. Matches are found regardless of case, and the Case sensitive switch currently makes no difference, so check the result when capitalisation matters."
     }
   ]
 }
