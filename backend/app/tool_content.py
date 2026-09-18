@@ -771,7 +771,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "sanitize-pdf": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB containing potentially risky elements."},
-        {"name": "PrivaTools clears what it can", "text": "It empties the document information fields (title, author, dates, producer) and deletes screen (multimedia) annotations. JavaScript, embedded files, links, layers, form fields and XMP metadata are left in the file."},
+        {"name": "PrivaTools clears what it can", "text": "It empties the document information fields (title, author, dates, producer) and deletes Movie and RichMedia annotations, the containers for old video and Flash (SWF) content. JavaScript, embedded files, links, layers, form fields, screen annotations and XMP metadata are left in the file."},
         {"name": "Download the sanitized PDF", "text": "Visible content is preserved, and the file is rewritten without unused objects."},
     ],
     "set-permissions": [
@@ -2102,7 +2102,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "strip-metadata": [
         {"q": "Why strip metadata?", "a": "Author / producer / original-filename fields can identify who created or owns a document — a privacy concern for whistleblowers, journalists, or before public release."},
         {"q": "What about embedded images' EXIF?", "a": "It is not removed. EXIF inside images embedded in the PDF is left as it is: in a test, the camera make stored in an embedded JPEG was still in the output. Only the document's own Info and XMP metadata is cleared."},
-        {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and multimedia screen annotations; it leaves JavaScript, embedded files and XMP in place."},
+        {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and Movie and RichMedia (Flash) annotations; it leaves JavaScript, embedded files and XMP in place."},
     ],
     "svg-to-pdf": [
         {"q": "Will my SVG stay as vector inside the PDF?", "a": "Yes — PDF natively supports vector content, so paths, text, and gradients remain editable at any zoom level."},

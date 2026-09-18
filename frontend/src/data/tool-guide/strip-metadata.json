@@ -24,7 +24,7 @@
     },
     {
       "q": "Is this the same as Sanitize?",
-      "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and multimedia screen annotations; it leaves JavaScript, embedded files and XMP in place."
+      "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and Movie and RichMedia (Flash) annotations; it leaves JavaScript, embedded files and XMP in place."
     }
   ]
 }

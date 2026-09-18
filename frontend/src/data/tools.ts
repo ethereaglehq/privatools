@@ -1153,7 +1153,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "sanitize-pdf", icon: Sparkles, name: "Sanitize Document",
     description: "Clear the document info fields of a PDF",
-    longDescription: "Sanitize PDF online — clear the document information fields (title, author, dates, software), remove multimedia screen annotations, and rewrite the file without unused objects. It does not remove JavaScript, embedded files, form fields, layers, links or XMP metadata, so do not rely on it alone for high-security document workflows.",
+    longDescription: "Sanitize PDF online — clear the document information fields (title, author, dates, software), remove Movie and RichMedia annotations (old video and Flash content), and rewrite the file without unused objects. It does not remove JavaScript, embedded files, form fields, layers, links or XMP metadata, so do not rely on it alone for high-security document workflows.",
     seoTitle: "Sanitize a PDF Online – Clear Document Info Fields",
     metaDescription: "Sanitize clears a PDF's title, author, date, and software fields and rewrites the file. Scripts, attachments, layers, and form fields are not removed.",
     synonyms: "remove javascript scripts malware safe",

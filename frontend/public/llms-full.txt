@@ -819,7 +819,7 @@ URL: https://privatools.me/tool/sanitize-pdf
 
 Clear the document info fields of a PDF
 
-Sanitize PDF online — clear the document information fields (title, author, dates, software), remove multimedia screen annotations, and rewrite the file without unused objects. It does not remove JavaScript, embedded files, form fields, layers, links or XMP metadata, so do not rely on it alone for high-security document workflows.
+Sanitize PDF online — clear the document information fields (title, author, dates, software), remove Movie and RichMedia annotations (old video and Flash content), and rewrite the file without unused objects. It does not remove JavaScript, embedded files, form fields, layers, links or XMP metadata, so do not rely on it alone for high-security document workflows.
 
 ### Reverse PDF
 

@@ -6,7 +6,7 @@
     },
     {
       "name": "PrivaTools clears what it can",
-      "text": "It empties the document information fields (title, author, dates, producer) and deletes screen (multimedia) annotations. JavaScript, embedded files, links, layers, form fields and XMP metadata are left in the file."
+      "text": "It empties the document information fields (title, author, dates, producer) and deletes Movie and RichMedia annotations, the containers for old video and Flash (SWF) content. JavaScript, embedded files, links, layers, form fields, screen annotations and XMP metadata are left in the file."
     },
     {
       "name": "Download the sanitized PDF",
