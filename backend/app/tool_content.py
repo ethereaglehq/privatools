@@ -239,7 +239,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Upscale and download", "text": "Run it and save the result. The output has two or four times the width and height of your original."},
     ],
     "audio-converter": [
-        {"name": "Add the audio file", "text": "Drop or select an audio file up to 500 MB."},
+        {"name": "Add the audio file", "text": "Drop or select an audio file up to 200 MB."},
         {"name": "Choose the output format", "text": "Pick MP3, AAC, OGG, FLAC or WAV. MP3 is the most widely compatible; FLAC and WAV are lossless."},
         {"name": "Choose a bitrate", "text": "For MP3, AAC and OGG choose from 64 to 320 kbps; the default is 192. Higher bitrates keep more detail and make bigger files. WAV and FLAC are lossless, so the bitrate does not apply."},
         {"name": "Convert and download", "text": "Run the conversion and save the new file."},
@@ -307,7 +307,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "view-exif": [
         {"name": "Add the photo", "text": "Drop or select an image up to 500 MB. Photos straight from a camera or phone carry the most metadata; anything already processed by a social platform has usually had it stripped."},
-        {"name": "Read what it carries", "text": "The metadata is listed for you: camera and lens, exposure settings, the capture timestamp and, where the device recorded it, GPS coordinates."},
+        {"name": "Read what it carries", "text": "The metadata is listed for you: camera make and model, software, the date and time in the main EXIF block and, where the device recorded it, GPS coordinates. Exposure settings, lens details and the original capture time sit in a separate EXIF section that this viewer does not list."},
         {"name": "Decide what to do next", "text": "If the image is going to be published and the metadata should not, run Remove EXIF on the original to write a clean copy."},
     ],
     "jwt-decoder": [
@@ -947,7 +947,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "svg-to-png": [
         {"name": "Add the SVG", "text": "Drop or select .svg files up to 500 MB each. Vector artwork, icons and exported logos are the usual input. You can add several at once; they are processed a few at a time and a batch comes back as one ZIP."},
-        {"name": "Choose the scale", "text": "Set how large to render, from 0.1 up to 8 times the SVG's own dimensions; the default is 2 for a crisp result on high-resolution screens."},
+        {"name": "Choose the scale", "text": "Pick 1×, 2× (the default), 3× or 4× the SVG's own dimensions; the output size in pixels is shown before you convert. 2× gives a crisp result on high-resolution screens."},
         {"name": "Render and download", "text": "Convert and save the PNG. Because SVG is vector artwork, rendering at a larger scale produces genuinely sharper output rather than an enlarged blur."},
     ],
     "url-encoder": [
@@ -1449,7 +1449,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What bitrate should I pick?", "a": "192 kbps, the default, is a good general choice. Use 256 or 320 for music you care about, and 64 or 128 for speech, podcasts and voice memos where small size matters more."},
         {"q": "Does converting between lossy formats lose quality?", "a": "Yes, a little. Each lossy encode discards more detail, so MP3 to AAC or OGG to MP3 is a trade for compatibility. Start from the highest-quality source you have."},
         {"q": "Can I take the audio out of a video?", "a": "Use Extract Audio for that; it is built for pulling the soundtrack out of a video file."},
-        {"q": "What happens to my file after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the audio file and the result and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
+        {"q": "What happens to my file after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the audio file and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
 
     # ── v1.1.0 + v1.2.0 additions ─────────────────────────────────────────
@@ -1535,7 +1535,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does it show GPS coordinates?", "a": "Yes, when the camera recorded them and nothing has removed them since. That is the single most sensitive field in a typical photo, and the main reason to check before publishing."},
         {"q": "Does viewing the metadata change my file?", "a": "No. This tool only reads. To actually remove anything, use Remove EXIF, which writes a cleaned copy and leaves your original alone."},
         {"q": "Can I trust the timestamp?", "a": "Treat it as a strong hint rather than proof. It comes from the device's own clock, which may be wrong or set to another time zone, and metadata can be edited after the fact."},
-        {"q": "What happens to my photo after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."},
+        {"q": "What happens to my photo after I upload it?", "a": "It is uploaded over HTTPS and read on the PrivaTools server using local imaging libraries, not a third-party service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes it once the results have been sent, and a background sweep clears anything an interrupted request leaves behind."},
     ],
     "jwt-decoder": [
         {"q": "Does this verify the token's signature?", "a": "No, and that matters. The tool decodes and displays the contents; it does not check the signature against a key. A token that decodes cleanly may still be forged or tampered with, so never treat a decoded token as trusted."},
@@ -2269,7 +2269,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "svg-to-png": [
         {"q": "Why convert an SVG to PNG?", "a": "Because plenty of places will not take vector artwork. Image fields in older software, some document and presentation tools, social previews and many upload forms expect a raster image, and PNG is the lossless choice that keeps transparency."},
-        {"q": "What scale should I pick?", "a": "Work out the pixel size you actually need. The default of 2 renders at twice the SVG's own dimensions, which suits high-resolution displays. Raise it for print or large artwork, and drop below 1 when the SVG is already larger than you need."},
+        {"q": "What scale should I pick?", "a": "Work out the pixel size you actually need. The default of 2 renders at twice the SVG's own dimensions, which suits high-resolution displays. Raise it to 3× or 4× for print or large artwork; 1× keeps the SVG's own size, the smallest option here."},
         {"q": "Is transparency preserved?", "a": "Yes. PNG supports an alpha channel, so an SVG with no background produces a PNG with a transparent one — which is what you want for a logo going over another colour."},
         {"q": "Will the PNG stay sharp if I enlarge it later?", "a": "No, and this is the trade you are making. The SVG is resolution-independent; the PNG is a fixed grid of pixels. Render at the size you need, and keep the SVG as the master for any future size."},
         {"q": "My fonts look wrong in the PNG.", "a": "An SVG that refers to a font by name needs that font to be available where it is rendered, and the server will not have every typeface. Converting text to outlines in your design tool before exporting the SVG makes the result predictable."},

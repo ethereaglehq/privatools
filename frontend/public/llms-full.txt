@@ -1259,7 +1259,7 @@ URL: https://privatools.me/tools/view-exif
 
 Inspect GPS, camera, and metadata stored in an image
 
-View EXIF data online for free — see every piece of metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, lens info, ISO, exposure, timestamps, software, and more. Counterpart to Remove EXIF — see what you'd be stripping out.
+View EXIF data online for free — see the main metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, the stored date and time, software, and more. Exposure settings such as ISO and lens details are not listed. Counterpart to Remove EXIF — see what you'd be stripping out.
 
 ### WebP to JPG
 

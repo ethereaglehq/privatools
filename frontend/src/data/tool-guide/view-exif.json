@@ -6,7 +6,7 @@
     },
     {
       "name": "Read what it carries",
-      "text": "The metadata is listed for you: camera and lens, exposure settings, the capture timestamp and, where the device recorded it, GPS coordinates."
+      "text": "The metadata is listed for you: camera make and model, software, the date and time in the main EXIF block and, where the device recorded it, GPS coordinates. Exposure settings, lens details and the original capture time sit in a separate EXIF section that this viewer does not list."
     },
     {
       "name": "Decide what to do next",
@@ -36,7 +36,7 @@
     },
     {
       "q": "What happens to my photo after I upload it?",
-      "a": "It is uploaded over HTTPS and converted on the PrivaTools server using local imaging libraries, not a third-party conversion service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes the input and the output once your download has been sent, and a background sweep clears anything an interrupted request leaves behind."
+      "a": "It is uploaded over HTTPS and read on the PrivaTools server using local imaging libraries, not a third-party service. The file sits in isolated temporary per-request storage while it is read; response cleanup removes it once the results have been sent, and a background sweep clears anything an interrupted request leaves behind."
     }
   ]
 }

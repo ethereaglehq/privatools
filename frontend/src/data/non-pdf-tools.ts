@@ -569,9 +569,9 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "view-exif", icon: ScanLine, name: "View EXIF Data",
     description: "Inspect GPS, camera, and metadata stored in an image",
-    longDescription: "View EXIF data online for free — see every piece of metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, lens info, ISO, exposure, timestamps, software, and more. Counterpart to Remove EXIF — see what you'd be stripping out.",
+    longDescription: "View EXIF data online for free — see the main metadata embedded in a JPEG, PNG, TIFF, or HEIC: GPS coordinates, camera make and model, the stored date and time, software, and more. Exposure settings such as ISO and lens details are not listed. Counterpart to Remove EXIF — see what you'd be stripping out.",
     seoTitle: "View EXIF Data Online Free – Camera and GPS Details",
-    metaDescription: "Inspect every metadata field in a JPEG, PNG, TIFF, or HEIC file, including GPS coordinates, camera model, and exposure. Free to use, with no sign-up.",
+    metaDescription: "Inspect the metadata in a JPEG, PNG, TIFF, or HEIC file, including GPS coordinates, camera make and model, and software. Free to use, with no sign-up.",
     synonyms: "metadata gps camera info",
     popularity: 32,
     category: "image", accepts: ".jpg,.jpeg,.png,.tiff,.tif,.webp,.heic,.heif,.bmp,.gif", outputLabel: "metadata JSON",
