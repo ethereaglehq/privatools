@@ -143,6 +143,15 @@ def test_release_calls_real_typecheck_and_has_no_nonblocking_test_jobs():
     assert 'needs: tests' in release
 
 
+def test_release_gate_boots_the_built_image():
+    # A build that compiles can still ship an image that never serves; the
+    # gate runs it before the deploy's readiness check has to.
+    workflow = (ROOT / '.github/workflows/test.yml').read_text()
+    assert 'load: true' in workflow
+    assert 'python3 scripts/ci/probe-image.py "$PROBE_IMAGE"' in workflow
+    assert (ROOT / 'scripts/ci/probe-image.py').is_file()
+
+
 def test_local_private_data_is_excluded_from_build_context():
     ignored = set((ROOT / '.dockerignore').read_text().splitlines())
     assert {'.venv/', 'data/', 'backups/', 'docs/', '**/.env*', '**/*.db', '**/*.db-wal', '**/*.db-shm',
