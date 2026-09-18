@@ -307,7 +307,7 @@ def video_merge(input_paths: list[str]) -> str:
         anull_indices: dict[int, int] = {}
         for idx, has in enumerate(audio_flags):
             if not has:
-                anull_indices[idx] = len(inputs) // 2  # next ffmpeg input index
+                anull_indices[idx] = n + len(anull_indices)  # next ffmpeg input index
                 inputs += ["-f", "lavfi", "-t", "0.1", "-i",
                            "anullsrc=channel_layout=stereo:sample_rate=44100"]
         # Build concat input list — use real audio when available, anullsrc when not.

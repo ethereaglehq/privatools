@@ -219,6 +219,16 @@ def test_video_merge_keeps_the_shape_of_clips_with_non_square_pixels(client, mer
     assert colours_at(tmp_path / "merged.mp4", 3, [(10, 90), (310, 90)], tmp_path) == ["blue", "blue"]
 
 
+def test_video_merge_gives_every_clip_without_audio_a_silent_track(client, merge_clips, tmp_path):
+    silent = []
+    for name in ("quiet-1.mp4", "quiet-2.mp4"):
+        subprocess.run(["ffmpeg", "-v", "error", "-i", str(merge_clips["wide"]), "-an", "-c:v", "copy", str(tmp_path / name)], check=True, timeout=15)
+        silent.append(tmp_path / name)
+    info = inspect_download(merge(client, merge_clips["wide"], *silent), tmp_path / "merged.mp4")
+    assert {stream["codec_type"] for stream in info["streams"]} == {"video", "audio"}
+    assert abs(float(info["format"]["duration"]) - 6.0) <= 0.2
+
+
 def test_video_merge_rounds_an_odd_first_clip_down_to_an_even_frame(client, merge_clips, tmp_path):
     source = json.loads(subprocess.check_output(["ffprobe", "-v", "error", "-show_streams", "-of", "json", str(merge_clips["odd"])], timeout=15))
     assert frame_size(source) == (321, 181)
