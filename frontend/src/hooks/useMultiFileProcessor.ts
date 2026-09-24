@@ -22,7 +22,7 @@
  *     "N=1 → blob, N>1 → zip" branching so most call sites stay tiny.
  */
 import { useCallback, useRef, useState } from "react";
-import { uploadFile, downloadBlob, buildOutputFilename, type UploadOptions } from "@/lib/api";
+import { uploadFile, downloadBlob, buildOutputFilename, chooseDownloadFilename, type UploadOptions } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { friendlyError } from "@/lib/utils";
 import { emitToolRun, runOutcome } from "@/lib/toolRun";
@@ -194,7 +194,10 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                         const ascii = cd.match(/filename=(["']?)([^"';]+)\1/i);
                         if (ascii?.[2]) serverName = ascii[2].trim();
                     }
-                    const outName = serverName || buildOutputFilename((file as File).name, opts.outputSuffix, opts.outputExt);
+                    // As every other download: a generic server name such as
+                    // "converted.docx" does not replace the file's own.
+                    const outName = chooseDownloadFilename(
+                        buildOutputFilename((file as File).name, opts.outputSuffix, opts.outputExt), serverName);
 
                     // Capture all response headers — small cost, lets callers
                     // read tool-specific metadata (e.g. X-Highlight-Hits) without
