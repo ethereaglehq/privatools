@@ -8,7 +8,9 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 ## [Unreleased]
 
-Merged to `main` since v2.6.1, not yet in a release.
+Nothing yet.
+
+## [2.7.0] — 2026-09-24 — Tools that match their pages, current dependencies, deploy tooling
 
 ### Tool fixes
 
@@ -25,7 +27,7 @@ Merged to `main` since v2.6.1, not yet in a release.
 
 - Tool copy was checked sentence by sentence against the code and corrected where it described features, defaults, limits or behaviour the code does not have: every non-PDF tool outside the most popular 50 (#186), every PDF tool outside them (#204), and the top-50 PDF tools that #204 had not re-checked (#222). Copy narrowed around the bugs above came back with their fixes. (#210, #219, #223)
 - Tool-page structured data says where each tool's files go (the browser, or temporary server storage removed after the response) instead of promising immediate deletion, and `llms.txt` and `llms-full.txt` describe the default-on Google Analytics. (#206)
-- The server-rendered Privacy page, read by crawlers and without JavaScript, now describes the default-on Google Analytics instead of the old opt-in policy, and its date matches the September 17 change. The tools list, Privacy and Terms no longer promise immediate deletion, and Terms no longer claims there are no usage limits. The Summarize PDF model is labelled at its measured size, about 275 MB.
+- The server-rendered Privacy page, read by crawlers and without JavaScript, now describes the default-on Google Analytics instead of the old opt-in policy, and its date matches the September 17 change. The tools list, Privacy and Terms no longer promise immediate deletion, and Terms no longer claims there are no usage limits. The Summarize PDF model is labelled at its measured size, about 275 MB. (#243)
 
 ### Errors and headers
 
@@ -39,24 +41,33 @@ Merged to `main` since v2.6.1, not yet in a release.
 
 ### Dependencies
 
-- Python: pikepdf 8.12.0 → 10.13.0.post1, pypdf 6.19.0, pillow-heif 1.7.0 and cairosvg 2.9.1 (security releases), pyjwt 2.14.0 (security release; Clerk key fetching refuses redirects), onnxruntime 1.30.0, reportlab 5.0.1, rembg 2.0.84, uvicorn 0.53.0, anyio 4.15.1, slowapi 0.1.10, cryptography 50.0.1, numpy 2.5.3; pytest 9.1.1 for development. (#182, #208, #218, #221, #220)
+- Python: pikepdf 8.12.0 → 10.13.0.post1, pypdf 6.19.0, pillow-heif 1.7.0 and cairosvg 2.9.1 (security releases), pyjwt 2.14.0 (security release; Clerk key fetching refuses redirects), onnxruntime 1.30.0, reportlab 5.0.1, rembg 2.0.85, uvicorn 0.53.0, anyio 4.15.1, slowapi 0.1.10, cryptography 50.0.1, numpy 2.5.3; pytest 9.1.1 for development. (#182, #208, #218, #221, #220, #265)
 - The Python dependencies are now `requirements*.in` sources compiled by `uv pip compile` into the hashed `requirements*.txt` locks, which Dependabot's `uv` ecosystem can regenerate; Python minor and patch updates arrive as one grouped PR. (#208)
-- Base images: `python:3.12-slim` and the `node:26-slim` build stage move to current digests, and Dependabot proposes digest refreshes of the current Python tag again. (#203, #185)
+- Base images: `python:3.12-slim` and the `node:26-slim` build stage move to current digests, and Dependabot proposes digest refreshes of the current Python tag again. (#203, #185, #263)
 - The on-device AI tools run transformers.js 4.3.0. Its runtime files stay in the browser's HTTP cache, so the AI hub lists and deletes only model files. (#209)
 - Frontend: onnxruntime-web 1.30.0 for background removal, sonner 2.0.8, next-themes 0.4.6, react-router-dom 7.18.4, Radix dialog and tooltip, and dev tooling (typescript-eslint 8.70.0, eslint-plugin-react-refresh 0.5.7, @vitejs/plugin-react-swc 4.3.3). (#192, #194, #134, #217, #230, #190, #226, #216, #212)
+- Frontend, continued: lucide-react 1.47.0, whose icons are hidden from screen readers by default and slightly redrawn in places, with the removed GitHub mark kept as a local icon; zod 4.6.5, which adds about 11 KB (gzip) to the code every page loads; Clerk, Radix and tailwind-merge minor and patch releases, the Vite build tools and tailwindcss 3.4.19; TypeScript 5.9.3, @types/node 26 to match the Node 26 the image and CI run, and globals 17. (#246, #258, #255, #240, #241, #267, #245, #257)
+- Tests run on vitest 5, jsdom 30.0.1 and jest-dom 7 with the same 949 tests. (#256)
+- Dependabot groups npm minor and patch updates into one PR per weekly run; majors stay separate. (#244)
 - Unused frontend packages and three dead `components/ui` wrappers are removed, among them recharts, react-hook-form, cmdk, vaul and date-fns; `esbuild` becomes a direct dev dependency. The production bundle is unchanged apart from 242 bytes of CSS. Earlier bumps of removed packages went with them. (#205, #235; #137, #140, #142, #146, #215)
-- Majors held for dedicated migrations in `.github/dependabot.yml`: React 19, eslint-plugin-react-hooks 7, Tailwind CSS 4 with tailwind-merge 3, and pdf.js 6. (#225, #231, #236)
+- Held in `.github/dependabot.yml`, each with its reason: React 19, eslint-plugin-react-hooks 7, ESLint 10, Tailwind CSS 4 with tailwind-merge 3, TypeScript 6 and 7, pdf.js 6 and pdf.js 5.x minors (every release from 5.6.83 until 6.2.108 has a high-severity advisory, so the site stays on 5.5.207), and jsdom 30.1, which breaks vitest 5.0.1's test environment. (#225, #231, #236, #247, #260, #255, #267)
 
 ### CI
 
-- CodeQL runs `init`, `analyze` and `upload-sarif` on v4.38.0, grouped so they update together. (#183)
+- CodeQL runs `init`, `analyze` and `upload-sarif` on v4.38.1, grouped so they update together. (#183, #266)
 - cosign-installer v4.1.2 keeps signing with cosign v2.6.5, the signature format the server's verification reads. (#184)
 - The Python audit reads the hashed runtime lock itself (`pip-audit -r requirements.txt --disable-pip`). (#208)
+- The frontend audit and build job runs on Node 26 instead of Node 20, which is past end of life. (#254)
 - Workflow actions updated: dependency-review-action 5.0.0, upload-artifact 7.0.1, github-script 9.0.0 and the docker login, metadata, buildx and build-push actions. (#143, #145, #199, #224, #198, #200, #201, #202)
+
+### Deploy
+
+- Zero-downtime deploy tooling: the next release starts beside the live one on a spare port, host nginx switches to it only after it passes readiness and real-page checks, and the old container drains and hands over the job queue before it stops. It takes effect only when the production rollout runbook in `deploy/README.md` installs it on the server; until then the existing deploy, which replaces the container and then waits for readiness, keeps running. (#207)
 
 ### Docs
 
 - The documentation catches up with v2.6.1: changelog entries for every release since 1.6.0, the README checked against the code, the required checks in CONTRIBUTING, a complete docs index and status notes on the 2026-09-17 plans. (#197)
+- A second pass records this release's changes, the dependency layout and held majors in CLAUDE.md, and corrects storage, quota and upload-limit wording in the README, CONTRIBUTING, SECURITY and the API guide. (#242)
 
 ## [2.6.1] — 2026-09-18 — Accurate tool copy, lighter pages, stricter CI
 
