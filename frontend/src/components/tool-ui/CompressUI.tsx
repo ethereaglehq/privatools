@@ -146,9 +146,6 @@ export function CompressUI() {
             outputSuffix: "compressed",
             outputExt: "pdf",
             params,
-            // Large PDFs can legitimately take minutes; the hook default (60s)
-            // would abort them mid-flight.
-            uploadOptions: { timeoutMs: 180_000 },
         }, retry);
         setPhase("done");
     }, [proc, level, customQuality, customMaxDim, targetMb]);

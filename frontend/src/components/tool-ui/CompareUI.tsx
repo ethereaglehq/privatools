@@ -52,7 +52,7 @@ export function CompareUI() {
                 fd.append("mode", mode);
                 fd.append("highlight_color", highlight);
                 return fd;
-            }, { timeoutMs: 300_000 });
+            });
             if (mode === "visual") {
                 const blob = await res.blob();
                 setResultBlob(blob); setTextResult(null);

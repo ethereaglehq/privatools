@@ -18,7 +18,7 @@ export function ExtractArchiveUI() {
         if (!file || active.current) return;
         active.current = true; const current = ++generation.current; setBusy(true); setError(null); setResult(null); setDirectory(null); setListingError(null);
         try {
-            const response = await postFormData("/extract-archive", () => { const form = new FormData(); form.append("file", file); return form; }, {timeoutMs: 300_000});
+            const response = await postFormData("/extract-archive", () => { const form = new FormData(); form.append("file", file); return form; });
             const blob = await response.blob();
             if (generation.current !== current) return;
             setResult(blob);

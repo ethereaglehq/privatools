@@ -28,7 +28,7 @@ export function UrlToPdfUI() {
                 const fd = new FormData();
                 fd.append("url", finalUrl);
                 return fd;
-            }, { timeoutMs: 120_000 });
+            });
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");

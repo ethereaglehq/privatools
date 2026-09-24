@@ -16,7 +16,6 @@ export function BackgroundRemoverUI() {
         setPhase("processing");
         await proc.run({
             endpoint: "/remove-background", outputSuffix: "nobg", outputExt: "png",
-            uploadOptions: { timeoutMs: 180000 },
             concurrency: 1,
             ...(engine === "local" ? { localProcess: (file: File) => removeBackgroundLocal(file, setModelPct) } : {}),
         }, retry);

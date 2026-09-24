@@ -120,6 +120,8 @@ describe("trialVaultPasswords", () => {
   // must fail loudly.
   it("never performs a network request", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
+    // Uploads go by XMLHttpRequest, so watching fetch alone would miss one.
+    const xhrSpy = vi.spyOn(XMLHttpRequest.prototype, "open");
     await vault.addPassword("a", "aaa");
     const open = vi.fn(async (_d: Uint8Array, password?: string) => {
       if (password !== "aaa") throw passwordError();
@@ -127,6 +129,8 @@ describe("trialVaultPasswords", () => {
     });
     await trialVaultPasswords(new Uint8Array([1]), open);
     expect(fetchSpy).not.toHaveBeenCalled();
+    expect(xhrSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+    xhrSpy.mockRestore();
   });
 });

@@ -209,7 +209,7 @@
       },
       {
         "label": "Files and size",
-        "privatools": "Merge takes up to 100 PDFs in one 500 MB upload but stops waiting after 60 seconds; most single-file pages take up to 500 MB.",
+        "privatools": "Merge takes up to 100 PDFs in one 500 MB upload, which the server then has five minutes to merge; most single-file pages take up to 500 MB.",
         "competitor": "Basic merges 25 files up to 100 MB and Premium 500 files up to 4 GB; Basic Office conversion and OCR take one 15 MB file.",
         "sourceUrl": "https://www.ilovepdf.com/pricing"
       },
@@ -249,7 +249,7 @@
         "heading": "Reading the Basic plan",
         "body": [
           "iLovePDF's pricing page says the free plan processes a limited number of documents, and its plan table lists limits per tool. On Basic, merging takes up to 25 files and 100 MB, compression two files up to 200 MB, and Office conversion and OCR one file of 15 MB; editing and splitting take one file on every plan. Tools including OCR conversion to Word or Excel and PDF/A are marked as not included in Basic, and Premium raises most per-task limits to 4 GB.",
-          "PrivaTools applies the same limits to everyone. An upload request can be 500 MB, and most pages upload each file in a request of its own. Standard tool pages queue up to 25 files, but heavy tools accept about five runs a minute from one visitor, so in a long queue some files are marked failed and need a retry. Merge, PDF to Word, OCR and Protect stop waiting after 60 seconds, upload included, so a large file on a slow connection can fail. There is no paid tier to lift any of this."
+          "PrivaTools applies the same limits to everyone. An upload request can be 500 MB, and most pages upload each file in a request of its own. Standard tool pages queue up to 25 files, but heavy tools accept about five runs a minute from one visitor, so in a long queue some files are marked failed and need a retry. A page keeps waiting while an upload is moving, but the server then gives each request five minutes and a PDF to Word conversion 60 seconds, so a very large or complex document can fail. There is no paid tier to lift any of this."
         ]
       },
       {
@@ -273,7 +273,7 @@
     ],
     "tradeoffs": [
       "iLovePDF showed us its prices in Indian rupees, based on our location, so this page quotes no figure; check the pricing page from where you are.",
-      "PrivaTools' 60-second wait on its heavier pages can cut off a large upload on a slow connection.",
+      "PrivaTools' server ends each request five minutes after the upload arrives, so the heaviest jobs on very large files can fail.",
       "We did not benchmark conversion quality or speed for either product."
     ],
     "sources": [
@@ -365,7 +365,7 @@
       },
       {
         "label": "File size",
-        "privatools": "500 MB per upload request, which on most pages holds a single file, and some heavy pages wait 60 seconds at most.",
+        "privatools": "500 MB per upload request, which on most pages holds a single file, and five minutes of server time once it has arrived.",
         "competitor": "The free file size is marked Limited without a number, paid plans Unlimited; AI files up to 50 MB.",
         "sourceUrl": "https://smallpdf.com/pricing"
       },
@@ -405,7 +405,7 @@
         "heading": "What the free plan leaves out",
         "body": [
           "Smallpdf meters its free plan by day. Most tools, including PDF OCR and conversion to and from Word, carry a daily download limit, and the mobile apps a daily task limit. Strong compression, batch processing, OCR that outputs Word, Excel or PowerPoint, text editing and image extraction are Pro features. Its support page says free users can process up to two conversions a day.",
-          "PrivaTools does not count use by day. Its strongest compression preset, OCR and PDF to Word are available without an account, but heavy tools accept about five runs a minute from one visitor, so a long batch partly fails and needs retries, and the OCR and PDF to Word pages stop waiting after 60 seconds, upload included. It cannot edit existing PDF text on any plan: Edit PDF adds new content on top of the page."
+          "PrivaTools does not count use by day. Its strongest compression preset, OCR and PDF to Word are available without an account, but heavy tools accept about five runs a minute from one visitor, so a long batch partly fails and needs retries, and once a file has arrived, OCR has five minutes on the server and PDF to Word 60 seconds. It cannot edit existing PDF text on any plan: Edit PDF adds new content on top of the page."
         ]
       },
       {
@@ -517,7 +517,7 @@
       },
       {
         "label": "File limits",
-        "privatools": "Up to 500 MB per file on most pages, 100 PDFs per merge, and a 60-second wait on several heavy pages.",
+        "privatools": "Up to 500 MB per file on most pages, 100 PDFs per merge, and five minutes of server time per request.",
         "competitor": "PDFs up to 100 MB; PDF to Word and PowerPoint 200 MB, Split 1 GB, Compress 2 GB; Merge up to 100 files.",
         "sourceUrl": "https://helpx.adobe.com/document-cloud/faq/try-acrobat-online-services.html"
       },
@@ -563,7 +563,7 @@
         "heading": "Free online tools and their limits",
         "body": [
           "Adobe's free online tools come with limits on free use. Without an Adobe ID, most tools let you complete one free transaction and download the result once; signed in, you can share, fill, sign and comment on PDFs for free and make one free transaction with a premium tool every 30 days. Removing a password needs a subscription or the seven-day Acrobat Pro trial, and a password added with the free Protect PDF tool cannot then be removed with it. Page tools such as rotate and extract handle up to 1,500 pages.",
-          "PrivaTools has no trial logic. Protect PDF, Unlock PDF, compression, conversion, OCR and redaction are free on every run and need no sign-in, within the 500 MB upload cap, a limit of about five runs a minute on heavy tools and a 60-second wait on pages such as Protect, OCR and PDF to Word."
+          "PrivaTools has no trial logic. Protect PDF, Unlock PDF, compression, conversion, OCR and redaction are free on every run and need no sign-in, within the 500 MB upload cap, a limit of about five runs a minute on heavy tools, and five minutes of server time per request, 60 seconds for a PDF to Word conversion."
         ]
       },
       {
@@ -587,7 +587,7 @@
     ],
     "tradeoffs": [
       "The online-tool limits here come from an Adobe help article last updated in June 2025, the newest we found.",
-      "A very large file can outlast PrivaTools' 60-second wait on its Protect, OCR and PDF to Word pages.",
+      "A very large file can outlast the five minutes PrivaTools' server gives each request, or the 60 seconds it gives a PDF to Word conversion.",
       "We did not benchmark either product's output."
     ],
     "sources": [
@@ -735,7 +735,7 @@
         "heading": "How the free limits work",
         "body": [
           "Sejda's tool pages state its free web limits. Most accept documents up to 200 pages or 50 MB, Merge up to 50 pages or 50 MB, compression up to 100 MB and OCR up to 10 pages, each with three tasks per hour. The free Desktop tier allows three tasks per day. A Week Pass lifts the web limits for seven days as a one-time charge that does not renew, and prices are in US dollars with tax calculated at checkout.",
-          "PrivaTools has no task allowance to spend. Its limits are technical instead: 500 MB per upload request, one file per request on most tool pages, about five runs a minute from one visitor on heavy jobs such as OCR and PDF to Word, and a 60-second wait on several of those pages, upload included. With nothing to buy, there is also no paid route past those limits on the public site."
+          "PrivaTools has no task allowance to spend. Its limits are technical instead: 500 MB per upload request, one file per request on most tool pages, about five runs a minute from one visitor on heavy jobs such as OCR and PDF to Word, and a server time limit that starts once the upload has arrived: five minutes per request, and 60 seconds for a PDF to Word conversion. With nothing to buy, there is also no paid route past those limits on the public site."
         ]
       },
       {
@@ -758,7 +758,7 @@
     ],
     "tradeoffs": [
       "Its licence agreement says Sejda Desktop contacts Sejda's servers to download OCR language data.",
-      "Long PrivaTools OCR or PDF to Word jobs must finish within a 60-second wait; Sejda's paid plans allow up to 21 minutes per task.",
+      "Long PrivaTools OCR jobs must finish within five minutes on the server, and PDF to Word conversions within 60 seconds; Sejda's paid plans allow up to 21 minutes per task.",
       "We did not benchmark either product's output."
     ],
     "sources": [
@@ -911,7 +911,7 @@
     ],
     "tradeoffs": [
       "PDF24's Creator manual documents a setting that stops Creator from using the online converter when no local converter is available; check it if files must stay on the PC.",
-      "PrivaTools' heavy tools take about five runs a minute from one visitor, and several of their pages stop waiting after 60 seconds.",
+      "PrivaTools' heavy tools take about five runs a minute from one visitor, and its server ends any request still running after five minutes.",
       "We did not benchmark output quality for either product."
     ],
     "sources": [
@@ -999,7 +999,7 @@
       },
       {
         "label": "Online file limits",
-        "privatools": "Up to 500 MB per file on most pages, but PDF to Word and OCR stop waiting after 60 seconds.",
+        "privatools": "Up to 500 MB per file on most pages, but a PDF to Word conversion must finish within 60 seconds and OCR within five minutes.",
         "competitor": "The online PDF to Word converter takes files up to 15 MB; Foxit says its desktop version handles higher limits.",
         "sourceUrl": "https://www.foxit.com/pdf-to-word/"
       },
@@ -1069,7 +1069,7 @@
     ],
     "tradeoffs": [
       "The prices here are Foxit's published US list rates; local prices and taxes can differ.",
-      "PrivaTools' PDF to Word and OCR pages give up after 60 seconds, upload included, so a large file on a slow connection can fail.",
+      "PrivaTools' server gives a PDF to Word conversion 60 seconds and an OCR request five minutes, so a long document can fail.",
       "We did not benchmark editing quality or OCR accuracy."
     ],
     "sources": [
@@ -1544,7 +1544,7 @@
         "heading": "The free plan in practice",
         "body": [
           "DocHub's free plan suits occasional use: its core features share a limit of three uses a month, and Basic keeps that cap on selected Pro features while adding unlimited downloads, self-signing and templates. Pro makes PDF editing and sign requests unlimited.",
-          "PrivaTools has no monthly allowance, but it has other limits: 500 MB per upload request, lower caps on some tools, such as 200 MB for Mute Video and Trim Media, a 60-second wait on pages such as OCR and PDF to Word, a five-minute limit on the server, and about five runs a minute on heavy tools. It also has no account to keep documents in, so download a completed form before you leave the page."
+          "PrivaTools has no monthly allowance, but it has other limits: 500 MB per upload request, lower caps on some tools, such as 200 MB for Mute Video and Trim Media, a five-minute limit per request on the server, 60 seconds for a PDF to Word conversion, and about five runs a minute on heavy tools. It also has no account to keep documents in, so download a completed form before you leave the page."
         ]
       }
     ],
@@ -1717,7 +1717,7 @@
     ],
     "tradeoffs": [
       "PrivaTools' editor and form tools are separate steps, and its signatures are visible images; if you need certificate-based signing, choose a product that issues one.",
-      "Big uploads to PrivaTools can still fail on a slow connection, because some of its pages stop waiting after 60 seconds.",
+      "Big jobs on PrivaTools can still fail, because its server stops any request that runs longer than five minutes.",
       "We did not benchmark either editor's output."
     ],
     "sources": [
@@ -1867,7 +1867,7 @@
     ],
     "tradeoffs": [
       "Placing a signature image and running a signature-request service are different jobs; compare them separately.",
-      "A large file on a slow connection can outlast the 60-second wait on PrivaTools' OCR and PDF to Word pages.",
+      "A long scan can run past the five minutes PrivaTools' server allows an OCR request, and a PDF to Word conversion has only 60 seconds.",
       "We did not benchmark editing accuracy, OCR quality or speed."
     ],
     "sources": [

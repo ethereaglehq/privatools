@@ -29,7 +29,7 @@ export function CreateZipUI() {
         if (!files.length || active.current) return;
         active.current = true; const current = ++generation.current; setBusy(true); setError(null); setResult(null);
         try {
-            const response = await postFormData("/create-zip", () => { const form = new FormData(); files.forEach(item => form.append("files", item.file)); form.append("compression", String(config.compression)); return form; }, {timeoutMs: 300_000});
+            const response = await postFormData("/create-zip", () => { const form = new FormData(); files.forEach(item => form.append("files", item.file)); form.append("compression", String(config.compression)); return form; });
             const blob = await response.blob();
             if (generation.current === current) setResult({blob, count: files.length, originalBytes: totalBytes});
             emitToolRun({outcome: "success", files: files.length});

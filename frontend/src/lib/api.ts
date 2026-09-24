@@ -199,31 +199,56 @@ export interface RetryPolicy {
     attempts: number;
     /** Initial backoff in ms; subsequent retries are linearly multiplied (600, 1200, 1800…). */
     backoffMs: number;
-    /** Predicate: should this error be retried? Default: network errors + 5xx HTTP.
-     *  NEVER returns `true` for AbortError or 4xx — see `defaultShouldRetry`. */
+    /** Predicate: should this error be retried? Default: network errors + 5xx HTTP
+     *  other than a timeout. NEVER returns `true` for AbortError, 4xx or a
+     *  timeout — see `defaultShouldRetry`. */
     on?: (err: unknown) => boolean;
 }
 
 /** Default retry policy — moderate. 2 retries, 600ms + 1200ms backoff,
- *  retry network errors + 5xx HTTP but never 4xx or aborts. */
+ *  retry network errors + 5xx HTTP but never 4xx, timeouts or aborts. */
 export const DEFAULT_RETRY: RetryPolicy = {
     attempts: 2,
     backoffMs: 600,
     on: defaultShouldRetry,
 };
 
-/** Default request timeout — 60s. Server-side processing of ~50MB files
- *  typically finishes in <15s, so 60s catches everything except the truly
- *  pathological. Long-running tools (large compress, OCR) override per-call. */
-export const DEFAULT_TIMEOUT_MS = 60_000;
-/** XHR progress uploads preserve the historical 5 minute ceiling by default.
- *  They still honor per-call timeoutMs, including 0 to disable timeouts. */
-const DEFAULT_PROGRESS_TIMEOUT_MS = 300_000;
+/** The server's own limit on one request, counted once the whole upload has
+ *  reached it. The backend answers 504 when REQUEST_TIMEOUT_SECONDS (300 in
+ *  docker-compose.yml) have passed, and production nginx, which receives the
+ *  whole upload before it hands the request on, waits proxy_read_timeout 300s
+ *  for the backend. nginx sets no limit on how long a moving upload takes; it
+ *  drops only one that sends nothing for client_body_timeout 300s. */
+export const SERVER_TIME_LIMIT_MS = 300_000;
+
+/** How long a request may go with nothing happening before the page gives up
+ *  on it: no upload progress while a file is being sent, no answer once the
+ *  last byte has gone, no bytes while the answer arrives. It is a minute longer
+ *  than the server's own limit, so the server's answer, a 504 included,
+ *  normally comes first. It may not when something between the browser and
+ *  the server holds the upload after the browser has sent it, such as a
+ *  corporate proxy that scans uploads, for more than that minute: the
+ *  server's clock starts only once the whole body has reached it.
+ *
+ *  What this deadline guarantees: it never ends an upload that keeps moving,
+ *  however long that takes. What it cannot guarantee: that the browser or the
+ *  network will not end one. Over HTTP/2, Chrome closes a connection whose
+ *  PING goes unanswered for 10 s, which happens when the PING queues behind
+ *  upload bytes on a slow, deeply buffered uplink. It then sends the upload
+ *  again from the start, and once its own retries run out the request fails
+ *  as a network error.
+ *
+ *  A request without a file cannot report upload progress, so for it the
+ *  wait runs from the start. */
+export const DEFAULT_TIMEOUT_MS = SERVER_TIME_LIMIT_MS + 60_000;
 
 /** Decide whether an error from a single attempt should be retried.
  *
  * Retry:  network errors, "Failed to fetch", HTTP 5xx (server-side hiccup).
- * Don't:  AbortError (user cancelled), 4xx (caller's fault — bad input).
+ * Don't:  AbortError (user cancelled), 4xx (caller's fault — bad input), and a
+ *         timeout: 504 or 524 from the server, or the page's own deadline.
+ *         Each of those came after a full wait, which another attempt would
+ *         repeat, sending the whole upload again.
  *
  * The "retry" classifier is matched against either the Error message OR a
  * special `__status` property we tag onto thrown errors below.
@@ -231,9 +256,11 @@ const DEFAULT_PROGRESS_TIMEOUT_MS = 300_000;
 export function defaultShouldRetry(err: unknown): boolean {
     if (isAbortError(err)) return false;
     if (err instanceof Error) {
+        if ((err as Error & { __kind?: ToolErrorKind }).__kind === "timeout") return false;
         // Tag we set on describeError() — see below.
         const status = (err as Error & { __status?: number }).__status;
         if (typeof status === "number") {
+            if (status === 504 || status === 524) return false;
             if (status >= 500 && status < 600) return true;
             return false;  // 4xx → don't retry
         }
@@ -247,17 +274,18 @@ export function defaultShouldRetry(err: unknown): boolean {
 /** Shared options for uploads. Adding fields here propagates to every helper. */
 export interface UploadOptions {
     /** Forward an AbortController.signal so callers can cancel in-flight uploads
-     *  (e.g. PipelinePage's "Cancel" button). XHR-based progress uploads use
-     *  xhr.abort() under the hood. */
+     *  (e.g. PipelinePage's "Cancel" button). Uploads go by XMLHttpRequest and
+     *  are cancelled with xhr.abort(). */
     signal?: AbortSignal;
-    /** Progress callback. Only fires when XHR is used (not for the simple
-     *  fetch() path; fetch doesn't expose upload progress). */
+    /** Upload progress, as a percentage of the request body sent. */
     onProgress?: ProgressCallback;
     /** Auto-retry on transient failures. Set `attempts: 0` to disable. */
     retry?: RetryPolicy;
     /** Fired before each retry — lets the UI show "Retrying… (attempt 2 of 3)". */
     onRetry?: RetryCallback;
-    /** Per-request timeout in ms. Default 60_000. Pass 0 to disable. */
+    /** How long the request may go with nothing happening before the page
+     *  gives up. Default DEFAULT_TIMEOUT_MS; 0 turns the deadline off. Leave it
+     *  unset: a shorter wait gives up before the server's own limit. */
     timeoutMs?: number;
 }
 
@@ -342,17 +370,136 @@ function timeoutSignal(timeoutMs: number, external?: AbortSignal): {
     };
 }
 
+/** What the page says when it gives up, by what it was waiting for. */
+const GAVE_UP = {
+    upload: "The upload stopped moving — check your connection and try again.",
+    answer: "The server didn't respond — try a smaller file or check your connection.",
+    download: "The result stopped arriving — check your connection and try again.",
+} as const;
+type RequestStage = keyof typeof GAVE_UP;
+
+function gaveUp(stage: RequestStage): Error {
+    return withErrorKind(new Error(GAVE_UP[stage]), "timeout");
+}
+
 /** Translate an AbortError that came from our timeoutSignal into a friendly
  *  message, and mark a request that never completed. Caller-cancels (which use
  *  a plain AbortError) and HTTP errors get passed through. */
 function decorateTransportError(err: unknown): unknown {
-    if (err instanceof DOMException && err.name === "TimeoutError") {
-        return withErrorKind(new Error("The server didn't respond — try a smaller file or check your connection."), "timeout");
-    }
+    if (err instanceof DOMException && err.name === "TimeoutError") return gaveUp("answer");
     // Only fetch() itself can throw a TypeError inside the helpers' try blocks:
     // offline, DNS, a dropped connection, CORS or a blocked request.
     if (err instanceof TypeError) return withErrorKind(err, "network");
     return err;
+}
+
+/** True when a form carries a file, whose upload can take minutes. */
+function carriesFile(body: FormData): boolean {
+    for (const value of body.values()) if (typeof value !== "string") return true;
+    return false;
+}
+
+/** The headers an XMLHttpRequest received. A value can itself contain ": ",
+ *  as Redact's JSON report does, so each line is split at its first colon. */
+function xhrHeaders(xhr: XMLHttpRequest): Headers {
+    const headers = new Headers();
+    for (const line of xhr.getAllResponseHeaders().split(/\r?\n/)) {
+        const colon = line.indexOf(":");
+        if (colon <= 0) continue;
+        try {
+            headers.append(line.slice(0, colon).trim(), line.slice(colon + 1).trim());
+        } catch { /* a header the Headers class refuses: skip it */ }
+    }
+    return headers;
+}
+
+/** Send a form that carries a file and resolve with the answer, as a fetch()
+ *  Response. It goes by XMLHttpRequest because only that reports upload
+ *  progress, which is how a slow upload that is still moving is told apart
+ *  from a connection that has died.
+ *
+ *  The deadline restarts whenever something happens: a chunk of the upload
+ *  goes out, the answer's headers come in, a chunk of the answer comes in. So
+ *  once the last byte has gone, the page waits `timeoutMs` for the answer,
+ *  which is the server's own limit plus a minute by default, and the page
+ *  gives up on an upload only once it has not moved for that long (the
+ *  browser can still end one itself; see DEFAULT_TIMEOUT_MS). The request
+ *  then fails as a timeout; `timeoutMs` 0 turns the deadline off. A cancel
+ *  through `signal` rejects with an AbortError. */
+function sendForm(
+    endpoint: string,
+    body: FormData,
+    { signal, onProgress, timeoutMs }: { signal?: AbortSignal; onProgress?: ProgressCallback; timeoutMs: number },
+): Promise<Response> {
+    return new Promise((resolve, reject) => {
+        if (signal?.aborted) {
+            reject(new DOMException("Aborted", "AbortError"));
+            return;
+        }
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", `${API_BASE}${normalizeEndpoint(endpoint)}`);
+        xhr.responseType = "blob";
+
+        let stage: RequestStage = "upload";
+        let expired: RequestStage | null = null;
+        let timer: number | undefined;
+        const moved = () => {
+            window.clearTimeout(timer);
+            if (timeoutMs > 0) timer = window.setTimeout(() => { expired = stage; xhr.abort(); }, timeoutMs);
+        };
+
+        // Wire abort signal → xhr.abort(). The listener is removed in
+        // onloadend so we don't keep a reference to a long-lived signal.
+        const onAbort = () => xhr.abort();
+        if (signal) signal.addEventListener("abort", onAbort);
+        xhr.onloadend = () => {
+            window.clearTimeout(timer);
+            if (signal) signal.removeEventListener("abort", onAbort);
+        };
+
+        // Upload listeners are what make the browser report upload progress.
+        // (For a cross-origin API host they also make it send a CORS preflight.)
+        xhr.upload.onprogress = (e) => {
+            moved();
+            if (e.lengthComputable && e.total > 0 && onProgress) {
+                onProgress("upload", Math.round((e.loaded / e.total) * 100));
+            }
+        };
+        xhr.upload.onload = () => {
+            // The last byte has gone, so the server's own limit is running now.
+            if (stage === "upload") stage = "answer";
+            moved();
+        };
+        xhr.onreadystatechange = () => {
+            // HEADERS_RECEIVED or LOADING: the answer is coming in.
+            if (xhr.readyState === 2 || xhr.readyState === 3) {
+                stage = "download";
+                moved();
+            }
+        };
+        xhr.onprogress = moved;
+
+        xhr.onload = () => {
+            let res: Response;
+            try {
+                // 204, 205 and 304 answers cannot carry a body.
+                const bodyless = xhr.status === 204 || xhr.status === 205 || xhr.status === 304;
+                res = new Response(bodyless ? null : xhr.response as Blob, { status: xhr.status, headers: xhrHeaders(xhr) });
+            } catch {
+                reject(withErrorKind(new Error(`Request failed (${xhr.status})`), "server"));
+                return;
+            }
+            if (res.ok) resolve(res);
+            else describeError(res).then(reject, reject);
+        };
+        xhr.onerror = () => reject(withErrorKind(new Error("Network error"), "network"));
+        xhr.onabort = () => reject(expired ? gaveUp(expired) : new DOMException("Aborted", "AbortError"));
+        // xhr.timeout, a limit on the whole request upload included, stays 0
+        // (none); settle anyway should a browser ever fire it.
+        xhr.ontimeout = () => reject(gaveUp(stage));
+        moved();
+        xhr.send(body);
+    });
 }
 
 /** Upload a single file with optional form-data parameters. Returns the response.
@@ -373,27 +520,16 @@ export async function uploadFile(
         if (params) for (const [k, v] of Object.entries(params)) fd.append(k, String(v));
         return fd;
     };
-    return withRetry(async () => {
-        const { signal: combined, cancel } = timeoutSignal(timeoutMs, options?.signal);
-        try {
-            const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, {
-                method: "POST",
-                body: buildBody(),
-                signal: combined,
-            });
-            if (!res.ok) throw await describeError(res);
-            return res;
-        } catch (err) {
-            throw decorateTransportError(err);
-        } finally {
-            cancel();
-        }
-    }, options?.retry, options?.onRetry, options?.signal);
+    return withRetry(
+        () => sendForm(endpoint, buildBody(), { signal: options?.signal, onProgress: options?.onProgress, timeoutMs }),
+        options?.retry, options?.onRetry, options?.signal,
+    );
 }
 
 /**
- * Upload a single file with real upload progress via XMLHttpRequest. Like
- * uploadFile, it sends the file once, under the field its route reads.
+ * Upload a single file, reporting its upload progress. Like uploadFile, it
+ * sends the file once, under the field its route reads, and waits by the same
+ * rule; unlike it, it does not retry.
  */
 export function uploadFileWithProgress(
     endpoint: string,
@@ -404,7 +540,6 @@ export function uploadFileWithProgress(
     options?: { timeoutMs?: number },
 ): Promise<Response> {
     validateFileSize(file);
-    const timeoutMs = options?.timeoutMs ?? DEFAULT_PROGRESS_TIMEOUT_MS;
     const fd = new FormData();
     fd.append(uploadFieldFor(endpoint), file);
     if (params) {
@@ -412,56 +547,7 @@ export function uploadFileWithProgress(
             fd.append(k, String(v));
         }
     }
-
-    return new Promise((resolve, reject) => {
-        if (signal?.aborted) {
-            reject(new DOMException("Aborted", "AbortError"));
-            return;
-        }
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${API_BASE}${normalizeEndpoint(endpoint)}`);
-        xhr.responseType = "blob";
-
-        // Wire abort signal → xhr.abort(). The listener is removed in
-        // onloadend so we don't keep a reference to a long-lived signal.
-        const onAbort = () => xhr.abort();
-        if (signal) signal.addEventListener("abort", onAbort);
-        xhr.onloadend = () => { if (signal) signal.removeEventListener("abort", onAbort); };
-
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable && onProgress) {
-                onProgress("upload", Math.round((e.loaded / e.total) * 100));
-            }
-        };
-
-        xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                const blob = xhr.response as Blob;
-                const headers = new Headers();
-                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
-                    const parts = line.split(": ");
-                    if (parts.length === 2) headers.append(parts[0], parts[1]);
-                });
-                resolve(new Response(blob, { status: xhr.status, headers }));
-            } else {
-                const blob = xhr.response as Blob;
-                const headers = new Headers();
-                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
-                    const parts = line.split(": ");
-                    if (parts.length === 2) headers.append(parts[0], parts[1]);
-                });
-                describeError(new Response(blob, { status: xhr.status, headers }))
-                    .then(reject)
-                    .catch(() => reject(new Error(`Request failed (${xhr.status})`)));
-            }
-        };
-
-        xhr.onerror = () => reject(withErrorKind(new Error("Network error"), "network"));
-        xhr.onabort  = () => reject(new DOMException("Aborted", "AbortError"));
-        xhr.ontimeout = () => reject(withErrorKind(new Error("Request timed out"), "timeout"));
-        xhr.timeout = Math.max(0, timeoutMs);
-        xhr.send(fd);
-    });
+    return sendForm(endpoint, fd, { signal, onProgress, timeoutMs: options?.timeoutMs ?? DEFAULT_TIMEOUT_MS });
 }
 
 /** Upload multiple files with optional params. Returns the response. */
@@ -480,26 +566,15 @@ export async function uploadFiles(
         if (params) for (const [k, v] of Object.entries(params)) fd.append(k, String(v));
         return fd;
     };
-    return withRetry(async () => {
-        const { signal: combined, cancel } = timeoutSignal(timeoutMs, options?.signal);
-        try {
-            const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, {
-                method: "POST",
-                body: buildBody(),
-                signal: combined,
-            });
-            if (!res.ok) throw await describeError(res);
-            return res;
-        } catch (err) {
-            throw decorateTransportError(err);
-        } finally {
-            cancel();
-        }
-    }, options?.retry, options?.onRetry, options?.signal);
+    return withRetry(
+        () => sendForm(endpoint, buildBody(), { signal: options?.signal, onProgress: options?.onProgress, timeoutMs }),
+        options?.retry, options?.onRetry, options?.signal,
+    );
 }
 
 /**
- * Upload multiple files with real upload progress via XMLHttpRequest.
+ * Upload multiple files, reporting their upload progress. Waits by the same
+ * rule as uploadFiles, without retrying.
  */
 export function uploadFilesWithProgress(
     endpoint: string,
@@ -511,7 +586,6 @@ export function uploadFilesWithProgress(
 ): Promise<Response> {
     validateFileCount(files);
     for (const f of files) validateFileSize(f);
-    const timeoutMs = options?.timeoutMs ?? DEFAULT_PROGRESS_TIMEOUT_MS;
     const fd = new FormData();
     for (const f of files) fd.append("files", f);
     if (params) {
@@ -519,54 +593,7 @@ export function uploadFilesWithProgress(
             fd.append(k, String(v));
         }
     }
-
-    return new Promise((resolve, reject) => {
-        if (signal?.aborted) {
-            reject(new DOMException("Aborted", "AbortError"));
-            return;
-        }
-        const xhr = new XMLHttpRequest();
-        xhr.open("POST", `${API_BASE}${normalizeEndpoint(endpoint)}`);
-        xhr.responseType = "blob";
-
-        const onAbort = () => xhr.abort();
-        if (signal) signal.addEventListener("abort", onAbort);
-        xhr.onloadend = () => { if (signal) signal.removeEventListener("abort", onAbort); };
-
-        xhr.upload.onprogress = (e) => {
-            if (e.lengthComputable && onProgress) {
-                onProgress("upload", Math.round((e.loaded / e.total) * 100));
-            }
-        };
-
-        xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                const blob = xhr.response as Blob;
-                const headers = new Headers();
-                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
-                    const parts = line.split(": ");
-                    if (parts.length === 2) headers.append(parts[0], parts[1]);
-                });
-                resolve(new Response(blob, { status: xhr.status, headers }));
-            } else {
-                const blob = xhr.response as Blob;
-                const headers = new Headers();
-                xhr.getAllResponseHeaders().trim().split(/[\r\n]+/).forEach(line => {
-                    const parts = line.split(": ");
-                    if (parts.length === 2) headers.append(parts[0], parts[1]);
-                });
-                describeError(new Response(blob, { status: xhr.status, headers }))
-                    .then(reject)
-                    .catch(() => reject(new Error(`Request failed (${xhr.status})`)));
-            }
-        };
-
-        xhr.onerror = () => reject(withErrorKind(new Error("Network error"), "network"));
-        xhr.onabort  = () => reject(new DOMException("Aborted", "AbortError"));
-        xhr.ontimeout = () => reject(withErrorKind(new Error("Request timed out"), "timeout"));
-        xhr.timeout = Math.max(0, timeoutMs);
-        xhr.send(fd);
-    });
+    return sendForm(endpoint, fd, { signal, onProgress, timeoutMs: options?.timeoutMs ?? DEFAULT_TIMEOUT_MS });
 }
 
 /** Upload a file and get a JSON response back. */
@@ -585,6 +612,7 @@ export interface RequestOptions {
     signal?: AbortSignal;
     retry?: RetryPolicy;
     onRetry?: RetryCallback;
+    /** As UploadOptions.timeoutMs: leave it unset. */
     timeoutMs?: number;
 }
 
@@ -593,6 +621,8 @@ export interface RequestOptions {
  * This covers custom workflows (Batch, Pipeline, multi-input editors) that
  * need to build their own payload but still deserve the shared timeout,
  * retry, abort, request-ID, and friendly-error handling used by uploadFile().
+ * A form that carries a file is sent as uploadFile() sends one, so a slow
+ * upload is waited for; a form without one goes by fetch().
  * Pass a builder when retries are enabled so each attempt gets a fresh body.
  */
 export async function postFormData(
@@ -605,6 +635,7 @@ export async function postFormData(
     return withRetry(async () => {
         const body = buildBody();
         validateFormDataFiles(body);
+        if (carriesFile(body)) return sendForm(endpoint, body, { signal: options?.signal, timeoutMs });
         const { signal: combined, cancel } = timeoutSignal(timeoutMs, options?.signal);
         try {
             const res = await fetch(`${API_BASE}${normalizeEndpoint(endpoint)}`, {

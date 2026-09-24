@@ -36,7 +36,7 @@
     },
     {
       "q": "How long a video can I convert?",
-      "a": "Clips rather than feature films. FFmpeg is stopped after 180 seconds per file and the whole request, upload included, has five minutes, while every frame has to be re-encoded. If a long file fails, cut it into parts with Trim Media and convert those."
+      "a": "Clips rather than feature films. FFmpeg is stopped after 180 seconds per file, and the whole request has five minutes once the upload has arrived, while every frame has to be re-encoded. If a long file fails, cut it into parts with Trim Media and convert those."
     },
     {
       "q": "Are there other limits?",

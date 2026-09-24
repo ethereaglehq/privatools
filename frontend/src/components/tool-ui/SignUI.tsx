@@ -129,7 +129,7 @@ export function SignUI() {
                 if (sigFile) fd.append("signature", sigFile);
                 else if (sigData) fd.append("signature_data", sigData);
                 return fd;
-            }, { timeoutMs: 300_000 });
+            });
             const blob = await res.blob();
             downloadBlob(blob, `${file.name.replace(/\.pdf$/i, "")}_signed.pdf`);
             setState("done");

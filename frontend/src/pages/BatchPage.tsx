@@ -277,7 +277,7 @@ export default function BatchPage() {
             } else {
                 resp = await postFormData(selectedTool.endpoint,
                     () => buildBatchForm(selectedTool.slug, originalFile, highlightQuery),
-                    { signal, timeoutMs: 300_000 });
+                    { signal });
             }
             const blob = await resp.blob();
             const url = URL.createObjectURL(blob);

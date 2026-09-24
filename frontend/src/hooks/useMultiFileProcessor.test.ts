@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useMultiFileProcessor, type ProcessOptions } from "./useMultiFileProcessor";
+import { installNetwork } from "@/test/fake-network";
 
 const RUN_EVENT = "privatools:tool-run";
 type Detail = Record<string, unknown>;
@@ -15,7 +16,7 @@ function options(localProcess: ProcessOptions["localProcess"]): ProcessOptions {
   return { endpoint: "noop", outputExt: "txt", outputSuffix: null, localProcess };
 }
 
-afterEach(() => { vi.restoreAllMocks(); });
+afterEach(() => { vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 
 describe("useMultiFileProcessor usage events", () => {
   it("emits one single-mode tool run with the file count when every file succeeds", async () => {
@@ -43,7 +44,7 @@ describe("useMultiFileProcessor usage events", () => {
 
   it("reports the category of a server refusal", async () => {
     const seen = listen();
-    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("slow down", { status: 429 }));
+    installNetwork({ uploadMs: 0, answerAfterMs: 0, status: 429, body: "slow down" });
     const { result } = renderHook(() => useMultiFileProcessor());
     act(() => result.current.addFiles([file("secret.txt")]));
     await act(() => result.current.run({ endpoint: "/compress", outputExt: "txt", outputSuffix: null, uploadOptions: { retry: { attempts: 0, backoffMs: 1 } } }));
