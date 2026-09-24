@@ -188,12 +188,14 @@ export function requestSize(values: Iterable<FormDataEntryValue>): number {
 
 /** An upload that fails is sent again only up to this size. Another attempt
  *  sends the whole body again, and past this it costs the visitor minutes on a
- *  slow connection. By then a failure is rarely a blip the retry's second or
- *  two of backoff would outlast: nginx buffers a whole upload before passing
- *  it on, so a 502 comes only after all of it has gone; a proxy that refuses
- *  large bodies refuses every attempt; and over HTTP/2 Chrome has already sent
- *  a stalled upload again itself before reporting a network error. So a larger
- *  failure is shown at once, and the visitor decides whether to send it again. */
+ *  slow connection. A failure is rarely a blip the retry's second or two of
+ *  backoff would outlast: a proxy that refuses large bodies refuses every
+ *  attempt; over HTTP/2 Chrome has already sent a stalled upload again itself
+ *  before reporting a network error; and while the app is down, nginx refuses
+ *  the upload's CORS preflight (a network error) or, when the browser still
+ *  holds a preflight, buffers the whole upload before answering 502. So a
+ *  larger failure is shown at once, and the visitor decides whether to send it
+ *  again. */
 export const MAX_RETRY_SIZE = 10 * 1024 * 1024;
 
 function validateFileSize(file: File) {
@@ -430,13 +432,15 @@ function decorateTransportError(err: unknown): unknown {
 }
 
 /** The error for a form that would pass MAX_REQUEST_SIZE. It is refused before
- *  anything is sent: nginx would refuse it only once the upload had begun. */
+ *  anything is sent: nginx would refuse it only once the upload had begun. The
+ *  limit counts the form the files go in, so the message says so: shown only
+ *  the files' size, a visitor refused at "500.0 MB" would see no reason. */
 function tooLargeToSend(body: FormData): Error {
     const files = [...body.values()].filter((value): value is File => typeof value !== "string");
-    const total = formatFileSize(files.reduce((sum, file) => sum + file.size, 0));
+    const size = formatFileSize(files.reduce((sum, file) => sum + file.size, 0));
     const message = files.length > 1
-        ? `These files add up to ${total}, over the ${MAX_REQUEST_SIZE_LABEL} one upload can carry, so nothing was sent. Choose fewer or smaller files.`
-        : `This upload comes to ${total}, over the ${MAX_REQUEST_SIZE_LABEL} one upload can carry, so nothing was sent. Choose a smaller file.`;
+        ? `These files are ${size} in all, and one upload can carry ${MAX_REQUEST_SIZE_LABEL}, counting the form they are sent in. Nothing was sent. Choose fewer or smaller files.`
+        : `This file is ${size}, and one upload can carry ${MAX_REQUEST_SIZE_LABEL}, counting the form it is sent in. Nothing was sent. Choose a smaller file.`;
     return withErrorKind(new Error(message), "too_large");
 }
 

@@ -104,10 +104,10 @@ describe("Merge workspace", { timeout: 20_000 }, () => {
         await waitFor(() => expect(screen.getByRole("button", { name: "Merge 2 PDFs" })).toBeEnabled());
         addFiles([sized("volume-3.pdf", 60)]);
         expect(screen.getByRole("alert")).toHaveTextContent(
-            "You can merge up to 500 MB at a time. Adding “volume-3.pdf” would make 510.0 MB, so it was not added.");
+            "You can merge up to 500 MB at a time, counting the form the PDFs are sent in. Adding “volume-3.pdf” would make 510.0 MB, so it was not added.");
         addFiles([sized("volume-3.pdf", 30), sized("volume-4.pdf", 30)]);
         expect(screen.getByRole("alert")).toHaveTextContent(
-            "You can merge up to 500 MB at a time. Adding these 2 PDFs would make 510.0 MB, so they were not added.");
+            "You can merge up to 500 MB at a time, counting the form the PDFs are sent in. Adding these 2 PDFs would make 510.0 MB, so they were not added.");
         expect(screen.getAllByRole("button", { name: /^Remove .*pdf$/ })).toHaveLength(2);
         addFiles([sized("volume-3.pdf", 49)]);
         await waitFor(() => expect(screen.getByRole("button", { name: "Merge 3 PDFs" })).toBeEnabled());

@@ -111,7 +111,7 @@ export function MergeUI() {
         if (requestSize(combined) > MAX_REQUEST_SIZE) {
             const total = formatFileSize(combined.reduce((sum, file) => sum + file.size, 0));
             const which = incoming.length === 1 ? `“${incoming[0].name}”` : `these ${incoming.length} PDFs`;
-            setError(`You can merge up to ${MAX_REQUEST_SIZE_LABEL} at a time. Adding ${which} would make ${total}, so ${incoming.length === 1 ? "it was" : "they were"} not added.`);
+            setError(`You can merge up to ${MAX_REQUEST_SIZE_LABEL} at a time, counting the form the PDFs are sent in. Adding ${which} would make ${total}, so ${incoming.length === 1 ? "it was" : "they were"} not added.`);
             return;
         }
         invalidateResult();

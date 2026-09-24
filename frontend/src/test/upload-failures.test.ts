@@ -7,6 +7,12 @@
  * says nothing for five minutes. Until those answers carried CORS headers the
  * page could not read them: each reached it as a network failure (status 0),
  * which it reported as "network" and sent again, the whole upload each time.
+ *
+ * The fake network has no CORS preflight: an answer it scripts is one the
+ * browser let the page read. A real upload is preflighted, and nginx answers
+ * the preflight too, so while the app is down its 502 (or a limit's 503)
+ * reaches an upload only when the browser still holds a preflight for that
+ * endpoint; otherwise the upload fails as the network error tested below.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -55,7 +61,7 @@ const NGINX_504 = json("The server took too long to answer. Try a smaller file, 
 
 describe("a request that would pass the 500 MB one upload can carry", () => {
     const three = () => [sizedFile("a.pdf", 200 * MB), sizedFile("b.pdf", 200 * MB), sizedFile("c.pdf", 200 * MB)];
-    const REFUSED = "These files add up to 600.0 MB, over the 500 MB one upload can carry, so nothing was sent. Choose fewer or smaller files.";
+    const REFUSED = "These files are 600.0 MB in all, and one upload can carry 500 MB, counting the form they are sent in. Nothing was sent. Choose fewer or smaller files.";
 
     it.each([
         ["Merge, Bates, Page Counter (uploadFiles)", () => uploadFiles("/merge", three())],
@@ -77,7 +83,7 @@ describe("a request that would pass the 500 MB one upload can carry", () => {
     it("counts what the form adds to its files, so one file of exactly 500 MB does not fit either", async () => {
         const net = installNetwork({ uploadMs: SECOND, answerAfterMs: SECOND });
         const err = await failure(uploadFile("/compress", sizedFile("scan.pdf", 500 * MB)));
-        expect(err.message).toBe("This upload comes to 500.0 MB, over the 500 MB one upload can carry, so nothing was sent. Choose a smaller file.");
+        expect(err.message).toBe("This file is 500.0 MB, and one upload can carry 500 MB, counting the form it is sent in. Nothing was sent. Choose a smaller file.");
         expect(toolErrorKind(err)).toBe("too_large");
         expect(net.requests).toEqual([]);
     });
@@ -93,7 +99,7 @@ describe("a request that would pass the 500 MB one upload can carry", () => {
     });
 });
 
-describe("an answer nginx or the backend refused, now that the page can read it", () => {
+describe("an answer nginx or the backend refused, when the page can read it", () => {
     it("shows a 413 for what it is, and never sends it again", async () => {
         const net = installNetwork({ uploadMs: 0, answerAfterMs: 0, status: 413, ...NGINX_413 });
         const err = await failure(uploadFile("/split", sizedFile("scan.pdf", 2 * MB)));
@@ -102,6 +108,9 @@ describe("an answer nginx or the backend refused, now that the page can read it"
         expect(net.requests).toHaveLength(1);
     });
 
+    // nginx's 504 reaches the page when the app answered the preflight and then
+    // said nothing about the upload. Its 502 does only while the browser holds
+    // a preflight for the endpoint (see the top).
     it("shows nginx's 502 and 504, classified as a server failure and a timeout", async () => {
         installNetwork({ uploadMs: 0, answerAfterMs: 0, status: 502, ...NGINX_502 });
         const down = await failure(uploadFile("/split", sizedFile("scan.pdf", 20 * MB)));
