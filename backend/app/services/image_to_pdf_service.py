@@ -111,9 +111,10 @@ _OTHER_FRAMES = {0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
 
 # An SVG is drawn 2,400 pixels wide, its height following its aspect ratio,
 # unless that is taller than cairo can draw: then it is drawn that tall and
-# narrower.
+# narrower. One below cairo's 32,767: at exactly 32,767 pixels cairo draws
+# nothing for a gradient that fills the canvas, and the page comes out black.
 _SVG_WIDTH = 2400
-_SVG_MAX_SIDE = 32_767
+_SVG_MAX_SIDE = 32_766
 
 
 class ImageRefused(ValueError):
