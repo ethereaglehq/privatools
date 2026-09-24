@@ -46,7 +46,7 @@ export function HtmlToPdfUI() {
                 if (mode === "url") fd.append("url", url.trim());
                 else fd.append("html_content", html);
                 return fd;
-            }, { timeoutMs: 120_000 });
+            });
             const blob = await res.blob();
             setResultBlob(blob);
             setState("done");

@@ -129,9 +129,9 @@ export function ImageToPdfUI({
         setState("processing"); setError(null);
         try {
             const outName = buildOutputFilename(files[0]?.name, null, "pdf");
-            // No client-side deadline: a full selection can take minutes to
-            // upload, and the server bounds the conversion once it arrives.
-            await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), outName, { page_size: pageSize }, undefined, undefined, { timeoutMs: 0 });
+            // A full selection can take minutes to upload. The shared wait in
+            // lib/api.ts lets it, and gives up only on a connection that stops.
+            await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), outName, { page_size: pageSize });
             setState("done");
             emitToolSuccess("Image to PDF");
             emitToolRun({ outcome: "success", files: files.length });

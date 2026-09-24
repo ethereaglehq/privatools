@@ -450,7 +450,7 @@ export default function PipelinePage() {
                     fd.append("file", resumeBlob, file.name);
                     fd.append("steps", JSON.stringify(steps.map(s => s.tool.slug)));
                     return fd;
-                }, { signal: controller.signal, timeoutMs: 300_000 });
+                }, { signal: controller.signal });
 
                 const out = await resp.blob();
                 if (!controller.signal.aborted) {
@@ -492,7 +492,6 @@ export default function PipelinePage() {
                     return formData;
                 }, {
                     signal: controller.signal,
-                    timeoutMs: 300_000,
                 });
                 currentBlob = await resp.blob();
                 intermediateBlobsRef.current[i] = currentBlob;

@@ -133,7 +133,7 @@ export function WatermarkUI() {
                 fd.append("image_scale", String(imageScale));
             }
             return fd;
-        }, { timeoutMs: 300_000 });
+        });
         return res.blob();
     }, [mode, text, opacity, position, fontSize, watermarkImage, imageScale]);
 

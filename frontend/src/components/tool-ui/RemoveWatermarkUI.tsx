@@ -77,7 +77,7 @@ export function RemoveWatermarkUI() {
                 const fd = new FormData();
                 fd.append("file", f, f.name);
                 return fd;
-            }, { timeoutMs: 300_000 });
+            });
             const data = (await resp.json()) as DetectResult;
             setResult(data);
             setChosen(new Set(
@@ -110,7 +110,7 @@ export function RemoveWatermarkUI() {
                 fd.append("file", file, file.name);
                 fd.append("candidate_ids", JSON.stringify([...chosen]));
                 return fd;
-            }, { timeoutMs: 300_000 });
+            });
             downloadBlob(await resp.blob(), buildOutputFilename(file.name, "no_watermark", "pdf"));
             setPhase("done");
             emitToolRun({ outcome: "success", files: 1 });

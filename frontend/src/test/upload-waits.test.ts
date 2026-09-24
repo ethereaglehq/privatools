@@ -11,6 +11,8 @@
  * Each test scripts what the connection does with the fake network, which
  * serves fetch and XMLHttpRequest alike, and moves Vitest's fake clock.
  */
+import { readdirSync, readFileSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -298,5 +300,27 @@ describe("what a page reads from an answer", () => {
 
         expect(redact.error).toBeUndefined();
         expect((redact.value as Record<string, string>)["x-redaction-report"]).toBe(report);
+    });
+});
+
+describe("no page sets a deadline of its own", () => {
+    // A page that passes its own timeoutMs can give up before the server's limit,
+    // as the 60-, 120- and 180-second overrides once did. Every page uses the
+    // shared default in lib/api.ts instead.
+    const root = join(process.cwd(), "src");
+    function sources(dir: string): string[] {
+        return readdirSync(dir).flatMap(name => {
+            const path = join(dir, name);
+            if (statSync(path).isDirectory()) return sources(path);
+            return /\.(ts|tsx)$/.test(name) && !/\.test\.(ts|tsx)$/.test(name) ? [path] : [];
+        });
+    }
+
+    it("in any component, page, hook or skin", () => {
+        const offenders = ["components", "pages", "hooks", "skins"]
+            .flatMap(dir => sources(join(root, dir)))
+            .filter(path => /\btimeoutMs\b/.test(readFileSync(path, "utf8")))
+            .map(path => relative(root, path));
+        expect(offenders).toEqual([]);
     });
 });

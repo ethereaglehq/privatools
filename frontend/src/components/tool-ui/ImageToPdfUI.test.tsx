@@ -67,7 +67,7 @@ describe("Image to PDF limits", { timeout: 20_000 }, () => {
         expect(alert.compareDocumentPosition(pages) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
 
-    it("sends 100 images of exactly 200 MB in one request, without the 60-second client deadline", async () => {
+    it("sends 100 images of exactly 200 MB in one request, with the shared upload wait", async () => {
         let finish!: () => void;
         vi.mocked(processFilesAndDownload).mockImplementationOnce(() => new Promise<void>(resolve => { finish = resolve; }));
         render(<ImageToPdfUI />);
@@ -88,8 +88,9 @@ describe("Image to PDF limits", { timeout: 20_000 }, () => {
         expect(endpoint).toBe("/image-to-pdf");
         expect(files.map(file => file.name)).toEqual(Array.from({ length: 100 }, (_, index) => `IMG_${index + 1}.jpg`));
         expect(params).toEqual({ page_size: "auto" });
-        // The upload alone can take minutes; the server bounds the processing.
-        expect(options?.timeoutMs).toBe(0);
+        // The upload alone can take minutes. The page sets no deadline of its
+        // own: lib/api.ts waits while the upload moves, then for the server.
+        expect(options?.timeoutMs).toBeUndefined();
 
         await act(async () => finish());
         expect(await screen.findByText("100 images, one PDF.")).toBeVisible();

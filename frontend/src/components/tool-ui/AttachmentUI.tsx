@@ -25,7 +25,7 @@ export function AttachmentUI() {
                 fd.append("file", pdfFile);
                 fd.append("attachment", attachFile);
                 return fd;
-            }, { timeoutMs: 300_000 });
+            });
             const blob = await res.blob();
             setResultBlob(blob);
             setStatus("done");

@@ -46,7 +46,7 @@ export function OverlayUI() {
                 fd.append("overlay_file", file2.raw);
                 fd.append("mode", mode);
                 return fd;
-            }, { timeoutMs: 300_000 });
+            });
             const blob = await res.blob();
             setResultBlob(blob);
             downloadBlob(blob, outputName);

@@ -439,7 +439,7 @@ export function EditPdfUI() {
                 fd.append("file", file);
                 fd.append("edits", JSON.stringify(edits.map(({ id, ...rest }) => rest)));
                 return fd;
-            }, { timeoutMs: 300_000 });
+            });
             setResultBlob(await res.blob());
             setState("done");
             emitToolRun({ outcome: "success", files: 1 });
