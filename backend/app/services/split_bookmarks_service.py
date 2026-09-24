@@ -73,7 +73,7 @@ def split_by_bookmarks(input_path: str) -> str:
                         copier.copy(out, range(start, end))
                         # The other sections' pages must not ride along with
                         # this section's links, form fields and threads.
-                        prune_to_page_tree(out).save(str(chunk_path))
+                        prune_to_page_tree(out).save(str(chunk_path), tool="split-by-bookmarks")
                     zf.write(str(chunk_path), f"{idx:02d}_{safe_title}.pdf")
 
             return str(zip_path)

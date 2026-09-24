@@ -39,7 +39,7 @@ def reorder_pages(input_path: str, page_order: list) -> str:
             if len(set(indices)) < total:
                 # Pages left out must not ride along with the links, form
                 # fields and threads of the pages that stay.
-                prune_to_page_tree(out).save(str(output_path))
+                prune_to_page_tree(out).save(str(output_path), tool="organize-pages")
             else:
                 out.save(str(output_path))
     return str(output_path)

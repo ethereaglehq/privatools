@@ -50,6 +50,6 @@ def extract_pages(input_path: str, pages_str: str) -> str:
             preserve_structure_tree(pdf, new_pdf, pages=indices)
             # The pages left out must not ride along with the links, form
             # fields and threads of the pages extracted.
-            prune_to_page_tree(new_pdf).save(str(output_path))
+            prune_to_page_tree(new_pdf).save(str(output_path), tool="extract-pages")
 
     return str(output_path)

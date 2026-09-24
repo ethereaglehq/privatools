@@ -80,7 +80,7 @@ def _write_part(copier: PageCopier, indices, out_path) -> None:
         copier.copy(out, indices)
         # The other parts' pages must not ride along with this part's links,
         # form fields and threads.
-        prune_to_page_tree(out).save(str(out_path))
+        prune_to_page_tree(out).save(str(out_path), tool="split")
 
 
 def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2) -> str:

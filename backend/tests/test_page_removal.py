@@ -35,9 +35,11 @@ from backend.tests.page_reference_pdfs import (
     KINDS,
     MALFORMED,
     MISPLACED_TREES,
+    PROTECTED,
     build_crafted_pdf,
     build_damaged_tree_pdf,
     build_malformed_pdf,
+    build_protected_pdf,
     build_reference_pdf,
     build_shared_objects_pdf,
     build_tagged_link_pdf,
@@ -484,7 +486,7 @@ def _service(tool: str, path) -> list[bytes]:
 
     run = {
         "delete": lambda: delete_pages_service.delete_pages(str(path), "2"),
-        "extract": lambda: extract_pages_service.extract_pages(str(path), "1,3-4"),
+        "extract": lambda: extract_pages_service.extract_pages(str(path), "1,3-end"),
         "organize": lambda: organize_pages_service.reorder_pages(str(path), [1, 3, 4]),
         "split": lambda: split_service.split_pdf(str(path), mode="individual"),
         "merge": lambda: merge_service.merge_pdfs([str(path), str(path)], ["1,3-4", "1"]),
@@ -513,20 +515,38 @@ def _stray_pages(data: bytes) -> int:
     ("shared_action", "extract", 3000),
     ("shared_outline", "delete", 3000),
     ("shared_ring", "delete", 4000),
+    ("stray_headings", "delete", 40),
+    ("stray_headings", "extract", 40),
+    ("stray_list", "delete", 3000),
+    ("shared_annots", "extract", 2000),
+    ("shared_beads", "delete", 3000),
+    ("shared_kids", "delete", 2000),
+    ("shared_field_kids", "delete", 3000),
 ])
 def test_an_object_shared_by_many_owners_is_read_once(kind, tool, n, tmp_path):
-    """One action chain shared by every link, or one bead ring shared by every
-    thread, was walked again for each owner: n*n. At these sizes that cost
-    40 s to over 100 s of CPU; read once, it costs well under a second. The
-    bound is loose on purpose, so a loaded CI runner cannot flake it."""
-    path = tmp_path / "shared.pdf"
-    path.write_bytes(build_shared_objects_pdf(kind, n))
-    start = time.process_time()
-    outputs = _service(tool, path)
-    cpu = time.process_time() - start
-    assert cpu < 10, f"{kind} with {n} owners took {cpu:.1f} s of CPU"
-    for data in outputs:
-        assert not leaked_pages(data)
+    """One action chain shared by every link, one bead ring shared by every
+    thread, one array shared by every page, element or field, one list of
+    bookmarks shared by every heading: each was read again for each owner,
+    n*n, and nested headings once per path, 2**n. At these sizes the pruning
+    took from 12 s to hours of CPU; read once, it takes under 0.4 s. Only the
+    pruning is timed: saving is qpdf's and pikepdf's work, and pikepdf's own
+    save is slow on fields that share their kids. The bound is loose on
+    purpose, so a loaded CI runner cannot flake it."""
+    from backend.app.utils.page_removal import copy_pages, prune_to_page_tree, remove_pages
+
+    out = tmp_path / "out.pdf"
+    with pikepdf.open(io.BytesIO(build_shared_objects_pdf(kind, n))) as pdf:
+        start = time.process_time()
+        if tool == "delete":
+            removal = remove_pages(pdf, [1])
+        else:  # Extract every page but page 2
+            copy = pikepdf.new()
+            copy_pages(copy, pdf, [i for i in range(len(pdf.pages)) if i != 1])
+            removal = prune_to_page_tree(copy)
+        cpu = time.process_time() - start
+        assert cpu < 3, f"{kind} with {n} owners took {cpu:.1f} s of CPU"
+        removal.save(out, tool="test")
+    assert not leaked_pages(out.read_bytes())
 
 
 @pytest.mark.parametrize("damage", DAMAGED_TREES)
@@ -583,6 +603,78 @@ def test_a_crafted_reference_to_a_removed_page_does_not_keep_it(name, tool, tmp_
         assert _stray_pages(data) == 0
 
 
+@pytest.mark.parametrize("tool", ["delete", "extract", "organize"])
+@pytest.mark.parametrize("name", PROTECTED)
+def test_the_catalog_the_page_tree_and_kept_pages_are_never_cut(name, tool, tmp_path):
+    """Listed among page 2's annotations or beads, or dressed up as a dead link
+    or an element of page 2, page 3, the page tree or the catalog was cut:
+    Delete Pages lost page 3, or wrote a file without a page tree or catalog,
+    and Extract and Organize lost page 3 when it posed as a dead link."""
+    path = tmp_path / "protected.pdf"
+    path.write_bytes(build_protected_pdf(name))
+    [data] = _service(tool, path)
+    assert _numbers(data) == [1, 3, 4]
+    assert _stray_pages(data) == 0
+    assert not leaked_pages(data)
+    checked = tmp_path / "out.pdf"
+    checked.write_bytes(data)
+    assert qpdf_check_passes(checked)
+
+
+def _cutting_sweep(monkeypatch, cut):
+    """Make the sweep damage the page tree after doing its work, as a bug would."""
+    from backend.app.utils import page_removal
+
+    sweep = page_removal._Pruner.sweep
+
+    def cutting(self, exhaustive=False):
+        sweep(self, exhaustive)
+        cut(self.pdf)
+
+    monkeypatch.setattr(page_removal._Pruner, "sweep", cutting)
+
+
+def _cut_the_page_tree(pdf):
+    del pdf.Root["/Pages"]
+
+
+def _cut_a_kept_page(pdf):
+    kids = pdf.Root.Pages.Kids
+    page = kids[1]
+    pdf.Root.Pages.Kids = pikepdf.Array([kids[0], kids[2]])
+    pdf.Root.Pages.Count = 2
+    pdf.pages[0].obj.PieceInfo = pikepdf.Dictionary(PrivaApp=pikepdf.Dictionary(
+        LastModified=pikepdf.String("D:20260924"),
+        Private=pikepdf.Dictionary(Page=page)))  # still written
+
+
+@pytest.mark.parametrize("cut, reason", [
+    (_cut_the_page_tree, "the output has no page tree"),
+    (_cut_a_kept_page, "the page tree lists 2 pages, 3 expected"),
+])
+def test_an_output_whose_page_tree_is_not_the_one_kept_is_refused(client, monkeypatch, caplog, cut, reason):
+    """The check reads the pages from the tree the save wrote, not from qpdf's
+    list of pages, which a cut in /Kids or in the catalog does not change: an
+    output that no reader could open, or that lost a kept page, was returned
+    as a success. It is refused, and the refusal is logged with the tool and
+    the reason, and no document text."""
+    from backend.app.utils import cleanup
+
+    _cutting_sweep(monkeypatch, cut)
+    before = set(cleanup.TEMP_DIR.iterdir()) if cleanup.TEMP_DIR.exists() else set()
+    with caplog.at_level(logging.ERROR, logger="backend.app.utils.page_removal"):
+        resp = client.post(
+            "/api/delete-pages", files={"file": _upload(build_reference_pdf(["piece_info"]))},
+            data={"pages": "2"},
+        )
+    assert resp.status_code == 422
+    assert "could not be removed completely" in resp.json()["detail"]
+    refusals = [r.getMessage() for r in caplog.records if "refused the output" in r.getMessage()]
+    assert refusals == [f"page removal refused the output of delete-pages: {reason}"]
+    after = set(cleanup.TEMP_DIR.iterdir()) if cleanup.TEMP_DIR.exists() else set()
+    assert after <= before, f"left behind: {sorted(str(p) for p in after - before)}"
+
+
 def test_an_element_the_tree_pass_leaves_to_the_sweep_is_swept(tmp_path, caplog):
     """A section reached only through elements the tree pass read in full is
     still read by the sweep, so the check after saving has nothing to find."""
@@ -618,18 +710,25 @@ def test_a_page_the_sweep_missed_is_caught_after_saving(tmp_path, caplog, monkey
     assert _stray_pages(data) == 0
 
 
-def test_an_output_that_would_keep_a_removed_page_is_refused(client, monkeypatch):
-    """If even the second sweep cannot cut a removed page, no file is returned."""
+def test_an_output_that_would_keep_a_removed_page_is_refused(client, monkeypatch, caplog):
+    """If even the second sweep cannot cut a removed page, no file is returned,
+    and the refusal is logged with the tool and the reason."""
     from backend.app.utils import cleanup, page_removal
 
     monkeypatch.setattr(page_removal._Pruner, "sweep", lambda self, exhaustive=False: None)
     before = set(cleanup.TEMP_DIR.iterdir()) if cleanup.TEMP_DIR.exists() else set()
-    resp = client.post(
-        "/api/delete-pages", files={"file": _upload(build_reference_pdf(["piece_info"]))},
-        data={"pages": "2"},
-    )
+    with caplog.at_level(logging.ERROR, logger="backend.app.utils.page_removal"):
+        resp = client.post(
+            "/api/delete-pages", files={"file": _upload(build_reference_pdf(["piece_info"]))},
+            data={"pages": "2"},
+        )
     assert resp.status_code == 422, resp.text
     assert "could not be removed completely" in resp.json()["detail"]
+    refusals = [r.getMessage() for r in caplog.records if "refused the output" in r.getMessage()]
+    assert refusals == [
+        "page removal refused the output of delete-pages: "
+        "1 page object(s) outside the page tree after a second sweep"
+    ]
     after = set(cleanup.TEMP_DIR.iterdir()) if cleanup.TEMP_DIR.exists() else set()
     assert after <= before, f"left behind: {sorted(str(p) for p in after - before)}"
 

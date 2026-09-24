@@ -23,6 +23,6 @@ def delete_pages(input_path: str, pages_str: str) -> str:
 
         # Not just `del pdf.pages[idx]`: bookmarks, links, form fields and
         # the structure tree would keep the deleted pages in the file.
-        remove_pages(pdf, to_delete).save(str(output_path))
+        remove_pages(pdf, to_delete).save(str(output_path), tool="delete-pages")
 
     return str(output_path)

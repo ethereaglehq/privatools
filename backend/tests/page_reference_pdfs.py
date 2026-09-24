@@ -524,18 +524,35 @@ def _outline_of(pdf: pikepdf.Pdf, items: list) -> None:
     pdf.Root.Outlines = root
 
 
-SHARED_KINDS = ("shared_action", "shared_outline", "shared_ring")
+SHARED_KINDS = (
+    "shared_action", "shared_outline", "shared_ring", "stray_headings", "stray_list",
+    "shared_annots", "shared_beads", "shared_kids", "shared_field_kids",
+)
 
 
 def build_shared_objects_pdf(kind: str, n: int) -> bytes:
-    """A 4-page PDF whose many owners share one object, as hostile files do.
+    """A PDF whose many owners share one object, as hostile files do.
 
-    ``shared_action``: n links on page 1 share one action whose /Next lists n
-    more; ``shared_outline``: n bookmarks share such an action;
-    ``shared_ring``: n article threads start in one ring of n beads. A walk
-    that starts afresh for each owner costs n*n.
+    A walk that starts afresh for each owner costs n*n, or 2**n when owners
+    nest. On 4 pages unless said otherwise:
+
+    - ``shared_action``: n links on page 1 share one action whose /Next lists
+      n more; ``shared_outline``: n bookmarks share such an action;
+    - ``shared_ring``: n article threads start in one ring of n beads;
+    - ``stray_headings``: n levels of two headings without a target that share
+      their list of children, the deepest going to page 2, reached only from
+      page 1's /PieceInfo (so the outline pass never sees them, the sweep
+      does); ``stray_list``: n such headings share one list of n bookmarks to
+      page 2;
+    - ``shared_annots``: n pages share one /Annots array of n links, every
+      other one to page 2; ``shared_beads``: n pages share one /B array, a
+      ring of n beads on page 1;
+    - ``shared_kids``: n structure elements on page 1 share one /K array of n
+      elements on page 2; ``shared_field_kids``: n fields share one /Kids
+      array of n widgets on page 2.
     """
-    pdf = _open(build_reference_pdf(()))
+    pages = n if kind in ("shared_annots", "shared_beads") else PAGE_COUNT
+    pdf = _open(build_reference_pdf((), pages=pages))
     p = [page.obj for page in pdf.pages]
     if kind in ("shared_action", "shared_outline"):
         subs = [
@@ -567,9 +584,90 @@ def build_shared_objects_pdf(kind: str, n: int) -> bytes:
             bead.T = threads[0]
         p[0].B = Array(beads)
         pdf.Root.Threads = Array(threads)
+    elif kind == "stray_headings":
+        holder = pdf.make_indirect(Dictionary(Title=String("root")))
+        level = None
+        for k in range(n, 0, -1):
+            a = pdf.make_indirect(Dictionary(Title=String(f"a{k}"), Parent=holder))
+            b = pdf.make_indirect(Dictionary(Title=String(f"b{k}"), Parent=holder, Prev=a))
+            a.Next = b
+            if level is None:
+                a.Title = String(marker(2, "STRAY"))
+                a.Dest = Array([p[1], Name.Fit])
+                b.Dest = Array([p[1], Name.Fit])
+            else:
+                a.First = level
+                b.First = level
+            level = a
+        top = pdf.make_indirect(Dictionary(Title=String("top"), Parent=holder, First=level))
+        _private(p[0], top)
+    elif kind == "stray_list":
+        holder = pdf.make_indirect(Dictionary(Title=String("root")))
+        items = [pdf.make_indirect(Dictionary(
+            Title=String(marker(2, "STRAY")), Parent=holder, Dest=Array([p[1], Name.Fit])))
+            for _ in range(n)]
+        for a, b in zip(items, items[1:]):
+            a.Next = b
+        _private(p[0], Array([
+            pdf.make_indirect(Dictionary(Title=String(f"heading {k}"), Parent=holder, First=items[0]))
+            for k in range(n)
+        ]))
+    elif kind == "shared_annots":
+        shared = pdf.make_indirect(Array([
+            _link(pdf, 10, marker(2 if k % 2 else 1, "SHARED"), "")
+            for k in range(n)
+        ]))
+        for k, link in enumerate(shared):
+            link.Dest = Array([p[1] if k % 2 else p[0], Name.Fit])
+        for page in p:
+            page.Annots = shared
+    elif kind == "shared_beads":
+        thread = pdf.make_indirect(Dictionary(Type=Name.Thread))
+        beads = [pdf.make_indirect(Dictionary(Type=Name.Bead, T=thread, P=p[0], R=Array([0, 0, 1, 1])))
+                 for _ in range(n)]
+        for k, bead in enumerate(beads):
+            bead.N = beads[(k + 1) % n]
+            bead.V = beads[k - 1]
+        thread.F = beads[0]
+        shared = pdf.make_indirect(Array(beads))
+        for page in p:
+            page.B = shared
+        pdf.Root.Threads = Array([thread])
+    elif kind == "shared_kids":
+        root = pdf.make_indirect(Dictionary(Type=Name.StructTreeRoot))
+        document = pdf.make_indirect(Dictionary(Type=Name.StructElem, S=Name.Document, P=root))
+        shared = pdf.make_indirect(Array([
+            pdf.make_indirect(Dictionary(Type=Name.StructElem, S=Name.Span, P=document, Pg=p[1],
+                                         Alt=String(marker(2, "SHARED-KID")), K=0))
+            for _ in range(n)
+        ]))
+        document.K = Array([
+            pdf.make_indirect(Dictionary(Type=Name.StructElem, S=Name.P, P=document, Pg=p[0], K=shared))
+            for _ in range(n)
+        ])
+        root.K = Array([document])
+        pdf.Root.StructTreeRoot = root
+        pdf.Root.MarkInfo = Dictionary(Marked=True)
+    elif kind == "shared_field_kids":
+        shared = pdf.make_indirect(Array([
+            pdf.make_indirect(Dictionary(Type=Name.Annot, Subtype=Name.Widget, Rect=Array([0, 0, 10, 10]),
+                                         P=p[1], TU=String(marker(2, "SHARED-WIDGET"))))
+            for _ in range(n)
+        ]))
+        p[1].Annots = shared
+        pdf.Root.AcroForm = Dictionary(Fields=Array([
+            pdf.make_indirect(Dictionary(FT=Name.Tx, T=String(f"field {k}"), Kids=shared))
+            for k in range(n)
+        ]))
     else:
         raise ValueError(kind)
     return _saved(pdf)
+
+
+def _private(page, value) -> None:
+    """Hang ``value`` off ``page``'s /PieceInfo, where only the sweep looks."""
+    page.PieceInfo = Dictionary(PrivaApp=Dictionary(
+        LastModified=String("D:20260924"), Private=Dictionary(Data=value)))
 
 
 DAMAGED_TREES = ("count_small", "count_large", "junk_kid", "dangling_kid")
@@ -698,6 +796,47 @@ def build_malformed_pdf(name: str) -> bytes:
     elif name == "bead_type_is_junk":
         # In a copy, this bead's /P is null too: only its shape says it is one.
         p[1].B[0].Type = 7
+    else:
+        raise ValueError(name)
+    return _saved(pdf)
+
+
+# A crafted file puts the catalog, the page tree or a kept page where a pass
+# expects something it removes with page 2. Nothing of those may go.
+PROTECTED = (
+    "removed_annots_list_a_kept_page", "removed_beads_list_a_kept_page",
+    "kept_page_as_a_dead_link", "kept_page_as_a_dead_element",
+    "removed_annots_list_the_catalog", "removed_annots_list_the_page_tree",
+    "tagged_removed_annots_list_a_kept_page",
+)
+
+
+def build_protected_pdf(name: str) -> bytes:
+    """Page 2's annotations or beads, or a dead link or structure element,
+    that are really page 3, the catalog or the page tree."""
+    tagged = name in ("kept_page_as_a_dead_element", "tagged_removed_annots_list_a_kept_page")
+    pdf = _open(build_reference_pdf(("struct_tree",) if tagged else ()))
+    p = [page.obj for page in pdf.pages]
+    if name == "removed_annots_list_a_kept_page":
+        p[1].Annots = Array([p[2]])
+    elif name == "removed_beads_list_a_kept_page":
+        p[1].B = Array([p[2]])
+    elif name == "kept_page_as_a_dead_link":
+        p[2].Subtype = Name.Link
+        p[2].Rect = Array([0, 0, 10, 10])
+        p[2].Dest = Array([p[1], Name.Fit])
+        p[0].Annots = Array([p[2]])
+    elif name == "kept_page_as_a_dead_element":
+        p[2].S = Name.P
+        p[2].Pg = p[1]
+        document = pdf.Root.StructTreeRoot.K[0]
+        document.K = Array([x for x in document.K] + [p[2]])
+    elif name == "removed_annots_list_the_catalog":
+        p[1].Annots = Array([pdf.Root])
+    elif name == "removed_annots_list_the_page_tree":
+        p[1].Annots = Array([pdf.Root.Pages])
+    elif name == "tagged_removed_annots_list_a_kept_page":
+        p[1].Annots = Array([x for x in p[1].get("/Annots", [])] + [p[2]])
     else:
         raise ValueError(name)
     return _saved(pdf)

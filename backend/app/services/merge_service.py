@@ -104,7 +104,7 @@ def merge_pdfs(
         if pages_left_out:
             # Pages a range left out must not ride along with the links, form
             # fields and threads of the pages merged.
-            prune_to_page_tree(dst).save(str(output))
+            prune_to_page_tree(dst).save(str(output), tool="merge")
         else:
             dst.save(str(output))
     finally:
