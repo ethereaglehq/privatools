@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload an .odt file",
-      "text": "Drop an OpenDocument Text file (LibreOffice / OpenOffice) up to 500 MB."
+      "name": "Add your ODT files",
+      "text": "Drop or select one or more OpenDocument Text (.odt) files, up to 25 at a time and up to about 250 MB each. Templates (.ott) and flat .fodt files are turned away as an unsupported file type, so save them as .odt first; for Word files, use Office to PDF."
     },
     {
-      "name": "PrivaTools renders via LibreOffice headless",
-      "text": "Styles, embedded images, tables, footnotes, and bibliography are kept; fonts the server does not have are replaced with similar ones, which can shift line and page breaks."
+      "name": "Convert with LibreOffice",
+      "text": "Click ODT to PDF. There are no settings: each file is uploaded and converted on the server by LibreOffice in headless mode, one file at a time, with a fresh LibreOffice profile for every conversion."
+    },
+    {
+      "name": "Know the default PDF settings",
+      "text": "LibreOffice's standard PDF export settings apply. Headings become bookmarks, the PDF is tagged, which helps screen readers, and comments in the document are left out. Photos may be recompressed as JPEG at quality 90, and images sharper than 300 DPI are scaled down to 300 DPI. The result is not PDF/A."
     },
     {
       "name": "Download the PDF",
-      "text": "Click Convert. The output PDF matches the on-screen rendering closely."
+      "text": "Each file becomes its own PDF named after it, so minutes.odt downloads as minutes.pdf. A single file downloads automatically; several can be saved one by one or together as odt-to-pdf-results.zip."
     }
   ],
   "faq": [
     {
-      "q": "What about ODT-specific features (math equations, drawings)?",
-      "a": "OpenDocument math (Formula) and drawings render correctly as the LibreOffice converter handles them natively."
+      "q": "Will the PDF look exactly like the document in LibreOffice?",
+      "a": "Close, but not always exact. The server's LibreOffice is installed without extra font packages, so text in a font the server does not have is set in a substitute, which can move line and page breaks. Blank pages that LibreOffice inserts automatically, for example so a chapter starts on a right-hand page, are left out. Check the page count before you send the PDF."
     },
     {
-      "q": "Will fonts that aren't on the server cause problems?",
-      "a": "Missing fonts get substituted. Embedded fonts in the ODT are honored."
+      "q": "What does a typical conversion look like?",
+      "a": "A thesis.odt with numbered headings, photos and review comments becomes thesis.pdf with a bookmark for each heading and no comments. Five sets of meeting minutes queued together come back as five PDFs, which you can download one by one or as one ZIP."
     },
     {
-      "q": "Does it handle macros?",
-      "a": "Macros are not executed — only the static document content is converted."
+      "q": "Are formulas made in LibreOffice Math converted?",
+      "a": "Check them in the PDF. The server installs LibreOffice's Writer, Calc and Impress components but not the Math module that lays out formulas, so an equation can come out differently from your screen, or be missing."
+    },
+    {
+      "q": "Do macros run during the conversion?",
+      "a": "No. LibreOffice opens a file for conversion without permission to run macros, and PrivaTools passes no setting that changes this, so nothing a macro would add or change on opening appears in the PDF."
+    },
+    {
+      "q": "Are comments and form controls kept?",
+      "a": "Comments are left out, and form controls such as check boxes and text fields are drawn as they would print rather than exported as fillable PDF fields; both follow LibreOffice's default export settings. Add fillable fields to the PDF afterwards with Form Creator if you need them."
+    },
+    {
+      "q": "Can I convert a password-protected ODT?",
+      "a": "No. No password is passed to LibreOffice, so it cannot open the file, no PDF is produced and the page reports \"Processing failed. Please try again.\" Save a copy without the password in LibreOffice and convert that."
+    },
+    {
+      "q": "How large a document can I convert, and how long can it take?",
+      "a": "Up to about 250 MB per file. Each conversion has two minutes; one that runs longer is stopped and the page reports \"The server took too long. Try a smaller file or try again.\" The converter also accepts up to five files a minute from one IP address, so in a longer queue some files can fail with a rate-limit message; wait a minute and click Retry."
+    },
+    {
+      "q": "What happens to my document after I upload it?",
+      "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, by LibreOffice running there rather than a third-party service. LibreOffice works on a temporary copy with its own temporary profile, both cleared when the conversion ends. Response cleanup removes the upload and the PDF after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

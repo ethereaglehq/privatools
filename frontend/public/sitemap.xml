@@ -43,7 +43,7 @@
   <url><loc>https://privatools.me/tool/unlock-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
   <url><loc>https://privatools.me/tool/redact-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
   <url><loc>https://privatools.me/tool/strip-metadata</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tool/delete-annotations</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tool/delete-annotations</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/metadata</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/html-to-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/image-to-pdf</loc><lastmod>2026-09-24</lastmod><priority>0.8</priority></url>
@@ -55,7 +55,7 @@
   <url><loc>https://privatools.me/tool/bmp-to-pdf</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/gif-to-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/svg-to-pdf</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tool/odt-to-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tool/odt-to-pdf</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/office-to-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/pdf-to-excel</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
   <url><loc>https://privatools.me/tool/pdf-to-image</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
@@ -131,16 +131,16 @@
   <url><loc>https://privatools.me/tools/extract-audio</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/trim-media</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/compress-video</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/video-to-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/video-to-pdf</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/video-converter</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/video-resizer</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/video-resizer</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/video-thumbnail</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/gif-to-mp4</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/add-subtitles</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/video-merge</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/audio-merge</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/subtitle-converter</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/json-xml-formatter</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/json-xml-formatter</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/text-diff</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/base64</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/hash-generator</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
@@ -158,10 +158,10 @@
   <url><loc>https://privatools.me/tools/generate-barcode</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/url-to-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/password-generator</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/uuid-generator</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/lorem-ipsum</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/word-counter</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/color-converter</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/uuid-generator</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/lorem-ipsum</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/word-counter</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/color-converter</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/url-encoder</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/qr-reader</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/merge-images</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
@@ -188,7 +188,7 @@
   <url><loc>https://privatools.me/tools/m4a-to-mp3</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/mp4-to-mp3</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/mov-to-mp4</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/avi-to-mp4</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/avi-to-mp4</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/webm-to-mp4</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/mp4-to-webm</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/jpg-to-tiff</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
@@ -210,25 +210,25 @@
   <url><loc>https://privatools.me/tools/mkv-to-mp4</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/mp4-to-mov</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/mov-to-webm</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/mkv-to-webm</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/mkv-to-webm</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/mp4-to-avi</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/avi-to-webm</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/webm-to-mov</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tools/mov-to-mkv</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/webm-to-mov</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/mov-to-mkv</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/webm-to-gif</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/mov-to-gif</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/yaml-to-json</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/json-to-yaml</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
+  <url><loc>https://privatools.me/tools/json-to-yaml</loc><lastmod>2026-09-24</lastmod><priority>0.8</priority></url>
   <url><loc>https://privatools.me/tools/case-converter</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/cron-parser</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/sql-formatter</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/graphql-formatter</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/yaml-toml-converter</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/gitignore-generator</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
+  <url><loc>https://privatools.me/tools/sql-formatter</loc><lastmod>2026-09-24</lastmod><priority>0.8</priority></url>
+  <url><loc>https://privatools.me/tools/graphql-formatter</loc><lastmod>2026-09-24</lastmod><priority>0.8</priority></url>
+  <url><loc>https://privatools.me/tools/yaml-toml-converter</loc><lastmod>2026-09-24</lastmod><priority>0.8</priority></url>
+  <url><loc>https://privatools.me/tools/gitignore-generator</loc><lastmod>2026-09-24</lastmod><priority>0.8</priority></url>
   <url><loc>https://privatools.me/tools/semver-bumper</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/env-validator</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/json-to-csv-schema</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tools/mute-video</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tools/env-validator</loc><lastmod>2026-09-24</lastmod><priority>0.8</priority></url>
+  <url><loc>https://privatools.me/tools/json-to-csv-schema</loc><lastmod>2026-09-24</lastmod><priority>0.8</priority></url>
+  <url><loc>https://privatools.me/tools/mute-video</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/reverse-video</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/video-speed</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tools/audio-trim</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>

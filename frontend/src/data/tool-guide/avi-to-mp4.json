@@ -1,26 +1,50 @@
 {
   "howto": [
     {
-      "name": "Upload an AVI",
-      "text": "Drop an .avi video — typical for older Windows captures."
+      "name": "Choose your AVI files",
+      "text": "Drop or pick one or more .avi files; the queue holds up to 25. Keep each file under about 250 MB."
     },
     {
-      "name": "Convert and download",
-      "text": "Run the conversion. The result is an MP4 with H.264 video and AAC audio, ready for streaming on phones, browsers, and modern TVs."
+      "name": "Start the conversion",
+      "text": "Press AVI to MP4. The files are uploaded over HTTPS and converted one at a time on the PrivaTools server."
+    },
+    {
+      "name": "FFmpeg re-encodes to H.264",
+      "text": "FFmpeg decodes the AVI's video, commonly DivX, Xvid, Motion JPEG or DV, and re-encodes it with x264 at CRF 23 (veryfast preset); the audio becomes AAC. The frame size and frame rate stay the same."
+    },
+    {
+      "name": "Download the MP4",
+      "text": "A single file downloads when it is ready as the same name with .mp4, so tape-01.avi becomes tape-01.mp4. The index is written at the front of the file (+faststart), so it can start playing online before it has fully downloaded. Several files can be saved as avi-to-mp4-results.zip."
     }
   ],
   "faq": [
     {
       "q": "Why convert AVI to MP4?",
-      "a": "AVI is an old Microsoft container with poor support for modern codecs and metadata. MP4 is the universal standard — every modern device, browser, and editor plays it."
+      "a": "AVI is Microsoft's older container, usually filled with codecs such as DivX, Xvid or Motion JPEG that phones and browsers handle poorly or not at all. H.264 with AAC in an MP4 is the combination those devices are built around."
     },
     {
-      "q": "What if my AVI uses DivX or Xvid?",
-      "a": "FFmpeg re-encodes the video to H.264 inside the MP4 container, so any source codec is handled."
+      "q": "Will the MP4 be smaller than the AVI?",
+      "a": "Often, but not always. The size is set by the CRF 23 quality target, not by the AVI's bitrate, so a high-bitrate capture such as Motion JPEG or DV shrinks a lot, while an already compact DivX or Xvid file can come out about the same size or larger."
     },
     {
-      "q": "Will the file get bigger or smaller?",
-      "a": "Usually similar or smaller. Old AVIs often used inefficient codecs; modern H.264 typically achieves the same quality at a smaller size."
+      "q": "Does it fix old-video problems like interlacing?",
+      "a": "No. No deinterlacing, cropping or clean-up filter is applied, so the combing lines of an interlaced capture, such as many DV camcorder transfers, can remain. The picture is re-encoded as it is, at its original size and frame rate."
+    },
+    {
+      "q": "What happens to the audio?",
+      "a": "FFmpeg keeps one audio track, the one flagged as default or else the one with the most channels, and re-encodes it as AAC at FFmpeg's default bitrate; other audio tracks are dropped. An AVI without sound converts to a silent MP4."
+    },
+    {
+      "q": "Why did my AVI fail to convert?",
+      "a": "The page shows \"Processing failed. Please try again.\" when FFmpeg stops with an error. Typical causes are a truncated or damaged file, a codec FFmpeg cannot decode, a frame with an odd width or height (x264 needs even dimensions here), and encoding that runs past the 180-second limit."
+    },
+    {
+      "q": "What limits apply?",
+      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg has 180 seconds per file, and the request has five minutes overall, upload included. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so a large batch may need a retry after \"Slow down — we're rate-limiting requests.\""
+    },
+    {
+      "q": "What happens to my AVI on the server?",
+      "a": "It is uploaded over HTTPS and converted with FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes the AVI and the MP4 after your download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."
     }
   ]
 }

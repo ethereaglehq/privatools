@@ -371,7 +371,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove comments notes clean",
     popularity: 76,
     category: "security", accepts: ".pdf", outputLabel: "clean.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "metadata", icon: Info, name: "Metadata",
@@ -499,13 +499,13 @@ const _toolsRaw: Tool[] = [
   {
     slug: "odt-to-pdf", icon: FileText, name: "ODT to PDF",
     description: "Convert OpenDocument (ODT) into PDF",
-    longDescription: "Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a polished PDF with their styles, images, and layout kept; fonts the server does not have are replaced with similar ones. Powered by LibreOffice in the background.",
+    longDescription: "Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a PDF with LibreOffice, which turns headings into bookmarks; fonts the server does not have are replaced with substitutes, which can move line and page breaks.",
     seoTitle: "Convert ODT to PDF Online – Powered by LibreOffice",
     metaDescription: "ODT to PDF turns OpenDocument Text files into a polished document with LibreOffice, keeping styles and layout. Free tool; missing fonts get substitutes.",
     synonyms: "openoffice libreoffice convert",
     popularity: 119,
     category: "to-pdf", accepts: ".odt", outputLabel: "document.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "office-to-pdf", icon: FileBox, name: "Office to PDF",

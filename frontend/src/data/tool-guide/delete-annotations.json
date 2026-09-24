@@ -1,30 +1,58 @@
 {
   "howto": [
     {
-      "name": "Upload the PDF",
-      "text": "Drop a PDF up to 500 MB."
+      "name": "Add your PDFs",
+      "text": "Drop or select one or more PDFs, up to 25 at a time and up to about 250 MB each. Each file is uploaded and cleaned separately, one after another, within a five-minute limit that includes the upload."
     },
     {
-      "name": "Strip annotations",
-      "text": "Click Delete. PrivaTools removes every annotation except form fields: highlights, comments, sticky notes, drawings, stamps and links."
+      "name": "Delete the annotations",
+      "text": "Click Delete Annotations. There are no settings: on every page, every annotation that is not a form field is removed. That covers sticky notes and their pop-ups, highlights, underlines and strike-throughs, text boxes, drawings, shapes, stamps, file-attachment icons, unapplied redaction marks and links."
     },
     {
-      "name": "Download the cleaned PDF",
-      "text": "The visible page content is unchanged; comments, markup and links are gone, while form fields stay fillable."
+      "name": "Know what stays",
+      "text": "Form fields, signature fields included, stay on their pages and remain fillable. Page content, bookmarks, document properties, files attached to the document as a whole and any document JavaScript are left as they were; Fast Web View (linearization) is not kept. Run Strip Metadata afterwards to clear the author and other properties."
+    },
+    {
+      "name": "Download the result",
+      "text": "A single file downloads automatically, as no_annotations.pdf or under its own name: contract.pdf comes back as no_annotations.pdf, but board_minutes.pdf keeps its name. Several files can be saved one by one or as delete-annotations-results.zip, where repeated names are numbered, as in no_annotations (2).pdf."
     }
   ],
   "faq": [
     {
       "q": "Will this remove form fields too?",
-      "a": "No. Form fields are technically annotations too, but they are kept, so a fillable form stays fillable."
+      "a": "No. Form fields are technically annotations, but they are kept with their values, so a fillable form stays fillable. Signature fields are kept too. The page has no switch for this; developers calling the API can send keep_form_fields=false (the default is true) to take them off the pages as well."
     },
     {
       "q": "Are hyperlinks deleted?",
-      "a": "Yes — hyperlinks are link annotations, so they are removed along with the comments and markup. Form fields remain, so the result is not completely static."
+      "a": "Yes. Links are annotations, so web links and links within the document, such as a clickable table of contents, stop working. The bookmarks panel is stored separately and still works."
+    },
+    {
+      "q": "What does the result look like in practice?",
+      "a": "A contract with 12 sticky notes, 3 highlights and 2 links comes back with the same pages and none of those 17 annotations, pop-up windows included. An application form with 10 filled-in fields and a reviewer's comments keeps all 10 fields, with their answers, and loses only the comments."
     },
     {
       "q": "Does this remove signatures?",
-      "a": "No. Signature fields are form fields and are kept, but the file is rewritten, which breaks any digital signature in it."
+      "a": "It keeps signature fields, but the whole file is rewritten, so a digital signature in it no longer validates: in a test, a signature that covered the entire file failed its integrity check afterwards. Delete annotations before a document is signed, not after."
+    },
+    {
+      "q": "Is the comment text really gone from the file?",
+      "a": "In most files, yes. An annotation that no page lists any more is left out when the file is rewritten, so the words of a sticky note or text box are not carried over, and an attachment annotation's file goes with it. The exception is a tagged (accessible) PDF whose tags point to an annotation: that annotation stays in the file, although no page shows it."
+    },
+    {
+      "q": "What happens to redaction marks?",
+      "a": "Redactions that were marked but never applied are annotations, so the marks are deleted and the content under them stays on the page. To remove content for good, use Redact PDF."
+    },
+    {
+      "q": "Can I remove comments and lock a filled form?",
+      "a": "Yes, in two passes: run Delete Annotations, then Flatten PDF on the result, which draws the remaining form fields into the pages. Flattening first would draw the comments into the pages as well."
+    },
+    {
+      "q": "What about password-protected PDFs?",
+      "a": "A PDF that needs a password to open cannot be read, and the page reports \"Processing failed. Please try again.\" Remove the password with Unlock PDF first. A PDF that opens without a password but restricts editing is processed, and the result is saved without that encryption."
+    },
+    {
+      "q": "What happens to my PDF after I upload it?",
+      "a": "It is uploaded over HTTPS and processed on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."
     }
   ]
 }

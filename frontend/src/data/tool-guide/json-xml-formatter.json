@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Paste JSON or XML",
-      "text": "Choose JSON or XML, then paste your text or load the example."
+      "name": "Choose JSON or XML",
+      "text": "Pick JSON, the default, or XML at the top. Switching clears the current result. Your format and indent choices are remembered in this browser for next time; the text you paste is not."
     },
     {
-      "name": "Format, minify or validate",
-      "text": "Format adds indentation and line breaks, Minify removes the extra whitespace, and Validate only checks the syntax. Keys keep their original order."
+      "name": "Add your data",
+      "text": "Paste into the Input box, use the Paste button to read your clipboard, or click Use example. In JSON mode the example is a sample file loaded from this site, with a built-in fallback if it cannot load; XML mode uses a short built-in document. Clear empties the box."
+    },
+    {
+      "name": "Pick Format, Minify or Validate",
+      "text": "Format adds line breaks and indentation: 2 spaces (the default), 4 spaces or Tabs. Minify removes the whitespace between tokens or tags. Validate checks the syntax and shows your text unchanged. The Indent menu only works with Format."
+    },
+    {
+      "name": "Run the action",
+      "text": "Click the button named after the action and format, such as Format JSON or Minify XML, or press Ctrl/⌘ + Enter in the input. A good result shows Valid JSON or Valid XML under the output, with syntax highlighting for results up to 150,000 characters."
     },
     {
       "name": "Copy or download the result",
-      "text": "Runs entirely in your browser."
+      "text": "Copy puts the output on your clipboard. Download saves a UTF-8 file named after the action and format, such as format.json, minify.xml or validate.json. Editing the input or changing any setting clears the old result, so what you copy or download always matches the current input and settings."
     }
   ],
   "faq": [
     {
-      "q": "Will it validate the input?",
-      "a": "Yes — invalid JSON / XML shows an error with the line and column. Common errors (trailing commas, unclosed strings, mismatched tags) are highlighted."
+      "q": "What does formatting change, and what does it keep?",
+      "a": "JSON formatting only changes the whitespace between tokens: key order, duplicate keys and the way numbers are written stay exactly as typed, so 9007199254740993 and 1.50 are not rounded or rewritten. XML formatting re-indents elements that contain only other elements; text mixed with tags and sections marked xml:space=\"preserve\" are left as they were, and comments and CDATA sections are kept."
     },
     {
-      "q": "Can it convert JSON ↔ XML?",
-      "a": "No. This tool formats, minifies and validates; it does not convert between JSON and XML."
+      "q": "What does the output look like?",
+      "a": "Minify turns { \"id\": 7, \"tags\": [ \"a\", \"b\" ] } into {\"id\":7,\"tags\":[\"a\",\"b\"]}, and Format with 2 spaces puts \"id\" and \"tags\" on their own lines, indented 2 spaces, with \"a\" and \"b\" indented 4. In XML, minifying an indented note document leaves <note><!-- reminder --><to>Tove</to><body>Hi <b>there</b>!</body></note>, keeping the comment and the mixed text inside body."
+    },
+    {
+      "q": "Will it validate the input?",
+      "a": "Yes. Every action parses the input first with your browser's JSON or XML parser. If that fails, the input box is outlined as an error and a message appears under it. When the parser reports a position, the heading gives the line and column, such as Line 3, column 1 when a closing brace on line 3 follows a trailing comma; otherwise it reads Check your JSON or Check your XML. The parser's own wording follows."
+    },
+    {
+      "q": "Why is there no line number for some errors?",
+      "a": "The location comes from the browser's message, and not every message has one. In Chrome, a trailing comma inside an array, as in [1, 2,], or a bare word such as NaN produces a message ending in 'is not valid JSON' with no position, so the heading reads Check your JSON. Wording also differs between browsers."
     },
     {
       "q": "Is the indent customizable?",
-      "a": "Yes — 2 spaces, 4 spaces, or tabs."
+      "a": "Yes, for Format: 2 spaces, 4 spaces or Tabs, with 2 spaces as the default. Minify and Validate don't use it, so the menu is disabled for them. Your choice is remembered in this browser."
+    },
+    {
+      "q": "Can it convert JSON ↔ XML?",
+      "a": "No. This tool formats, minifies and validates; it does not convert between JSON and XML. Switching between JSON and XML only changes which parser is used."
+    },
+    {
+      "q": "Is my data uploaded or stored?",
+      "a": "No. Parsing and formatting run in JavaScript in your browser, and the text you paste is not uploaded or saved. The tool's requests are limited to fetching the JSON example from this site when you click Use example and, if analytics is on, an event recording whether a run succeeded, without any content. Analytics can be switched off on the Privacy page."
     }
   ]
 }

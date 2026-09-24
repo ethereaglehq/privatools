@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Paste a .env file",
-      "text": "Drop environment variable lines into the browser-only editor."
+      "name": "Paste your .env text",
+      "text": "Paste the contents of a .env file into the .env input box, replacing the sample that loads with the page. There is no file upload. Blank lines and lines starting with # are skipped, each line is trimmed, and Windows line endings are accepted."
     },
     {
-      "name": "Review warnings",
-      "text": "The validator catches missing equals signs, invalid names, duplicate keys, empty values, unquoted spaces, and short-looking secrets."
+      "name": "Read the validation report",
+      "text": "The Validation report updates as you type and lists each finding with its line number, counting every line, including blank and comment lines. Errors are highlighted in red. When nothing is flagged, the report reads No obvious .env issues found."
     },
     {
-      "name": "Fix and copy",
-      "text": "Update your .env file until the report is clean, then copy the corrected content back to your project."
+      "name": "Fix the errors",
+      "text": "An error means a line is not a usable KEY=value pair. A line with no equals sign gets missing =, and a name that is not ASCII letters, digits and underscores starting with a letter or underscore gets invalid variable name, as in the sample's Line 4: invalid variable name BAD NAME."
+    },
+    {
+      "name": "Review the warnings",
+      "text": "Warnings flag a key that is set again, an empty value, a value containing spaces or tabs that is not wrapped in matching quotes, and a short secret: a name containing SECRET, TOKEN, KEY or PASSWORD whose value is under 12 characters."
+    },
+    {
+      "name": "Copy the report",
+      "text": "Copy puts the report on your clipboard, one finding per line with an [OK], [WARN] or [ERROR] prefix. It copies the report, not your .env text, so make the fixes in your own file."
     }
   ],
   "faq": [
     {
+      "q": "What does the report say for the sample?",
+      "a": "The sample has four lines: API_URL=https://privatools.me, SECRET_KEY=change-me, FEATURE_FLAG=true and BAD NAME=value. The copied report is two lines: [WARN] Line 2: SECRET_KEY looks short for a secret, because change-me has 9 characters, and [ERROR] Line 4: invalid variable name BAD NAME, because names cannot contain spaces."
+    },
+    {
+      "q": "Why is a line with spaces around = flagged?",
+      "a": "The value is everything after the first =, so PORT = 8080 has the value \" 8080\" and gives Line 1: quote values that contain spaces. An inline comment does the same, as in PORT=8080 # web port, because # only starts a comment at the beginning of a line. Write PORT=8080, and wrap values that need spaces in quotes."
+    },
+    {
+      "q": "How does the short-secret check work?",
+      "a": "It looks for SECRET, TOKEN, KEY or PASSWORD anywhere in the name, in capitals only, so api_key is not checked while MONKEY is. A leading and a trailing quote are removed before counting; 12 characters pass and 11 are flagged. An empty value under such a name gets both the empty-value and the short-secret warning."
+    },
+    {
+      "q": "How are duplicate keys reported?",
+      "a": "Each repeat gets a warning such as Line 2: duplicate key A, first seen on line 1. If a key appears three or more times, each warning names the previous line that set it rather than the first one."
+    },
+    {
+      "q": "Are export lines and multi-line values supported?",
+      "a": "No. export API_TOKEN=... is read as a variable named export API_TOKEN and reported as an invalid variable name. Each line is checked on its own, so a quoted value that continues over several lines, such as a PEM key, gets a missing = error for each continuation line."
+    },
+    {
       "q": "Does this replace secret scanning?",
-      "a": "No. It is a fast syntax and hygiene check. Use dedicated secret scanning before committing any real credentials."
+      "a": "No. It checks syntax and a few hygiene rules. It does not recognize real credentials, compare the file with a .env.example, or know which variables your app needs. Use a dedicated secret scanner before committing credentials."
     },
     {
       "q": "Will it reveal my secrets to PrivaTools?",
-      "a": "No. The .env text stays in browser memory and is never sent to the backend."
-    },
-    {
-      "q": "What checks are included?",
-      "a": "Missing equals signs, invalid variable names, duplicate keys, empty values, unquoted spaces, and short-looking secret values."
+      "a": "No. Validation is plain JavaScript in the page; the tool makes no network request with the text and does not save it in browser storage. The report quotes only line numbers and the text before each =, so a copied report does not contain your values."
     }
   ]
 }

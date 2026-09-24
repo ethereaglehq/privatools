@@ -1,30 +1,50 @@
 {
   "howto": [
     {
-      "name": "Upload a MOV file",
-      "text": "Drop a .mov file from QuickTime, an iPhone or a camera."
+      "name": "Choose your MOV files",
+      "text": "Drop or pick one or more .mov files from an iPhone, a camera or QuickTime; the queue holds up to 25. Keep each file under about 250 MB."
     },
     {
-      "name": "PrivaTools re-encodes via FFmpeg",
-      "text": "The video is re-encoded as H.264 (CRF 23) and the audio as AAC, then stored in Matroska."
+      "name": "Start the conversion",
+      "text": "Press MOV to MKV. The files are uploaded over HTTPS and converted one after another on the PrivaTools server."
     },
     {
-      "name": "Convert and download",
-      "text": "Run the conversion. Matroska can hold multiple audio and subtitle tracks, though this conversion keeps just one audio track."
+      "name": "FFmpeg re-encodes into Matroska",
+      "text": "The video is re-encoded with x264 at CRF 23 (veryfast preset) and the audio as AAC, then written to an MKV. A MOV that already holds H.264 is re-encoded too, not remuxed. Portrait phone clips come out upright, with the rotation applied to the frames."
+    },
+    {
+      "name": "Download the MKV",
+      "text": "A single file downloads when it is ready, keeping its name with an .mkv extension, so IMG_0421.mov becomes IMG_0421.mkv. Several files can be saved one by one or together as mov-to-mkv-results.zip."
     }
   ],
   "faq": [
     {
       "q": "Why convert MOV to MKV?",
-      "a": "MKV is a flexible archival container that can hold multiple audio and subtitle tracks. This tool re-encodes the streams rather than moving them across, so it is not a lossless remux."
+      "a": "MOV is Apple's QuickTime container; Matroska is an open, royalty-free one that VLC and many media servers handle, with room for several audio and subtitle tracks and chapters. This tool changes the encoding as well as the container, so it is not a lossless remux."
     },
     {
-      "q": "Is it lossless?",
-      "a": "No. The video is re-encoded as H.264 at CRF 23 and the audio as AAC, so there is a small quality loss."
+      "q": "Is any quality lost?",
+      "a": "A little. The video is compressed again as H.264 at CRF 23, x264's default quality level, and the audio again as AAC at FFmpeg's default bitrate. Whether the MKV ends up bigger or smaller than the MOV depends on the footage and on how the MOV was encoded."
     },
     {
-      "q": "Are uploads kept?",
-      "a": "No — temporary input/output, removed after the response."
+      "q": "Which tracks end up in the MKV?",
+      "a": "One video track, at most one audio track and at most one subtitle track. With several audio tracks, FFmpeg keeps the one flagged as default, or else the one with the most channels. A text subtitle track is converted to ASS. Timecode and other data tracks are not copied."
+    },
+    {
+      "q": "Is my iPhone's location copied into the MKV?",
+      "a": "It can be. The command does not strip metadata, so container tags such as the title and, on iPhone clips, the camera make, model and location are copied into the MKV as Matroska tags. Check the tags before you share the file if that matters."
+    },
+    {
+      "q": "Why won't the MKV play on my TV or phone?",
+      "a": "Often it is the pixel format, which the command leaves as it is. A 10-bit source, such as HDR video from a recent iPhone, becomes 10-bit H.264 (High 10), and an RGB screen recording becomes 4:4:4 H.264; many hardware players decode only 8-bit 4:2:0 H.264. Some devices do not open MKV files at all."
+    },
+    {
+      "q": "What limits apply?",
+      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg gets 180 seconds per file and the request five minutes in total, upload included, so long high-resolution clips may not finish; when that happens the page shows \"Processing failed. Please try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."
+    },
+    {
+      "q": "What happens to my MOV on the server?",
+      "a": "It is uploaded over HTTPS and converted by FFmpeg on the PrivaTools server in isolated temporary per-request storage, rather than by a third-party service. Response cleanup removes the MOV and the MKV after your download is sent, and a background sweep every five minutes clears anything older than ten minutes left by an interrupted request."
     }
   ]
 }

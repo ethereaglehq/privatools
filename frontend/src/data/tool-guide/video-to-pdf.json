@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload a video",
-      "text": "MP4 / MOV / MKV / WebM up to 500 MB."
+      "name": "Add the videos to sample",
+      "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under about 250 MB. The preview shows how long the clip is when your browser can play it."
     },
     {
-      "name": "Choose number of frames",
-      "text": "Anywhere from 1 to 60 (12 by default). PrivaTools samples frames at even intervals across the video."
+      "name": "Choose the number of frames",
+      "text": "Set the slider anywhere from 1 to 60; the default is 12. Each frame becomes one page, so this number is also the page count."
+    },
+    {
+      "name": "Create the PDF",
+      "text": "Press the run button. Up to three files upload at once over HTTPS, and for each one FFmpeg splits the video into that many equal slices, takes a frame from about the middle of each slice and scales it to 1280 pixels wide."
     },
     {
       "name": "Download the PDF",
-      "text": "Each frame becomes one PDF page. Useful for storyboards, content review, or accessibility."
+      "text": "One video gives a PDF named after it with _frames.pdf, so lecture.mp4 becomes lecture_frames.pdf; several arrive together in media-results.zip."
     }
   ],
   "faq": [
     {
-      "q": "Why convert video to PDF?",
-      "a": "Storyboarding, content moderation review, video summarisation for accessibility, lecture notes from recorded talks."
+      "q": "Which moments end up in the PDF?",
+      "a": "The video's duration is split into as many equal slices as frames, and FFmpeg takes a frame from about the middle of each slice. For a 10-second clip and the default 12 frames that is one roughly every 0.83 seconds, starting about 0.4 seconds in; a single frame comes from the middle of the video. Scene changes are not detected."
     },
     {
-      "q": "Can I get just keyframes (scene changes)?",
-      "a": "Frames are sampled at even intervals across the video. Picking frames at scene changes is not supported."
+      "q": "How are the pages laid out?",
+      "a": "One frame per US Letter page (8.5 × 11 inches) with half-inch margins. Each frame is stored as a JPEG 1280 pixels wide, with the height set by its shape, so smaller videos are enlarged to that width. It is scaled to fit the page without cropping: a landscape frame spans the width at the top of the page, a portrait one fills the height and is centred. Pages carry no timestamps or captions."
     },
     {
-      "q": "What resolution are the frames?",
-      "a": "Frames are scaled to 1280 pixels wide and placed one per US Letter page, fitted inside the margins."
+      "q": "What if I ask for more frames than the clip has?",
+      "a": "Frames repeat rather than the job failing: a one-second clip with 10 frames turned into 60 pages shows each frame six times. Choose fewer frames for very short clips."
+    },
+    {
+      "q": "Why do all my pages show the first second?",
+      "a": "The spacing is worked out from the duration recorded in the file. When a file records none, as some WebM recordings made in a browser do, the tool assumes one second, so every page comes from the opening second. Converting the file first, for example with WebM to MP4, writes a proper duration."
+    },
+    {
+      "q": "Why did a long video fail?",
+      "a": "FFmpeg decodes the whole video to pick the frames and gets 180 seconds per file, and the request, upload included, has five minutes. A long or high-resolution file can run out of time and show \"Processing failed. Please try again.\" Cut the part you need with Trim Media, or shrink it with Video Resizer, and try again."
+    },
+    {
+      "q": "What other limits apply?",
+      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. The route is rate-limited at 5 requests a minute per IP address. A file without a video stream, such as an audio-only recording saved as .mp4, cannot be turned into pages and fails with \"Processing failed. Please try again.\""
+    },
+    {
+      "q": "What is a frames PDF useful for?",
+      "a": "Storyboards, reviewing footage without playing it, notes from a recorded lecture, or sending a preview to someone who only opens PDFs. For a single still, Video Thumbnail saves one frame as a JPG instead."
+    },
+    {
+      "q": "What happens to my video on the server?",
+      "a": "It is uploaded over HTTPS and processed with FFmpeg and a PDF library on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. The extracted frames are deleted once the PDF is built; response cleanup removes the video and the PDF after your download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."
     }
   ]
 }

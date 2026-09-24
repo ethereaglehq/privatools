@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Paste JSON",
-      "text": "Enter a JSON object or array of objects. Nested objects are flattened to dot-notation columns."
+      "name": "Paste your JSON",
+      "text": "Paste a JSON object or an array of objects into the JSON input box, replacing the sample that loads with the page. There is no file upload: open a .json file in an editor and paste its text. A single object becomes one row."
     },
     {
-      "name": "Inspect the inferred schema",
-      "text": "Each column shows its inferred type and how many rows contain a value."
+      "name": "Check the inferred schema",
+      "text": "The Inferred schema panel lists one line per column as name: type (filled/total rows), for example plan: string (1/2 rows). Types are boolean, number, date, string or empty, and null, missing or empty-string values do not count as filled."
     },
     {
-      "name": "Copy or download CSV",
-      "text": "Export the flattened CSV for spreadsheets, BI tools, QA fixtures, or one-off data migrations."
+      "name": "Review the CSV output",
+      "text": "The CSV output panel starts with a header row of every key in first-seen order, then one row per object, leaving a cell empty where an object lacks that key. Nested objects are flattened into dot-notation columns such as user.address.city."
+    },
+    {
+      "name": "Copy or download the CSV",
+      "text": "Each panel has a Copy button, and the CSV panel also has Download, which saves the CSV as data.csv. Both panels update as you type. While the input cannot be converted, the schema panel shows the error message, the CSV panel stays empty and the buttons are disabled."
     }
   ],
   "faq": [
     {
-      "q": "How are nested objects handled?",
-      "a": "Nested keys are flattened with dot notation, such as user.email or billing.address.city."
+      "q": "What does the sample produce?",
+      "a": "The sample is two user objects, the second with an extra plan key. The schema reads id: number (2/2 rows), email: string (2/2 rows), active: boolean (2/2 rows) and plan: string (1/2 rows). With / marking a line break, the CSV is id,email,active,plan / 1,a@example.com,true, / 2,b@example.com,false,pro."
     },
     {
-      "q": "What schema is inferred?",
-      "a": "The tool infers simple column types: empty, boolean, number, date, or string, plus value coverage per column."
+      "q": "How are nested objects and arrays handled?",
+      "a": "Objects are flattened: [{\"id\":1,\"user\":{\"name\":\"Ann\",\"address\":{\"city\":\"Oslo\"}}},{\"id\":2,\"user\":{\"name\":\"Bo, Jr.\"}}] gives the columns id,user.name,user.address.city and the rows 1,Ann,Oslo and 2,\"Bo, Jr.\", with an empty last cell. Arrays are not expanded: [\"a\",\"b\"] becomes the single cell \"a,b\", an array of two objects becomes \"[object Object],[object Object]\", and an empty object adds no column."
+    },
+    {
+      "q": "How is the CSV formatted?",
+      "a": "Fields are separated by commas and rows by line feeds, with no trailing newline and no byte order mark. A value is quoted only when it contains a comma, a double quote or a line feed, and inner quotes are doubled, so say \"hi\" becomes \"say \"\"hi\"\"\". Booleans are written as true and false, numbers in JavaScript form (1.0 becomes 1, 1e21 becomes 1e+21), and null as an empty cell."
+    },
+    {
+      "q": "How are column types inferred?",
+      "a": "Empty cells are ignored. A column is boolean if every value is true or false, including strings such as TRUE; number if every value converts to a finite number; date if the browser's Date.parse accepts every value; otherwise string. A column with no values is empty. The type is only a label: the zip code \"01234\" is typed number but stays 01234 in the CSV."
+    },
+    {
+      "q": "Why is a text column labelled date?",
+      "a": "Date detection uses the browser's own date parser, and Chrome's is lenient: it accepts values such as Room 5 and Hall 2 as dates, so a column holding them is labelled date there. Treat a date label on a text column as a prompt to check the data."
+    },
+    {
+      "q": "Which inputs are rejected?",
+      "a": "A top-level value that is not an object or array, or an array holding anything other than objects, such as [{\"a\":1}, 2] or [[1,2]], shows Use an object or an array of objects. Invalid JSON shows the browser's parser message instead; for {\"a\":1,} Chrome reports Expected double-quoted property name in JSON at position 7 (line 1 column 8). An empty array gives empty output."
+    },
+    {
+      "q": "Are large numbers kept exactly?",
+      "a": "No. The JSON is parsed into JavaScript numbers, so integers too large for them lose precision: 12345678901234567890 comes out as 12345678901234567000 in the CSV. Put long IDs in quotes in the JSON to keep them exact."
     },
     {
       "q": "Does large JSON get uploaded?",
-      "a": "No. Parsing, schema inference, and CSV generation all run in your browser."
+      "a": "No. Parsing, schema inference and CSV generation run in your browser, and the tool makes no network request with your data and does not save it in browser storage."
     }
   ]
 }

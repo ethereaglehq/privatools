@@ -159,7 +159,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "frames pages slideshow",
     popularity: 62,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "frames.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "video-converter", icon: RefreshCw, name: "Video Converter",
@@ -174,14 +174,14 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   },
   {
     slug: "video-resizer", icon: Maximize2, name: "Video Resizer",
-    description: "Downscale a video to 240p, 360p, 480p, 720p, 1080p, or 1440p",
-    longDescription: "Resize video resolution online for free — downscale to 240p, 360p, 480p, 720p, 1080p, or 1440p while preserving aspect ratio. Re-encodes with H.264 + AAC and the +faststart flag for streaming-friendly output.",
+    description: "Resize a video to 240p, 360p, 480p, 720p, 1080p, or 1440p",
+    longDescription: "Resize video resolution online for free — scale to 240p, 360p, 480p, 720p, 1080p, or 1440p while preserving aspect ratio. Re-encodes with H.264 + AAC and the +faststart flag for streaming-friendly output.",
     seoTitle: "Resize Video Resolution Online – Shrink for Faster Upload",
-    metaDescription: "Downscale a video's resolution while preserving its aspect ratio, re-encoded for smooth streaming playback. Files are processed and then removed automatically.",
+    metaDescription: "Change a video's resolution while keeping its aspect ratio, re-encoded for smooth streaming playback. Files are processed and then removed automatically.",
     synonyms: "resize scale dimensions width height",
     popularity: 63,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.avi,.mkv", outputLabel: "video.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "video-thumbnail", icon: ImageIcon, name: "Video Thumbnail",
@@ -253,14 +253,14 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   // ── Developer & Text ────────────────────────────────────────────────────────
   {
     slug: "json-xml-formatter", icon: Braces, name: "JSON / XML Formatter",
-    description: "Prettify and validate JSON or XML offline",
-    longDescription: "Format JSON and XML online for free — paste, prettify, validate, and highlight syntax errors instantly. 100% offline processing — sensitive API payloads and config files never leave your browser. No data sent to servers.",
+    description: "Prettify, minify or validate JSON and XML in your browser",
+    longDescription: "Format JSON and XML online for free — paste, prettify, minify or validate, with the line and column of an error when the browser's parser reports one. Formatting runs in your browser, so the API payloads and config files you paste are not uploaded.",
     seoTitle: "Format JSON and XML Online Free – Validate Instantly",
-    metaDescription: "Paste JSON or XML to prettify, validate, and highlight syntax errors instantly. It runs in your browser, so sensitive payloads stay local.",
+    metaDescription: "Paste JSON or XML to prettify, minify or validate it, with the parser's message when it is invalid. It runs in your browser, so sensitive payloads stay local.",
     synonyms: "pretty print beautify lint validate",
     popularity: 81,
     category: "developer", clientOnly: true, accepts: ".json,.xml", outputLabel: "formatted",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "text-diff", icon: GitCompare, name: "Text Diff / Comparator",
@@ -463,7 +463,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "guid v4 v7 random id unique",
     popularity: 94,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "uuids",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "lorem-ipsum", icon: Type, name: "Lorem Ipsum Generator",
@@ -474,7 +474,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "placeholder dummy text greek latin",
     popularity: 97,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "lorem text",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "word-counter", icon: Type, name: "Word & Character Counter",
@@ -485,7 +485,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "words characters sentences paragraphs",
     popularity: 96,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "stats",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "color-converter", icon: ImageIcon, name: "Color Converter",
@@ -496,7 +496,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "hex rgb hsl picker palette",
     popularity: 95,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "color value",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "url-encoder", icon: Code2, name: "URL Encoder / Decoder",
@@ -793,13 +793,13 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
   {
     slug: "avi-to-mp4", icon: Film, name: "AVI to MP4",
     description: "Convert legacy AVI video to modern MP4",
-    longDescription: "Convert AVI to MP4 online for free — AVI is the old Microsoft container that's poorly supported by modern devices. MP4 plays everywhere and is often smaller. Powered by FFmpeg with H.264 encoding.",
+    longDescription: "Convert AVI to MP4 online for free — AVI is an older Microsoft container that many phones and browsers handle poorly; the MP4 carries H.264 video and AAC audio, which modern devices are built around. Powered by FFmpeg.",
     seoTitle: "Convert AVI to MP4 Online Free – Modernize Old Video",
     metaDescription: "Turn old Microsoft AVI video into widely supported MP4 that works on modern devices and players. Files are processed and then removed automatically.",
     synonyms: "legacy windows convert modern",
     popularity: 58,
     category: "video-audio", accepts: ".avi", outputLabel: "video.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "webm-to-mp4", icon: Film, name: "WebM to MP4",
@@ -1043,7 +1043,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "matroska webm open web vp9",
     popularity: 80,
     category: "video-audio", accepts: ".mkv", outputLabel: "video.webm",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "mp4-to-avi", icon: Film, name: "MP4 to AVI",
@@ -1076,7 +1076,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "google webm quicktime apple",
     popularity: 83,
     category: "video-audio", accepts: ".webm", outputLabel: "video.mov",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "mov-to-mkv", icon: Film, name: "MOV to MKV",
@@ -1087,7 +1087,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "quicktime matroska archive",
     popularity: 84,
     category: "video-audio", accepts: ".mov", outputLabel: "video.mkv",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "webm-to-gif", icon: Film, name: "WebM to GIF",
@@ -1133,7 +1133,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "kubernetes config convert",
     popularity: 86,
     category: "developer", clientOnly: true, accepts: "", outputLabel: "YAML output",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "case-converter", icon: Type, name: "Case Converter",
@@ -1167,18 +1167,18 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "sql pretty print beautify format query database",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".sql", outputLabel: "formatted SQL",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "graphql-formatter", icon: Braces, name: "GraphQL Formatter",
     description: "Format GraphQL queries, mutations, and fragments",
-    longDescription: "Format GraphQL online for free — paste compact queries, mutations, fragments, or selection sets and get clean indentation immediately. Browser-only, no server logs, no schema required.",
+    longDescription: "Format GraphQL online for free — paste compact queries, mutations, fragments, or selection sets and get clean indentation immediately. It runs in your browser and needs no schema.",
     seoTitle: "Format GraphQL Queries Online Free – No Schema Required",
     metaDescription: "Paste compact GraphQL queries, mutations, or fragments and get clean indentation right away. No schema is required, and it runs in your browser.",
     synonyms: "graphql query mutation fragment pretty print",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".graphql,.gql", outputLabel: "formatted GraphQL",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "yaml-toml-converter", icon: ArrowLeftRight, name: "YAML to TOML",
@@ -1189,7 +1189,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "yaml toml convert config pyproject cargo",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".yaml,.yml,.toml", outputLabel: "converted config",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "gitignore-generator", icon: GitCompare, name: ".gitignore Generator",
@@ -1200,7 +1200,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "git ignore generator node python docker template",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: "", outputLabel: ".gitignore",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "semver-bumper", icon: RefreshCw, name: "SemVer Bumper",
@@ -1222,7 +1222,7 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "dotenv env linter secrets config validate",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".env", outputLabel: "validation report",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "json-to-csv-schema", icon: Archive, name: "JSON to CSV Schema",
@@ -1233,19 +1233,19 @@ const _nonPdfToolsRaw: NonPdfTool[] = [
     synonyms: "json csv schema infer flatten columns data",
     popularity: 90,
     category: "developer", clientOnly: true, accepts: ".json", outputLabel: "data.csv",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   // ── Phase 7 — competitor-gap tools (v1.5.0) ────────────────────────────
   {
     slug: "mute-video", icon: Video, name: "Mute Video",
     description: "Strip the audio track from any video",
-    longDescription: "Remove audio from MP4, MOV, WebM, MKV, AVI videos online for free — stream-copies the video so the operation is instant and lossless. No re-encoding, no quality loss.",
-    seoTitle: "Mute a Video Online Free – Strip Audio Instantly",
+    longDescription: "Remove audio from MP4, MOV, WebM, MKV, AVI videos online for free — stream-copies the video, so the picture is not re-encoded and its quality is unchanged.",
+    seoTitle: "Mute a Video Online Free – Strip Audio Without Re-encoding",
     metaDescription: "Remove the audio track from an MP4, MOV, WebM, MKV, or AVI file using a lossless stream copy. Files are processed and then removed automatically.",
     synonyms: "remove audio silent strip soundtrack",
     popularity: 53,
     category: "video-audio", accepts: ".mp4,.mov,.webm,.mkv,.avi,.m4v", outputLabel: "muted.mp4",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "reverse-video", icon: Video, name: "Reverse Video",

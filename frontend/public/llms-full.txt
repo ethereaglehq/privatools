@@ -355,7 +355,7 @@ URL: https://privatools.me/tool/odt-to-pdf
 
 Convert OpenDocument (ODT) into PDF
 
-Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a polished PDF with their styles, images, and layout kept; fonts the server does not have are replaced with similar ones. Powered by LibreOffice in the background.
+Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a PDF with LibreOffice, which turns headings into bookmarks; fonts the server does not have are replaced with substitutes, which can move line and page breaks.
 
 ### Office to PDF
 
@@ -977,9 +977,9 @@ Convert video between formats online for free — change MP4 → WebM, MOV → M
 
 URL: https://privatools.me/tools/video-resizer
 
-Downscale a video to 240p, 360p, 480p, 720p, 1080p, or 1440p
+Resize a video to 240p, 360p, 480p, 720p, 1080p, or 1440p
 
-Resize video resolution online for free — downscale to 240p, 360p, 480p, 720p, 1080p, or 1440p while preserving aspect ratio. Re-encodes with H.264 + AAC and the +faststart flag for streaming-friendly output.
+Resize video resolution online for free — scale to 240p, 360p, 480p, 720p, 1080p, or 1440p while preserving aspect ratio. Re-encodes with H.264 + AAC and the +faststart flag for streaming-friendly output.
 
 ### Video Thumbnail
 
@@ -1033,9 +1033,9 @@ Convert subtitles online for free — turn SRT (SubRip), VTT (WebVTT), and ASS (
 
 URL: https://privatools.me/tools/json-xml-formatter
 
-Prettify and validate JSON or XML offline
+Prettify, minify or validate JSON and XML in your browser
 
-Format JSON and XML online for free — paste, prettify, validate, and highlight syntax errors instantly. 100% offline processing — sensitive API payloads and config files never leave your browser. No data sent to servers.
+Format JSON and XML online for free — paste, prettify, minify or validate, with the line and column of an error when the browser's parser reports one. Formatting runs in your browser, so the API payloads and config files you paste are not uploaded.
 
 ### Text Diff / Comparator
 
@@ -1419,7 +1419,7 @@ URL: https://privatools.me/tools/avi-to-mp4
 
 Convert legacy AVI video to modern MP4
 
-Convert AVI to MP4 online for free — AVI is the old Microsoft container that's poorly supported by modern devices. MP4 plays everywhere and is often smaller. Powered by FFmpeg with H.264 encoding.
+Convert AVI to MP4 online for free — AVI is an older Microsoft container that many phones and browsers handle poorly; the MP4 carries H.264 video and AAC audio, which modern devices are built around. Powered by FFmpeg.
 
 ### WebM to MP4
 
@@ -1691,7 +1691,7 @@ URL: https://privatools.me/tools/graphql-formatter
 
 Format GraphQL queries, mutations, and fragments
 
-Format GraphQL online for free — paste compact queries, mutations, fragments, or selection sets and get clean indentation immediately. Browser-only, no server logs, no schema required.
+Format GraphQL online for free — paste compact queries, mutations, fragments, or selection sets and get clean indentation immediately. It runs in your browser and needs no schema.
 
 ### YAML to TOML
 
@@ -1739,7 +1739,7 @@ URL: https://privatools.me/tools/mute-video
 
 Strip the audio track from any video
 
-Remove audio from MP4, MOV, WebM, MKV, AVI videos online for free — stream-copies the video so the operation is instant and lossless. No re-encoding, no quality loss.
+Remove audio from MP4, MOV, WebM, MKV, AVI videos online for free — stream-copies the video, so the picture is not re-encoded and its quality is unchanged.
 
 ### Reverse Video
 

@@ -1,26 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload your video",
-      "text": "Drag-and-drop MP4, MOV, WebM, MKV, AVI, or M4V — up to 200 MB."
+      "name": "Add your videos",
+      "text": "Drop or pick MP4, MOV, WebM, MKV, AVI or M4V files; the queue holds up to 25. This tool accepts files up to 200 MB each."
     },
     {
-      "name": "Click Mute Video",
-      "text": "PrivaTools stream-copies the video and strips the audio track. Nothing is re-encoded, so it is lossless and quick."
+      "name": "Press Mute Video",
+      "text": "Each file is uploaded over HTTPS in turn, and FFmpeg on the PrivaTools server copies the video stream unchanged while leaving out every audio track."
+    },
+    {
+      "name": "Download the silent video",
+      "text": "A single file downloads when it is ready, named after the original with _muted.mp4 at the end, so interview.mov becomes interview_muted.mp4; several can be saved one by one or together as mute-video-results.zip."
+    },
+    {
+      "name": "Keep the sound separately",
+      "text": "Muting does not return the removed audio. If you want the soundtrack as its own file, run the original video through Extract Audio from Video as well."
     }
   ],
   "faq": [
     {
-      "q": "Is the video quality preserved?",
-      "a": "Yes. The video track is stream-copied without re-encoding, so its data is identical to the original; only the container is rewritten without the audio."
+      "q": "Is the picture changed at all?",
+      "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were. Only the container is rewritten, without the audio."
     },
     {
-      "q": "Will the file get smaller?",
-      "a": "Yes, by the size of the audio track, which depends on the audio's bitrate and length. The video portion is unchanged."
+      "q": "What format is the muted file?",
+      "a": "The same container you uploaded: an MKV comes back as Matroska, a WebM as WebM and an AVI as AVI, with the original video codec inside. The download name always ends in .mp4, though, so a muted holiday.mkv arrives as holiday_muted.mp4 with Matroska inside; rename it to .mkv if your player or editor goes by the extension. Nothing is converted; use Video Converter if you also need another format."
     },
     {
-      "q": "Can I just mute the audio instead of removing it?",
-      "a": "This tool removes the audio track entirely; it cannot put a silent track in its place. A video without an audio track simply plays silently."
+      "q": "Which tracks are removed?",
+      "a": "Every audio track, including commentary and extra languages. FFmpeg keeps one video stream, and in MKV and WebM files it can also carry over one text subtitle track. The removed audio cannot be recovered from the muted file."
+    },
+    {
+      "q": "How much smaller will the file be?",
+      "a": "Smaller by roughly the size of the audio, which depends on its bitrate and length; the video portion is unchanged. A clip with a short or low-bitrate soundtrack barely shrinks."
+    },
+    {
+      "q": "Can I replace the sound with a silent track?",
+      "a": "No. The audio is removed entirely rather than replaced with silence. A video without an audio track simply plays without sound."
+    },
+    {
+      "q": "What if my file has no audio, or no video?",
+      "a": "A file without sound is still processed and comes back as a copy of the video. A file without a video stream, such as an audio-only recording saved with a video extension, fails with \"Processing failed. Please try again.\""
+    },
+    {
+      "q": "What limits apply?",
+      "a": "Files over 200 MB are refused with \"File is too big for the server. Try compressing it first.\" FFmpeg has 180 seconds per file, after which the page says the server took too long, and the route is rate-limited at 5 requests a minute per IP address. Copying a stream needs no encoding, so it is much quicker than a conversion."
+    },
+    {
+      "q": "What happens to my video on the server?",
+      "a": "It is uploaded over HTTPS and processed by FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes the original and the muted copy after your download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."
     }
   ]
 }
