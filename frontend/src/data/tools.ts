@@ -349,7 +349,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "blackout hide remove sensitive",
     popularity: 72,
     category: "security", accepts: ".pdf", outputLabel: "redacted.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "strip-metadata", icon: DatabaseZap, name: "Strip Metadata",
