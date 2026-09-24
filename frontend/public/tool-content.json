@@ -107,7 +107,7 @@
     "category": "organize",
     "accepts": ".pdf",
     "outputLabel": "trimmed.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/delete-pages",
     "priority": 0.6
   },

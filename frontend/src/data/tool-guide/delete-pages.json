@@ -24,7 +24,7 @@
     },
     {
       "q": "Is this the same as Extract Pages?",
-      "a": "It is the reverse. Delete Pages removes the pages you list; Extract Pages keeps only the pages you list. Both produce a new PDF and leave the original alone. For pages with sensitive content, use Extract Pages on the pages you want to keep: Delete Pages works on a copy of the whole file, so a deleted page that a bookmark, a link or accessibility tagging points to stays inside it, out of sight."
+      "a": "It is the reverse. Delete Pages removes the pages you list; Extract Pages keeps only the pages you list. Both produce a new PDF and leave the original alone. Either way the pages left out are gone from the file, not hidden in it: bookmarks, links, form fields and accessibility tags that pointed to them are removed with them."
     },
     {
       "q": "Can I remove blank pages automatically?",
