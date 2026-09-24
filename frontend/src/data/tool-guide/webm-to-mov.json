@@ -44,7 +44,7 @@
     },
     {
       "q": "How large and how long can the WebM be?",
-      "a": "Keep each file under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the whole request, upload included, five minutes, so long or high-resolution recordings may not finish; cut them with Trim Media first. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a large batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them."
+      "a": "Keep each file under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the whole request five minutes once the upload has arrived, so long or high-resolution recordings may not finish; cut them with Trim Media first. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a large batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them."
     },
     {
       "q": "What happens to my WebM on the server?",
