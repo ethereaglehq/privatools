@@ -82,6 +82,10 @@ def test_nginx_error_answers_on_the_api_host_carry_cors_for_allowed_origins():
         for name, value in server_headers.items():
             assert headers.get(name) == value, f"{target} drops the server's {name}"
         assert direct(answer, "default_type") == [["application/json"]]
+        # Without an empty types block, return takes the Content-Type from the
+        # URI's extension: /api/og/card.png would answer JSON as image/png.
+        (types,) = named(answer.children, "types")
+        assert types.args == [] and types.children == [], f"{target}: types must be empty"
         (answer_return,) = direct(answer, "return")
         assert answer_return[0] == status
         detail = json.loads(answer_return[1])["detail"]
