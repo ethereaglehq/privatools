@@ -1,0 +1,21 @@
+{
+  "about": "The value each tool's page sends to its route to mean the first and the second page of a PDF. src/test/page-contract.test.tsx checks that the pages send these values; backend/tests/test_page_contract.py sends them through the real routes and checks that the change lands on that page and nowhere else. A page and a route that count pages differently fail one of the two.",
+  "tools": {
+    "redact-pdf": { "endpoint": "/redact", "field": "redactions", "key": "page", "first": 0, "second": 1 },
+    "whiteout-pdf": { "endpoint": "/whiteout-pdf", "field": "regions", "key": "page", "first": 1, "second": 2 },
+    "annotate-pdf": { "endpoint": "/annotate-pdf", "field": "annotations", "key": "page", "first": 1, "second": 2 },
+    "add-shapes": { "endpoint": "/add-shapes", "field": "shapes", "key": "page", "first": 1, "second": 2 },
+    "edit-pdf": { "endpoint": "/edit-pdf", "field": "edits", "key": "page", "first": 1, "second": 2 },
+    "form-creator": { "endpoint": "/form-creator", "field": "form_fields", "key": "page", "first": 1, "second": 2 },
+    "bookmarks": { "endpoint": "/bookmarks", "field": "bookmarks", "key": "page", "first": 1, "second": 2 },
+    "esign-pdf": { "endpoint": "/esign-pdf", "field": "page", "first": 1, "second": 2 },
+    "sign-pdf": { "endpoint": "/sign-pdf", "field": "page", "first": 1, "second": 2 },
+    "delete-pages": { "endpoint": "/delete-pages", "field": "pages", "first": "1", "second": "2" },
+    "extract-pages": { "endpoint": "/extract-pages", "field": "pages", "first": "1", "second": "2" },
+    "split-pdf": { "endpoint": "/split", "field": "pages", "first": "1", "second": "2" },
+    "rotate-pdf": { "endpoint": "/rotate", "field": "pages", "first": "1", "second": "2" },
+    "stamp-pdf": { "endpoint": "/stamp-pdf", "field": "pages", "first": "1", "second": "2" },
+    "organize-pages": { "endpoint": "/organize-pages", "field": "page_order", "first": [1], "second": [2] },
+    "merge-pdf": { "endpoint": "/merge", "field": "page_ranges", "first": "1", "second": "2" }
+  }
+}

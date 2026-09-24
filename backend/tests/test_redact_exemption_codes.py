@@ -214,3 +214,34 @@ def test_endpoint_rejects_an_over_long_code(client, tmp_path):
         data={"redactions": json.dumps([{**_SECRET_RECT, "code": "X" * 100}])},
     )
     assert res.status_code == 400
+
+
+# ── page numbers ────────────────────────────────────────────────────────────
+# `page` counts from 0 (test_page_contract.py holds the website's page to it).
+# It was once answered with "page 1 is out of range (PDF has 1 page)", which
+# reads as a bug in the PDF rather than in the request.
+
+def test_a_page_the_pdf_lacks_is_refused_with_how_pages_are_counted(client, tmp_path):
+    data = Path(_pdf(tmp_path / "a.pdf", pages=3)).read_bytes()
+    res = client.post(
+        "/api/redact",
+        files={"file": ("a.pdf", data, "application/pdf")},
+        data={"redactions": json.dumps([{**_SECRET_RECT, "page": 3}])},
+    )
+    assert res.status_code == 400
+    assert res.json()["detail"] == (
+        "Redaction #1 has page 3, which this PDF does not have: "
+        "the page field counts from 0, so a PDF with 3 pages takes 0 to 2."
+    )
+
+
+def test_the_public_api_says_pages_count_from_zero():
+    from backend.app.api_v1.schema import build_schema
+    from backend.app.main import app
+
+    schema = build_schema(app)
+    body = schema["paths"]["/api/v1/redact"]["post"]["requestBody"]["content"]["multipart/form-data"]["schema"]
+    if "$ref" in body:
+        body = schema["components"]["schemas"][body["$ref"].rsplit("/", 1)[1]]
+    description = body["properties"]["redactions"]["description"]
+    assert "counted from 0 (0 is the first page)" in description

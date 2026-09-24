@@ -52,6 +52,9 @@ def redact_pdf(
 ) -> tuple[str, dict]:
     """Redact, optionally stamping an exemption code on each box.
 
+    Each redaction's `page` is an index counted from 0; the report names pages
+    counted from 1, the way a person cites them.
+
     Returns `(output_path, report)`. The report is the withholding log: how many
     redactions landed on each page, and how many were made under each code.
 
