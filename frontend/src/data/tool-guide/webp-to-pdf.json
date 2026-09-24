@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "All images become one PDF in upload order. The PDF is usually much larger than the WebP files, because the pixels are stored with lossless compression."
+      "text": "All images become one PDF in upload order. The PDF is usually much larger than the WebP files, because the pixels are stored with lossless compression. Only the pixels are copied, so location and camera details stored in the WebPs are removed."
     }
   ],
   "faq": [

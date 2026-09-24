@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF."
+      "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF. Only the pixels are copied, so camera, author and location details in the TIFF tags are removed."
     }
   ],
   "faq": [

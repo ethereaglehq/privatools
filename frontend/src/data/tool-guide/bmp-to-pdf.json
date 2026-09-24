@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "Click Convert. All input images are combined into a single PDF, one image per page in upload order."
+      "text": "Click Convert. All input images are combined into a single PDF, one image per page in upload order. Only the pixels are copied, so no location or camera details go into the PDF."
     }
   ],
   "faq": [

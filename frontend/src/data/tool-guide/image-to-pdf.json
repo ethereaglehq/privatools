@@ -10,7 +10,7 @@
     },
     {
       "name": "Convert to PDF",
-      "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution."
+      "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution. Photos a phone stored sideways are turned upright, as the phone shows them. Location and camera details (EXIF, XMP and IPTC metadata) are removed."
     }
   ],
   "faq": [
