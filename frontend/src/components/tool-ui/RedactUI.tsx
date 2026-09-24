@@ -19,11 +19,23 @@ import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 interface Box {
     id: string;
+    /** The page number as this page shows it: 1 is the first page. */
     page: number;
     x: number; y: number;
     width: number; height: number;
     /** Statutory exemption citation, drawn inside the box. */
     code?: string;
+}
+
+/**
+ * The boxes as the redact route takes them. The route reads `page` as an index
+ * counted from 0, and API callers rely on that, so the page number shown here
+ * goes out one lower. Sending it unchanged blacked out the page after the one
+ * the visitor chose (fixed 2026-09-24); src/test/page-contract.test.tsx holds
+ * this to what the route expects.
+ */
+function redactionsForRoute(boxes: Box[]) {
+    return boxes.map(({ id: _id, page, ...rest }) => ({ ...rest, page: page - 1 }));
 }
 
 interface RedactionReport {
@@ -53,6 +65,8 @@ export function RedactUI() {
     const activeSet = EXEMPTION_CODE_SETS.find(s => s.id === codeSet) ?? null;
     const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
+    /** How many pages the chosen PDF has, once the preview has opened it. */
+    const [pageCount, setPageCount] = useState<number | null>(null);
     const [boxes, setBoxes] = useState<Box[]>([
         { id: makeId(), page: 1, x: 100, y: 700, width: 200, height: 20 },
     ]);
@@ -83,11 +97,18 @@ export function RedactUI() {
 
     const process = useCallback(async () => {
         if (!file || boxes.length === 0) return;
+        // Say which box is on a page the PDF does not have, in the page
+        // numbers shown here, before the route answers in its own.
+        const stray = boxes.findIndex(b => !Number.isInteger(b.page) || b.page < 1 || (pageCount !== null && b.page > pageCount));
+        if (stray >= 0) {
+            const pages = pageCount === null ? "a page number from 1" : pageCount === 1 ? "page 1" : `a page from 1 to ${pageCount}`;
+            setError(`Box ${stray + 1} is on page ${boxes[stray].page}, which this PDF does not have. Choose ${pages}.`);
+            return;
+        }
         setState("processing"); setError(null);
         try {
-            const payload = boxes.map(({ id, ...rest }) => rest);
             const headers = await processAndDownload("/redact", file, buildOutputFilename(file.name, "redacted", "pdf"),
-                { redactions: JSON.stringify(payload), color });
+                { redactions: JSON.stringify(redactionsForRoute(boxes)), color });
             const raw = headers["x-redaction-report"];
             if (raw) {
                 try { setReport(JSON.parse(raw) as RedactionReport); }
@@ -101,7 +122,7 @@ export function RedactUI() {
             setState("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
-    }, [file, boxes, color]);
+    }, [file, boxes, color, pageCount]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -175,8 +196,8 @@ export function RedactUI() {
         <div className="space-y-4">
             <FileUploadZone
                 file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                onFileSelect={next => { setFile(next); setPageCount(null); }}
+                onClear={() => { setFile(null); setPageCount(null); }}
                 accept=".pdf"
                 label="Drop PDF to redact"
                 hint="Opaque-box redaction — permanently removes content"
@@ -245,6 +266,7 @@ export function RedactUI() {
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(b.id, el); else rowRefs.current.delete(b.id); } : undefined}
                                                         type="number" aria-label={c.label} inputMode="numeric" min={c.min}
+                                                        max={c.f === "page" ? pageCount ?? undefined : undefined}
                                                         value={b[c.f]}
                                                         onClick={e => e.stopPropagation()}
                                                         onChange={e => update(b.id, c.f, +e.target.value)}
@@ -285,7 +307,7 @@ export function RedactUI() {
                         </fieldset>
 
                         {/* Page preview */}
-                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} regions={boxes.map((box, index) => ({ ...box, color, kind: "redact", label: `Redaction ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={state === "processing"} onDraw={region => { const id = makeId(); setBoxes(items => [...items, { ...region, id }]); setSelected(id); }} />
+                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} onDimensions={info => setPageCount(info.pages)} regions={boxes.map((box, index) => ({ ...box, color, kind: "redact", label: `Redaction ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={state === "processing"} onDraw={region => { const id = makeId(); setBoxes(items => [...items, { ...region, id }]); setSelected(id); }} />
                     </div>
                 </div>
             )}

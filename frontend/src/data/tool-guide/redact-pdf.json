@@ -14,13 +14,13 @@
     },
     {
       "name": "Apply redactions and download",
-      "text": "Click Redact. The underlying content is permanently destroyed — it cannot be recovered, even by removing the black boxes."
+      "text": "Click Redact. The text and image pixels under the boxes are removed from the file, not just covered, so removing a black box does not bring them back. The questions below say what redaction leaves in place."
     }
   ],
   "faq": [
     {
       "q": "Is redaction permanent and truly irreversible?",
-      "a": "Yes for what is under the boxes. The text glyphs and image pixels under each redaction rectangle are removed before the new PDF is written, and the file is rewritten without the old objects, so there is nothing under the box to recover. The same words elsewhere in the file are not touched: a bookmark title, a comment or the document metadata that repeats them survives, so check those too."
+      "a": "Yes for the text and images under the boxes. A character that a box covers, fully or in part, is removed whole; one the box only just touches may stay. The image pixels under a box are blanked, and a line or shape that lies entirely inside a box is removed. The file is then rewritten without the old objects, so what was removed cannot be recovered. Some things are left in place. A line or shape that reaches past a box stays in the file beneath it. Form fields, and comments such as notes, highlights and drawings, are not part of the page's content, so one that overlaps a box is kept and still shows on top of it: delete them, or flatten the PDF, before you redact. Copies of the same words elsewhere, such as a bookmark title, the document metadata or the replacement text an accessible PDF gives screen readers, survive too, so check those."
     },
     {
       "q": "Can I search and redact every occurrence of a name or number?",
@@ -32,11 +32,11 @@
     },
     {
       "q": "Will the redacted PDF still be searchable for non-redacted text?",
-      "a": "Yes. Only the content under the redaction rectangles is destroyed. Text outside the rectangles, along with bookmarks, hyperlinks, and the text-search layer, are preserved intact."
+      "a": "Yes. Text outside the boxes stays searchable, including the hidden text layer that OCR adds to a scan, and bookmarks are kept. Three things go beyond a box: a character it covers only in part is removed whole, a link whose clickable area overlaps it is removed, and so is a typed text-box comment that overlaps it."
     },
     {
       "q": "Is metadata also redacted?",
-      "a": "By default the rectangles destroy on-page text and images. Author name, title, software, and other XMP/Info metadata are NOT automatically stripped — use the Strip Metadata tool afterward. Smart Redact leaves metadata alone too."
+      "a": "No. The boxes act on the page only. Author name, title, software, and other XMP/Info metadata are NOT automatically stripped — use the Strip Metadata tool afterward. Smart Redact leaves metadata alone too."
     },
     {
       "q": "What happens to the original, unredacted PDF I upload?",

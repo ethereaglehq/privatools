@@ -19,6 +19,23 @@ logger = logging.getLogger(__name__)
 
 MAX_REDACTIONS = 5000  # plenty of headroom; protects against runaway clients
 
+# `page` has counted from 0 since the route moved to PyMuPDF (2026-03-05), and
+# API callers depend on that: reading it from 1 instead would silently move
+# their boxes to the page before. The website's page shows page numbers from 1
+# and subtracts one when it sends them (RedactUI.tsx).
+REDACTIONS_DESCRIPTION = (
+    "JSON array of rectangles to redact. Each has `page`, the page's index counted "
+    "from 0 (0 is the first page), and either `x`, `y`, `width` and `height` or "
+    "`x0`, `y0`, `x1` and `y1`, in points (1/72 inch) from the top-left corner of "
+    "the page's visible area (its CropBox), before any /Rotate setting it has is "
+    "applied. Optional `code`, an "
+    "exemption code of up to 32 characters, is printed inside the box."
+)
+
+
+def _page_word(count: int) -> str:
+    return f"{count} page{'s' if count != 1 else ''}"
+
 
 def _validate_redactions(rects: list, page_count: int) -> None:
     """Make sure every redaction has positive dimensions and lands on a real page.
@@ -80,8 +97,9 @@ def _validate_redactions(rects: list, page_count: int) -> None:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"Redaction #{i + 1} page {page_idx} is out of range "
-                    f"(PDF has {page_count} page{'s' if page_count != 1 else ''})"
+                    f"Redaction #{i + 1} has page {page_idx}, which this PDF does not have: "
+                    f"the page field counts from 0, so a PDF with {_page_word(page_count)} "
+                    f"takes {'0' if page_count == 1 else f'0 to {page_count - 1}'}."
                 ),
             )
 
@@ -110,7 +128,7 @@ def _validate_redactions(rects: list, page_count: int) -> None:
 async def redact_pdf(
     request: Request,
     file: UploadFile = File(...),
-    redactions: str = Form(...),
+    redactions: str = Form(..., description=REDACTIONS_DESCRIPTION),
     color: str = Form("#000000"),
 ):
     if not (file.filename or "").lower().endswith(".pdf"):
