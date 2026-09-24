@@ -527,6 +527,8 @@ def _outline_of(pdf: pikepdf.Pdf, items: list) -> None:
 SHARED_KINDS = (
     "shared_action", "shared_outline", "shared_ring", "stray_headings", "stray_list",
     "shared_annots", "shared_beads", "shared_kids", "shared_field_kids",
+    "shared_hide_list", "shared_field_list", "shared_next_list", "shared_next_dead",
+    "shared_triggers", "long_named_view",
 )
 
 
@@ -549,7 +551,17 @@ def build_shared_objects_pdf(kind: str, n: int) -> bytes:
       ring of n beads on page 1;
     - ``shared_kids``: n structure elements on page 1 share one /K array of n
       elements on page 2; ``shared_field_kids``: n fields share one /Kids
-      array of n widgets on page 2.
+      array of n widgets on page 2;
+    - ``shared_hide_list``: n links on page 1, each with its own Hide action,
+      name one list of n notes on page 3 and one on page 2;
+      ``shared_field_list``: the same with ResetForm actions and fields;
+    - ``shared_next_list``: n links on page 1, each with its own action, share
+      one /Next list of n actions; ``shared_next_dead``: the same, each own
+      action going to page 2, so the list takes its place;
+    - ``shared_triggers``: n links on page 1 share one /AA dictionary of n
+      actions, the first going to page 2;
+    - ``long_named_view``: n links on page 1 name one destination on page 3
+      whose view holds n numbers.
     """
     pages = n if kind in ("shared_annots", "shared_beads") else PAGE_COUNT
     pdf = _open(build_reference_pdf((), pages=pages))
@@ -659,6 +671,71 @@ def build_shared_objects_pdf(kind: str, n: int) -> bytes:
             pdf.make_indirect(Dictionary(FT=Name.Tx, T=String(f"field {k}"), Kids=shared))
             for k in range(n)
         ]))
+    elif kind in ("shared_hide_list", "shared_field_list"):
+        fields = kind == "shared_field_list"
+
+        def target(page: int):
+            entries = dict(Type=Name.Annot, Rect=Array([0, 0, 5, 5]), P=p[page - 1],
+                           Contents=String(marker(page, "LISTED")))
+            if fields:
+                entries.update(Subtype=Name.Widget, FT=Name.Tx, T=String(marker(page, "LISTED")))
+            else:
+                entries.update(Subtype=Name.Text)
+            return pdf.make_indirect(Dictionary(**entries))
+
+        listed = [target(3) for _ in range(n)]
+        gone = target(2)
+        p[2].Annots = Array(listed)
+        p[1].Annots = Array([gone])
+        shared = pdf.make_indirect(Array([*listed, gone]))
+        if fields:
+            pdf.Root.AcroForm = Dictionary(Fields=Array([*listed, gone]))
+        p[0].Annots = Array([
+            pdf.make_indirect(Dictionary(
+                Type=Name.Annot, Subtype=Name.Link, Rect=Array([0, 0, 5, 5]),
+                A=Dictionary(S=Name.ResetForm, Fields=shared) if fields
+                else Dictionary(S=Name.Hide, T=shared)))
+            for _ in range(n)
+        ])
+    elif kind in ("shared_next_list", "shared_next_dead"):
+        shared = pdf.make_indirect(Array([
+            pdf.make_indirect(Dictionary(S=Name.URI, URI=String(f"https://example.com/{k}")))
+            for k in range(n)
+        ]))
+
+        def action():
+            if kind == "shared_next_dead":
+                return Dictionary(S=Name.GoTo, D=Array([p[1], Name.Fit]), Next=shared)
+            return Dictionary(S=Name.URI, URI=String("https://example.com/"), Next=shared)
+
+        p[0].Annots = Array([
+            pdf.make_indirect(Dictionary(Type=Name.Annot, Subtype=Name.Link,
+                                         Rect=Array([0, 0, 5, 5]), A=action()))
+            for _ in range(n)
+        ])
+        p[2].Annots = Array([pdf.make_indirect(Dictionary(
+            Type=Name.Annot, Subtype=Name.Link, Rect=Array([0, 0, 5, 5]),
+            Dest=Array([p[1], Name.Fit])))])
+    elif kind == "shared_triggers":
+        triggers = {
+            f"/K{k}": pdf.make_indirect(Dictionary(S=Name.URI, URI=String(f"https://example.com/{k}")))
+            for k in range(1, n)
+        }
+        triggers["/K0"] = pdf.make_indirect(Dictionary(S=Name.GoTo, D=Array([p[1], Name.Fit])))
+        shared = pdf.make_indirect(Dictionary(triggers))
+        p[0].Annots = Array([
+            pdf.make_indirect(Dictionary(Type=Name.Annot, Subtype=Name.Link,
+                                         Rect=Array([0, 0, 5, 5]), AA=shared))
+            for _ in range(n)
+        ])
+    elif kind == "long_named_view":
+        pdf.Root.Names = Dictionary(Dests=pdf.make_indirect(Dictionary(
+            Names=Array([String("far"), Array([p[2], Name.XYZ, *([0] * n)])]))))
+        p[0].Annots = Array([
+            pdf.make_indirect(Dictionary(Type=Name.Annot, Subtype=Name.Link,
+                                         Rect=Array([0, 0, 5, 5]), Dest=String("far")))
+            for _ in range(n)
+        ])
     else:
         raise ValueError(kind)
     return _saved(pdf)
@@ -850,6 +927,9 @@ CRAFTED = (
     "structure_destination", "spanning_actualtext", "font_bbox_page",
     "catalog_under_a_kept_page", "catalog_as_a_thread", "page_tree_in_the_bookmarks",
     "catalog_under_an_element", "catalog_is_an_element_kid", "page_written_in_place",
+    "text_element_shares_kids_read_second", "alt_element_shares_kids_read_second",
+    "inherited_page_element_shares_kids", "text_element_shares_kids_read_first",
+    "form_is_a_note_of_the_removed_page",
 )
 
 
@@ -861,7 +941,10 @@ def build_crafted_pdf(name: str) -> bytes:
     which PDFium accepts. ``font_bbox_page`` hides page 2 in a font's number
     array, where the sweep once did not look. ``catalog_under_a_kept_page``
     makes a copied page carry the whole source catalog, bookmarks and tags of
-    page 2 included.
+    page 2 included. ``*_shares_kids_*`` give an element of a kept page the
+    /K array of an element of page 2, and a text that describes page 2's
+    content; the tree pass reads the later sections first, so the element
+    with the text is read second, or first.
     """
     base = {
         "catalog_under_a_kept_page": ("outline_dest", "struct_tree"),
@@ -874,6 +957,11 @@ def build_crafted_pdf(name: str) -> bytes:
         "structure_destination": ("struct_tree",),
         "spanning_actualtext": ("struct_tree",),
         "stream_element": ("struct_tree",),
+        "text_element_shares_kids_read_second": ("struct_tree",),
+        "alt_element_shares_kids_read_second": ("struct_tree",),
+        "inherited_page_element_shares_kids": ("struct_tree",),
+        "text_element_shares_kids_read_first": ("struct_tree",),
+        "form_is_a_note_of_the_removed_page": ("acroform",),
     }.get(name, ())
     pdf = _open(build_reference_pdf(base))
     p = [page.obj for page in pdf.pages]
@@ -959,9 +1047,69 @@ def build_crafted_pdf(name: str) -> bytes:
         # A copy of page 2's dictionary, not an object: no page tree can list it.
         p[0].PieceInfo = Dictionary(PrivaApp=Dictionary(
             LastModified=String("D:20260924"), Private=Dictionary(Page=Dictionary(dict(p[1].items())))))
+    elif name.endswith("_shares_kids") or "_shares_kids_" in name:
+        _share_kids(pdf, p, name)
+    elif name == "form_is_a_note_of_the_removed_page":
+        form = pdf.Root.AcroForm
+        form.Subtype = Name.Text
+        form.Rect = Array([0, 0, 10, 10])
+        form.Contents = String(marker(2, "NOTE-IN-FORM"))
+        p[1].Annots = Array([*p[1].Annots, form])
     else:
         raise ValueError(name)
     return _saved(pdf)
+
+
+def _share_kids(pdf: pikepdf.Pdf, p: list, name: str) -> None:
+    """An element of page 2 and one of page 3 (its own, or its section's)
+    share one /K array holding page 2's content; the second has the text."""
+    sections = [s for s in pdf.Root.StructTreeRoot.K[0].K if s.get("/S") == Name.Sect]
+    keep_under, gone_under = (3, 0) if name.endswith("_read_first") else (0, 3)
+    shared = pdf.make_indirect(Array([Dictionary(Type=Name.MCR, Pg=p[1], MCID=0)]))
+    gone = pdf.make_indirect(Dictionary(
+        Type=Name.StructElem, S=Name.P, Pg=p[1], K=shared, P=sections[gone_under]))
+    kept = pdf.make_indirect(Dictionary(
+        Type=Name.StructElem, S=Name.Span, K=shared, P=sections[keep_under]))
+    if name.startswith("inherited_page"):
+        sections[keep_under].Pg = p[2]
+    else:
+        kept.Pg = p[2]
+    key = "/Alt" if name.startswith("alt_") else "/ActualText"
+    kept[key] = String(marker(2, "SHARED-K"))
+    sections[gone_under].K = Array([*sections[gone_under].K, gone])
+    sections[keep_under].K = Array([*sections[keep_under].K, kept])
+
+
+# The outline root or the form, listed among page 2's annotations as if it
+# were one. They are no annotations: nothing of them may go.
+CATALOG_LISTED = ("outline_listed_on_removed_page", "form_listed_on_removed_page")
+
+
+def build_catalog_listed_pdf(name: str, *, listed: bool = True) -> bytes:
+    """With ``listed=False``, the same file without the listing."""
+    kind = "outline_dest" if name.startswith("outline") else "acroform"
+    pdf = _open(build_reference_pdf((kind,)))
+    if listed:
+        page = pdf.pages[1].obj
+        held = pdf.Root.Outlines if kind == "outline_dest" else pdf.Root.AcroForm
+        page.Annots = Array([*page.get("/Annots", []), held])
+    return _saved(pdf)
+
+
+def build_direct_page_tree_pdf() -> bytes:
+    """The reference PDF with its page tree root written into the catalog.
+
+    The specification wants the root indirect; some writers do not, and qpdf
+    reads it all the same.
+    """
+    pdf = _open(build_reference_pdf(()))
+    buf = io.BytesIO()
+    pdf.save(buf, qdf=True, object_stream_mode=pikepdf.ObjectStreamMode.disable)
+    pdf.close()
+    raw = buf.getvalue()
+    number = re.search(rb"/Pages (\d+) 0 R", raw).group(1)
+    body = re.search(rb"\n" + number + rb" 0 obj\n(<<.*?>>)\nendobj", raw, re.S).group(1)
+    return raw.replace(b"/Pages " + number + b" 0 R", b"/Pages " + body, 1)
 
 
 def build_tagged_link_pdf() -> bytes:

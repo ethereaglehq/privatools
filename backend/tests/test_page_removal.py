@@ -30,14 +30,17 @@ import pikepdf
 import pytest
 
 from backend.tests.page_reference_pdfs import (
+    CATALOG_LISTED,
     CRAFTED,
     DAMAGED_TREES,
     KINDS,
     MALFORMED,
     MISPLACED_TREES,
     PROTECTED,
+    build_catalog_listed_pdf,
     build_crafted_pdf,
     build_damaged_tree_pdf,
+    build_direct_page_tree_pdf,
     build_malformed_pdf,
     build_protected_pdf,
     build_reference_pdf,
@@ -522,20 +525,32 @@ def _stray_pages(data: bytes) -> int:
     ("shared_beads", "delete", 3000),
     ("shared_kids", "delete", 2000),
     ("shared_field_kids", "delete", 3000),
+    ("shared_hide_list", "delete", 2000),
+    ("shared_field_list", "delete", 2000),
+    ("shared_next_list", "delete", 2000),
+    ("shared_next_list", "extract", 2000),
+    ("shared_next_dead", "delete", 2000),
+    ("shared_triggers", "delete", 2000),
+    ("shared_triggers", "extract", 2000),
+    ("long_named_view", "extract", 4000),
 ])
 def test_an_object_shared_by_many_owners_is_read_once(kind, tool, n, tmp_path):
     """One action chain shared by every link, one bead ring shared by every
-    thread, one array shared by every page, element or field, one list of
-    bookmarks shared by every heading: each was read again for each owner,
-    n*n, and nested headings once per path, 2**n. At these sizes the pruning
-    took from 12 s to hours of CPU; read once, it takes under 0.4 s. Only the
-    pruning is timed: saving is qpdf's and pikepdf's work, and pikepdf's own
-    save is slow on fields that share their kids. The bound is loose on
+    thread, one array shared by every page, element, field or action, one
+    /AA dictionary shared by every link, one list of bookmarks shared by
+    every heading, one named view named by every link: each was read, and
+    often copied, again for each owner, n*n (n**3 for dead actions sharing
+    their successors), and nested headings once per path, 2**n. At these
+    sizes the pruning took from 8 s to hours of CPU, and the copies made
+    outputs about 70 times the input; read once, it takes under 0.5 s. Only
+    the pruning is timed: saving is qpdf's and pikepdf's work, and pikepdf's
+    own save is slow on fields that share their kids. The bound is loose on
     purpose, so a loaded CI runner cannot flake it."""
     from backend.app.utils.page_removal import copy_pages, prune_to_page_tree, remove_pages
 
     out = tmp_path / "out.pdf"
-    with pikepdf.open(io.BytesIO(build_shared_objects_pdf(kind, n))) as pdf:
+    source = build_shared_objects_pdf(kind, n)
+    with pikepdf.open(io.BytesIO(source)) as pdf:
         start = time.process_time()
         if tool == "delete":
             removal = remove_pages(pdf, [1])
@@ -546,6 +561,7 @@ def test_an_object_shared_by_many_owners_is_read_once(kind, tool, n, tmp_path):
         cpu = time.process_time() - start
         assert cpu < 3, f"{kind} with {n} owners took {cpu:.1f} s of CPU"
         removal.save(out, tool="test")
+    assert out.stat().st_size < 2 * len(source), "the output grew with the owners"
     assert not leaked_pages(out.read_bytes())
 
 
@@ -619,6 +635,40 @@ def test_the_catalog_the_page_tree_and_kept_pages_are_never_cut(name, tool, tmp_
     checked = tmp_path / "out.pdf"
     checked.write_bytes(data)
     assert qpdf_check_passes(checked)
+
+
+@pytest.mark.parametrize("name", CATALOG_LISTED)
+def test_the_outline_or_form_listed_among_a_removed_pages_annotations_stays(name, tmp_path):
+    """Listed among page 2's annotations, the outline root or the form went
+    as page 2's annotation, and every bookmark or field with it. Neither
+    looks like an annotation, so Delete Pages keeps what it keeps without
+    the listing. (A form that does look like one goes: see CRAFTED.)"""
+    listed, plain = tmp_path / "listed.pdf", tmp_path / "plain.pdf"
+    listed.write_bytes(build_catalog_listed_pdf(name))
+    plain.write_bytes(build_catalog_listed_pdf(name, listed=False))
+    [data] = _service("delete", listed)
+    [expected] = _service("delete", plain)
+    with _open(data) as pdf, _open(expected) as want:
+        kept = (outline(pdf), form_fields(pdf))
+        assert kept == (outline(want), form_fields(want))
+        assert kept[0] or kept[1]
+    assert not leaked_pages(data)
+
+
+@pytest.mark.parametrize("tool, pages", [
+    ("delete", [[1, 3, 4]]), ("extract", [[1, 3, 4]]), ("organize", [[1, 3, 4]]),
+    ("split", [[1], [2], [3], [4]]), ("merge", [[1, 3, 4, 1]]),
+])
+def test_a_page_tree_root_written_into_the_catalog_is_read(tool, pages, tmp_path):
+    """The specification wants the page tree's root indirect, but qpdf reads
+    one written into the catalog, and the check after saving refused it."""
+    path = tmp_path / "direct.pdf"
+    path.write_bytes(build_direct_page_tree_pdf())
+    with pikepdf.open(path) as pdf:
+        assert not pdf.Root.Pages.is_indirect
+    outputs = _service(tool, path)
+    assert [_numbers(data) for data in outputs] == pages
+    assert not any(leaked_pages(data) for data in outputs)
 
 
 def _cutting_sweep(monkeypatch, cut):

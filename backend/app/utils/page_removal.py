@@ -150,6 +150,12 @@ _FOREIGN = object()
 # A bookmark list being settled: a list that reaches it again counts it as
 # surviving.
 _PENDING = object()
+# What the memo of pruned actions holds for an action that stays as it is:
+# each owner then gets its own object back, and can tell nothing changed.
+_SAME = object()
+# An explicit destination holds at most a type and four numbers after its
+# page (/FitR left bottom right top).
+_MAX_VIEW = 5
 
 
 class PageLeakError(ToolError):
@@ -341,11 +347,12 @@ class PageCopier:
         for i, page in zip(indices, copied):
             page_map.setdefault(self._pages[i].obj.objgen, page)
         seen: set = set()  # one walk per copy: shared actions are read once
+        resolved: dict = {}  # name -> (page, view) or None, looked up once per copy
         for page in copied:
             for owner, key, value in _destination_slots(page, seen):
                 if _type(value) in (_STRING, _NAME):
                     try:
-                        self._resolve(owner, key, value, page_map)
+                        self._resolve(owner, key, value, page_map, resolved)
                     except Exception:  # noqa: BLE001 - left as it is; the pruner judges it
                         logger.debug("page copy: named destination not resolved", exc_info=True)
 
@@ -369,26 +376,42 @@ class PageCopier:
                 parent, steps = parent.get("/Parent"), steps + 1
         for owner in owners:
             try:
-                for action in _owner_actions(owner):
+                for action in _owner_actions(owner, self._strip_seen):
                     for step in _action_chain(action, self._strip_seen):
                         if step.get("/S") == Name.GoTo and "/SD" in step:
                             del step["/SD"]
             except Exception:  # noqa: BLE001 - one unreadable owner must not stop the copy
                 logger.debug("page copy: could not read an action", exc_info=True)
 
-    def _resolve(self, owner, key: str, value, page_map: dict) -> None:
+    def _resolve(self, owner, key: str, value, page_map: dict, resolved: dict) -> None:
+        """Replace a named destination by an explicit one to the copied page.
+
+        Each name is looked up once per copy, however many links name it.
+        """
+        name = (bytes(value), None) if _type(value) == _STRING else (None, str(value))
+        found = resolved.get(name, _MISSING)
+        if found is _MISSING:
+            found = resolved[name] = self._explicit_view(value, page_map)
+        if found is not None:
+            page, view = found
+            owner[key] = Array([page, *view])
+
+    def _explicit_view(self, value, page_map: dict):
+        """(the copied page or None, the view) a name stands for, or None."""
         if _type(value) == _STRING:
             dest = self._lookup_string(bytes(value))
         else:
             dest = self._lookup_name(str(value))
         if dest is None:
-            return  # not a name the source defines either; nothing to resolve
+            return None  # not a name the source defines either; nothing to resolve
         view = _items(dest)
         target = view.pop(0) if view else None
         page = page_map.get(target.objgen) if _is_indirect_dictlike(target) else None
-        if page is None or any(getattr(v, "is_indirect", False) for v in view):
+        # A longer view is no view at all, and it would be copied into every
+        # link that names it.
+        if page is None or len(view) > _MAX_VIEW or any(getattr(v, "is_indirect", False) for v in view):
             view = [Name.Fit]
-        owner[key] = Array([page, *view])
+        return page, view
 
     def _lookup_string(self, name: bytes):
         if self._string_dests is None:
@@ -427,6 +450,13 @@ def _is_indirect_dictlike(obj) -> bool:
 
 def _items(array) -> list:
     return [item for item in array]
+
+
+def _same(a, b) -> bool:
+    """True for one object: the same wrapper, or the same indirect object."""
+    return a is b or (
+        getattr(a, "is_indirect", False) and getattr(b, "is_indirect", False) and a.objgen == b.objgen
+    )
 
 
 def _array(obj) -> list:
@@ -516,27 +546,28 @@ def _written_pages(pdf: pikepdf.Pdf) -> tuple[list, str | None]:
     if _type(root) not in _DICTLIKE:
         return [], "the output has no catalog"
     tree = root.get("/Pages")
-    if not _is_indirect_dictlike(tree):
+    if _type(tree) not in _DICTLIKE:  # direct, as some files have it, or indirect
         return [], "the output has no page tree"
     pages: list = []
-    seen: set = set()  # inner nodes: one met again is a loop, not read twice
+    seen: set = set()  # indirect inner nodes: one met again is a loop, not read twice
     stack = [iter((tree,))]
     while stack:
         node = next(stack[-1], _MISSING)
         if node is _MISSING:
             stack.pop()
             continue
-        if not _is_indirect_dictlike(node):
+        if _type(node) not in _DICTLIKE:
             continue  # neither a node nor a page: not listed
         kids = node.get("/Kids")
         if _type(kids) != _ARRAY:
-            pages.append(node.objgen)
-        elif node.objgen in seen:
+            pages.append(node.objgen if node.is_indirect else None)
+        elif node.is_indirect and node.objgen in seen:
             continue
         elif len(stack) > _MAX_DEPTH:
             return pages, "the page tree is nested too deep"
         else:
-            seen.add(node.objgen)
+            if node.is_indirect:
+                seen.add(node.objgen)
             stack.append(iter(kids))
     count = tree.get("/Count")
     if type(count) is not int:
@@ -639,13 +670,21 @@ def _holds_no_objects(array) -> bool:
     return b" R" not in raw and b"/Page" not in raw
 
 
-def _owner_actions(owner):
-    """The actions an annotation, field or page holds in /A and /AA."""
+def _owner_actions(owner, seen: set):
+    """The actions an annotation, field or page holds in /A and /AA.
+
+    An /AA dictionary shared by many owners is read once: ``seen`` holds the
+    ones already read.
+    """
     action = owner.get("/A")
     if action is not None:
         yield action
     aa = owner.get("/AA")
     if _type(aa) in _DICTLIKE:
+        if aa.is_indirect:
+            if aa.objgen in seen:
+                return
+            seen.add(aa.objgen)
         for _, action in aa.items():
             yield action
 
@@ -660,7 +699,8 @@ def _action_chain(action, seen: set, depth: int = 0):
         seen.add(action.objgen)
     yield action
     nxt = action.get("/Next")
-    for sub in (_items(nxt) if _type(nxt) == _ARRAY else [nxt]):
+    # A /Next array shared by many actions is read once, like its actions.
+    for sub in (_unread(nxt, seen) if _type(nxt) == _ARRAY else [nxt]):
         yield from _action_chain(sub, seen, depth + 1)
 
 
@@ -677,10 +717,10 @@ def _destination_slots(page, seen: set):
             if annot.objgen in seen:
                 continue
             seen.add(annot.objgen)
-        fields = dict(annot.items())
-        if "/Dest" in fields:
-            yield annot, "/Dest", fields["/Dest"]
-        for action in _owner_actions(fields):
+        dest = annot.get("/Dest")
+        if dest is not None:
+            yield annot, "/Dest", dest
+        for action in _owner_actions(annot, seen):
             yield from _goto_slots(action, seen)
     aa = page.get("/AA")
     if _type(aa) in _DICTLIKE:
@@ -851,13 +891,15 @@ class _Pruner:
         nodes = [pdf.Root.get("/Pages")]
         while nodes and len(self.tree_nodes) < _MAX_CHAIN:
             node = nodes.pop()
-            if (
-                _is_indirect_dictlike(node)
-                and node.objgen not in self.tree_nodes
-                and node.objgen not in in_tree
-            ):
+            if _type(node) not in _DICTLIKE:
+                continue
+            if node.is_indirect:
+                if node.objgen in self.tree_nodes or node.objgen in in_tree:
+                    continue
                 self.tree_nodes.add(node.objgen)
-                nodes.extend(_array(node.get("/Kids")))
+            # A direct node, which only the root can be once qpdf has read
+            # the pages, is read once: its container holds it once.
+            nodes.extend(_array(node.get("/Kids")))
         # Never cut or killed, whatever points at them (see _Removed).
         self.protected: set = self.tree_nodes | self.live_pages
         if pdf.Root.is_indirect:
@@ -872,7 +914,14 @@ class _Pruner:
         # the sweep.
         self.vetted: set = set()
         self.pending: list = []
-        self._actions: dict = {}  # indirect action -> its pruned chain
+        self._actions: dict = {}  # indirect action -> its pruned chain, or _SAME
+        # Shared arrays and dictionaries decided once, for every owner: a
+        # /Next, Hide /T or form action /Fields array -> its replacement, a
+        # /Next array whose owner went -> the head that took its place, an
+        # /AA dictionary -> whether pruning emptied it.
+        self._arrays: dict = {}
+        self._heads: dict = {}
+        self._aa_done: dict = {}
         self._annot_verdicts: dict = {}
         self._removed_owners: set | None = None
         self.outline_items: set = set()  # bookmarks the outline pass walked
@@ -896,6 +945,13 @@ class _Pruner:
         self.live_annots = _indirect(self.annots_of.values())
         self.live_beads = _indirect(self.beads_of.values())
         self.dead_annots = _indirect(self.removed_annots) - self.live_annots - self.protected
+        # A dictionary the catalog holds, such as the outline root or the form,
+        # listed among a removed page's annotations is no annotation of that
+        # page unless it looks like one; cut, it would take every bookmark or
+        # field along.
+        for _, value in pdf.Root.items():
+            if _is_indirect_dictlike(value) and value.objgen in self.dead_annots and not _is_annotation(value):
+                self.dead_annots.discard(value.objgen)
         self.dead_beads = _indirect(removed_beads) - self.live_beads - self.protected
         # Everything removed by any pass; the sweep cuts references to these.
         self.dead = _Removed(self.protected)
@@ -1005,7 +1061,9 @@ class _Pruner:
         Returns ``action`` itself (possibly edited), a replacement when the
         head of the chain had to go, or None when nothing is left. An indirect
         action is pruned once however many owners share it; one that cannot be
-        read goes.
+        read goes. An action that stays is returned as the caller's own
+        object: pikepdf hands every reader a new one, and an owner that got
+        another reader's would take the action for a replacement.
         """
         if depth > _MAX_DEPTH or _type(action) not in _DICTLIKE:
             return action
@@ -1013,8 +1071,8 @@ class _Pruner:
         if og is not None:
             done = self._actions.get(og, _MISSING)
             if done is not _MISSING:
-                return done
-            self._actions[og] = action  # in progress: a loop back here keeps it
+                return action if done is _SAME else done
+            self._actions[og] = _SAME  # in progress: a loop back here keeps it
         try:
             result = self._prune_action(action, depth)
         except Exception:  # noqa: BLE001 - an unreadable action goes
@@ -1022,7 +1080,33 @@ class _Pruner:
             self.kill(action)
             result = None
         if og is not None:
-            self._actions[og] = result
+            self._actions[og] = _SAME if result is action else result
+        return result
+
+    def _shared_array(self, array, decide):
+        """Decide an array once, however many owners share it.
+
+        ``decide(items)`` returns the items to keep. Returns None when all of
+        them stay, _MISSING when none does, or the replacement, which is
+        indirect when ``array`` is: the owners that shared the array share
+        its replacement, instead of each getting a copy.
+        """
+        key = array.objgen if array.is_indirect else None
+        if key is not None:
+            done = self._arrays.get(key, _MISSING)
+            if done is not _MISSING:
+                return done
+            self._arrays[key] = None  # in progress: a loop back here keeps it
+        items = _items(array)
+        kept = decide(items)
+        if len(kept) == len(items) and all(map(_same, kept, items)):
+            result = None
+        elif not kept:
+            result = _MISSING
+        else:
+            result = Array(kept) if key is None else self.pdf.make_indirect(Array(kept))
+        if key is not None:
+            self._arrays[key] = result
         return result
 
     def _prune_action(self, action, depth: int):
@@ -1030,13 +1114,14 @@ class _Pruner:
         nxt = fields.get("/Next")
         if nxt is not None:
             if _type(nxt) == _ARRAY:
-                subs = _items(nxt)
-                pruned = [self.prune_action(s, depth + 1) for s in subs]
-                kept = [s for s in pruned if s is not None]
-                if not kept:
+                replacement = self._shared_array(nxt, lambda subs: [
+                    pruned for pruned in (self.prune_action(sub, depth + 1) for sub in subs)
+                    if pruned is not None
+                ])
+                if replacement is _MISSING:
                     del action["/Next"]
-                elif len(kept) != len(subs) or any(a is not b for a, b in zip(kept, subs)):
-                    action["/Next"] = Array(kept)
+                elif replacement is not None:
+                    action["/Next"] = replacement
             else:
                 pruned = self.prune_action(nxt, depth + 1)
                 if pruned is None:
@@ -1054,12 +1139,19 @@ class _Pruner:
         if _type(rest) != _ARRAY:
             return rest
         # The head goes; its successors run in the same order without it.
+        # A /Next array shared by many dead actions makes its head take their
+        # place once, not once per owner.
+        key = rest.objgen if rest.is_indirect else None
+        if key is not None and key in self._heads:
+            return self._heads[key]
         subs = _items(rest)
         head, tail = subs[0], subs[1:]
         if tail and _type(head) in _DICTLIKE:
             own = head.get("/Next")
             own_list = [] if own is None else (_items(own) if _type(own) == _ARRAY else [own])
             head["/Next"] = Array(own_list + tail)
+        if key is not None:
+            self._heads[key] = head
         return head
 
     def _action_dead(self, action, fields: dict) -> bool:
@@ -1082,37 +1174,44 @@ class _Pruner:
             targets = fields.get("/T")
             if _type(targets) != _ARRAY:
                 return self.annot_dead(targets) or self._field_dead(targets)
-            items = _items(targets)
-            kept = [t for t in items if not self.annot_dead(t) and not self._field_dead(t)]
-            if len(kept) != len(items):
-                if not kept:
-                    return True
-                action["/T"] = Array(kept)
+            replacement = self._shared_array(targets, lambda items: [
+                t for t in items if not self.annot_dead(t) and not self._field_dead(t)])
+            if replacement is _MISSING:
+                return True
+            if replacement is not None:
+                action["/T"] = replacement
             return False
         if kind in (Name.SubmitForm, Name.ResetForm):
             fields_ = fields.get("/Fields")
             if _type(fields_) == _ARRAY:
-                items = _items(fields_)
-                kept = [f for f in items if not self._field_dead(f) and not self.annot_dead(f)]
-                if len(kept) != len(items):
-                    # An empty list would mean "every field", the opposite.
-                    if not kept:
-                        return True
-                    action["/Fields"] = Array(kept)
+                replacement = self._shared_array(fields_, lambda items: [
+                    f for f in items if not self._field_dead(f) and not self.annot_dead(f)])
+                # An empty list would mean "every field", the opposite.
+                if replacement is _MISSING:
+                    return True
+                if replacement is not None:
+                    action["/Fields"] = replacement
         return False
 
     def prune_additional_actions(self, owner, aa) -> None:
+        """Prune an /AA dictionary; one shared by many owners, once."""
         if _type(aa) not in _DICTLIKE:
             return
-        for trigger, action in list(aa.items()):
-            pruned = self.prune_action(action)
-            if pruned is None:
-                # A null entry is absent to pikepdf: there is nothing to delete.
-                if trigger in aa:
-                    del aa[trigger]
-            elif pruned is not action:
-                aa[trigger] = pruned
-        if not aa.keys() and "/AA" in owner:
+        key = aa.objgen if aa.is_indirect else None
+        emptied = self._aa_done.get(key) if key is not None else None
+        if emptied is None:
+            for trigger, action in list(aa.items()):
+                pruned = self.prune_action(action)
+                if pruned is None:
+                    # A null entry is absent to pikepdf: there is nothing to delete.
+                    if trigger in aa:
+                        del aa[trigger]
+                elif pruned is not action:
+                    aa[trigger] = pruned
+            emptied = not aa.keys()
+            if key is not None:
+                self._aa_done[key] = emptied
+        if emptied and "/AA" in owner:
             del owner["/AA"]
 
     # ── passes ──────────────────────────────────────────────────────────────
@@ -1636,6 +1735,7 @@ class _Pruner:
                     # stays, and the sweep reads them.
                     record.recheck = True
                     record.had_kids = True
+                    record.shared = True
                     continue
                 seen_kids.add(raw.objgen)
             items = _items(raw) if _type(raw) == _ARRAY else ([] if raw is None else [raw])
@@ -1744,7 +1844,10 @@ class _Pruner:
                     continue
                 if len(kept) != len(record.kids):
                     elem["/K"] = kept[0] if record.single and len(kept) == 1 else Array(kept)
-                    # Its text spoke for the content that went too.
+                if len(kept) != len(record.kids) or record.shared:
+                    # Its text spoke for the content that went too. An element
+                    # whose kids were read with another element cannot show
+                    # that nothing went, so its text goes as well.
                     for key in record.texts:
                         if key in elem:
                             del elem[key]
@@ -2174,7 +2277,7 @@ class _Record:
 
     __slots__ = (
         "obj", "parent", "page", "kids", "kept", "alive", "had_kids", "single",
-        "pg", "p", "ref", "texts", "recheck",
+        "pg", "p", "ref", "texts", "recheck", "shared",
     )
 
     def __init__(self, obj, parent, page):
@@ -2191,3 +2294,4 @@ class _Record:
         self.ref = None
         self.texts: list = []
         self.recheck = False
+        self.shared = False  # its /K was read with another element
