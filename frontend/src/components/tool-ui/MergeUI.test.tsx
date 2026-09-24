@@ -93,6 +93,28 @@ describe("Merge workspace", { timeout: 20_000 }, () => {
         expect(uploadFiles).not.toHaveBeenCalled();
     });
 
+    it("refuses PDFs that would take the merge past the 500 MB one upload can carry, before anything is sent", async () => {
+        const sized = (name: string, mb: number) => {
+            const file = pdf(name);
+            Object.defineProperty(file, "size", { value: mb * 1024 * 1024 });
+            return file;
+        };
+        render(<MergeUI />);
+        addFiles([sized("volume-1.pdf", 300), sized("volume-2.pdf", 150)]);
+        await waitFor(() => expect(screen.getByRole("button", { name: "Merge 2 PDFs" })).toBeEnabled());
+        addFiles([sized("volume-3.pdf", 60)]);
+        expect(screen.getByRole("alert")).toHaveTextContent(
+            "You can merge up to 500 MB at a time. Adding “volume-3.pdf” would make 510.0 MB, so it was not added.");
+        addFiles([sized("volume-3.pdf", 30), sized("volume-4.pdf", 30)]);
+        expect(screen.getByRole("alert")).toHaveTextContent(
+            "You can merge up to 500 MB at a time. Adding these 2 PDFs would make 510.0 MB, so they were not added.");
+        expect(screen.getAllByRole("button", { name: /^Remove .*pdf$/ })).toHaveLength(2);
+        addFiles([sized("volume-3.pdf", 49)]);
+        await waitFor(() => expect(screen.getByRole("button", { name: "Merge 3 PDFs" })).toBeEnabled());
+        expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+        expect(uploadFiles).not.toHaveBeenCalled();
+    });
+
     it("keeps a large file in the merge while avoiding an excessive preview allocation", async () => {
         const large = pdf("large.pdf");
         Object.defineProperty(large, "size", { value: 70 * 1024 * 1024 });

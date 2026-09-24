@@ -19,6 +19,9 @@ export interface Script {
     uploadMs: number;
     /** The connection dies this far into the upload: nothing more is sent or answered. */
     stallAfterMs?: number;
+    /** The request fails this far into the upload with a network error (status 0),
+     *  as a dropped connection does, or an answer the page may not read. */
+    failAfterMs?: number;
     /** From the last byte sent to the answer's headers. Leave out to never answer. */
     answerAfterMs?: number;
     /** How long the answer's body takes to arrive, reported every second. */
@@ -69,6 +72,13 @@ export function installNetwork(script: Script | ((index: number) => Script)) {
             };
             if (signal?.aborted) { onAbort(); return; }
             signal?.addEventListener("abort", onAbort, { once: true });
+            if (s.failAfterMs !== undefined) {
+                timer = setTimeout(() => {
+                    signal?.removeEventListener("abort", onAbort);
+                    reject(new TypeError("Failed to fetch"));
+                }, s.failAfterMs);
+                return;
+            }
             // fetch() resolves once the headers are in; a dead connection never answers.
             if (s.stallAfterMs === undefined && s.answerAfterMs !== undefined) {
                 timer = setTimeout(() => {
@@ -120,9 +130,13 @@ export function installNetwork(script: Script | ((index: number) => Script)) {
             const total = bodySize(body);
             // A request's own `timeout` attribute limits the whole request, upload included.
             if (this.timeout > 0) this.later(this.timeout, () => this.end("timeout"));
-            const sending = s.stallAfterMs ?? s.uploadMs;
+            const sending = s.failAfterMs ?? s.stallAfterMs ?? s.uploadMs;
             for (let t = 1000; t <= sending; t += 1000) {
                 this.later(t, () => this.progress(this.upload.onprogress, Math.min(total, Math.round((total * t) / s.uploadMs)), total));
+            }
+            if (s.failAfterMs !== undefined) {
+                this.later(s.failAfterMs, () => this.end("error"));
+                return;
             }
             if (s.stallAfterMs !== undefined) return;
             this.later(s.uploadMs, () => {
