@@ -274,6 +274,33 @@ def test_a_file_that_is_no_image_at_all_is_a_400_naming_it(client):
     assert response.json()["detail"] == f"notes.png is not a {ACCEPTED} image."
 
 
+def test_a_file_of_one_of_these_formats_that_pillow_cannot_open_is_called_unreadable(client):
+    # Its signature says PNG, but its header is broken: not "not a PNG".
+    broken = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\x0dIHDR" + bytes(20)
+
+    response = client.post("/api/image-to-pdf", files=[("files", ("shot.png", broken, "image/png"))])
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "shot.png could not be read as an image."
+
+
+def test_jpegs_that_have_to_be_decoded_are_named_in_the_budget_refusal(client, monkeypatch):
+    from backend.tests.test_image_to_pdf_writer import LOSSLESS_JPEG  # 16 x 12, so 192 pixels
+
+    monkeypatch.setattr(image_to_pdf_service, "MAX_DECODED_MEGAPIXELS", 0.0003)
+    _no_page_may_be_made(monkeypatch)
+    one = [("files", ("scan.png", _image("PNG", (16, 12)), "image/png")), ("files", ("x-ray.jpg", LOSSLESS_JPEG, "image/jpeg"))]
+    two = one[1:] * 2
+
+    for files, tail in ((one, "That includes a JPEG that can't be copied into the PDF as it is."),
+                        (two, "That includes 2 JPEGs that can't be copied into the PDF as they are.")):
+        response = client.post("/api/image-to-pdf", files=files)
+        assert response.status_code == 413
+        assert response.json()["detail"] == (
+            "One PDF can take up to 0.0003 megapixels of images that have to be decoded; these add up to 1. " + tail
+        )
+
+
 def test_an_image_cut_short_is_a_400_naming_it(client):
     whole = _image("PNG", (600, 400), colour=(10, 20, 30))
     cut = whole[: len(whole) // 2]

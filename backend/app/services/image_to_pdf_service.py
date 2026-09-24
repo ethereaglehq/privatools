@@ -53,6 +53,7 @@ _SVG_EXTS = {".svg"}
 # has no entry of its own. SVGs go by their extension to cairosvg instead.
 _OPEN_FORMATS = ("JPEG", "PNG", "GIF", "BMP", "TIFF", "WEBP", "HEIF")
 _ACCEPTED = "JPEG, PNG, WebP, HEIC, TIFF, BMP or GIF"
+_HEIF_BRANDS = (b"heic", b"heix", b"heim", b"heis", b"hevc", b"hevx", b"hevm", b"hevs", b"mif1", b"msf1")
 
 # Page sizes in PDF points, as ReportLab defines them.
 A4 = (595.2755905511812, 841.8897637795277)
@@ -232,6 +233,17 @@ def _is_server_fault(exc: BaseException) -> bool:
     return isinstance(exc, OSError) and exc.errno is not None
 
 
+def _signed_as_ours(path: str) -> bool:
+    """Whether a file starts the way one of the accepted formats does, so a
+    file Pillow can't open is a damaged image rather than something else."""
+    with open(path, "rb") as fh:
+        head = fh.read(12)
+    return (head.startswith((b"\xff\xd8\xff", b"\x89PNG\r\n\x1a\n", b"GIF87a", b"GIF89a", b"BM",
+                             b"II*\x00", b"MM\x00*", b"II+\x00", b"MM\x00+"))
+            or (head[:4] == b"RIFF" and head[8:12] == b"WEBP")
+            or (head[4:8] == b"ftyp" and head[8:12] in _HEIF_BRANDS))
+
+
 def _jpeg_frame(path: str) -> int | None:
     """The JPEG's frame marker (SOFn), read from its header, or None if there is none to read."""
     with open(path, "rb") as fh:
@@ -270,6 +282,8 @@ def _source(path: str, name: str) -> _Source:
     except Image.DecompressionBombError:
         raise ImageTooLarge(f"{name} has more than {cap // 1_000_000:,} megapixels, the most one image can have.") from None
     except UnidentifiedImageError:
+        if _signed_as_ours(path):
+            raise UnreadableImage(f"{name} could not be read as an image.") from None
         raise UnreadableImage(f"{name} is not a {_ACCEPTED} image.") from None
     except Exception as exc:
         if _is_server_fault(exc):
