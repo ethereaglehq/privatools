@@ -126,8 +126,8 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Remove Bates Numbering](https://privatools.me/tool/bates-remove): Strip Bates stamps back off a PDF
 - [PDF Accessibility Checker](https://privatools.me/tool/accessibility-check): Audit a PDF against PDF/UA and WCAG
 - [PDF/A Validator](https://privatools.me/tool/pdfa-validator): Run basic PDF/A indicator checks
-- [Verify Digital Signature](https://privatools.me/tool/verify-signature): Look for signature fields in a PDF
-- [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Clear the document info fields of a PDF
+- [Verify Digital Signature](https://privatools.me/tool/verify-signature): Check that a PDF's signatures still match the file
+- [Sanitize Document](https://privatools.me/tool/sanitize-pdf): Remove scripts, attachments and hidden layers from a PDF
 - [Reverse PDF](https://privatools.me/tool/reverse-pdf): Reverse the page order of a PDF document
 - [PDF Booklet](https://privatools.me/tool/booklet-pdf): Rearrange pages for booklet printing
 - [Batch Compress PDF](https://privatools.me/tool/batch-compress-pdf): Compress multiple PDFs at once in parallel

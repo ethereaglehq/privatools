@@ -28,7 +28,8 @@ CONSTRAINTS = {
     "/pipeline/validate": ["Validates the pipeline definition without processing a file. Use supportedSteps from /pipeline/templates."],
     "/smart-redact": ["needles is a JSON-encoded array of up to 500 text strings. The API applies supplied terms; browser-side entity detection is not part of this endpoint."],
     "/pdf-to-long-image": ["format accepts png, jpg, or jpeg. At most 200 PDF pages; rendering DPI is clamped to 36–200."],
-    "/verify-signature": ["Detects signature fields; it does not perform cryptographic signature verification."],
+    "/verify-signature": ["Checks that each signature matches the file and the certificate embedded with it, and reports what was saved after signing. Certificates are not checked against a trust list or for revocation.", "A signature made with SHA-1 or MD5, which can be forged, has status weak, never valid; digest_algorithm names the digest of every checked signature.", "The check stops after 10 to 60 seconds, depending on file size; a signature it could not finish has status unchecked and a reason."],
+    "/sanitize": ["A file whose layered page content decodes to more than 6 MiB, or needs more memory than the server allows, is refused with 413. Layered content that will not parse is refused with 400, rather than returned with its hidden layers left in it.", "The work stops after 20 to 90 seconds, depending on file size, with 504."],
 }
 
 

@@ -71,6 +71,8 @@ def test_the_gap_is_documented_where_it_still_exists():
     known = {
         "crop-pdf", "auto-crop", "resize-pdf", "invert-colors",
         "remove-blank-pages", "transparent-background", "add-hyperlinks",
+        # Has a service (sanitize_service.sanitize_pdf), not yet registered
+        # as a pipeline step.
         "sanitize-pdf",
     }
     surprises = sorted(ui_only - known)

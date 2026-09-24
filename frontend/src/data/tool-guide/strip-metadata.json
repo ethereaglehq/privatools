@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload PDF(s)",
-      "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."
+      "text": "Drop one or many PDFs up to about 250 MB each. Multi-file batches are supported."
     },
     {
       "name": "PrivaTools removes all metadata",
@@ -24,7 +24,7 @@
     },
     {
       "q": "Is this the same as Sanitize?",
-      "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and Movie and RichMedia (Flash) annotations; it leaves JavaScript, embedded files and XMP in place."
+      "a": "No — Strip Metadata removes only informational fields, including XMP. Sanitize clears those too, and also removes JavaScript, risky links and actions, embedded files, media and switched-off layers."
     }
   ]
 }

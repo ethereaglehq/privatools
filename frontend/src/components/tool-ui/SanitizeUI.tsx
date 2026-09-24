@@ -11,7 +11,7 @@ export function SanitizeUI() {
             outputExt="pdf"
             dropIcon={ShieldCheck}
             dropTitle="Drop PDF to sanitize"
-            dropSubtitle="Strips embedded scripts, hidden data, and malicious content"
+            dropSubtitle="Removes scripts, risky links, attachments and hidden layers"
             actionLabel="Sanitize PDF"
             processingLabel="Sanitizing…"
             doneTitle="Sanitized"

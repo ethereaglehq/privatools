@@ -42,7 +42,7 @@
   <url><loc>https://privatools.me/tool/protect-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
   <url><loc>https://privatools.me/tool/unlock-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
   <url><loc>https://privatools.me/tool/redact-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.8</priority></url>
-  <url><loc>https://privatools.me/tool/strip-metadata</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tool/strip-metadata</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/delete-annotations</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/metadata</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/html-to-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
@@ -112,8 +112,8 @@
   <url><loc>https://privatools.me/tool/bates-remove</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/accessibility-check</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/pdfa-validator</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tool/verify-signature</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
-  <url><loc>https://privatools.me/tool/sanitize-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tool/verify-signature</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
+  <url><loc>https://privatools.me/tool/sanitize-pdf</loc><lastmod>2026-09-24</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/reverse-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/booklet-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
   <url><loc>https://privatools.me/tool/batch-compress-pdf</loc><lastmod>2026-09-18</lastmod><priority>0.6</priority></url>
