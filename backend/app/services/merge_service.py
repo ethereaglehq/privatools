@@ -23,7 +23,7 @@ from ..utils.pdf_accessibility import (
 from ..utils.cleanup import ensure_temp_dir, safe_open_pdf
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
-from ..utils.page_removal import copy_pages, prune_to_page_tree
+from ..utils.page_removal import copy_pages, prune_structure_tree_to_pages, prune_to_page_tree
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +80,13 @@ def merge_pdfs(
                     indices = _parse_page_range(spec, total)
                     selected = indices
                     pages_left_out = pages_left_out or len(set(indices)) < total
+                    # Before the copy: a page that reaches the structure tree
+                    # (a crafted file's can) would copy it whole, tags of the
+                    # pages left out included, and add_source uses that copy.
+                    try:
+                        prune_structure_tree_to_pages(src, indices)
+                    except Exception:  # add_source tries again, or drops the tags
+                        logger.debug("merge: structure tree not pruned before the copy", exc_info=True)
                 copy_pages(dst, src, indices)
                 total_pages_out += len(indices)
                 # Must happen here, while `src` is still open and immediately
@@ -88,17 +95,18 @@ def merge_pdfs(
                 struct_merger.add_source(src, first_page, len(dst.pages) - 1, pages=selected)
 
         struct_merger.finalize()
-        if pages_left_out:
-            # Pages a range left out must not ride along with the links, form
-            # fields and threads of the pages merged.
-            prune_to_page_tree(dst)
 
         # Unique per-request path (UUID) — a fixed "merged.pdf" over the shared
         # temp dir let concurrent /merge requests clobber each other's output
         # (cross-user PDF leak + corrupt downloads). The route sets the
         # user-facing download filename separately, so this is transparent.
         output = temp_output("merged", "pdf")
-        dst.save(str(output))
+        if pages_left_out:
+            # Pages a range left out must not ride along with the links, form
+            # fields and threads of the pages merged.
+            prune_to_page_tree(dst).save(str(output))
+        else:
+            dst.save(str(output))
     finally:
         # pikepdf.Pdf doesn't have a true close() in all builds, but we drop
         # the handle so the underlying file descriptors release promptly.

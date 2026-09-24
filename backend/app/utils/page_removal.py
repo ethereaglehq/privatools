@@ -23,31 +23,57 @@ Pages disappear in two ways here, and one pruner serves both:
   page answers, its bead of an article thread. And links to it stay, leading
   nowhere.
 
-The pruner then makes the document agree with its page tree. Destinations,
-links, bookmarks, named destinations, form fields, threads and the structure
-tree lose whatever points at a page that is not in it, and a final sweep over
-everything reachable from the trailer drops any reference to a removed object
-that is left. The sweep is the guarantee. The passes before it are what keep
-the rest of the document working: a bookmark whose page went is removed but its
-children are kept, a field keeps its widgets on the remaining pages, and a
-tagged document stays tagged.
+The pruner then makes the document agree with its page tree, in two layers.
+
+Repair passes keep the rest of the document working. Destinations, links,
+bookmarks, named destinations, form fields, threads and the structure tree lose
+whatever points at a page that is not in the tree: a bookmark whose page went
+is removed and its children move up, a field keeps its widgets on the remaining
+pages, a tagged document stays tagged. A piece a pass cannot read is dropped,
+or left to the sweep when it belongs to a page that stays, and the pass carries
+on. A pass that fails outright drops the whole structure it was repairing
+(the outline, the form, the tags, the threads) rather than leave it half done.
+
+A sweep then walks everything reachable from the trailer and cuts any
+reference to a removed page, annotation, bead, field, structure element or
+thread that is left, to any other page object outside the page tree, and to
+what a damaged or crafted file hides from the passes (see :meth:`_Pruner.sweep`).
+It skips two things to stay fast: structure elements the tree pass read in
+full, and, inside dictionaries whose type the PDF specification fixes (fonts,
+pages, annotations, XObjects, functions, shadings), direct values the
+specification limits to numbers, such as a font's widths. Whatever points at
+them, the catalog, the page tree and the kept pages are never removed or
+rewritten.
+
+A crafted file could hide a page reference in those skipped values, so
+:meth:`PageRemoval.save` checks what it wrote, with a walk that shares nothing
+with the sweep. If any page object outside the page tree reached the output,
+it sweeps again skipping nothing and saves again; if one is still there it
+deletes the output and raises :class:`PageLeakError` (HTTP 422) rather than
+return a file that holds removed pages.
 
 Not handled, because none of it points at a page: document-level objects that
-only a removed page used, such as an optional-content layer or a named
-JavaScript, stay in the file.
+only a removed page used, such as an optional-content layer, a named
+JavaScript, an attachment or an XMP thumbnail, stay in the file.
 
-pikepdf reads an object from the file the first time it is touched, and each
-key lookup costs about a microsecond, so the passes read every object they
-visit once, through ``items()``.
+Performance: pikepdf reads an object from the file the first time it is
+touched, and each key lookup costs about a microsecond, so the passes read each
+object once, through ``items()``. Shared objects (an action chain shared by
+many links, a bead ring shared by many threads, an array shared by many pages)
+are handled once, not once per owner: hostile files are built that way.
 """
 
 from __future__ import annotations
 
 import logging
 from collections.abc import Callable, Iterable
+from decimal import Decimal
+from pathlib import Path
 
 import pikepdf
-from pikepdf import Array, Dictionary, Name, ObjectType, String
+from pikepdf import Array, Name, ObjectType
+
+from .exceptions import ToolError
 
 logger = logging.getLogger(__name__)
 
@@ -55,59 +81,117 @@ logger = logging.getLogger(__name__)
 # action chains, and the length of linked lists (outline siblings, bead rings).
 _MAX_DEPTH = 64
 _MAX_CHAIN = 1_000_000
+# The sweep keeps a dictionary's entries, read to judge it, for its visit, but
+# only while fewer objects than this wait: a wide array of dictionaries would
+# otherwise hold all their entries at once.
+_HELD = 4096
 
 _DICT = ObjectType.dictionary
 _ARRAY = ObjectType.array
 _STREAM = ObjectType.stream
 _STRING = ObjectType.string
 _NAME = ObjectType.name_
-
-# Keys of bookmarks and structure elements whose values the passes below
-# check themselves. A vetted object's other containers go to the sweep.
-_OUTLINE_KEYS = frozenset((
-    "/Type", "/Title", "/Parent", "/Prev", "/Next", "/First", "/Last",
-    "/Count", "/Dest", "/A", "/SE", "/C", "/F",
-))
-_ELEMENT_KEYS = frozenset((
-    "/Type", "/S", "/P", "/K", "/Pg", "/Ref", "/ID", "/C", "/R", "/T",
-    "/Lang", "/Alt", "/E", "/ActualText", "/PhoneticAlphabet", "/Phoneme",
-))
+# A stream's dictionary works wherever a dictionary is expected: PDFium reads
+# it there (GetDictFor, GetDictAt), so the passes must too.
+_DICTLIKE = (_DICT, _STREAM)
+_CONTAINERS = (_DICT, _ARRAY, _STREAM)
+# What pikepdf hands back for PDF numbers, booleans and null.
+_SCALARS = frozenset((int, bool, float, Decimal, type(None)))
+# Compared on every object the sweep visits. pikepdf builds a new Name on each
+# attribute access (``Name.Page`` costs a microsecond), so these are built once.
+_PAGE = Name.Page
+_ANNOT = Name.Annot
+_BEAD = Name.Bead
+_CONTENT_TYPES = frozenset((Name.MCR, Name.OBJR))
+# What the sweep judges an object by its /Type as. _ROOT: a type a document has
+# one of, reached only from its catalog (and a root from its own items); another
+# one in the output was carried in with a copied page by a reference no valid
+# file makes, with everything under it.
+_SWEPT_PAGE, _SWEPT_ROOT, _SWEPT_ELEMENT, _SWEPT_BEAD, _SWEPT_ANNOT = range(5)
+_SWEPT_TYPES = {
+    Name.Page: _SWEPT_PAGE,
+    Name.Catalog: _SWEPT_ROOT,
+    Name.Outlines: _SWEPT_ROOT,
+    Name.StructTreeRoot: _SWEPT_ROOT,
+    Name.StructElem: _SWEPT_ELEMENT,
+    Name.Bead: _SWEPT_BEAD,
+    Name.Annot: _SWEPT_ANNOT,
+}
 
 # Keys whose values the PDF specification limits to numbers and names: a
-# font's widths, boxes, matrices, function domains. The sweep does not walk
-# them; a font's /W alone can hold thousands of numbers, copied into every part
-# a split writes.
+# font's widths, boxes, matrices, function domains. The sweep skips them only
+# as direct values of dictionaries of a type the specification defines; a
+# font's /W alone can hold thousands of numbers, copied into every part a split
+# writes.
 _NUMBERS_ONLY = frozenset((
     "/W", "/W2", "/Widths", "/DW2", "/FontBBox", "/FontMatrix", "/Differences",
     "/MediaBox", "/CropBox", "/BleedBox", "/TrimBox", "/ArtBox", "/BBox",
     "/Matrix", "/Rect", "/QuadPoints", "/Vertices", "/InkList", "/Decode",
     "/Domain", "/Range", "/Encode", "/Bounds", "/Size", "/Coords",
 ))
+_TYPED = frozenset(("/Font", "/FontDescriptor", "/Page", "/Pages", "/Annot", "/XObject", "/Pattern"))
+_TYPED_SUBTYPES = frozenset((
+    "/Image", "/Form", "/PS", "/Type0", "/Type1", "/MMType1", "/Type3", "/TrueType",
+    "/CIDFontType0", "/CIDFontType2",
+))
+_TYPE_MARKERS = frozenset(("/FunctionType", "/ShadingType", "/PatternType"))
+
+# Keys of a structure element whose values the tree pass follows itself.
+# Everything else an element holds is left to the sweep.
+_ELEMENT_WALKED = frozenset(("/K", "/P", "/Pg", "/Ref"))
+# Text an element carries for all its content: once part of that content was
+# on a removed page, the text describes the removed part too.
+_ELEMENT_TEXTS = ("/ActualText", "/Alt", "/E")
 
 _LIVE = "live"
 _DEAD = "dead"
 _UNKNOWN = "unknown"
+_MISSING = object()
+# Stands for "a removed page" where a structure element's /Pg is not a page.
+_REMOVED_PAGE = object()
+# Returned for something in a name or number tree's place that is no tree node.
+_FOREIGN = object()
 
 
-def remove_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> None:
-    """Delete the pages at the 0-based ``indices`` and everything pointing at them."""
-    doomed = sorted(set(indices), reverse=True)
+class PageLeakError(ToolError):
+    """Removed pages would still be in the output, so none is returned (HTTP 422)."""
+
+    status_code = 422
+    default_detail = (
+        "The pages could not be removed completely: something in this PDF still "
+        "points to them in a way that cannot be undone safely, so no file was made."
+    )
+
+
+def remove_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> PageRemoval:
+    """Delete the pages at the 0-based ``indices`` and everything pointing at them.
+
+    Save the result with :meth:`PageRemoval.save`.
+    """
     pages = _page_objs(pdf)
+    doomed = sorted(set(indices), reverse=True)
     removed = [pages[i] for i in doomed]
+    if doomed:
+        _repair_page_count(pdf, len(pages))
     for i in doomed:
         del pdf.pages[i]
-    _Pruner(pdf, removed=removed).run()
+    pruner = _Pruner(pdf, removed=removed)
+    pruner.run()
+    return PageRemoval(pdf, pruner)
 
 
-def prune_to_page_tree(pdf: pikepdf.Pdf) -> None:
+def prune_to_page_tree(pdf: pikepdf.Pdf) -> PageRemoval:
     """Drop every reference to a page that is not in ``pdf``'s page tree.
 
     For a document built by copying pages in (:class:`PageCopier`), right
     before it is saved. Anything that belongs to no page of ``pdf``, such as an
     annotation in no page's /Annots or a bead in no page's /B, came from a page
-    that was left behind and is dropped with it.
+    that was left behind and is dropped with it. Save the result with
+    :meth:`PageRemoval.save`.
     """
-    _Pruner(pdf, removed=None).run()
+    pruner = _Pruner(pdf, removed=None)
+    pruner.run()
+    return PageRemoval(pdf, pruner)
 
 
 def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> None:
@@ -117,8 +201,9 @@ def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> N
     /Pg of an element whose page was not copied into null, and a null /Pg reads
     exactly like no /Pg at all, so the elements of the pages left behind cannot
     be told apart afterwards. The tree has to be pruned in the source, while
-    every page reference is intact, and copied after. Nothing else changes,
-    and ``pdf`` must not be saved afterwards.
+    every page reference is intact, and copied after. Only the structure tree
+    changes, and, when nothing tagged survives, the pages' /StructParents and
+    the catalog's /MarkInfo /Marked. ``pdf`` must not be saved afterwards.
     """
     keep = set(indices)
     pages = _page_objs(pdf)
@@ -132,6 +217,50 @@ def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> N
     pruner.prune_structure_tree(pdf.Root)
 
 
+class PageRemoval:
+    """A document whose removed pages have been pruned, ready to save."""
+
+    def __init__(self, pdf: pikepdf.Pdf, pruner: _Pruner):
+        self.pdf = pdf
+        self._pruner = pruner
+
+    def save(self, path) -> None:
+        """Save to ``path``, and refuse an output that still holds removed pages.
+
+        After saving, every object the save wrote, that is everything reachable
+        from the trailer, is walked again and each page object checked against
+        the page tree. A stray page means a reference the sweep skipped: the
+        document is swept again with no shortcuts and saved again. If a stray
+        page is still there, the output is deleted and :class:`PageLeakError`
+        raised. An output that could not be saved or checked is deleted too,
+        and the error raised.
+
+        The check walks the document in memory rather than reading the file
+        back: on a 500-page file that costs a quarter of the time, and it does
+        not hold a second parsed copy of every object.
+        """
+        path = str(path)
+        try:
+            self.pdf.save(path)
+            stray = _pages_outside_tree(self.pdf)
+            if not stray:
+                return
+            logger.warning(
+                "page removal: %d page object(s) outside the page tree reached the "
+                "output; sweeping again without shortcuts", stray,
+            )
+            self._pruner.sweep(exhaustive=True)
+            self.pdf.save(path)
+            stray = _pages_outside_tree(self.pdf)
+            if stray:
+                logger.error("page removal: %d page object(s) could not be cut; output refused", stray)
+                raise PageLeakError()
+        except BaseException:
+            # Whatever stopped the check, an output it did not pass is not left behind.
+            Path(path).unlink(missing_ok=True)
+            raise
+
+
 class PageCopier:
     """Copies pages out of one document into new ones.
 
@@ -141,6 +270,12 @@ class PageCopier:
     copied too, and by a null one when it is not, which
     :func:`prune_to_page_tree` then removes. Build one copier per source and
     reuse it across the documents made from it, so the name tree is read once.
+
+    Before a page is copied, the structure destinations (/SD) of the GoTo
+    actions on it are deleted from the source. An /SD names a structure
+    element, and through its /P chain the whole unpruned structure tree would
+    be copied with the page, tags of the pages left behind included. The /D
+    each such action must also have keeps the link working.
     """
 
     def __init__(self, src: pikepdf.Pdf):
@@ -148,6 +283,8 @@ class PageCopier:
         self._pages: list | None = None
         self._string_dests: dict[bytes, object] | None = None
         self._name_dests: dict[str, object] | None = None
+        self._stripped: set = set()
+        self._strip_seen: set = set()
 
     def copy(self, dst: pikepdf.Pdf, indices: Iterable[int]) -> None:
         """Append ``src.pages[i]`` for each index to ``dst``, in order."""
@@ -155,17 +292,49 @@ class PageCopier:
         if self._pages is None:
             # One pass: `pages[i]` costs a copy of the whole page list.
             self._pages = [page for page in self.src.pages]
+        for i in indices:
+            page = self._pages[i].obj
+            if page.objgen not in self._stripped:
+                self._stripped.add(page.objgen)
+                self._strip_structure_destinations(page)
         start = len(dst.pages)
         for i in indices:
             dst.pages.append(self._pages[i])
         copied = _page_objs(dst)[start:]
-        page_map: dict[tuple[int, int], Dictionary] = {}
+        page_map: dict[tuple[int, int], object] = {}
         for i, page in zip(indices, copied):
             page_map.setdefault(self._pages[i].obj.objgen, page)
+        seen: set = set()  # one walk per copy: shared actions are read once
         for page in copied:
-            for owner, key, value in _destination_slots(page):
+            for owner, key, value in _destination_slots(page, seen):
                 if _type(value) in (_STRING, _NAME):
-                    self._resolve(owner, key, value, page_map)
+                    try:
+                        self._resolve(owner, key, value, page_map)
+                    except Exception:  # noqa: BLE001 - left as it is; the pruner judges it
+                        logger.debug("page copy: named destination not resolved", exc_info=True)
+
+    def _strip_structure_destinations(self, page) -> None:
+        owners = [page]
+        for annot in _array(page.get("/Annots")):
+            if _type(annot) not in _DICTLIKE:
+                continue
+            owners.append(annot)
+            parent, steps = annot.get("/Parent"), 0
+            while _type(parent) in _DICTLIKE and steps < _MAX_DEPTH:
+                if parent.is_indirect:
+                    if parent.objgen in self._strip_seen:
+                        break
+                    self._strip_seen.add(parent.objgen)
+                owners.append(parent)
+                parent, steps = parent.get("/Parent"), steps + 1
+        for owner in owners:
+            try:
+                for action in _owner_actions(owner):
+                    for step in _action_chain(action, self._strip_seen):
+                        if step.get("/S") == Name.GoTo and "/SD" in step:
+                            del step["/SD"]
+            except Exception:  # noqa: BLE001 - one unreadable owner must not stop the copy
+                logger.debug("page copy: could not read an action", exc_info=True)
 
     def _resolve(self, owner, key: str, value, page_map: dict) -> None:
         if _type(value) == _STRING:
@@ -176,7 +345,7 @@ class PageCopier:
             return  # not a name the source defines either; nothing to resolve
         view = _items(dest)
         target = view.pop(0) if view else None
-        page = page_map.get(target.objgen) if _is_indirect_dict(target) else None
+        page = page_map.get(target.objgen) if _is_indirect_dictlike(target) else None
         if page is None or any(getattr(v, "is_indirect", False) for v in view):
             view = [Name.Fit]
         owner[key] = Array([page, *view])
@@ -185,7 +354,7 @@ class PageCopier:
         if self._string_dests is None:
             self._string_dests = {}
             names = self.src.Root.get("/Names")
-            tree = names.get("/Dests") if _type(names) == _DICT else None
+            tree = names.get("/Dests") if _type(names) in _DICTLIKE else None
             for key, value in _tree_entries(tree, "/Names"):
                 if _type(key) == _STRING:
                     self._string_dests.setdefault(bytes(key), value)
@@ -195,7 +364,7 @@ class PageCopier:
         if self._name_dests is None:
             self._name_dests = {}
             dests = self.src.Root.get("/Dests")
-            if _type(dests) == _DICT:
+            if _type(dests) in _DICTLIKE:
                 self._name_dests.update(dests.items())
         return _explicit(self._name_dests.get(name))
 
@@ -212,8 +381,8 @@ def _type(obj):
     return getattr(obj, "_type_code", None)
 
 
-def _is_indirect_dict(obj) -> bool:
-    return _type(obj) == _DICT and obj.is_indirect
+def _is_indirect_dictlike(obj) -> bool:
+    return _type(obj) in _DICTLIKE and obj.is_indirect
 
 
 def _items(array) -> list:
@@ -222,6 +391,18 @@ def _items(array) -> list:
 
 def _array(obj) -> list:
     return _items(obj) if _type(obj) == _ARRAY else []
+
+
+def _read_array(obj, cache: dict) -> list:
+    """The items of an array, read once however many pages share it."""
+    if _type(obj) != _ARRAY:
+        return []
+    if not obj.is_indirect:
+        return _items(obj)
+    items = cache.get(obj.objgen)
+    if items is None:
+        items = cache[obj.objgen] = _items(obj)
+    return items
 
 
 def _first(array):
@@ -235,101 +416,230 @@ def _page_objs(pdf: pikepdf.Pdf) -> list:
     return [page.obj for page in pdf.pages]
 
 
+def _int_key(value, keys: set) -> None:
+    """Add a ParentTree key; anything but an integer is not one."""
+    if type(value) is int:
+        keys.add(value)
+
+
+def _repair_page_count(pdf: pikepdf.Pdf, count: int) -> None:
+    """Make the root /Count agree with the pages qpdf found.
+
+    Removing a page makes qpdf rebuild the tree from /Kids and then refuse a
+    root /Count that disagrees ("/Count is wrong after flattening pages
+    tree"); the number of pages it found is the right one.
+    """
+    try:
+        node = pdf.Root.get("/Pages")
+        if _type(node) in _DICTLIKE and node.get("/Count") != count:
+            node["/Count"] = count
+    except Exception:  # noqa: BLE001 - qpdf reports the problem itself if it matters
+        logger.debug("page removal: could not repair /Count", exc_info=True)
+
+
+def _pages_outside_tree(pdf: pikepdf.Pdf) -> int:
+    """Page objects reachable from the trailer that the page tree does not list.
+
+    That is what a save writes: qpdf writes every object reachable from the
+    trailer, and nothing else. The walk shares nothing with the sweep, neither
+    its shortcuts nor its judgements, and reads every value. A page dictionary
+    written in place, which no page tree can list, counts too.
+    """
+    listed = {page.objgen for page in _page_objs(pdf)}
+    names = pdf.Root.get("/Names")
+    if _type(names) in _DICTLIKE:
+        # Template pages live outside the page tree on purpose (PDF 12.7.6).
+        for _, page in _tree_entries(names.get("/Templates"), "/Names"):
+            if _is_indirect_dictlike(page):
+                listed.add(page.objgen)
+    seen: set = set()
+    stray = 0
+    stack = [pdf.trailer]
+    while stack:
+        obj = stack.pop()
+        if obj._type_code == _ARRAY:
+            values = obj
+        else:
+            fields = obj.items().mapping
+            if fields.get("/Type") == _PAGE and not (obj.is_indirect and obj.objgen in listed):
+                stray += 1
+            values = fields.values()
+        for value in values:
+            if value.__class__ in _SCALARS or getattr(value, "_type_code", None) not in _CONTAINERS:
+                continue
+            if value.is_indirect:
+                og = value.objgen
+                if og in seen:
+                    continue
+                seen.add(og)
+            stack.append(value)
+    return stray
+
+
 def _explicit(dest):
     """The explicit destination array behind a named-destination value."""
-    if _type(dest) == _DICT:
+    if _type(dest) in _DICTLIKE:
         dest = dest.get("/D")
     return dest if _type(dest) == _ARRAY else None
 
 
-def _is_annotation(fields: dict) -> bool:
-    return fields.get("/Type") == Name.Annot or ("/Rect" in fields and "/Subtype" in fields)
+def _is_bead(obj) -> bool:
+    """A bead has a rectangle and neighbours, or says it is one.
+
+    Not its page: in a copy, the /P of a bead whose page was left behind is
+    null, and that bead must still be found to be removed.
+    """
+    return ("/R" in obj and ("/N" in obj or "/V" in obj)) or obj.get("/Type") == _BEAD
 
 
-def _destination_slots(page: Dictionary):
-    """(owner, key, value) for each destination on a page and its annotations."""
-    for annot in _array(page.get("/Annots")):
-        if _type(annot) != _DICT:
-            continue
-        fields = dict(annot.items())
-        if "/Dest" in fields:
-            yield annot, "/Dest", fields["/Dest"]
-        yield from _action_slots(fields.get("/A"), set(), 0)
-        aa = fields.get("/AA")
-        if _type(aa) == _DICT:
-            for _, action in aa.items():
-                yield from _action_slots(action, set(), 0)
-    aa = page.get("/AA")
-    if _type(aa) == _DICT:
+def _is_annotation(obj) -> bool:
+    """For a pikepdf dictionary or stream, or a plain dict of its entries."""
+    return obj.get("/Type") == _ANNOT or ("/Rect" in obj and "/Subtype" in obj)
+
+
+def _is_spec_typed(pairs) -> bool:
+    """Is this a dictionary whose type the PDF specification defines?"""
+    typ = subtype = None
+    rect = False
+    for key, value in pairs:
+        if key == "/Type":
+            typ = value
+        elif key == "/Subtype":
+            subtype = value
+        elif key == "/Rect":
+            rect = True
+        elif key in _TYPE_MARKERS:
+            return True
+    if _type(typ) == _NAME and str(typ) in _TYPED:
+        return True
+    return _type(subtype) == _NAME and (str(subtype) in _TYPED_SUBTYPES or rect)
+
+
+def _owner_actions(owner):
+    """The actions an annotation, field or page holds in /A and /AA."""
+    action = owner.get("/A")
+    if action is not None:
+        yield action
+    aa = owner.get("/AA")
+    if _type(aa) in _DICTLIKE:
         for _, action in aa.items():
-            yield from _action_slots(action, set(), 0)
+            yield action
 
 
-def _action_slots(action, seen: set, depth: int):
-    if depth > _MAX_DEPTH or _type(action) != _DICT:
+def _action_chain(action, seen: set, depth: int = 0):
+    """Each action in a chain (the action and its /Next), each object once."""
+    if depth > _MAX_DEPTH or _type(action) not in _DICTLIKE:
         return
     if action.is_indirect:
         if action.objgen in seen:
             return
         seen.add(action.objgen)
-    fields = dict(action.items())
-    if fields.get("/S") == Name.GoTo and "/D" in fields:
-        yield action, "/D", fields["/D"]
-    nxt = fields.get("/Next")
+    yield action
+    nxt = action.get("/Next")
     for sub in (_items(nxt) if _type(nxt) == _ARRAY else [nxt]):
-        yield from _action_slots(sub, seen, depth + 1)
+        yield from _action_chain(sub, seen, depth + 1)
+
+
+def _destination_slots(page, seen: set):
+    """(owner, key, value) for each destination on a page and its annotations.
+
+    ``seen`` is shared by every page of one copy, so an annotation or action
+    shared by many owners is read once.
+    """
+    for annot in _array(page.get("/Annots")):
+        if _type(annot) not in _DICTLIKE:
+            continue
+        if annot.is_indirect:
+            if annot.objgen in seen:
+                continue
+            seen.add(annot.objgen)
+        fields = dict(annot.items())
+        if "/Dest" in fields:
+            yield annot, "/Dest", fields["/Dest"]
+        for action in _owner_actions(fields):
+            yield from _goto_slots(action, seen)
+    aa = page.get("/AA")
+    if _type(aa) in _DICTLIKE:
+        for _, action in aa.items():
+            yield from _goto_slots(action, seen)
+
+
+def _goto_slots(action, seen: set):
+    for step in _action_chain(action, seen):
+        if step.get("/S") == Name.GoTo and "/D" in step:
+            yield step, "/D", step.get("/D")
 
 
 def _tree_entries(node, leaf_key: str, depth: int = 0, seen: set | None = None):
     """Yield (key, value) pairs of a name or number tree, in order."""
     if seen is None:
         seen = set()
-    if depth > _MAX_DEPTH or _type(node) != _DICT:
+    if depth > _MAX_DEPTH or _type(node) not in _DICTLIKE:
         return
     if node.is_indirect:
         if node.objgen in seen:
             return
         seen.add(node.objgen)
-    fields = dict(node.items())
-    entries = fields.get(leaf_key)
+    entries = node.get(leaf_key)
     if _type(entries) == _ARRAY:
-        items = _items(entries)
-        for i in range(0, len(items) - 1, 2):
-            yield items[i], items[i + 1]
-    for kid in _array(fields.get("/Kids")):
+        it = iter(entries)
+        for key in it:
+            value = next(it, _MISSING)
+            if value is _MISSING:
+                break
+            yield key, value
+    for kid in _array(node.get("/Kids")):
         yield from _tree_entries(kid, leaf_key, depth + 1, seen)
 
 
 def _prune_tree(node, leaf_key: str, keep: Callable, depth: int = 0, seen: set | None = None):
     """Filter a name or number tree in place, fixing /Limits and empty nodes.
 
-    ``keep(key, value)`` decides each entry and may modify ``value`` in place.
-    Returns ``(first_key, last_key)`` of what is left, or None when nothing is.
+    ``keep(key, value)`` decides each entry and may modify ``value`` in place;
+    an entry it cannot decide goes. Returns ``(first_key, last_key)`` of what
+    is left, or None when nothing is. A leaf is read as a stream, without a
+    list of all its entries, and rebuilt only when something went.
+
+    A tree node has no /Type and holds ``leaf_key`` or /Kids. Anything else
+    found in a node's place, such as the page tree a crafted catalog names as
+    its /Names /Pages, is not this function's to change: it is left as it is,
+    and ``_FOREIGN`` returned for it.
     """
     if seen is None:
         seen = set()
-    if depth > _MAX_DEPTH or _type(node) != _DICT:
+    if depth > _MAX_DEPTH or _type(node) not in _DICTLIKE:
         return None
+    if "/Type" in node or (leaf_key not in node and "/Kids" not in node):
+        return _FOREIGN
     if node.is_indirect:
         if node.objgen in seen:
             return None
         seen.add(node.objgen)
-    fields = dict(node.items())
     first = last = None
     changed = False
-    entries = fields.get(leaf_key)
+    entries = node.get(leaf_key)
     if _type(entries) == _ARRAY:
-        items = _items(entries)
-        kept = []
-        for i in range(0, len(items) - 1, 2):
-            if keep(items[i], items[i + 1]):
-                kept.extend(items[i:i + 2])
-        if len(kept) != len(items):
-            node[leaf_key] = Array(kept)
+        flags = bytearray()
+        it = iter(entries)
+        for key in it:
+            value = next(it, _MISSING)
+            if value is _MISSING:
+                break
+            try:
+                ok = bool(keep(key, value))
+            except Exception:  # noqa: BLE001 - an entry that cannot be read goes
+                logger.debug("page removal: tree entry dropped", exc_info=True)
+                ok = False
+            flags.append(ok)
+            if ok:
+                if first is None:
+                    first = key
+                last = key
+        if not all(flags) or len(entries) != 2 * len(flags):
+            node[leaf_key] = Array(_kept_pairs(entries, flags))
             changed = True
-        if kept:
-            first, last = kept[0], kept[-2]
-    kids = fields.get("/Kids")
+    foreign = False
+    kids = node.get("/Kids")
     if _type(kids) == _ARRAY:
         items = _items(kids)
         kept_kids = []
@@ -338,17 +648,30 @@ def _prune_tree(node, leaf_key: str, keep: Callable, depth: int = 0, seen: set |
             if limits is None:
                 continue
             kept_kids.append(kid)
+            if limits is _FOREIGN:
+                foreign = True
+                continue
             if first is None:
                 first = limits[0]
             last = limits[1]
         if len(kept_kids) != len(items):
-            node.Kids = Array(kept_kids)
+            node["/Kids"] = Array(kept_kids)
             changed = True
     if first is None:
-        return None
-    if changed and "/Limits" in fields:
-        node.Limits = Array([first, last])
+        return _FOREIGN if foreign else None
+    if changed and "/Limits" in node:
+        node["/Limits"] = Array([first, last])
     return first, last
+
+
+def _kept_pairs(entries, flags: bytearray):
+    it = iter(entries)
+    for ok in flags:
+        key = next(it)
+        value = next(it)
+        if ok:
+            yield key
+            yield value
 
 
 # ── the pruner ──────────────────────────────────────────────────────────────
@@ -370,87 +693,143 @@ class _Pruner:
         self.live_pages = live_pages if live_pages is not None else {p.objgen for p in pages}
         self.pages = [page for page in pages if page.objgen in self.live_pages]
         self.removed_pages = {page.objgen for page in self.removed}
+        # The page tree's inner nodes. Removing pages flattens the tree, so
+        # usually this is just its root.
+        self.tree_nodes: set = set()
+        in_tree = {page.objgen for page in pages}
+        nodes = [pdf.Root.get("/Pages")]
+        while nodes and len(self.tree_nodes) < _MAX_CHAIN:
+            node = nodes.pop()
+            if (
+                _is_indirect_dictlike(node)
+                and node.objgen not in self.tree_nodes
+                and node.objgen not in in_tree
+            ):
+                self.tree_nodes.add(node.objgen)
+                nodes.extend(_array(node.get("/Kids")))
+        # Never removed or rewritten by a pass, whatever points at them.
+        self.protected: set = self.tree_nodes | self.live_pages
+        if pdf.Root.is_indirect:
+            self.protected.add(pdf.Root.objgen)
         self.template_pages: set = set()
         self.dead_names: set[bytes] = set()
         self.dead_legacy: set[str] = set()
         self.dead_elements: set = set()
         self.alive_elements: set = set()
+        self.dropped_annots: list = []  # taken off live pages by the annotation pass
+        # Structure elements the tree pass read in full, and values it left to
+        # the sweep.
+        self.vetted: set = set()
+        self.pending: list = []
+        self._actions: dict = {}  # indirect action -> its pruned chain
+        self._annot_verdicts: dict = {}
+        self._removed_owners: set | None = None
+        self.outline_items: set = set()  # bookmarks the outline pass walked
 
-        # Each live page's annotations, read once and shared by the passes.
+        # Each live page's annotations, read once and shared by the passes;
+        # an array shared by several pages is read once.
+        arrays: dict = {}
         self.annots_of: dict = {}
         self.live_annots: set = set()
         self.live_beads: set = set()
         for page in self.pages:
-            annots = _array(page.get("/Annots"))
+            annots = _read_array(page.get("/Annots"), arrays)
             self.annots_of[page.objgen] = annots
             for annot in annots:
-                if _is_indirect_dict(annot):
+                if _is_indirect_dictlike(annot):
                     self.live_annots.add(annot.objgen)
-            for bead in _array(page.get("/B")):
-                if _is_indirect_dict(bead):
+            for bead in _read_array(page.get("/B"), arrays):
+                if _is_indirect_dictlike(bead):
                     self.live_beads.add(bead.objgen)
         self.dead_annots: set = set()
         self.dead_beads: set = set()
         for page in self.removed:
-            for annot in _array(page.get("/Annots")):
-                if _is_indirect_dict(annot) and annot.objgen not in self.live_annots:
+            for annot in _read_array(page.get("/Annots"), arrays):
+                if _is_indirect_dictlike(annot) and annot.objgen not in self.live_annots:
                     self.dead_annots.add(annot.objgen)
-            for bead in _array(page.get("/B")):
-                if _is_indirect_dict(bead) and bead.objgen not in self.live_beads:
+            for bead in _read_array(page.get("/B"), arrays):
+                if _is_indirect_dictlike(bead) and bead.objgen not in self.live_beads:
                     self.dead_beads.add(bead.objgen)
         # Everything removed by any pass; the sweep cuts references to these.
         self.dead: set = set(self.removed_pages)
         self.dead.update(self.dead_annots)
         self.dead.update(self.dead_beads)
-        # Objects a pass has fully checked, and containers it left to the sweep.
-        self.vetted: set = set()
-        self.pending: list = []
 
     # ── predicates ──────────────────────────────────────────────────────────
 
     def page_dead(self, obj) -> bool:
         """True for a page reference that does not lead to a page in the output."""
+        if obj is _REMOVED_PAGE:
+            return True
         if obj is None:
             return True  # qpdf's stand-in for a page that was not copied
-        if _type(obj) != _DICT:
+        if _type(obj) not in _DICTLIKE:
             return False  # a page number or something else: not ours to judge
         if not obj.is_indirect:
-            return obj.get("/Type") == Name.Page
+            return obj.get("/Type") == _PAGE
         og = obj.objgen
-        if og in self.live_pages or og in self.template_pages:
+        if og in self.live_pages:
             return False
-        return og in self.removed_pages or obj.get("/Type") == Name.Page
+        if og in self.removed_pages:
+            return True  # even when it is also listed as a template
+        if og in self.template_pages or og in self.tree_nodes:
+            return False
+        return obj.get("/Type") == _PAGE
+
+    def _is_page(self, obj) -> bool:
+        """Is ``obj`` a page (in the tree, removed, or typed as one)?"""
+        if _type(obj) not in _DICTLIKE:
+            return False
+        if obj.is_indirect and (obj.objgen in self.live_pages or obj.objgen in self.removed_pages):
+            return True
+        return obj.get("/Type") == _PAGE
 
     def annot_dead(self, obj) -> bool:
-        if not _is_indirect_dict(obj):
+        if not _is_indirect_dictlike(obj):
             return False
         og = obj.objgen
         if og in self.dead:
             return True
         if og in self.live_annots:
             return False
-        if self.exact:
-            return og in self.dead_annots
-        return _is_annotation(dict(obj.items()))
+        verdict = self._annot_verdicts.get(og)
+        if verdict is None:
+            verdict = self._annot_verdicts[og] = self._judge_off_page(obj)
+        return verdict
+
+    def _judge_off_page(self, obj) -> bool:
+        """An annotation on no live page: did it belong to a removed one?"""
+        if not self.exact:
+            return _is_annotation(obj)
+        if obj.objgen in self.dead_annots:
+            return True
+        # Listed in no removed page's /Annots, but its /P names one.
+        page = obj.get("/P")
+        return _is_indirect_dictlike(page) and page.objgen in self.removed_pages
 
     def bead_dead(self, obj) -> bool:
-        if not _is_indirect_dict(obj):
+        if not _is_indirect_dictlike(obj):
             return False
         og = obj.objgen
         if og in self.dead:
             return True
         if og in self.live_beads:
             return False
-        return og in self.dead_beads if self.exact else True
+        if not self.exact:
+            return True
+        if og in self.dead_beads:
+            return True
+        page = obj.get("/P")
+        return _is_indirect_dictlike(page) and page.objgen in self.removed_pages
 
     def dest_state(self, dest) -> str:
         kind = _type(dest)
-        if kind == _DICT:  # a named destination's << /D [...] >> form
+        if kind in _DICTLIKE:  # a named destination's << /D [...] >> form
             dest = dest.get("/D")
             kind = _type(dest)
         if kind == _ARRAY:
             target = _first(dest)
-            if target is None or _type(target) == _DICT:
+            if target is None or _type(target) in _DICTLIKE:
                 if target is None and len(dest) == 0:
                     return _UNKNOWN
                 return _DEAD if self.page_dead(target) else _LIVE
@@ -461,46 +840,65 @@ class _Pruner:
             return _DEAD if str(dest) in self.dead_legacy else _UNKNOWN
         return _UNKNOWN
 
+    def _is_protected(self, obj) -> bool:
+        return obj.is_indirect and obj.objgen in self.protected
+
     def kill(self, obj) -> None:
-        if getattr(obj, "is_indirect", False):
+        # A crafted reference can put the catalog, the page tree or a kept
+        # page where a pass expects a bookmark, bead or thread. Those stay.
+        if getattr(obj, "is_indirect", False) and obj.objgen not in self.protected:
             self.dead.add(obj.objgen)
 
     def _field_dead(self, obj) -> bool:
-        return _is_indirect_dict(obj) and obj.objgen in self.dead
+        return _is_indirect_dictlike(obj) and obj.objgen in self.dead
 
     # ── actions ─────────────────────────────────────────────────────────────
 
-    def prune_action(self, action, seen: set | None = None, depth: int = 0):
+    def prune_action(self, action, depth: int = 0):
         """Return the action chain without actions that reach removed pages.
 
         Returns ``action`` itself (possibly edited), a replacement when the
-        head of the chain had to go, or None when nothing is left.
+        head of the chain had to go, or None when nothing is left. An indirect
+        action is pruned once however many owners share it; one that cannot be
+        read goes.
         """
-        if seen is None:
-            seen = set()
-        if depth > _MAX_DEPTH or _type(action) != _DICT:
+        if depth > _MAX_DEPTH or _type(action) not in _DICTLIKE:
             return action
-        if action.is_indirect:
-            if action.objgen in seen:
-                return action
-            seen.add(action.objgen)
-        fields = dict(action.items())
+        og = action.objgen if action.is_indirect else None
+        if og is not None:
+            done = self._actions.get(og, _MISSING)
+            if done is not _MISSING:
+                return done
+            self._actions[og] = action  # in progress: a loop back here keeps it
+        try:
+            result = self._prune_action(action, depth)
+        except Exception:  # noqa: BLE001 - an unreadable action goes
+            logger.debug("page removal: action dropped", exc_info=True)
+            self.kill(action)
+            result = None
+        if og is not None:
+            self._actions[og] = result
+        return result
 
+    def _prune_action(self, action, depth: int):
+        fields = dict(action.items())
         nxt = fields.get("/Next")
         if nxt is not None:
             if _type(nxt) == _ARRAY:
                 subs = _items(nxt)
-                kept = [s for s in (self.prune_action(s, seen, depth + 1) for s in subs) if s is not None]
+                pruned = [self.prune_action(s, depth + 1) for s in subs]
+                kept = [s for s in pruned if s is not None]
                 if not kept:
                     del action["/Next"]
                 elif len(kept) != len(subs) or any(a is not b for a, b in zip(kept, subs)):
-                    action.Next = Array(kept)
+                    action["/Next"] = Array(kept)
             else:
-                pruned = self.prune_action(nxt, seen, depth + 1)
+                pruned = self.prune_action(nxt, depth + 1)
                 if pruned is None:
-                    del action["/Next"]
+                    if "/Next" in action:
+                        del action["/Next"]
                 elif pruned is not nxt:
-                    action.Next = pruned
+                    action["/Next"] = pruned
 
         if not self._action_dead(action, fields):
             return action
@@ -513,20 +911,20 @@ class _Pruner:
         # The head goes; its successors run in the same order without it.
         subs = _items(rest)
         head, tail = subs[0], subs[1:]
-        if tail and _type(head) == _DICT:
+        if tail and _type(head) in _DICTLIKE:
             own = head.get("/Next")
             own_list = [] if own is None else (_items(own) if _type(own) == _ARRAY else [own])
-            head.Next = Array(own_list + tail)
+            head["/Next"] = Array(own_list + tail)
         return head
 
-    def _action_dead(self, action: Dictionary, fields: dict) -> bool:
+    def _action_dead(self, action, fields: dict) -> bool:
         kind = fields.get("/S")
         if kind == Name.GoTo:
             return self.dest_state(fields.get("/D")) == _DEAD
         if kind == Name.Thread:
             thread, bead = fields.get("/D"), fields.get("/B")
             return (
-                (_is_indirect_dict(thread) and thread.objgen in self.dead)
+                (_is_indirect_dictlike(thread) and thread.objgen in self.dead)
                 or self.bead_dead(bead)
             )
         if kind == Name.Rendition:
@@ -544,7 +942,7 @@ class _Pruner:
             if len(kept) != len(items):
                 if not kept:
                     return True
-                action.T = Array(kept)
+                action["/T"] = Array(kept)
             return False
         if kind in (Name.SubmitForm, Name.ResetForm):
             fields_ = fields.get("/Fields")
@@ -555,19 +953,21 @@ class _Pruner:
                     # An empty list would mean "every field", the opposite.
                     if not kept:
                         return True
-                    action.Fields = Array(kept)
+                    action["/Fields"] = Array(kept)
         return False
 
     def prune_additional_actions(self, owner, aa) -> None:
-        if _type(aa) != _DICT:
+        if _type(aa) not in _DICTLIKE:
             return
         for trigger, action in list(aa.items()):
             pruned = self.prune_action(action)
             if pruned is None:
-                del aa[trigger]
+                # A null entry is absent to pikepdf: there is nothing to delete.
+                if trigger in aa:
+                    del aa[trigger]
             elif pruned is not action:
                 aa[trigger] = pruned
-        if not aa.keys():
+        if not aa.keys() and "/AA" in owner:
             del owner["/AA"]
 
     # ── passes ──────────────────────────────────────────────────────────────
@@ -575,80 +975,146 @@ class _Pruner:
     def run(self) -> None:
         root = self.pdf.Root
         catalog = dict(root.items())
-        self._collect_templates(catalog)
-        self.prune_named_destinations(catalog)
+        self._contained(self._collect_templates, catalog)
+        self._contained(self.prune_named_destinations, catalog,
+                        fallback=lambda: self._drop(root, "/Dests", ("/Names", "/Dests")))
         # Fields and threads first: actions that name fields (reset, submit,
         # hide) or threads are pruned with the annotations and need to know
         # which of them went.
-        self.prune_fields(catalog)
-        self.prune_threads(root, catalog)
-        self.prune_page_annotations()
-        self.prune_structure_tree(root)
-        self.prune_outline(catalog)
-        self.prune_catalog(root)
+        self._contained(self.prune_fields, catalog,
+                        fallback=lambda: self._drop(root, "/AcroForm"))
+        self._contained(self.prune_threads, root, catalog, fallback=self._drop_threads)
+        self._contained(self.prune_page_annotations)
+        self._contained(self.prune_structure_tree, root,
+                        fallback=lambda: self._untag(root))
+        self._contained(self.prune_outline, catalog,
+                        fallback=lambda: self._drop(root, "/Outlines"))
+        self._contained(self.prune_catalog, root,
+                        fallback=lambda: self._drop(root, "/OpenAction", "/AA", ("/Names", "/Pages")))
+        # Not contained: a sweep that fails fails the request.
         self.sweep()
+
+    def _contained(self, run_pass: Callable, *args, fallback: Callable | None = None) -> None:
+        """Run a repair pass; if it fails outright, drop what it was repairing.
+
+        The passes contain errors per item already, so this is the last line.
+        The fallback removes the whole structure the pass was working on, so
+        nothing it had not yet pruned can keep a removed page's content.
+        """
+        try:
+            run_pass(*args)
+        except Exception:  # noqa: BLE001 - see the docstring
+            logger.warning("page removal: %s failed on this file", run_pass.__name__, exc_info=True)
+            if fallback is not None:
+                fallback()
+
+    @staticmethod
+    def _drop(root, *keys) -> None:
+        for key in keys:
+            owner = root
+            if isinstance(key, tuple):
+                owner = root.get(key[0])
+                key = key[1]
+                if _type(owner) not in _DICTLIKE:
+                    continue
+            if key in owner:
+                del owner[key]
+
+    def _drop_threads(self) -> None:
+        self._drop(self.pdf.Root, "/Threads")
+        for page in self.pages:
+            if "/B" in page:
+                del page["/B"]
+
+    def _untag(self, root) -> None:
+        """Say the document is untagged rather than keep a tree half pruned."""
+        self._drop(root, "/StructTreeRoot")
+        mark = root.get("/MarkInfo")
+        if _type(mark) in _DICTLIKE and "/Marked" in mark:
+            del mark["/Marked"]
+            if not mark.keys():
+                del root["/MarkInfo"]
+        for page in self.pages:
+            if "/StructParents" in page:
+                del page["/StructParents"]
 
     def _collect_templates(self, catalog: dict) -> None:
         # Template pages live outside the page tree on purpose (PDF 12.7.6).
         names = catalog.get("/Names")
-        if _type(names) == _DICT:
+        if _type(names) in _DICTLIKE:
             for _, page in _tree_entries(names.get("/Templates"), "/Names"):
-                if _is_indirect_dict(page):
+                if _is_indirect_dictlike(page):
                     self.template_pages.add(page.objgen)
 
     def prune_named_destinations(self, catalog: dict) -> None:
         names = catalog.get("/Names")
-        tree = names.get("/Dests") if _type(names) == _DICT else None
+        tree = names.get("/Dests") if _type(names) in _DICTLIKE else None
         if tree is not None:
             def keep(key, value):
-                if self.dest_state(value) != _DEAD:
-                    return True
+                try:
+                    if self.dest_state(value) != _DEAD:
+                        return True
+                except Exception:  # noqa: BLE001 - an unreadable entry goes
+                    logger.debug("page removal: named destination dropped", exc_info=True)
                 if _type(key) == _STRING:
                     self.dead_names.add(bytes(key))
                 self.kill(value)
                 return False
 
-            if _prune_tree(tree, "/Names", keep) is None:
+            if _prune_tree(tree, "/Names", keep) is None and "/Dests" in names:
                 del names["/Dests"]
         dests = catalog.get("/Dests")
-        if _type(dests) == _DICT:
+        if _type(dests) in _DICTLIKE:
             for key, value in list(dests.items()):
-                if self.dest_state(value) == _DEAD:
+                try:
+                    dead = self.dest_state(value) == _DEAD
+                except Exception:  # noqa: BLE001 - an unreadable entry goes
+                    dead = True
+                if dead:
                     self.dead_legacy.add(key)
                     self.kill(value)
-                    del dests[key]
+                    if key in dests:
+                        del dests[key]
 
     def prune_fields(self, catalog: dict) -> None:
         acroform = catalog.get("/AcroForm")
-        acroform = acroform if _type(acroform) == _DICT else None
+        acroform = acroform if _type(acroform) in _DICTLIKE else None
         seen: set = set()
         removed_any = False
 
         def alive(field, depth: int) -> bool:
             nonlocal removed_any
-            if depth > _MAX_DEPTH or _type(field) != _DICT:
+            if depth > _MAX_DEPTH or _type(field) not in _DICTLIKE:
                 return True
             if field.is_indirect:
+                if field.objgen in self.protected:
+                    return True  # the catalog or a page is no field: left alone
                 if field.objgen in seen:
                     return field.objgen not in self.dead
                 seen.add(field.objgen)
-            fields = dict(field.items())
-            kids = fields.get("/Kids")
-            if _type(kids) == _ARRAY and len(kids):
-                items = _items(kids)
-                kept = [kid for kid in items if alive(kid, depth + 1)]
-                if len(kept) != len(items):
+            try:
+                fields = dict(field.items())
+                kids = fields.get("/Kids")
+                if _type(kids) == _ARRAY and len(kids):
+                    items = _items(kids)
+                    kept = [kid for kid in items if alive(kid, depth + 1)]
+                    if len(kept) != len(items):
+                        removed_any = True
+                        if not kept:
+                            self.kill(field)
+                            return False
+                        field["/Kids"] = Array(kept)
+                    return True
+                if _is_annotation(fields) and self.annot_dead(field):
+                    self.kill(field)
                     removed_any = True
-                    if not kept:
-                        self.kill(field)
-                        return False
-                    field.Kids = Array(kept)
+                    return False
                 return True
-            if _is_annotation(fields) and self.annot_dead(field):
+            except Exception:  # noqa: BLE001 - an unreadable field goes
+                logger.debug("page removal: form field dropped", exc_info=True)
                 self.kill(field)
                 removed_any = True
                 return False
-            return True
 
         if acroform is not None:
             fields = acroform.get("/Fields")
@@ -656,20 +1122,25 @@ class _Pruner:
                 items = _items(fields)
                 kept = [field for field in items if alive(field, 0)]
                 if len(kept) != len(items):
-                    acroform.Fields = Array(kept)
+                    acroform["/Fields"] = Array(kept)
         # A copied document has no /AcroForm, but a widget's field still
         # reaches its sibling widgets on the pages left behind.
+        climbed: set = set()
         for annots in self.annots_of.values():
             for annot in annots:
-                if _type(annot) != _DICT:
+                if _type(annot) not in _DICTLIKE:
                     continue
+                if annot.is_indirect:
+                    if annot.objgen in climbed:
+                        continue
+                    climbed.add(annot.objgen)
                 parent = annot.get("/Parent")
-                if _type(parent) != _DICT or annot.get("/Subtype") != Name.Widget:
+                if _type(parent) not in _DICTLIKE or annot.get("/Subtype") != Name.Widget:
                     continue
                 top, steps = parent, 0
                 while steps < _MAX_DEPTH:
                     up = top.get("/Parent")
-                    if _type(up) != _DICT:
+                    if _type(up) not in _DICTLIKE:
                         break
                     top, steps = up, steps + 1
                 alive(top, 0)
@@ -680,7 +1151,7 @@ class _Pruner:
             items = _items(order)
             kept = [f for f in items if not self._field_dead(f)]
             if len(kept) != len(items):
-                acroform.CO = Array(kept)
+                acroform["/CO"] = Array(kept)
         if removed_any and "/XFA" in acroform:
             # XFA keeps every field's value in its own XML, so the values of
             # the fields that went would stay in the file. Without it the
@@ -688,25 +1159,42 @@ class _Pruner:
             del acroform["/XFA"]
 
     def prune_page_annotations(self) -> None:
+        decided: dict = {}  # annotation -> goes, for annotations shared by pages
         remaining = []  # (page, annotation, its entries) for what stays
+        listed: set = set()
         for page in self.pages:
             annots = self.annots_of[page.objgen]
             if annots:
                 kept, removed = [], []
                 for annot in annots:
-                    fields = dict(annot.items()) if _type(annot) == _DICT else {}
-                    if self._annotation_goes(annot, fields):
+                    og = annot.objgen if _is_indirect_dictlike(annot) else None
+                    if og is not None and og in decided:
+                        (removed if decided[og] else kept).append(annot)
+                        continue
+                    fields = dict(annot.items()) if _type(annot) in _DICTLIKE else {}
+                    try:
+                        goes = self._annotation_goes(annot, fields)
+                    except Exception:  # noqa: BLE001 - a kept page's own annotation: the sweep checks it
+                        logger.debug("page removal: annotation left as it is", exc_info=True)
+                        goes = False
+                    if og is not None:
+                        decided[og] = goes
+                    if goes:
                         removed.append(annot)
                     else:
                         kept.append(annot)
-                        remaining.append((page, annot, fields))
+                        if og is None or og not in listed:
+                            remaining.append((page, annot, fields))
+                            if og is not None:
+                                listed.add(og)
                 for annot in removed:
-                    if _is_indirect_dict(annot):
+                    if _is_indirect_dictlike(annot) and annot.objgen not in self.dead:
                         self.live_annots.discard(annot.objgen)
                         self.dead.add(annot.objgen)
+                        self.dropped_annots.append(annot)
                 if removed:
                     if kept:
-                        page.Annots = Array(kept)
+                        page["/Annots"] = Array(kept)
                     else:
                         del page["/Annots"]
                     self.annots_of[page.objgen] = kept
@@ -716,11 +1204,14 @@ class _Pruner:
         # Replies and popups can point at annotations of removed pages and at
         # links removed above, on any page.
         for page, annot, fields in remaining:
-            for key in ("/IRT", "/Popup"):
-                if key in fields and self.annot_dead(fields[key]):
-                    del annot[key]
-            if "/P" in fields and self.page_dead(fields["/P"]):
-                annot.P = page
+            try:
+                for key in ("/IRT", "/Popup"):
+                    if key in fields and self.annot_dead(fields[key]) and key in annot:
+                        del annot[key]
+                if "/P" in fields and self.page_dead(fields["/P"]):
+                    annot["/P"] = page
+            except Exception:  # noqa: BLE001 - the sweep still cuts what is dead
+                logger.debug("page removal: annotation links left to the sweep", exc_info=True)
 
     def _annotation_goes(self, annot, fields: dict) -> bool:
         """Decide one annotation on a live page; edits what stays in place."""
@@ -739,222 +1230,371 @@ class _Pruner:
             if pruned is None:
                 action_dead = True
             elif pruned is not action:
-                annot.A = pruned
+                annot["/A"] = pruned
         if "/AA" in fields:
             self.prune_additional_actions(annot, fields["/AA"])
         if subtype == Name.Link:
             has_dest, has_action = "/Dest" in fields, action is not None
             if (has_dest or has_action) and (dest_dead or not has_dest) and (action_dead or not has_action):
                 return True
-        if dest_dead:
+        if dest_dead and "/Dest" in annot:
             del annot["/Dest"]
-        if action_dead:
+        if action_dead and "/A" in annot:
             del annot["/A"]
         return False
 
     def prune_threads(self, root, catalog: dict) -> None:
         threads = catalog.get("/Threads")
         candidates = _array(threads)
-        listed = {t.objgen for t in candidates if _is_indirect_dict(t)}
+        listed = {t.objgen for t in candidates if _is_indirect_dictlike(t)}
         for page in self.pages:
             for bead in _array(page.get("/B")):
-                thread = bead.get("/T") if _type(bead) == _DICT else None
-                if _is_indirect_dict(thread) and thread.objgen not in listed:
+                thread = bead.get("/T") if _type(bead) in _DICTLIKE else None
+                if _is_indirect_dictlike(thread) and thread.objgen not in listed:
                     listed.add(thread.objgen)
                     candidates.append(thread)
+        ring_of: dict = {}  # bead -> the ring it was walked in, for every thread
+        budget = [_MAX_CHAIN]
         dead_threads = set()
         for thread in candidates:
-            if _type(thread) != _DICT:
+            if _type(thread) not in _DICTLIKE or self._is_protected(thread):
                 continue
-            ring, seen, bead = [], set(), thread.get("/F")
-            while _is_indirect_dict(bead) and bead.objgen not in seen and len(ring) < _MAX_CHAIN:
-                seen.add(bead.objgen)
-                ring.append(bead)
-                bead = bead.get("/N")
-            live = [b for b in ring if not self.bead_dead(b)]
-            if len(live) == len(ring):
-                continue
+            try:
+                first = thread.get("/F")
+                ring = ring_of.get(first.objgen) if _is_indirect_dictlike(first) else None
+                if ring is None:
+                    ring = self._walk_ring(first, ring_of, budget)
+                if ring:
+                    if not _is_indirect_dictlike(first) or self.bead_dead(first):
+                        thread["/F"] = ring[0]
+                    continue
+            except Exception:  # noqa: BLE001 - an unreadable thread goes
+                logger.debug("page removal: article thread dropped", exc_info=True)
+            self.kill(thread)
+            if thread.is_indirect:
+                dead_threads.add(thread.objgen)
+        if dead_threads and _type(threads) == _ARRAY:
+            kept = [t for t in _items(threads) if not (_is_indirect_dictlike(t) and t.objgen in dead_threads)]
+            if kept:
+                root["/Threads"] = Array(kept)
+            else:
+                del root["/Threads"]
+
+    def _walk_ring(self, first, ring_of: dict, budget: list) -> list:
+        """Walk a bead ring once, relink its live beads; return them.
+
+        ``ring_of`` and ``budget`` are shared by all threads, so a ring many
+        threads start in is walked once.
+        """
+        ring, bead = [], first
+        while (
+            _is_indirect_dictlike(bead)
+            and bead.objgen not in ring_of
+            and bead.objgen not in self.protected
+            and _is_bead(bead)  # something else in a ring ends it
+            and budget[0] > 0
+        ):
+            budget[0] -= 1
+            ring.append(bead)
+            ring_of[bead.objgen] = None  # placeholder while walking
+            bead = bead.get("/N")
+        live = [b for b in ring if not self.bead_dead(b)]
+        for b in ring:
+            ring_of[b.objgen] = live
+        if len(live) != len(ring):
             for b in ring:
                 if self.bead_dead(b):
                     self.kill(b)
-            if not live:
-                self.kill(thread)
-                if thread.is_indirect:
-                    dead_threads.add(thread.objgen)
-                continue
             for i, b in enumerate(live):
-                b.N = live[(i + 1) % len(live)]
-                b.V = live[i - 1]
-            thread.F = live[0]
-        if dead_threads and _type(threads) == _ARRAY:
-            kept = [t for t in _items(threads) if not (_is_indirect_dict(t) and t.objgen in dead_threads)]
-            if kept:
-                root.Threads = Array(kept)
-            else:
-                del root["/Threads"]
+                b["/N"] = live[(i + 1) % len(live)]
+                b["/V"] = live[i - 1]
+        return live
 
     # ── structure tree ──────────────────────────────────────────────────────
 
     def prune_structure_tree(self, root) -> None:
         tree = root.get("/StructTreeRoot")
-        if _type(tree) != _DICT:
+        if _type(tree) not in _DICTLIKE:
             return
-        tree_fields = dict(tree.items())
-        kids = tree_fields.get("/K")
+        kids = tree.get("/K")
         if kids is None:
             return
         records = self._walk_structure(tree, kids)
         top = records[0]
         if top.had_kids and not top.kept:
-            # Nothing tagged is left: say so rather than claim a tree.
-            del root["/StructTreeRoot"]
-            mark = root.get("/MarkInfo")
-            if _type(mark) == _DICT and "/Marked" in mark:
-                del mark["/Marked"]
-                if not mark.keys():
-                    del root["/MarkInfo"]
-            for page in self.pages:
-                if "/StructParents" in page:
-                    del page["/StructParents"]
+            self._untag(root)  # nothing tagged is left: say so
             return
 
         dead_keys = self._dead_struct_keys()
+        seen_values: dict = {}
 
         def keep_parent_entry(key, value):
-            if key in dead_keys:
+            if type(key) is int and key in dead_keys:
                 return False  # the key of a removed page or annotation
             if _type(value) == _ARRAY:
-                items = _items(value)
-                cleared = [
-                    i for i, item in enumerate(items)
-                    if _is_indirect_dict(item) and item.objgen not in self.alive_elements
-                ]
-                if len(cleared) + sum(item is None for item in items) == len(items):
-                    return False
-                for i in cleared:
-                    value[i] = None
-                return True
-            if _is_indirect_dict(value):
+                og = value.objgen if value.is_indirect else None
+                if og is not None and og in seen_values:
+                    return seen_values[og]
+                left = False
+                for i, item in enumerate(value):
+                    if _is_indirect_dictlike(item) and item.objgen not in self.alive_elements:
+                        value[i] = None
+                    elif item is not None:
+                        left = True
+                if og is not None:
+                    seen_values[og] = left
+                return left
+            if _is_indirect_dictlike(value):
                 return value.objgen in self.alive_elements
             return value is not None
 
-        parent_tree = tree_fields.get("/ParentTree")
+        parent_tree = tree.get("/ParentTree")
         if parent_tree is not None and _prune_tree(parent_tree, "/Nums", keep_parent_entry) is None:
-            del tree["/ParentTree"]
+            if "/ParentTree" in tree:
+                del tree["/ParentTree"]
 
         def keep_id(_key, value):
-            return not (_is_indirect_dict(value) and value.objgen not in self.alive_elements)
+            return not (_is_indirect_dictlike(value) and value.objgen not in self.alive_elements)
 
-        id_tree = tree_fields.get("/IDTree")
+        id_tree = tree.get("/IDTree")
         if id_tree is not None and _prune_tree(id_tree, "/Names", keep_id) is None:
-            del tree["/IDTree"]
+            if "/IDTree" in tree:
+                del tree["/IDTree"]
 
+        known = set(self.alive_elements)
+        if tree.is_indirect:
+            known.add(tree.objgen)
+        pruned_refs: set = set()
         for record in records[1:]:
             if not record.alive:
                 continue
-            refs = record.fields.get("/Ref")
-            if _type(refs) == _ARRAY:
-                items = _items(refs)
-                kept = [r for r in items if not (_is_indirect_dict(r) and r.objgen in self.dead_elements)]
-                if len(kept) != len(items):
-                    if kept:
-                        record.obj.Ref = Array(kept)
-                    else:
-                        del record.obj["/Ref"]
-            parent = record.fields.get("/P")
-            if _is_indirect_dict(parent) and parent.objgen in self.dead_elements:
-                record.obj.P = record.parent.obj
+            try:
+                refs = record.ref
+                if _type(refs) == _ARRAY:
+                    og = refs.objgen if refs.is_indirect else None
+                    if og is None or og not in pruned_refs:
+                        if og is not None:
+                            pruned_refs.add(og)
+                        items = _items(refs)
+                        # Elements only: a reference to anything but a live
+                        # one (a removed element, one outside the tree) goes.
+                        kept = [r for r in items if not _is_indirect_dictlike(r) or r.objgen in self.alive_elements]
+                        if len(kept) != len(items):
+                            if kept:
+                                record.obj["/Ref"] = Array(kept)
+                            else:
+                                del record.obj["/Ref"]
+                    self.pending.append(record.obj.get("/Ref"))
+                elif refs is not None:
+                    self._unvet(record.obj)  # not an array: the sweep reads it
+                parent = record.p
+                if _is_indirect_dictlike(parent) and parent.objgen in known:
+                    continue
+                if _is_indirect_dictlike(parent) and parent.objgen in self.dead_elements:
+                    record.obj["/P"] = record.parent.obj
+                elif parent is not None:
+                    self._unvet(record.obj)  # a /P the pass did not follow
+            except Exception:  # noqa: BLE001 - left to the sweep
+                logger.debug("page removal: element links left to the sweep", exc_info=True)
+                self._unvet(record.obj)
         self.dead.update(self.dead_elements)
+
+    def _unvet(self, obj) -> None:
+        if obj.is_indirect:
+            self.vetted.discard(obj.objgen)
+            self.pending.append(obj)
 
     def _dead_struct_keys(self) -> set:
         """ParentTree keys that belonged to removed pages and annotations."""
         dead, live = set(), set()
         for page in self.removed:
-            dead.add(page.get("/StructParents"))
+            _int_key(page.get("/StructParents"), dead)
             for annot in _array(page.get("/Annots")):
-                if _is_indirect_dict(annot) and annot.objgen in self.dead:
-                    dead.add(annot.get("/StructParent"))
+                if _is_indirect_dictlike(annot) and annot.objgen in self.dead:
+                    _int_key(annot.get("/StructParent"), dead)
+        # Links the annotation pass took off live pages: their element can
+        # survive (it owns the link text), but their key is gone with them.
+        for annot in self.dropped_annots:
+            _int_key(annot.get("/StructParent"), dead)
         if not dead:
             return dead
         for page in self.pages:
-            live.add(page.get("/StructParents"))
+            _int_key(page.get("/StructParents"), live)
             for annot in self.annots_of.get(page.objgen, []):
-                if _type(annot) == _DICT:
-                    live.add(annot.get("/StructParent"))
-        dead -= live
-        dead.discard(None)
-        return dead
+                if _type(annot) in _DICTLIKE:
+                    _int_key(annot.get("/StructParent"), live)
+        return dead - live
 
     def _walk_structure(self, tree, kids):
         """Prune the element tree below ``tree``; return its records, root first.
 
-        Iterative, so a deep tree cannot exhaust the interpreter stack.
+        Iterative, so a deep tree cannot exhaust the interpreter stack. Each
+        element is read once; a record keeps only what the later steps need.
         """
-        top = _Record(tree, {"/K": kids}, None, None)
+        top = _Record(tree, None, None)
         records = [top]
-        pending = [top]
+        pending = [(top, kids)]
         seen: set = set()
         while pending:
-            record = pending.pop()
-            raw = record.fields.get("/K")
+            record, raw = pending.pop()
             items = _items(raw) if _type(raw) == _ARRAY else ([] if raw is None else [raw])
             record.single = _type(raw) != _ARRAY
             record.had_kids = bool(items)
             page = record.page
             for item in items:
-                if _type(item) != _DICT:
-                    record.kids.append((item, self._mcid_alive(item, page)))
-                    continue
-                fields = dict(item.items())
-                if "/MCID" in fields or "/Obj" in fields or "/S" not in fields:
-                    alive = self._content_alive(fields, page)
-                    record.kids.append((item, alive))
-                    if alive:
-                        self.pending.append(item)  # /Stm, /StmOwn: the sweep's
-                    continue
-                if item.is_indirect:
-                    if item.objgen in seen:
-                        continue  # a second parent or a loop: keep the first
-                    seen.add(item.objgen)
-                own = fields.get("/Pg")
-                child = _Record(item, fields, record, own if own is not None else page)
-                records.append(child)
-                record.kids.append(child)
-                pending.append(child)
+                try:
+                    kind = _type(item)
+                    if kind not in _DICTLIKE:
+                        if kind == _ARRAY:
+                            # Not a valid kid: it stays while the element does,
+                            # without keeping it, and the sweep reads it.
+                            record.recheck = True
+                            record.kids.append((item, None))
+                        else:
+                            # A marked-content id, or a value that is no kid
+                            # at all: either way, on the element's page.
+                            record.kids.append((item, self._mcid_alive(page)))
+                        continue
+                    fields = item.items().mapping
+                    typ = fields.get("/Type")
+                    if (
+                        "/MCID" in fields
+                        or "/Obj" in fields
+                        or (_type(typ) == _NAME and typ in _CONTENT_TYPES)
+                    ):
+                        alive = self._content_alive(fields, page)
+                        record.kids.append((item, alive))
+                        if alive:
+                            self.pending.append(item)  # /Stm, /StmOwn, /Obj: the sweep's
+                        continue
+                    if "/S" not in fields:
+                        # Neither an element nor marked content: it stays while
+                        # the element does, without keeping it, and the sweep
+                        # reads it with the element.
+                        record.recheck = True
+                        record.kids.append((item, None))
+                        continue
+                    if item.is_indirect:
+                        if item.objgen in seen:
+                            # A second parent or a loop: the kid stays as it
+                            # is without keeping this element alive, and the
+                            # sweep checks this element's /K.
+                            record.recheck = True
+                            record.kids.append((item, None))
+                            continue
+                        seen.add(item.objgen)
+                    own = fields.get("/Pg")
+                    kids_page = own if own is not None else page
+                    if own is not None and not self._is_page(own):
+                        # A /Pg that is not a page: only the ParentTree says
+                        # whose content the element owns.
+                        removed = item.is_indirect and item.objgen in self._owners_of_removed_content()
+                        kids_page = _REMOVED_PAGE if removed else page
+                    child = _Record(item, record, kids_page)
+                    child.pg = own
+                    child.p = fields.get("/P")
+                    child.ref = fields.get("/Ref")
+                    child.texts = [key for key in _ELEMENT_TEXTS if key in fields]
+                    for key, value in fields.items():
+                        if key in _ELEMENT_WALKED or value.__class__ in _SCALARS:
+                            continue
+                        vtype = _type(value)
+                        if vtype in _DICTLIKE and value.is_indirect:
+                            # The sweep can only cut this reference by reading
+                            # the element itself.
+                            child.recheck = True
+                        elif vtype in _CONTAINERS:
+                            self.pending.append(value)
+                    records.append(child)
+                    record.kids.append(child)
+                    pending.append((child, fields.get("/K")))
+                except Exception:  # noqa: BLE001 - an unreadable kid goes
+                    logger.debug("page removal: structure item dropped", exc_info=True)
+                    record.kids.append((item, False))
         for record in reversed(records):
-            kept = []
+            kept, deciding, live = [], 0, 0
             for kid in record.kids:
                 if isinstance(kid, _Record):
+                    deciding += 1
                     if kid.alive:
                         kept.append(kid.obj)
-                elif kid[1]:
-                    kept.append(kid[0])
+                        live += 1
+                elif kid[1] is None:
+                    kept.append(kid[0])  # neither keeps nor drops the element
+                else:
+                    deciding += 1
+                    if kid[1]:
+                        kept.append(kid[0])
+                        live += 1
             record.kept = kept
             if record is top:
                 if len(kept) != len(record.kids) and kept:
-                    tree.K = Array(kept)
+                    tree["/K"] = Array(kept)
                 continue
             elem = record.obj
-            if record.had_kids:
-                record.alive = bool(kept)
-            else:
-                record.alive = record.page is None or not self.page_dead(record.page)
-            if not record.alive:
+            try:
+                if deciding:
+                    record.alive = bool(live)
+                else:  # no kids that say where it is: its page decides
+                    record.alive = record.page is None or not self.page_dead(record.page)
+                if not record.alive:
+                    if elem.is_indirect:
+                        self.dead_elements.add(elem.objgen)
+                    continue
+                if len(kept) != len(record.kids):
+                    elem["/K"] = kept[0] if record.single and len(kept) == 1 else Array(kept)
+                    # Its text spoke for the content that went too.
+                    for key in record.texts:
+                        if key in elem:
+                            del elem[key]
+                own = record.pg
+                if own is not None:
+                    if self.page_dead(own):
+                        del elem["/Pg"]
+                    elif not (_is_indirect_dictlike(own) and own.objgen in self.live_pages):
+                        record.recheck = True  # not a page: the sweep reads it
                 if elem.is_indirect:
+                    self.alive_elements.add(elem.objgen)
+                    if record.recheck:
+                        # Reached only through vetted elements, it would be
+                        # skipped: the sweep is sent to it.
+                        self.pending.append(elem)
+                    else:
+                        self.vetted.add(elem.objgen)
+                elif record.recheck and record.parent is not top:
+                    record.parent.recheck = True  # a direct element is read with its parent
+            except Exception:  # noqa: BLE001 - an unreadable element goes
+                logger.debug("page removal: structure element dropped", exc_info=True)
+                record.alive = False
+                if elem.is_indirect:
+                    self.alive_elements.discard(elem.objgen)
+                    self.vetted.discard(elem.objgen)
                     self.dead_elements.add(elem.objgen)
-                continue
-            if elem.is_indirect:
-                self.alive_elements.add(elem.objgen)
-            self._vet(elem, record.fields, _ELEMENT_KEYS)
-            if len(kept) != len(record.kids):
-                elem.K = kept[0] if record.single and len(kept) == 1 else Array(kept)
-            own = record.fields.get("/Pg")
-            if own is not None and self.page_dead(own):
-                del elem["/Pg"]
         return records
 
-    def _mcid_alive(self, item, page) -> bool:
-        """A marked-content id: it lives on the element's page."""
+    def _owners_of_removed_content(self) -> set:
+        """Elements the ParentTree files under a removed page's content.
+
+        Read only for an element whose /Pg is not a page, where nothing else
+        says which page its marked content is on.
+        """
+        if self._removed_owners is None:
+            owners: set = set()
+            keys: set = set()
+            for page in self.removed:
+                _int_key(page.get("/StructParents"), keys)
+            tree = self.pdf.Root.get("/StructTreeRoot")
+            if keys and _type(tree) in _DICTLIKE:
+                for key, value in _tree_entries(tree.get("/ParentTree"), "/Nums"):
+                    if type(key) is int and key in keys:
+                        for item in (_items(value) if _type(value) == _ARRAY else [value]):
+                            if _is_indirect_dictlike(item):
+                                owners.add(item.objgen)
+            self._removed_owners = owners
+        return self._removed_owners
+
+    def _mcid_alive(self, page) -> bool:
+        """A marked-content id lives on its element's page."""
         return page is None or not self.page_dead(page)
 
     def _content_alive(self, fields: dict, page) -> bool:
@@ -965,7 +1605,7 @@ class _Pruner:
             target = fields.get("/Obj")
             if target is None or self.annot_dead(target):
                 return False
-            if _is_indirect_dict(target) and target.objgen in self.dead:
+            if _is_indirect_dictlike(target) and target.objgen in self.dead:
                 return False
         return page is None or not self.page_dead(page)
 
@@ -973,7 +1613,7 @@ class _Pruner:
 
     def prune_outline(self, catalog: dict) -> None:
         outlines = catalog.get("/Outlines")
-        if _type(outlines) != _DICT:
+        if _type(outlines) not in _DICTLIKE or self._is_protected(outlines):
             return
         first = outlines.get("/First")
         if first is not None:
@@ -984,62 +1624,70 @@ class _Pruner:
 
         A bookmark whose target was on a removed page goes, and its surviving
         children take its place. So does a heading without a target of its own
-        once all its children are gone. ``parent_open`` is None for the
-        outline root. Returns ``(kept, changed)``: the kept children as
-        ``(item, descendants visible when it is open, is open)``, and whether
-        anything at or below this level changed.
+        once all its children are gone, and a bookmark that cannot be read.
+        ``parent_open`` is None for the outline root. Returns ``(kept,
+        changed)``: the kept children as ``(item, descendants visible when it
+        is open, is open)``, and whether anything at or below this level
+        changed. Bookmarks are not vetted: the sweep reads them all.
         """
-        items = []
-        item = first
-        while _is_indirect_dict(item) and item.objgen not in seen and len(seen) < _MAX_CHAIN:
-            seen.add(item.objgen)
-            fields = dict(item.items())
-            items.append((item, fields))
-            item = fields.get("/Next")
-
         kept: list = []
         changed = False
-        for item, fields in items:
-            count = fields.get("/Count")
-            is_open = isinstance(count, int) and count > 0
-            child = fields.get("/First")
-            children, below_changed = None, False
-            if child is not None and depth < _MAX_DEPTH:
-                children, below_changed = self._prune_outline_level(item, child, is_open, depth + 1, seen)
-            changed = changed or below_changed
-            se = fields.get("/SE")
-            if se is not None and _is_indirect_dict(se) and se.objgen in self.dead:
-                del item["/SE"]
-            target = self._outline_target(item, fields)
-            if target == _DEAD or (target is None and child is not None and children == []):
+        item = first
+        while (
+            _is_indirect_dictlike(item)
+            and item.objgen not in seen
+            and item.objgen not in self.protected  # a crafted /Next: the list ends there
+            and len(seen) < _MAX_CHAIN
+        ):
+            seen.add(item.objgen)
+            self.outline_items.add(item.objgen)
+            if item.objgen in self.dead:
+                # A removed page or the like where a bookmark belongs: it goes,
+                # and with it the rest of a list no bookmark continues.
+                changed = True
+                item = item.get("/Next")
+                continue
+            nxt = None
+            try:
+                fields = dict(item.items())
+                nxt = fields.get("/Next")
+                count = fields.get("/Count")
+                is_open = type(count) is int and count > 0
+                child = fields.get("/First")
+                children, below_changed = None, False
+                if child is not None and depth < _MAX_DEPTH:
+                    children, below_changed = self._prune_outline_level(item, child, is_open, depth + 1, seen)
+                changed = changed or below_changed
+                se = fields.get("/SE")
+                if se is not None and _is_indirect_dictlike(se) and se.objgen in self.dead:
+                    del item["/SE"]
+                target = self._outline_target(item, fields)
+                if target == _DEAD or (target is None and child is not None and children == []):
+                    self.kill(item)
+                    changed = True
+                    kept.extend(children or [])
+                else:
+                    if children is None:
+                        below = abs(count) if type(count) is int and child is not None else 0
+                    else:
+                        below = sum(1 + (b if o else 0) for _, b, o in children)
+                    kept.append((item, below, is_open))
+            except Exception:  # noqa: BLE001 - an unreadable bookmark goes
+                logger.debug("page removal: bookmark dropped", exc_info=True)
                 self.kill(item)
                 changed = True
-                kept.extend(children or [])
-                continue
-            if children is None:
-                # No children, or nesting too deep to follow: left as it is,
-                # and the sweep still goes through whatever is below.
-                below = abs(count) if isinstance(count, int) and child is not None else 0
-                if child is not None:
-                    self.pending.append(child)
-            else:
-                below = sum(1 + (b if o else 0) for _, b, o in children)
-            kept.append((item, below, is_open))
-            self._vet(item, fields, _OUTLINE_KEYS)
-            action = item.get("/A") if "/A" in fields else None
-            if _type(action) == _DICT:
-                self.pending.append(action)  # its keys beyond /D and /Next
+            item = nxt
 
         if not changed:
             return kept, False
         for i, (item, _, _) in enumerate(kept):
-            item.Parent = parent
+            item["/Parent"] = parent
             if i:
-                item.Prev = kept[i - 1][0]
+                item["/Prev"] = kept[i - 1][0]
             elif "/Prev" in item:
                 del item["/Prev"]
             if i + 1 < len(kept):
-                item.Next = kept[i + 1][0]
+                item["/Next"] = kept[i + 1][0]
             elif "/Next" in item:
                 del item["/Next"]
         if not kept:
@@ -1047,13 +1695,40 @@ class _Pruner:
                 if key in parent:
                     del parent[key]
             return kept, True
-        parent.First = kept[0][0]
-        parent.Last = kept[-1][0]
+        parent["/First"] = kept[0][0]
+        parent["/Last"] = kept[-1][0]
         visible = sum(1 + (b if o else 0) for _, b, o in kept)
         # Open when /Count is positive; a closed bookmark stores the number
         # negated (PDF 12.3.3). The root counts everything visible.
-        parent.Count = visible if parent_open is None or parent_open else -visible
+        parent["/Count"] = visible if parent_open is None or parent_open else -visible
         return kept, True
+
+    def _stray_bookmark_dead(self, item, fields, depth: int = 0) -> bool:
+        """The outline pass's verdict, for a bookmark it could not reach.
+
+        Dead when its target was on a removed page, or, for a heading without
+        a target, when none of its children survives. Its list is not relinked:
+        past a break, no viewer shows it anyway.
+        """
+        target = self._outline_target(item, fields)
+        if target is not None:
+            return target == _DEAD
+        child = fields.get("/First")
+        if depth >= _MAX_DEPTH:
+            return False
+        seen: set = set()
+        while (
+            _is_indirect_dictlike(child)
+            and child.objgen not in seen
+            and child.objgen not in self.protected
+            and len(seen) < _MAX_CHAIN
+        ):
+            seen.add(child.objgen)
+            entries = child.items().mapping
+            if child.objgen not in self.dead and not self._stray_bookmark_dead(child, entries, depth + 1):
+                return False
+            child = entries.get("/Next")
+        return bool(seen)
 
     def _outline_target(self, item, fields: dict):
         """_DEAD or _LIVE for a bookmark with a target, None without one."""
@@ -1067,7 +1742,7 @@ class _Pruner:
                 states.append(_DEAD)
             else:
                 if pruned is not action:
-                    item.A = pruned
+                    item["/A"] = pruned
                 states.append(_LIVE)
         if not states:
             return None
@@ -1077,105 +1752,178 @@ class _Pruner:
 
     def prune_catalog(self, root) -> None:
         opener = root.get("/OpenAction")
-        if _type(opener) == _ARRAY:
-            if self.dest_state(opener) == _DEAD:
-                del root["/OpenAction"]
-        elif _type(opener) == _DICT:
-            pruned = self.prune_action(opener)
-            if pruned is None:
-                del root["/OpenAction"]
-            elif pruned is not opener:
-                root.OpenAction = pruned
+        try:
+            if _type(opener) == _ARRAY:
+                if self.dest_state(opener) == _DEAD:
+                    del root["/OpenAction"]
+            elif _type(opener) in _DICTLIKE:
+                pruned = self.prune_action(opener)
+                if pruned is None:
+                    del root["/OpenAction"]
+                elif pruned is not opener:
+                    root["/OpenAction"] = pruned
+        except Exception:  # noqa: BLE001 - an unreadable open action goes
+            logger.debug("page removal: open action dropped", exc_info=True)
+            self._drop(root, "/OpenAction")
         aa = root.get("/AA")
         if aa is not None:
             self.prune_additional_actions(root, aa)
         names = root.get("/Names")
-        pages_tree = names.get("/Pages") if _type(names) == _DICT else None
+        pages_tree = names.get("/Pages") if _type(names) in _DICTLIKE else None
         if pages_tree is not None:
             def keep(_key, value):
-                return not (_type(value) == _DICT and self.page_dead(value))
+                return not (_type(value) in _DICTLIKE and self.page_dead(value))
 
-            if _prune_tree(pages_tree, "/Names", keep) is None:
+            if _prune_tree(pages_tree, "/Names", keep) is None and "/Pages" in names:
                 del names["/Pages"]
-
-    def _vet(self, obj, fields: dict, known: frozenset) -> None:
-        """Record that a pass checked ``obj``'s ``known`` keys; queue the rest."""
-        for key, value in fields.items():
-            if key not in known and _type(value) in (_DICT, _ARRAY, _STREAM):
-                self.pending.append(value)
-        if obj.is_indirect:
-            self.vetted.add(obj.objgen)
 
     # ── the sweep ───────────────────────────────────────────────────────────
 
-    def sweep(self) -> None:
+    def sweep(self, exhaustive: bool = False) -> None:
         """Cut every remaining reference to a removed object.
 
-        Everything reachable from the trailer is visited once, except values
-        the specification limits to numbers and names (``_NUMBERS_ONLY``) and
-        what a pass already read in full. A reference to a removed page,
-        annotation, bead, field, structure element or thread is deleted from
-        its dictionary, or replaced by null in its array, so nothing that
-        belonged to a removed page is written. So is one to any other page
-        object outside the page tree, such as one an earlier tool left behind,
-        and, in a copied document, to an annotation on no page.
+        Everything reachable from the trailer is visited once. A reference is
+        deleted from its dictionary, or replaced by null in its array, when it
+        leads to:
+
+        * a removed page, annotation, bead, field, structure element or thread;
+        * any other page object outside the page tree (one an earlier tool
+          left behind, say), or a page dictionary written in place;
+        * a structure element the tree pass did not keep, or a bead or
+          bookmark of a removed page that the passes could not reach through
+          a broken ring or list;
+        * another document's catalog, outline or structure tree, carried in
+          with a copied page, and in a copied document an annotation on no page.
+
+        So nothing that belonged to a removed page is written.
+
+        Unless ``exhaustive``, two things are skipped: structure elements the
+        tree pass read in full (what it left over was queued in ``pending``),
+        and direct values under ``_NUMBERS_ONLY`` keys of dictionaries whose
+        type the specification defines. A dictionary's entries are read once,
+        to judge it and to visit it.
         """
         dead = self.dead
         live_pages = self.live_pages
+        tree_nodes = self.tree_nodes
         templates = self.template_pages
+        removed_pages = self.removed_pages
         exact = self.exact
         live_annots = self.live_annots
-        containers = (_DICT, _ARRAY, _STREAM)
-        # Vetted objects count as visited; what they left over is queued.
-        verdicts: dict = dict.fromkeys(self.vetted, False)
+        alive_elements = self.alive_elements
+        outline_items = self.outline_items
+        root = self.pdf.Root
+        own_roots = {
+            obj.objgen for obj in (root, root.get("/Outlines"), root.get("/StructTreeRoot"))
+            if _is_indirect_dictlike(obj)
+        }
+        verdicts: dict = {} if exhaustive else dict.fromkeys(self.vetted, False)
+        # (object, its entries if they were read to judge it)
         stack: list = [(self.pdf.trailer, None)]
-        for obj in self.pending:
-            if not obj.is_indirect:
-                stack.append((obj, None))
-            elif obj.objgen not in verdicts:
-                verdicts[obj.objgen] = obj.objgen in dead
-                if not verdicts[obj.objgen]:
-                    stack.append((obj, None))
         cut = 0
 
         def is_dead(value, og) -> bool:
             verdict = verdicts.get(og)
-            if verdict is None:
-                fields = None
-                verdict = og in dead
-                if not verdict and value._type_code == _DICT and og not in live_pages:
-                    fields = dict(value.items())
-                    verdict = (
-                        (fields.get("/Type") == Name.Page and og not in templates)
-                        or (not exact and og not in live_annots and _is_annotation(fields))
-                    )
-                verdicts[og] = verdict
-                if not verdict:
-                    stack.append((value, fields))  # visited once, from here
+            if verdict is not None:
+                return verdict
+            verdict = og in dead
+            fields = None
+            if (
+                not verdict
+                and og not in live_pages
+                and og not in tree_nodes
+                and value._type_code in _DICTLIKE
+            ):
+                fields = value.items().mapping
+                typ = fields.get("/Type")
+                kind = _SWEPT_TYPES.get(typ) if _type(typ) == _NAME else None
+                if kind == _SWEPT_PAGE:
+                    verdict = og not in templates
+                elif kind == _SWEPT_ROOT:
+                    verdict = og not in own_roots  # another document's
+                elif kind == _SWEPT_ELEMENT:
+                    verdict = og not in alive_elements  # removed, or outside the tree
+                elif kind == _SWEPT_BEAD:
+                    verdict = self.bead_dead(value)  # its ring may not have been walkable
+                elif og not in live_annots and (
+                    kind == _SWEPT_ANNOT or ("/Rect" in fields and "/Subtype" in fields)
+                ):
+                    if exact:
+                        page = fields.get("/P")
+                        verdict = _is_indirect_dictlike(page) and page.objgen in removed_pages
+                    else:
+                        verdict = True
+                elif (
+                    og not in outline_items
+                    and "/Title" in fields
+                    and ("/Parent" in fields or "/Prev" in fields or "/Next" in fields)
+                ):
+                    # A bookmark past a break in its list, which the outline
+                    # pass could not reach. Judging it can rewrite its /A, so
+                    # its entries are read again for the visit.
+                    try:
+                        verdict = self._stray_bookmark_dead(value, fields)
+                    except Exception:  # noqa: BLE001 - unreadable: the visit reads it
+                        verdict = False
+                    fields = None
+            verdicts[og] = verdict
+            if not verdict:  # visited once, from here
+                stack.append((value, fields if len(stack) < _HELD else None))
             return verdict
+
+        def cut_direct(value) -> bool:
+            """Queue a direct value for its visit; True for a page written in place."""
+            if value._type_code == _ARRAY:
+                stack.append((value, None))
+                return False
+            entries = value.items().mapping
+            if entries.get("/Type") == _PAGE:
+                return True  # no page tree can list a page that is not an object
+            stack.append((value, entries if len(stack) < _HELD else None))
+            return False
+
+        if not exhaustive:
+            for value in self.pending:
+                if value.__class__ in _SCALARS or _type(value) not in _CONTAINERS:
+                    continue
+                if not value.is_indirect:
+                    stack.append((value, None))
+                else:
+                    is_dead(value, value.objgen)
 
         while stack:
             obj, fields = stack.pop()
             if obj._type_code == _ARRAY:
                 doomed = []
                 for i, value in enumerate(obj):
-                    if getattr(value, "_type_code", None) not in containers:
+                    if value.__class__ in _SCALARS or getattr(value, "_type_code", None) not in _CONTAINERS:
                         continue
-                    if not value.is_indirect:
-                        stack.append((value, None))
-                    elif is_dead(value, value.objgen):
+                    if value.is_indirect:
+                        if is_dead(value, value.objgen):
+                            doomed.append(i)
+                    elif cut_direct(value):
                         doomed.append(i)
                 for i in doomed:
                     obj[i] = None
                 cut += len(doomed)
                 continue
+            if fields is None:
+                fields = obj.items().mapping
+            typed = None
             doomed = []
-            for key, value in (fields.items() if fields is not None else obj.items()):
-                if key in _NUMBERS_ONLY or getattr(value, "_type_code", None) not in containers:
+            for key, value in fields.items():
+                if value.__class__ in _SCALARS or getattr(value, "_type_code", None) not in _CONTAINERS:
                     continue
-                if not value.is_indirect:
-                    stack.append((value, None))
-                elif is_dead(value, value.objgen):
+                if value.is_indirect:
+                    if is_dead(value, value.objgen):
+                        doomed.append(key)
+                    continue
+                if not exhaustive and key in _NUMBERS_ONLY:
+                    if typed is None:
+                        typed = _is_spec_typed(fields.items())
+                    if typed:
+                        continue
+                if cut_direct(value):
                     doomed.append(key)
             for key in doomed:
                 del obj[key]
@@ -1187,11 +1935,13 @@ class _Pruner:
 class _Record:
     """One structure element during pruning."""
 
-    __slots__ = ("obj", "fields", "parent", "page", "kids", "kept", "alive", "had_kids", "single")
+    __slots__ = (
+        "obj", "parent", "page", "kids", "kept", "alive", "had_kids", "single",
+        "pg", "p", "ref", "texts", "recheck",
+    )
 
-    def __init__(self, obj, fields: dict, parent, page):
+    def __init__(self, obj, parent, page):
         self.obj = obj
-        self.fields = fields
         self.parent = parent
         self.page = page
         self.kids: list = []
@@ -1199,3 +1949,8 @@ class _Record:
         self.alive = True
         self.had_kids = False
         self.single = False
+        self.pg = None
+        self.p = None
+        self.ref = None
+        self.texts: list = []
+        self.recheck = False

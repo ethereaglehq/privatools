@@ -7,6 +7,7 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
+from ..utils.exceptions import ToolError
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -29,14 +30,21 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
 
     doc = fitz.open(stream=data, filetype="pdf")
     threshold = (100 - sensitivity) / 100.0
-    pages_to_keep = []
+    # Pages are recorded by object number, not position: see below.
+    blank_objects: set[int] = set()
+    content_objects: set[int] = set()
 
     for i in range(len(doc)):
-        page = doc[i]
+        try:
+            page = doc[i]
+        except (IndexError, RuntimeError):
+            # MuPDF counted a page it cannot load (a /Count larger than the
+            # tree). Not judged, so it is not removed.
+            continue
 
         # Fast path: if page has text content, keep it immediately
         if page.get_text("text").strip():
-            pages_to_keep.append(i)
+            content_objects.add(page.xref)
             continue
 
         # Render at low DPI for blank detection
@@ -68,22 +76,30 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
 
         ratio = white_count / sample_count if sample_count > 0 else 1
         if ratio < (1 - threshold):
-            pages_to_keep.append(i)
+            content_objects.add(page.xref)
+        else:
+            blank_objects.add(page.xref)
 
-    total = len(doc)
     doc.close()
-    if not pages_to_keep:
-        pages_to_keep = list(range(total))
-    kept = set(pages_to_keep)
 
     # Removed with pikepdf rather than by copying the kept pages into a new
     # PyMuPDF document: a form field with a widget on a blank page pulled that
     # whole page, content and images, back into the copy.
+    #
+    # MuPDF and qpdf can read a damaged page tree differently: MuPDF trusts
+    # /Count and takes a junk or dangling /Kids entry for a page, qpdf skips
+    # it. Counting positions across the two then removes the wrong pages, so
+    # a page goes only if MuPDF judged that very object blank. Any page qpdf
+    # lists that MuPDF did not judge, or judged to have content, stays.
     with safe_open_pdf(io.BytesIO(data)) as pdf:
-        blank = [i for i in range(total) if i not in kept]
-        if blank:
-            remove_pages(pdf, blank)
-        pdf.save(out_path)
+        pages = [page.obj for page in pdf.pages]
+        blank = [
+            i for i, page in enumerate(pages)
+            if page.objgen[0] in blank_objects and page.objgen[0] not in content_objects
+        ]
+        if len(blank) == len(pages):
+            blank = []  # every page looks blank: keep them all
+        remove_pages(pdf, blank).save(out_path)
     return out_path
 
 
@@ -119,7 +135,7 @@ async def remove_blank_pages(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         if out_path:
             remove_files(out_path)
         raise

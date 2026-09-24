@@ -66,9 +66,8 @@ def split_by_text(input_path: str, search: str, case_sensitive: bool = False) ->
                 copier.copy(chunk, range(start, end))
                 # The other parts' pages must not ride along with this part's
                 # links, form fields and threads.
-                prune_to_page_tree(chunk)
                 chunk_out = temp_output(f"split_text_part{idx}", "pdf")
-                chunk.save(str(chunk_out))
+                prune_to_page_tree(chunk).save(str(chunk_out))
             chunk_paths.append(chunk_out)
     finally:
         pdf.close()

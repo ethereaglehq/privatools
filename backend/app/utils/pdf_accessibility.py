@@ -168,13 +168,14 @@ def _preserve_title(src: pikepdf.Pdf, dst: pikepdf.Pdf) -> None:
 
 
 def preserve_structure_tree(
-    src: pikepdf.Pdf, dst: pikepdf.Pdf, pages: Sequence[int] | None = None,
+    src: pikepdf.Pdf, dst: pikepdf.Pdf, *, pages: Sequence[int],
 ) -> bool:
     """Carry `src`'s structure tree onto `dst`, pruned to the copied pages.
 
     Call this AFTER the pages have been appended — the object map that makes
     `/Pg` resolve correctly is populated by those appends. `pages` lists the
-    0-based indices of the source pages that were copied (None: all of them).
+    0-based indices of the source pages that were copied; it is required,
+    because a tree copied unpruned carries the tags of every page left out.
     The tree is pruned to them in `src` itself, in memory, before it is
     copied, so `src` must not be saved afterwards.
 
@@ -182,13 +183,12 @@ def preserve_structure_tree(
     the caller to set `/MarkInfo << /Marked true >>`; setting it otherwise
     claims the document is tagged when it is not.
     """
-    if pages is not None:
-        try:
-            prune_structure_tree_to_pages(src, pages)
-        except Exception:
-            # Copying an unpruned tree would carry the other pages' tags along.
-            logger.debug("preserve: structure tree could not be pruned", exc_info=True)
-            return False
+    try:
+        prune_structure_tree_to_pages(src, pages)
+    except Exception:
+        # Copying an unpruned tree would carry the other pages' tags along.
+        logger.debug("preserve: structure tree could not be pruned", exc_info=True)
+        return False
 
     try:
         src_root = src.Root.get("/StructTreeRoot")
@@ -240,7 +240,7 @@ class StructureTreeMerger:
             with open_pdf(path) as src:
                 first = len(dst.pages)
                 dst.pages.extend(src.pages)
-                merger.add_source(src, first, len(dst.pages) - 1)
+                merger.add_source(src, first, len(dst.pages) - 1, pages=None)
         merger.finalize()
     """
 
@@ -254,13 +254,14 @@ class StructureTreeMerger:
         self._tagged_sources = 0
 
     def add_source(
-        self, src: pikepdf.Pdf, first_page: int, last_page: int,
-        pages: Sequence[int] | None = None,
+        self, src: pikepdf.Pdf, first_page: int, last_page: int, *,
+        pages: Sequence[int] | None,
     ) -> None:
         """Add the tree of `src`, whose pages landed at `first_page..last_page`.
 
-        `pages` lists the 0-based source pages that were copied (None: all);
-        as in `preserve_structure_tree`, `src` is pruned to them in memory.
+        `pages` lists the 0-based source pages that were copied, or None when
+        every page was. It is required so no caller forgets it: as in
+        `preserve_structure_tree`, `src` is pruned to those pages in memory.
         """
         self._sources += 1
         if pages is not None:

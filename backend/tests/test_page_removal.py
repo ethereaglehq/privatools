@@ -22,14 +22,26 @@ from __future__ import annotations
 
 import io
 import json
+import logging
+import time
 import zipfile
 
 import pikepdf
 import pytest
 
 from backend.tests.page_reference_pdfs import (
+    CRAFTED,
+    DAMAGED_TREES,
     KINDS,
+    MALFORMED,
+    MISPLACED_TREES,
+    build_crafted_pdf,
+    build_damaged_tree_pdf,
+    build_malformed_pdf,
     build_reference_pdf,
+    build_shared_objects_pdf,
+    build_tagged_link_pdf,
+    page_texts,
     form_fields,
     leaked_pages,
     links,
@@ -453,3 +465,197 @@ def test_template_pages_are_left_alone(reference_pdf):
         out = _open(_save(pdf))
     names = out.Root.Names.Templates.Names
     assert str(names[0]) == "form-page" and names[1].get("/Type") == "/Page"
+
+
+# ── review round 1: hostile, damaged, malformed and crafted input ───────────
+
+
+def _service(tool: str, path) -> list[bytes]:
+    """Run a page service on ``path``; return each output PDF's bytes."""
+    from pathlib import Path
+
+    from backend.app.services import (
+        delete_pages_service,
+        extract_pages_service,
+        merge_service,
+        organize_pages_service,
+        split_service,
+    )
+
+    run = {
+        "delete": lambda: delete_pages_service.delete_pages(str(path), "2"),
+        "extract": lambda: extract_pages_service.extract_pages(str(path), "1,3-4"),
+        "organize": lambda: organize_pages_service.reorder_pages(str(path), [1, 3, 4]),
+        "split": lambda: split_service.split_pdf(str(path), mode="individual"),
+        "merge": lambda: merge_service.merge_pdfs([str(path), str(path)], ["1,3-4", "1"]),
+    }[tool]
+    out = Path(run())
+    data = out.read_bytes()
+    out.unlink()
+    if data[:2] == b"PK":
+        with zipfile.ZipFile(io.BytesIO(data)) as zf:
+            return [zf.read(name) for name in sorted(zf.namelist()) if name.endswith(".pdf")]
+    return [data]
+
+
+def _stray_pages(data: bytes) -> int:
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        listed = {page.obj.objgen for page in pdf.pages}
+        return sum(
+            1 for obj in pdf.objects
+            if isinstance(obj, (pikepdf.Dictionary, pikepdf.Stream))
+            and obj.get("/Type") == pikepdf.Name.Page and obj.objgen not in listed
+        )
+
+
+@pytest.mark.parametrize("kind, tool, n", [
+    ("shared_action", "delete", 3000),
+    ("shared_action", "extract", 3000),
+    ("shared_outline", "delete", 3000),
+    ("shared_ring", "delete", 4000),
+])
+def test_an_object_shared_by_many_owners_is_read_once(kind, tool, n, tmp_path):
+    """One action chain shared by every link, or one bead ring shared by every
+    thread, was walked again for each owner: n*n. At these sizes that cost
+    40 s to over 100 s of CPU; read once, it costs well under a second. The
+    bound is loose on purpose, so a loaded CI runner cannot flake it."""
+    path = tmp_path / "shared.pdf"
+    path.write_bytes(build_shared_objects_pdf(kind, n))
+    start = time.process_time()
+    outputs = _service(tool, path)
+    cpu = time.process_time() - start
+    assert cpu < 10, f"{kind} with {n} owners took {cpu:.1f} s of CPU"
+    for data in outputs:
+        assert not leaked_pages(data)
+
+
+@pytest.mark.parametrize("damage", DAMAGED_TREES)
+def test_remove_blank_pages_on_a_damaged_page_tree_keeps_every_page_with_content(client, damage):
+    """MuPDF finds the blank pages and qpdf removes them, and on a damaged page
+    tree the two list different pages. Matched by position, content pages went
+    and the blank one stayed; matched by object, only the blank page goes."""
+    resp = client.post(
+        "/api/remove-blank-pages", files={"file": _upload(build_damaged_tree_pdf(damage))},
+        data={"sensitivity": "85"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert page_texts(resp.content) == ["PAGE-1", "PAGE-2", "PAGE-4"]
+
+
+def test_delete_pages_accepts_a_page_tree_whose_count_is_wrong(client):
+    """qpdf refuses to remove a page when the root /Count disagrees with /Kids."""
+    resp = client.post(
+        "/api/delete-pages", files={"file": _upload(build_damaged_tree_pdf("count_small"))},
+        data={"pages": "3"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert page_texts(resp.content) == ["PAGE-1", "PAGE-2", "PAGE-4"]
+
+
+@pytest.mark.parametrize("tool", ["delete", "extract", "organize"])
+@pytest.mark.parametrize("name", MALFORMED)
+def test_a_malformed_value_neither_fails_the_tool_nor_keeps_a_removed_page(name, tool, tmp_path):
+    path = tmp_path / "malformed.pdf"
+    path.write_bytes(build_malformed_pdf(name))
+    for data in _service(tool, path):
+        assert not leaked_pages(data), f"{tool} kept page 2 of {name}"
+
+
+@pytest.mark.parametrize("tool", ["delete", "extract", "organize"])
+@pytest.mark.parametrize("name", MISPLACED_TREES)
+def test_a_page_tree_where_a_name_tree_belongs_keeps_its_pages(name, tool, tmp_path):
+    """The name tree pass must not prune the page tree, or the catalog, as
+    if it were a name tree: that emptied the page tree's /Kids."""
+    path = tmp_path / "misplaced.pdf"
+    path.write_bytes(build_malformed_pdf(name))
+    [data] = _service(tool, path)
+    assert _numbers(data) == [1, 3, 4]
+    assert _stray_pages(data) == 0
+
+
+@pytest.mark.parametrize("tool", ["delete", "extract", "organize", "split", "merge"])
+@pytest.mark.parametrize("name", CRAFTED)
+def test_a_crafted_reference_to_a_removed_page_does_not_keep_it(name, tool, tmp_path):
+    path = tmp_path / "crafted.pdf"
+    path.write_bytes(build_crafted_pdf(name))
+    for data in _service(tool, path):
+        assert not leaked_pages(data), f"{tool} kept objects of page 2 through {name}"
+        assert _stray_pages(data) == 0
+
+
+def test_an_element_the_tree_pass_leaves_to_the_sweep_is_swept(tmp_path, caplog):
+    """A section reached only through elements the tree pass read in full is
+    still read by the sweep, so the check after saving has nothing to find."""
+    pdf = pikepdf.open(io.BytesIO(build_reference_pdf(("struct_tree",))))
+    pdf.Root.StructTreeRoot.K[0].K[0].PrivaData = pdf.pages[1].obj  # page 1's section
+    path = tmp_path / "element.pdf"
+    pdf.save(path)
+    with caplog.at_level(logging.WARNING, logger="backend.app.utils.page_removal"):
+        [data] = _service("delete", path)
+    assert not any("sweeping again" in record.getMessage() for record in caplog.records)
+    assert _numbers(data) == [1, 3, 4]
+    assert not leaked_pages(data)
+    assert _stray_pages(data) == 0
+
+
+def test_a_page_hidden_where_the_sweep_does_not_look_is_caught_after_saving(tmp_path, caplog):
+    """A font's direct number array is skipped by the sweep; the check after
+    saving finds the page it hid, and a second sweep that skips nothing cuts it."""
+    path = tmp_path / "hidden.pdf"
+    path.write_bytes(build_crafted_pdf("font_bbox_page"))
+    with caplog.at_level(logging.WARNING, logger="backend.app.utils.page_removal"):
+        [data] = _service("delete", path)
+    assert any("sweeping again" in record.getMessage() for record in caplog.records)
+    assert _numbers(data) == [1, 3, 4]
+    assert not leaked_pages(data)
+    assert _stray_pages(data) == 0
+
+
+def test_an_output_that_would_keep_a_removed_page_is_refused(client, monkeypatch):
+    """If even the second sweep cannot cut a removed page, no file is returned."""
+    from backend.app.utils import cleanup, page_removal
+
+    monkeypatch.setattr(page_removal._Pruner, "sweep", lambda self, exhaustive=False: None)
+    before = set(cleanup.TEMP_DIR.iterdir()) if cleanup.TEMP_DIR.exists() else set()
+    resp = client.post(
+        "/api/delete-pages", files={"file": _upload(build_reference_pdf(["piece_info"]))},
+        data={"pages": "2"},
+    )
+    assert resp.status_code == 422, resp.text
+    assert "could not be removed completely" in resp.json()["detail"]
+    after = set(cleanup.TEMP_DIR.iterdir()) if cleanup.TEMP_DIR.exists() else set()
+    assert after <= before, f"left behind: {sorted(str(p) for p in after - before)}"
+
+
+def test_a_tagged_link_to_a_removed_page_leaves_no_parent_tree_key(client):
+    """The link goes with its target; its element stays for the link text, so
+    the link's own ParentTree key has to be dropped explicitly, and the
+    element's /Alt, which described the link to page 2, goes too."""
+    resp = client.post(
+        "/api/delete-pages", files={"file": _upload(build_tagged_link_pdf())},
+        data={"pages": "2"},
+    )
+    [data] = _outputs(resp)
+    assert not leaked_pages(data)
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        assert structure_problems(pdf) == []
+        tree = pdf.Root.StructTreeRoot
+        keys = [int(key) for key, _ in tree_items(tree.ParentTree, "/Nums")]
+        assert 2000 not in keys
+        text_links = [
+            e for e, _ in _walk_elements(tree)
+            if e.S == "/Link" and isinstance(e.get("/K"), pikepdf.Array) and list(e.K) == [2]
+        ]
+        assert len(text_links) == 1, "the link's element keeps its text and loses its OBJR"
+        assert "/Alt" not in text_links[0]
+
+
+def test_validation_errors_of_page_services_reach_the_user_as_400(client):
+    """The page routes turned every service error into a bare 500."""
+    data = build_reference_pdf(())
+    resp = client.post("/api/delete-pages", files={"file": _upload(data)}, data={"pages": "1-4"})
+    assert resp.status_code == 400, resp.text
+    resp = client.post(
+        "/api/split-by-text", files={"file": _upload(data)}, data={"search": "not in this file"},
+    )
+    assert resp.status_code == 400, resp.text

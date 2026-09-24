@@ -492,6 +492,370 @@ def _write_outline(pdf: pikepdf.Pdf, page_objs: list, items: list) -> None:
     pdf.Root.Outlines = root
 
 
+# ── hostile, damaged, malformed and crafted input ───────────────────────────
+
+
+def _open(data: bytes) -> pikepdf.Pdf:
+    return pikepdf.open(io.BytesIO(data))
+
+
+def _saved(pdf: pikepdf.Pdf) -> bytes:
+    buf = io.BytesIO()
+    pdf.save(buf, object_stream_mode=pikepdf.ObjectStreamMode.disable)
+    pdf.close()
+    return buf.getvalue()
+
+
+def _stream(pdf: pikepdf.Pdf, **entries):
+    stream = pdf.make_stream(b"")
+    for key, value in entries.items():
+        stream[f"/{key}"] = value
+    return stream
+
+
+def _outline_of(pdf: pikepdf.Pdf, items: list) -> None:
+    root = pdf.make_indirect(Dictionary(Type=Name.Outlines))
+    for item in items:
+        item["/Parent"] = root
+    for prev, nxt in zip(items, items[1:]):
+        prev["/Next"] = nxt
+        nxt["/Prev"] = prev
+    root.First, root.Last, root.Count = items[0], items[-1], len(items)
+    pdf.Root.Outlines = root
+
+
+SHARED_KINDS = ("shared_action", "shared_outline", "shared_ring")
+
+
+def build_shared_objects_pdf(kind: str, n: int) -> bytes:
+    """A 4-page PDF whose many owners share one object, as hostile files do.
+
+    ``shared_action``: n links on page 1 share one action whose /Next lists n
+    more; ``shared_outline``: n bookmarks share such an action;
+    ``shared_ring``: n article threads start in one ring of n beads. A walk
+    that starts afresh for each owner costs n*n.
+    """
+    pdf = _open(build_reference_pdf(()))
+    p = [page.obj for page in pdf.pages]
+    if kind in ("shared_action", "shared_outline"):
+        subs = [
+            pdf.make_indirect(Dictionary(S=Name.URI, URI=String(f"https://example.com/{k}")))
+            for k in range(n)
+        ]
+        shared = pdf.make_indirect(Dictionary(
+            S=Name.GoTo, D=Array([p[0], Name.Fit]), Next=Array(subs)))
+    if kind == "shared_action":
+        p[0].Annots = Array([
+            pdf.make_indirect(Dictionary(Type=Name.Annot, Subtype=Name.Link,
+                                         Rect=Array([0, 0, 10, 10]), A=shared))
+            for _ in range(n)
+        ])
+        p[2].Annots = Array([pdf.make_indirect(Dictionary(
+            Type=Name.Annot, Subtype=Name.Link, Rect=Array([0, 0, 10, 10]),
+            Dest=Array([p[1], Name.Fit])))])
+    elif kind == "shared_outline":
+        _outline_of(pdf, [
+            pdf.make_indirect(Dictionary(Title=String(f"b{k}"), A=shared)) for k in range(n)
+        ])
+    elif kind == "shared_ring":
+        beads = [pdf.make_indirect(Dictionary(Type=Name.Bead, P=p[0], R=Array([0, 0, 1, 1])))
+                 for _ in range(n)]
+        threads = [pdf.make_indirect(Dictionary(Type=Name.Thread, F=beads[0])) for _ in range(n)]
+        for k, bead in enumerate(beads):
+            bead.N = beads[(k + 1) % n]
+            bead.V = beads[k - 1]
+            bead.T = threads[0]
+        p[0].B = Array(beads)
+        pdf.Root.Threads = Array(threads)
+    else:
+        raise ValueError(kind)
+    return _saved(pdf)
+
+
+DAMAGED_TREES = ("count_small", "count_large", "junk_kid", "dangling_kid")
+
+
+def build_damaged_tree_pdf(damage: str) -> bytes:
+    """Pages reading PAGE-1, PAGE-2, (blank), PAGE-4, in a damaged page tree.
+
+    ``count_small`` and ``count_large``: the root /Count says 3 or 6.
+    ``junk_kid``: a string sits in /Kids between pages 1 and 2.
+    ``dangling_kid``: a /Kids entry points at an object that does not exist.
+    MuPDF trusts /Count and reads a junk entry as a page; qpdf does neither.
+    """
+    pdf = pikepdf.new()
+    font = pdf.make_indirect(Dictionary(Type=Name.Font, Subtype=Name.Type1, BaseFont=Name.Helvetica))
+    for i in range(1, 5):
+        text = b"" if i == 3 else f"BT /F1 24 Tf 72 700 Td (PAGE-{i}) Tj ET".encode()
+        pdf.pages.append(pikepdf.Page(Dictionary(
+            Type=Name.Page, MediaBox=Array([0, 0, 612, 792]),
+            Resources=Dictionary(Font=Dictionary(F1=font)),
+            Contents=pdf.make_stream(text))))
+    if damage in ("junk_kid", "dangling_kid"):
+        kids = list(pdf.Root.Pages.Kids)
+        pdf.Root.Pages.Kids = Array(kids[:1] + [String("junk")] + kids[1:])
+    data = _saved(pdf)
+    patch = {
+        "count_small": (b"/Count 4", b"/Count 3"),
+        "count_large": (b"/Count 4", b"/Count 6"),
+        "junk_kid": None,
+        "dangling_kid": (b"(junk)", b"999 0 R"),
+    }[damage]
+    if patch:
+        assert patch[0] in data, damage
+        data = data.replace(patch[0], patch[1])
+    return data
+
+
+def page_texts(data: bytes) -> list[str]:
+    """PAGE-n, or "blank", for each page in qpdf's page list."""
+    found = []
+    with _open(data) as pdf:
+        for page in pdf.pages:
+            match = re.search(rb"PAGE-\d", _content_bytes(page.obj))
+            found.append(match.group(0).decode() if match else "blank")
+    return found
+
+
+MALFORMED = (
+    "structparents_array", "structparents_page", "structparent_stream",
+    "aa_names_a_page", "aa_is_array", "count_is_name", "first_is_integer",
+    "odd_parent_tree", "kid_is_string", "pg_is_array", "annots_is_dictionary",
+    "fields_is_name", "bead_ring_is_broken", "dest_array_empty",
+    "element_kid_is_name", "element_is_its_own_kid", "pg_is_the_catalog",
+    "section_kids_are_junk", "thread_first_is_junk", "bookmark_list_is_broken",
+    "thread_first_is_a_stream", "heading_child_is_a_removed_page", "bead_type_is_junk",
+)
+# Something other than a tree where a name tree belongs. The pages must stay
+# as they are; what the tree held cannot be read, so a named link to page 2
+# keeps its name.
+MISPLACED_TREES = ("names_is_the_catalog", "named_pages_is_the_page_tree")
+
+
+def build_malformed_pdf(name: str) -> bytes:
+    """The all-kinds fixture with one value of a type the spec does not allow."""
+    pdf = _open(build_reference_pdf(KINDS))
+    p = [page.obj for page in pdf.pages]
+    root = pdf.Root.StructTreeRoot
+    if name == "structparents_array":
+        p[2].StructParents = Array([])
+    elif name == "structparents_page":
+        p[2].StructParents = p[1]
+    elif name == "structparent_stream":
+        link = [a for a in p[1].Annots if "/StructParent" in a][0]
+        link.StructParent = pdf.make_stream(b"x")
+    elif name == "aa_names_a_page":
+        p[0].AA = Dictionary(O=p[1])
+    elif name == "aa_is_array":
+        p[0].AA = Array([p[1]])
+    elif name == "count_is_name":
+        pdf.Root.Outlines.Count = Name.Bogus
+    elif name == "first_is_integer":
+        pdf.Root.Outlines.First.First = 7
+    elif name == "odd_parent_tree":
+        nums = [x for x in root.ParentTree.Nums]
+        root.ParentTree.Nums = Array(nums + [99])
+    elif name == "kid_is_string":
+        section = root.K[0].K[1]
+        section.K = Array([x for x in section.K] + [String("junk")])
+    elif name == "pg_is_array":
+        root.K[0].K[1].K[0].Pg = Array([])
+    elif name == "annots_is_dictionary":
+        p[0].Annots = Dictionary(Bogus=1)
+    elif name == "fields_is_name":
+        pdf.Root.AcroForm.Fields = Name.Bogus
+    elif name == "bead_ring_is_broken":
+        p[1].B[0].N = 7
+    elif name == "dest_array_empty":
+        pdf.Root.Outlines.First.Dest = Array([])
+    elif name == "element_kid_is_name":
+        # Page 2's Link element: no valid kid says where it is, its /Pg does.
+        root.K[0].K[1].K[2].K = Name.Bogus
+    elif name == "element_is_its_own_kid":
+        element = root.K[0].K[1].K[2]
+        element.K = Array([element])
+    elif name == "names_is_the_catalog":
+        pdf.Root.Names = pdf.Root
+    elif name == "named_pages_is_the_page_tree":
+        pdf.Root.Names.Pages = pdf.Root.Pages
+    elif name == "pg_is_the_catalog":
+        root.K[0].K[1].K[0].Pg = pdf.Root  # page 2's paragraph
+    elif name == "section_kids_are_junk":
+        # Page 2's elements drop out of the tree; page 3's /Ref still names one.
+        root.K[0].K[1].K = 7
+    elif name == "thread_first_is_junk":
+        pdf.Root.Threads[0].F = 7  # the ring can no longer be walked
+    elif name == "bookmark_list_is_broken":
+        # The bookmarks after the first are reached only through /Last and /Prev.
+        pdf.Root.Outlines.First.Next = 7
+    elif name == "thread_first_is_a_stream":
+        pdf.Root.Threads[1].F = pdf.make_stream(b"x")  # the article only on page 2
+    elif name == "heading_child_is_a_removed_page":
+        item = pdf.Root.Outlines.First
+        while str(item.get("/Title", "")) != marker(2, "HEADING"):
+            item = item.Next
+        item.First = p[1]
+    elif name == "bead_type_is_junk":
+        # In a copy, this bead's /P is null too: only its shape says it is one.
+        p[1].B[0].Type = 7
+    else:
+        raise ValueError(name)
+    return _saved(pdf)
+
+
+# Each removes page 2's markers only if a pass reads it the way PDFium does.
+CRAFTED = (
+    "private_numbers_key", "template_is_removed_page", "stream_action",
+    "stream_bookmark", "stream_field", "stream_note", "stream_element",
+    "stream_dest", "widget_not_in_annots", "reply_to_unlisted_note",
+    "structure_destination", "spanning_actualtext", "font_bbox_page",
+    "catalog_under_a_kept_page", "catalog_as_a_thread", "page_tree_in_the_bookmarks",
+    "catalog_under_an_element", "catalog_is_an_element_kid", "page_written_in_place",
+)
+
+
+def build_crafted_pdf(name: str) -> bytes:
+    """Page 2 reached in a way the reference kinds do not cover.
+
+    Removing page 2 (Delete Pages "2", or any copy without it) must leave no
+    PRIVA-P2- marker. ``stream_*`` put a stream where a dictionary belongs,
+    which PDFium accepts. ``font_bbox_page`` hides page 2 where the sweep does
+    not look (a direct number array of a font), so only the check after saving
+    catches it. ``catalog_under_a_kept_page`` makes a copied page carry the
+    whole source catalog, bookmarks and tags of page 2 included.
+    """
+    base = {
+        "catalog_under_a_kept_page": ("outline_dest", "struct_tree"),
+        "catalog_as_a_thread": ("threads",),
+        "page_tree_in_the_bookmarks": ("outline_dest",),
+        "catalog_under_an_element": ("outline_dest", "struct_tree"),
+        "catalog_is_an_element_kid": ("outline_dest", "struct_tree"),
+        "template_is_removed_page": ("outline_dest",),
+        "widget_not_in_annots": ("acroform",),
+        "structure_destination": ("struct_tree",),
+        "spanning_actualtext": ("struct_tree",),
+        "stream_element": ("struct_tree",),
+    }.get(name, ())
+    pdf = _open(build_reference_pdf(base))
+    p = [page.obj for page in pdf.pages]
+    if name == "private_numbers_key":
+        p[0].PieceInfo = Dictionary(PrivaApp=Dictionary(
+            LastModified=String("D:20260924"), Private=Dictionary(BBox=Array([p[1]]))))
+    elif name == "template_is_removed_page":
+        pdf.Root.Names = Dictionary(Templates=Dictionary(Names=Array([String("tpl"), p[1]])))
+    elif name == "stream_action":
+        _outline_of(pdf, [pdf.make_indirect(Dictionary(
+            Title=String(marker(2, "BOOKMARK")),
+            A=_stream(pdf, S=Name.GoTo, D=Array([p[1], Name.Fit]))))])
+    elif name == "stream_bookmark":
+        _outline_of(pdf, [
+            pdf.make_indirect(Dictionary(Title=String("one"), Dest=Array([p[0], Name.Fit]))),
+            _stream(pdf, Title=String("two"), Dest=Array([p[2], Name.Fit])),
+            pdf.make_indirect(Dictionary(Title=String(marker(2, "BOOKMARK")),
+                                         Dest=Array([p[1], Name.Fit]))),
+        ])
+    elif name == "stream_field":
+        field = _stream(pdf, FT=Name.Tx, T=String("ssn"), V=String(marker(2, "TYPED")))
+        widget = pdf.make_indirect(Dictionary(
+            Type=Name.Annot, Subtype=Name.Widget, Rect=Array([300, 600, 500, 620]),
+            Parent=field, P=p[1], F=4))
+        field.Kids = Array([widget])
+        p[1].Annots = Array([widget])
+        pdf.Root.AcroForm = pdf.make_indirect(Dictionary(Fields=Array([field])))
+    elif name == "stream_note":
+        note = _stream(pdf, Type=Name.Annot, Subtype=Name.Text, Rect=Array([0, 0, 20, 20]),
+                       Contents=String(marker(2, "NOTE")), P=p[1])
+        reply = pdf.make_indirect(Dictionary(
+            Type=Name.Annot, Subtype=Name.Text, Rect=Array([0, 0, 20, 20]),
+            Contents=String("reply"), IRT=note, P=p[0]))
+        p[1].Annots = Array([note])
+        p[0].Annots = Array([reply])
+    elif name == "stream_element":
+        section = pdf.Root.StructTreeRoot.K[0].K[1]
+        element = _stream(pdf, Type=Name.StructElem, S=Name.P, P=section, Pg=p[1],
+                          ActualText=String(marker(2, "STREAM-ELEM")), K=0)
+        section.K = Array([x for x in section.K] + [element])
+    elif name == "stream_dest":
+        _outline_of(pdf, [pdf.make_indirect(Dictionary(
+            Title=String(marker(2, "BOOKMARK")),
+            Dest=_stream(pdf, D=Array([p[1], Name.Fit]))))])
+    elif name == "widget_not_in_annots":
+        widget = [a for a in p[1].Annots if str(a.get("/T", "")) == marker(2, "FIELD")][0]
+        p[1].Annots = Array([a for a in p[1].Annots if a.objgen != widget.objgen])
+    elif name == "reply_to_unlisted_note":
+        note = pdf.make_indirect(Dictionary(
+            Type=Name.Annot, Subtype=Name.Text, Rect=Array([0, 0, 20, 20]),
+            Contents=String(marker(2, "UNLISTED-NOTE")), P=p[1]))
+        p[0].Annots = Array([pdf.make_indirect(Dictionary(
+            Type=Name.Annot, Subtype=Name.Text, Rect=Array([0, 0, 20, 20]),
+            Contents=String("reply"), IRT=note, P=p[0]))])
+    elif name == "structure_destination":
+        tree = pdf.Root.StructTreeRoot
+        paragraph = tree.K[0].K[0].K[0]  # page 1's P
+        link = pdf.make_indirect(Dictionary(
+            Type=Name.Annot, Subtype=Name.Link, Rect=Array([72, 10, 200, 30]),
+            A=Dictionary(S=Name.GoTo, D=Array([p[0], Name.Fit]),
+                         SD=Array([paragraph, Name.Fit]))))
+        p[0].Annots = Array([x for x in p[0].Annots] + [link])
+    elif name == "spanning_actualtext":
+        for element in pdf.Root.StructTreeRoot.K[0].K:
+            if element.get("/S") == Name.Span:
+                element.ActualText = String(marker(2, "SPAN") + " continued on page 3")
+    elif name == "font_bbox_page":
+        font = p[0].Resources.Font.F1
+        font.FontBBox = Array([p[1]])
+    elif name == "catalog_under_a_kept_page":
+        p[0].PieceInfo = Dictionary(PrivaApp=Dictionary(
+            LastModified=String("D:20260924"), Private=Dictionary(Doc=pdf.Root)))
+    elif name == "catalog_as_a_thread":
+        p[0].B[0].T = pdf.Root  # page 1's bead
+    elif name == "page_tree_in_the_bookmarks":
+        pdf.Root.Outlines.First.Next = pdf.Root.Pages
+    elif name == "catalog_under_an_element":
+        pdf.Root.StructTreeRoot.K[0].K[0].PrivaDoc = pdf.Root  # page 1's section
+    elif name == "catalog_is_an_element_kid":
+        section = pdf.Root.StructTreeRoot.K[0].K[0]
+        section.K = Array([x for x in section.K] + [pdf.Root])
+    elif name == "page_written_in_place":
+        # A copy of page 2's dictionary, not an object: no page tree can list it.
+        p[0].PieceInfo = Dictionary(PrivaApp=Dictionary(
+            LastModified=String("D:20260924"), Private=Dictionary(Page=Dictionary(dict(p[1].items())))))
+    else:
+        raise ValueError(name)
+    return _saved(pdf)
+
+
+def build_tagged_link_pdf() -> bytes:
+    """A tagged link on page 1 to page 2 whose element also owns link text.
+
+    Page 1's third marked-content sequence (MCID 2) becomes the link's text,
+    owned by a Link element with an OBJR to the annotation and /Alt naming
+    page 2. Removing page 2 removes the link; the element survives through its
+    text, and the link's ParentTree key must go with the link.
+    """
+    pdf = _open(build_reference_pdf(("struct_tree",)))
+    p = [page.obj for page in pdf.pages]
+    tree = pdf.Root.StructTreeRoot
+    section = tree.K[0].K[0]
+    link = pdf.make_indirect(Dictionary(
+        Type=Name.Annot, Subtype=Name.Link, Rect=Array([72, 60, 300, 80]),
+        Dest=Array([p[1], Name.Fit]), StructParent=2000))
+    element = pdf.make_indirect(Dictionary(
+        Type=Name.StructElem, S=Name.Link, P=section, Pg=p[0],
+        Alt=String(marker(2, "LINK-ALT")),
+        K=Array([2, Dictionary(Type=Name.OBJR, Obj=link, Pg=p[0])])))
+    section.K = Array([x for x in section.K] + [element])
+    p[0].Annots = Array([x for x in p[0].Annots] + [link])
+    nums = [x for x in tree.ParentTree.Nums]
+    page1_key = int(p[0].StructParents)
+    at = nums.index(page1_key) + 1
+    parents = [x for x in nums[at]]
+    parents[2] = element
+    nums[at] = Array(parents)
+    tree.ParentTree.Nums = Array(nums + [2000, element])
+    return _saved(pdf)
+
+
 # ── checking ────────────────────────────────────────────────────────────────
 
 
