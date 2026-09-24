@@ -64,15 +64,48 @@ describe("PDF editor backend and file handoff contracts", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Download again" }));
         expect(uploadFile).toHaveBeenCalledTimes(1); expect(downloadBlob).toHaveBeenCalledTimes(2);
     });
-    it("shows detected signature fields without inventing a validity or tampering verdict", async () => {
-        vi.mocked(uploadFile).mockResolvedValue(new Response(JSON.stringify({ has_signatures: true, signatures: [{ signer: "Example signer", date: "", status: "detected" }], note: "Cryptographic verification is not supported." })));
+    const certificate = { subject: "Common Name: Alice Example", issuer: "Common Name: Example CA", valid_from: "2026-01-01T00:00:00+00:00", valid_until: "2027-01-01T00:00:00+00:00", self_signed: false };
+    const signature = (overrides: Record<string, unknown>) => ({ field: "Signature1", signed: true, kind: "signature", signer: "Alice Example", date: "2026-09-18T16:05:56+00:00", status: "valid", modification: "none", certificate, reason: "", ...overrides });
+    const verify = async (signatures: unknown[]) => {
+        vi.mocked(uploadFile).mockResolvedValue(new Response(JSON.stringify({ has_signatures: signatures.some(s => (s as { signed: boolean }).signed), signatures, note: "Certificates are not checked against a trust list." })));
         const { container } = render(<VerifySignatureUI />);
         fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(["%PDF"], "signed.pdf")] } });
         fireEvent.click(screen.getByRole("button", { name: "Verify signatures" }));
-        await screen.findByText("Signature fields found");
-        expect(screen.getByText("Detected")).toBeInTheDocument();
-        expect(screen.queryByText("Invalid")).not.toBeInTheDocument();
-        expect(screen.queryByText(/broken or tampered/i)).not.toBeInTheDocument();
+        // The upload zone has a status region too; the verdict is the one under this label.
+        return (await screen.findByText("Verification result")).closest<HTMLElement>('[role="status"]')!;
+    };
+    it("reports a matching signature without claiming the signer's identity", async () => {
+        const verdict = await verify([signature({})]);
+        expect(verdict).toHaveTextContent("Signature matches the document");
+        expect(verdict).toHaveTextContent(/not checked against a trust list/i);
+        expect(screen.getByText("Alice Example")).toBeInTheDocument();
+        expect(screen.getByText("Valid")).toBeInTheDocument();
+        expect(screen.getByText(/Common Name: Alice Example/)).toHaveTextContent("Common Name: Example CA");
+        expect(screen.queryByText(/verified signer|trusted/i)).not.toBeInTheDocument();
+    });
+    it("marks a signature invalid and says why", async () => {
+        const verdict = await verify([signature({ status: "invalid", modification: null, reason: "The signed content has changed since it was signed." })]);
+        expect(verdict).toHaveTextContent("A signature does not match the document");
+        expect(screen.getByText("Invalid")).toBeInTheDocument();
+        expect(screen.getByText("The signed content has changed since it was signed.")).toBeInTheDocument();
+    });
+    it("separates changes saved after signing by what kind they are", async () => {
+        const verdict = await verify([signature({ field: "First", status: "modified", modification: "form_filling" }), signature({ field: "Second", status: "modified", modification: "other" })]);
+        expect(verdict).toHaveTextContent("Changed after signing");
+        expect(screen.getByText(/form fields were filled in or signed/i)).toBeInTheDocument();
+        expect(screen.getByText(/can change what the document shows/i)).toBeInTheDocument();
+    });
+    it("lists empty and unchecked signature fields without a verdict on them", async () => {
+        const verdict = await verify([signature({ field: "Empty", signed: false, signer: "", date: "", status: "unsigned", modification: null, certificate: null }), signature({ status: "unchecked", modification: null, certificate: null, reason: "This signature uses the adbe.x509.rsa_sha1 format, which cannot be checked here." })]);
+        expect(verdict).toHaveTextContent("A signature could not be checked");
+        expect(screen.getByText("Not signed")).toBeInTheDocument();
+        expect(screen.getByText("Not checked")).toBeInTheDocument();
+        expect(screen.getByText(/adbe.x509.rsa_sha1/)).toBeInTheDocument();
+        expect(screen.queryByText("Valid")).not.toBeInTheDocument();
+    });
+    it("says when a PDF has no signature fields", async () => {
+        const verdict = await verify([]);
+        expect(verdict).toHaveTextContent("No signature fields found");
     });
     it("keeps invalid bookmark JSON editable and prevents submission without crashing the row editor", async () => {
         const { container } = render(<BookmarksUI />);

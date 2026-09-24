@@ -770,9 +770,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "Click Convert. Open in any PDF viewer."},
     ],
     "sanitize-pdf": [
-        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB containing potentially risky elements."},
-        {"name": "PrivaTools clears what it can", "text": "It empties the document information fields (title, author, dates, producer) and deletes Movie and RichMedia annotations, the containers for old video and Flash (SWF) content. JavaScript, embedded files, links, layers, form fields, screen annotations and XMP metadata are left in the file."},
-        {"name": "Download the sanitized PDF", "text": "Visible content is preserved, and the file is rewritten without unused objects."},
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."},
+        {"name": "PrivaTools removes active and hidden content", "text": "It deletes document JavaScript and every automatic action; links and buttons that launch programs, open other files, submit or import form data, or use any address other than http:, https: or mailto:, such as javascript: or file:; embedded file attachments; sound, video, rich media and 3D content; XFA form data; and anything in a layer that is switched off when the file opens. It also clears the document information fields and XMP metadata."},
+        {"name": "Download the sanitized PDF", "text": "Visible layers become ordinary page content, form fields keep their values and stay fillable, and web, email and in-document links keep working. The file is rewritten without unused objects."},
     ],
     "set-permissions": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
@@ -810,9 +810,9 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download with transparency", "text": "The output has white/off-white pixels converted to alpha=0. Useful for overlaying scans on dark backgrounds. Each page becomes a single image, so its text can no longer be selected or searched."},
     ],
     "verify-signature": [
-        {"name": "Upload a signed PDF", "text": "Drop a PDF with one or more digital signatures."},
-        {"name": "PrivaTools looks for signature fields", "text": "It scans each page's form fields for signature fields. It does not check certificates, trust chains or whether the content changed since signing, and at present it misses signature fields, so a signed PDF comes back with none found."},
-        {"name": "Read the result", "text": "Any fields found are listed with the status detected, beside a note that cryptographic verification is not supported. For a real check, open the file in a PDF reader that validates signatures."},
+        {"name": "Upload a signed PDF", "text": "Drop a PDF with one or more digital signatures. A file that needs a password to open must be unlocked first."},
+        {"name": "PrivaTools checks each signature", "text": "For every signature field it checks whether the signed content still matches the digest in the signature, whether the signature matches the certificate embedded with it, and what was saved to the file after signing. Certificates are not checked against a trust list and revocation is not looked up, so nothing is fetched from the internet."},
+        {"name": "Read the result", "text": "Each field is listed with the signer's name, the signing time, the certificate's subject and issuer, and a status: valid, later additions (form filling, further signatures or comments), changed (edits that can alter the pages), invalid, not signed or not checked. Confirm who signed in a PDF reader that validates certificates."},
     ],
     "webp-to-pdf": [
         {"name": "Upload WebP images", "text": "Drop one or many .webp files, up to 100 images and 200 MB in total."},
@@ -2079,9 +2079,11 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How does this differ from DOCX-to-PDF?", "a": "RTF is an older Microsoft format and DOCX a newer ZIP-based one. The tools differ too: Word to PDF keeps headings and some bold and italic styling from a DOCX, while this tool keeps only plain text. For a conversion that keeps the formatting, use Office to PDF, which lays the file out with LibreOffice."},
     ],
     "sanitize-pdf": [
-        {"q": "What is sanitization protecting against?", "a": "In general, malicious PDFs that abuse embedded scripts or attachments. This tool does not remove those: in a test, a document-level JavaScript action, a link that launches a program and an embedded file all survived. Use it to clear identifying document info, not to neutralise a suspicious file."},
-        {"q": "Does this remove form fields?", "a": "No — form fields are kept, along with any actions attached to them. To remove them, run the Flatten tool, which draws the fields into the page content and drops their actions."},
-        {"q": "Are hyperlinks removed?", "a": "No. All links are kept, including links that launch another program or use a javascript: address."},
+        {"q": "What is sanitization protecting against?", "a": "PDFs that run scripts, launch programs, open or send data to other places, or carry hidden files and content. Sanitize removes the scripts, actions, attachments, media and switched-off layers that do this, so opening the result cannot trigger them. It does not rebuild fonts or images, so open files from unknown senders in an up-to-date PDF reader all the same."},
+        {"q": "Does this remove form fields?", "a": "No. Fields and the values typed into them are kept and stay fillable. Their scripts (formatting, validation and calculation) and any submit or import actions are removed, along with XFA form data, so a form that relied on scripts may stop calculating totals. To remove the fields themselves, run the Flatten tool, which draws them into the page content."},
+        {"q": "Are hyperlinks removed?", "a": "Links to web pages (http and https), email links and links within the document are kept. Links that launch a program, open another file, run JavaScript or use any other kind of address are removed."},
+        {"q": "What happens to layers?", "a": "Content in layers that are switched off when the file opens is deleted, and the remaining layers become ordinary page content, so each page looks as it did but nothing is left to switch on. A form field placed in a hidden layer is kept and becomes visible, so the form stays complete."},
+        {"q": "Will a signed PDF stay signed?", "a": "No. Sanitizing rewrites the file, so any digital signature in it no longer validates. Check the signatures with Verify Digital Signature before you sanitize."},
     ],
     "set-permissions": [
         {"q": "What's the difference between owner password and user password?", "a": "User password = required to OPEN. Owner password = required to override permissions (print, edit). This tool sets only the owner password + permission flags, so the file still opens without a password. Protect PDF adds an open password, but its owner password is generated at random and never shown."},
@@ -2104,7 +2106,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "strip-metadata": [
         {"q": "Why strip metadata?", "a": "Author / producer / original-filename fields can identify who created or owns a document — a privacy concern for whistleblowers, journalists, or before public release."},
         {"q": "What about embedded images' EXIF?", "a": "It is not removed. EXIF inside images embedded in the PDF is left as it is: in a test, the camera make stored in an embedded JPEG was still in the output. Only the document's own Info and XMP metadata is cleared."},
-        {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes informational fields, including XMP. Sanitize clears only the document Info fields and Movie and RichMedia (Flash) annotations; it leaves JavaScript, embedded files and XMP in place."},
+        {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes only informational fields, including XMP. Sanitize clears those too, and also removes JavaScript, risky links and actions, embedded files, media and switched-off layers."},
     ],
     "svg-to-pdf": [
         {"q": "Will my SVG stay as vector inside the PDF?", "a": "No. Each SVG is rendered with CairoSVG to a PNG image 2400 pixels wide, and that image is placed on the page. It looks sharp at normal sizes, but edges soften when you zoom in far, and text cannot be selected or searched."},
@@ -2122,9 +2124,10 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I use this on photos?", "a": "It works best on text/diagram documents with clean backgrounds. Photos with light skies become weirdly transparent — use Remove Background (rembg) for photos."},
     ],
     "verify-signature": [
-        {"q": "Does this require uploading my certificates?", "a": "No. No certificates are read or checked at all, neither yours nor the ones embedded in the PDF."},
-        {"q": "What if a signature is invalid?", "a": "This tool cannot tell you: it does not validate signatures. Use a PDF reader that validates signatures to see why one fails."},
-        {"q": "Can I verify multiple signatures?", "a": "PDFs can have multiple signatures (e.g. one per signing party), but this tool verifies none of them, and at present it does not recognise signature fields, so the list comes back empty."},
+        {"q": "Does this require uploading my certificates?", "a": "No. The check uses the certificates embedded in the PDF's signatures. It does not check them against a trust list or for revocation, so a valid result shows the file is unchanged since that certificate signed it, not who holds the certificate."},
+        {"q": "What if a signature is invalid?", "a": "Invalid means the signed content changed after signing, the signature does not match its certificate, or the signature leaves part of the signed file uncovered. Treat the document as altered and ask the sender for a fresh copy."},
+        {"q": "Can I verify multiple signatures?", "a": "Yes. Every signature field is listed, including empty ones and document timestamps. When people sign one after another, the earlier signatures show later additions, which is expected; any other change saved after signing is flagged."},
+        {"q": "Which signature formats are checked?", "a": "PKCS#7 detached (adbe.pkcs7.detached) and PAdES (ETSI.CAdES.detached) signatures, and RFC 3161 document timestamps. Older formats such as adbe.x509.rsa_sha1 are listed but marked not checked."},
     ],
     "webp-to-pdf": [
         {"q": "Will the PDF be much smaller than from JPG?", "a": "No, usually larger. WebP pixels are decoded and stored with lossless compression, so a lossy WebP photo can grow many times over, while a JPG is placed in the PDF without re-encoding."},

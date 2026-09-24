@@ -809,17 +809,17 @@ Check PDF/A indicators online for free. Run basic checks for a PDF/A label, titl
 
 URL: https://privatools.me/tool/verify-signature
 
-Look for signature fields in a PDF
+Check that a PDF's signatures still match the file
 
-Check a PDF for signature fields online. The tool does not verify signatures: it reads no certificate information and cannot tell whether a signed document was changed, and at present it reports no signature fields even when a PDF has them. Confirm signatures in your PDF reader's signature panel. Free tool.
+Verify PDF digital signatures online. Every signature field is listed, and each signature shows the signer's name as recorded, the signing time and the subject and issuer of its certificate. Each one is checked: whether the signed content has changed, whether the signature matches its certificate, and what was saved to the file afterwards, such as form filling, further signatures or edits to the pages. Certificates are not checked against a trust list or for revocation, so a valid result does not prove who signed; confirm that in a PDF reader that validates certificates. Free tool.
 
 ### Sanitize Document
 
 URL: https://privatools.me/tool/sanitize-pdf
 
-Clear the document info fields of a PDF
+Remove scripts, attachments and hidden layers from a PDF
 
-Sanitize PDF online — clear the document information fields (title, author, dates, software), remove Movie and RichMedia annotations (old video and Flash content), and rewrite the file without unused objects. It does not remove JavaScript, embedded files, form fields, layers, links or XMP metadata, so do not rely on it alone for high-security document workflows.
+Sanitize PDF online — remove the parts of a PDF that can run code, reach outside the file or hide content: document JavaScript and automatic actions, links and buttons that launch programs, open other files, submit form data or use javascript: or file: addresses, embedded file attachments, sound, video and 3D content, XFA form data, and anything in a layer that is switched off. The document information fields and XMP metadata are cleared too. Visible layers become ordinary page content, form fields stay fillable, and web, email and in-document links keep working. The file is rewritten, so a digital signature in it will no longer validate.
 
 ### Reverse PDF
 

@@ -2,29 +2,33 @@
   "howto": [
     {
       "name": "Upload a signed PDF",
-      "text": "Drop a PDF with one or more digital signatures."
+      "text": "Drop a PDF with one or more digital signatures. A file that needs a password to open must be unlocked first."
     },
     {
-      "name": "PrivaTools looks for signature fields",
-      "text": "It scans each page's form fields for signature fields. It does not check certificates, trust chains or whether the content changed since signing, and at present it misses signature fields, so a signed PDF comes back with none found."
+      "name": "PrivaTools checks each signature",
+      "text": "For every signature field it checks whether the signed content still matches the digest in the signature, whether the signature matches the certificate embedded with it, and what was saved to the file after signing. Certificates are not checked against a trust list and revocation is not looked up, so nothing is fetched from the internet."
     },
     {
       "name": "Read the result",
-      "text": "Any fields found are listed with the status detected, beside a note that cryptographic verification is not supported. For a real check, open the file in a PDF reader that validates signatures."
+      "text": "Each field is listed with the signer's name, the signing time, the certificate's subject and issuer, and a status: valid, later additions (form filling, further signatures or comments), changed (edits that can alter the pages), invalid, not signed or not checked. Confirm who signed in a PDF reader that validates certificates."
     }
   ],
   "faq": [
     {
       "q": "Does this require uploading my certificates?",
-      "a": "No. No certificates are read or checked at all, neither yours nor the ones embedded in the PDF."
+      "a": "No. The check uses the certificates embedded in the PDF's signatures. It does not check them against a trust list or for revocation, so a valid result shows the file is unchanged since that certificate signed it, not who holds the certificate."
     },
     {
       "q": "What if a signature is invalid?",
-      "a": "This tool cannot tell you: it does not validate signatures. Use a PDF reader that validates signatures to see why one fails."
+      "a": "Invalid means the signed content changed after signing, the signature does not match its certificate, or the signature leaves part of the signed file uncovered. Treat the document as altered and ask the sender for a fresh copy."
     },
     {
       "q": "Can I verify multiple signatures?",
-      "a": "PDFs can have multiple signatures (e.g. one per signing party), but this tool verifies none of them, and at present it does not recognise signature fields, so the list comes back empty."
+      "a": "Yes. Every signature field is listed, including empty ones and document timestamps. When people sign one after another, the earlier signatures show later additions, which is expected; any other change saved after signing is flagged."
+    },
+    {
+      "q": "Which signature formats are checked?",
+      "a": "PKCS#7 detached (adbe.pkcs7.detached) and PAdES (ETSI.CAdES.detached) signatures, and RFC 3161 document timestamps. Older formats such as adbe.x509.rsa_sha1 are listed but marked not checked."
     }
   ]
 }

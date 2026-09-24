@@ -28,7 +28,7 @@ CONSTRAINTS = {
     "/pipeline/validate": ["Validates the pipeline definition without processing a file. Use supportedSteps from /pipeline/templates."],
     "/smart-redact": ["needles is a JSON-encoded array of up to 500 text strings. The API applies supplied terms; browser-side entity detection is not part of this endpoint."],
     "/pdf-to-long-image": ["format accepts png, jpg, or jpeg. At most 200 PDF pages; rendering DPI is clamped to 36–200."],
-    "/verify-signature": ["Detects signature fields; it does not perform cryptographic signature verification."],
+    "/verify-signature": ["Checks that each signature matches the file and the certificate embedded with it, and reports what was saved after signing. Certificates are not checked against a trust list or for revocation."],
 }
 
 
