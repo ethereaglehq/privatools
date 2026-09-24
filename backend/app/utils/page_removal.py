@@ -38,14 +38,12 @@ A sweep then walks everything reachable from the trailer and cuts any
 reference to a removed page, annotation, bead, field, structure element or
 thread that is left, to any other page object outside the page tree, and to
 what a damaged or crafted file hides from the passes (see :meth:`_Pruner.sweep`).
-It skips two things to stay fast: structure elements the tree pass read in
-full, and, inside dictionaries whose type the PDF specification fixes (fonts,
-pages, annotations, XObjects, functions, shadings), direct values the
-specification limits to numbers, such as a font's widths. Whatever points at
-them, the catalog, the page tree and the kept pages are never removed or
-rewritten.
+It skips only the structure elements the tree pass read in full, and reads a
+long array item by item only when its serialization holds a reference or a
+page. Whatever points at them, the catalog, the page tree and the kept pages
+are never removed or rewritten.
 
-A crafted file could hide a page reference in those skipped values, so
+A mistake in a pass could still hide a page reference from the sweep, so
 :meth:`PageRemoval.save` checks what it wrote, with a walk that shares nothing
 with the sweep. If any page object outside the page tree reached the output,
 it sweeps again skipping nothing and saves again; if one is still there it
@@ -118,23 +116,11 @@ _SWEPT_TYPES = {
     Name.Annot: _SWEPT_ANNOT,
 }
 
-# Keys whose values the PDF specification limits to numbers and names: a
-# font's widths, boxes, matrices, function domains. The sweep skips them only
-# as direct values of dictionaries of a type the specification defines; a
-# font's /W alone can hold thousands of numbers, copied into every part a split
-# writes.
-_NUMBERS_ONLY = frozenset((
-    "/W", "/W2", "/Widths", "/DW2", "/FontBBox", "/FontMatrix", "/Differences",
-    "/MediaBox", "/CropBox", "/BleedBox", "/TrimBox", "/ArtBox", "/BBox",
-    "/Matrix", "/Rect", "/QuadPoints", "/Vertices", "/InkList", "/Decode",
-    "/Domain", "/Range", "/Encode", "/Bounds", "/Size", "/Coords",
-))
-_TYPED = frozenset(("/Font", "/FontDescriptor", "/Page", "/Pages", "/Annot", "/XObject", "/Pattern"))
-_TYPED_SUBTYPES = frozenset((
-    "/Image", "/Form", "/PS", "/Type0", "/Type1", "/MMType1", "/Type3", "/TrueType",
-    "/CIDFontType0", "/CIDFontType2",
-))
-_TYPE_MARKERS = frozenset(("/FunctionType", "/ShadingType", "/PatternType"))
+# An array this long is first checked as a whole, in qpdf's serialization,
+# for an object reference or a page dictionary. Without either, nothing in it
+# can lead to a page: a font's widths (a /W of thousands of numbers is copied
+# into every part a split writes), a function's samples, an ink path.
+_SCAN = 64
 
 # Keys of a structure element whose values the tree pass follows itself.
 # Everything else an element holds is left to the sweep.
@@ -242,7 +228,7 @@ class PageRemoval:
         path = str(path)
         try:
             self.pdf.save(path)
-            stray = _pages_outside_tree(self.pdf)
+            stray = _pages_outside_tree(self.pdf, self._pruner.inert)
             if not stray:
                 return
             logger.warning(
@@ -251,7 +237,7 @@ class PageRemoval:
             )
             self._pruner.sweep(exhaustive=True)
             self.pdf.save(path)
-            stray = _pages_outside_tree(self.pdf)
+            stray = _pages_outside_tree(self.pdf, self._pruner.inert)
             if stray:
                 logger.error("page removal: %d page object(s) could not be cut; output refused", stray)
                 raise PageLeakError()
@@ -437,13 +423,15 @@ def _repair_page_count(pdf: pikepdf.Pdf, count: int) -> None:
         logger.debug("page removal: could not repair /Count", exc_info=True)
 
 
-def _pages_outside_tree(pdf: pikepdf.Pdf) -> int:
+def _pages_outside_tree(pdf: pikepdf.Pdf, inert: set = frozenset()) -> int:
     """Page objects reachable from the trailer that the page tree does not list.
 
     That is what a save writes: qpdf writes every object reachable from the
     trailer, and nothing else. The walk shares nothing with the sweep, neither
     its shortcuts nor its judgements, and reads every value. A page dictionary
-    written in place, which no page tree can list, counts too.
+    written in place, which no page tree can list, counts too. ``inert``
+    names long arrays already found to hold no reference, which it does not
+    read again.
     """
     listed = {page.objgen for page in _page_objs(pdf)}
     names = pdf.Root.get("/Names")
@@ -458,6 +446,10 @@ def _pages_outside_tree(pdf: pikepdf.Pdf) -> int:
     while stack:
         obj = stack.pop()
         if obj._type_code == _ARRAY:
+            if len(obj) >= _SCAN and (
+                (obj.is_indirect and obj.objgen in inert) or _holds_no_objects(obj)
+            ):
+                continue
             values = obj
         else:
             fields = obj.items().mapping
@@ -497,22 +489,20 @@ def _is_annotation(obj) -> bool:
     return obj.get("/Type") == _ANNOT or ("/Rect" in obj and "/Subtype" in obj)
 
 
-def _is_spec_typed(pairs) -> bool:
-    """Is this a dictionary whose type the PDF specification defines?"""
-    typ = subtype = None
-    rect = False
-    for key, value in pairs:
-        if key == "/Type":
-            typ = value
-        elif key == "/Subtype":
-            subtype = value
-        elif key == "/Rect":
-            rect = True
-        elif key in _TYPE_MARKERS:
-            return True
-    if _type(typ) == _NAME and str(typ) in _TYPED:
-        return True
-    return _type(subtype) == _NAME and (str(subtype) in _TYPED_SUBTYPES or rect)
+def _holds_no_objects(array) -> bool:
+    """True for an array that references no object and holds no page.
+
+    Walking a long array of numbers item by item costs a few microseconds an
+    item; qpdf writes it out a few times faster, and a search of the text
+    finds any reference (``N G R``) or page dictionary (``/Page``) in it.
+    """
+    for i, value in enumerate(array):
+        if i == 8:
+            break
+        if getattr(value, "is_indirect", False):
+            return False  # it references objects: no need to look further
+    raw = array.unparse(resolved=True)
+    return b" R" not in raw and b"/Page" not in raw
 
 
 def _owner_actions(owner):
@@ -725,6 +715,7 @@ class _Pruner:
         self._annot_verdicts: dict = {}
         self._removed_owners: set | None = None
         self.outline_items: set = set()  # bookmarks the outline pass walked
+        self.inert: set = set()  # long indirect arrays that hold no reference
 
         # Each live page's annotations, read once and shared by the passes;
         # an array shared by several pages is read once.
@@ -1797,11 +1788,11 @@ class _Pruner:
 
         So nothing that belonged to a removed page is written.
 
-        Unless ``exhaustive``, two things are skipped: structure elements the
-        tree pass read in full (what it left over was queued in ``pending``),
-        and direct values under ``_NUMBERS_ONLY`` keys of dictionaries whose
-        type the specification defines. A dictionary's entries are read once,
-        to judge it and to visit it.
+        Unless ``exhaustive``, structure elements the tree pass read in full
+        are skipped (what it left over was queued in ``pending``). A long array
+        is read item by item only if it can hold a reference
+        (:func:`_holds_no_objects`). A dictionary's entries are read once, to
+        judge it and to visit it.
         """
         dead = self.dead
         live_pages = self.live_pages
@@ -1894,6 +1885,10 @@ class _Pruner:
         while stack:
             obj, fields = stack.pop()
             if obj._type_code == _ARRAY:
+                if len(obj) >= _SCAN and _holds_no_objects(obj):
+                    if obj.is_indirect:
+                        self.inert.add(obj.objgen)
+                    continue
                 doomed = []
                 for i, value in enumerate(obj):
                     if value.__class__ in _SCALARS or getattr(value, "_type_code", None) not in _CONTAINERS:
@@ -1909,7 +1904,6 @@ class _Pruner:
                 continue
             if fields is None:
                 fields = obj.items().mapping
-            typed = None
             doomed = []
             for key, value in fields.items():
                 if value.__class__ in _SCALARS or getattr(value, "_type_code", None) not in _CONTAINERS:
@@ -1918,11 +1912,6 @@ class _Pruner:
                     if is_dead(value, value.objgen):
                         doomed.append(key)
                     continue
-                if not exhaustive and key in _NUMBERS_ONLY:
-                    if typed is None:
-                        typed = _is_spec_typed(fields.items())
-                    if typed:
-                        continue
                 if cut_direct(value):
                     doomed.append(key)
             for key in doomed:

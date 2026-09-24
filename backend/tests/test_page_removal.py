@@ -598,9 +598,16 @@ def test_an_element_the_tree_pass_leaves_to_the_sweep_is_swept(tmp_path, caplog)
     assert _stray_pages(data) == 0
 
 
-def test_a_page_hidden_where_the_sweep_does_not_look_is_caught_after_saving(tmp_path, caplog):
-    """A font's direct number array is skipped by the sweep; the check after
-    saving finds the page it hid, and a second sweep that skips nothing cuts it."""
+def test_a_page_the_sweep_missed_is_caught_after_saving(tmp_path, caplog, monkeypatch):
+    """If the sweep misses a reference, the check after saving finds the page
+    it keeps, and a second sweep that skips nothing cuts it."""
+    from backend.app.utils import page_removal
+
+    sweep = page_removal._Pruner.sweep
+    monkeypatch.setattr(
+        page_removal._Pruner, "sweep",
+        lambda self, exhaustive=False: sweep(self, exhaustive) if exhaustive else None,
+    )
     path = tmp_path / "hidden.pdf"
     path.write_bytes(build_crafted_pdf("font_bbox_page"))
     with caplog.at_level(logging.WARNING, logger="backend.app.utils.page_removal"):

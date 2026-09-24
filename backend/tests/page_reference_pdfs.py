@@ -719,10 +719,10 @@ def build_crafted_pdf(name: str) -> bytes:
 
     Removing page 2 (Delete Pages "2", or any copy without it) must leave no
     PRIVA-P2- marker. ``stream_*`` put a stream where a dictionary belongs,
-    which PDFium accepts. ``font_bbox_page`` hides page 2 where the sweep does
-    not look (a direct number array of a font), so only the check after saving
-    catches it. ``catalog_under_a_kept_page`` makes a copied page carry the
-    whole source catalog, bookmarks and tags of page 2 included.
+    which PDFium accepts. ``font_bbox_page`` hides page 2 in a font's number
+    array, where the sweep once did not look. ``catalog_under_a_kept_page``
+    makes a copied page carry the whole source catalog, bookmarks and tags of
+    page 2 included.
     """
     base = {
         "catalog_under_a_kept_page": ("outline_dest", "struct_tree"),
