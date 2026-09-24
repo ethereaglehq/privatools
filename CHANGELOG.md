@@ -10,6 +10,23 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.2] — 2026-09-24 — Redact the page you chose, uploads sent once
+
+### Tools
+
+- Redact PDF blacks out the page you chose. From v1.6.0 until this release, the page counted pages from 1 and the route from 0, so a box on page 1 of a PDF with several pages blacked out the same area of page 2 and left page 1 as it was, a box on the last page was refused, and every one-page PDF was refused. The route still counts from 0 and the page now converts. A contract test holds each of the 16 tools that send page numbers to what its route expects. The guide now says what redaction removes and what it leaves: a line or shape that reaches past a box, form fields and most comments over a box, and replacement text for screen readers. (#283)
+- Pages that take one file upload it once. Every single-file page used to send the file twice in one request, so a file over about 250 MB was refused by the 500 MB request cap and every upload took twice as long. The guides, comparison pages, About page and README now state the real limits. (#279)
+- Pages no longer give up after 60 seconds while a file is still uploading. A request that carries a file waits while the upload moves, then for the server's own five-minute limit; one that makes no progress for six minutes ends as a timeout. Over HTTP/2, Chrome can still restart a slow upload by itself. (#281)
+
+### For API users
+
+- `/redact` counts `page` from 0, as before. Its OpenAPI description now says so, and says that coordinates start at the top-left corner of the page's visible area (its CropBox), before any `/Rotate`. (#283)
+- The website now sends each upload under the field its route reads: `files` for the routes that take several files, `file` for the rest. Routes are unchanged. (#279)
+
+### Known issue
+
+- On pages stored rotated (`/Rotate`), common in scans, a box drawn in Redact, White-Out and the other tools that draw on a page preview lands off the page, so nothing on the page is covered. A fix is in progress; until it ships, check redacted scans before sharing them.
+
 ## [2.7.1] — 2026-09-24 — Sanitize and Verify Signature that work, faster Image to PDF, truthful analytics
 
 ### Tools
