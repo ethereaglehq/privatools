@@ -1803,11 +1803,11 @@ Flip any image left-to-right (horizontal mirror) or top-to-bottom (vertical mirr
 
 URL: https://privatools.me/blog/remove-bg-canva-alternative
 Published: 2026-09-14
-Reviewed: 2026-09-14
+Reviewed: 2026-09-24
 
 Choose around the result you need: a standalone transparent PNG or a cutout inside a larger design workflow. Test a representative image, understand its processing path and keep the original before changing tools.
 
-<p>The <a href="https://www.remove.bg/faq">official remove.bg notice</a> says background removal is moving into Canva. The notice reviewed on 14 September 2026 gives no shutdown date, and the <a href="https://www.remove.bg/">remove.bg homepage</a> still presents its background remover. Check current product information before treating a migration announcement as a service closure.</p>
+<p>The <a href="https://www.remove.bg/faq">official remove.bg notice</a> says background removal is moving into Canva. When we checked it on 24 September 2026, its FAQ said the standalone website will no longer be available from 1 December 2026 at 9:00am CET, that the self-service API stops accepting requests that day and that unused pay-as-you-go credits expire then. Until that date the <a href="https://www.remove.bg/">remove.bg homepage</a> still offers its background remover, so plan the move before the closure rather than after it.</p>
 <h2>Begin with the job you need to finish</h2>
 <p>A product photograph for a shop, a portrait for a presentation and an image inside a design have different finishing requirements. Write down the output dimensions, file format and application where the cutout will be used. A transparent PNG may be the complete job; in another workflow, it is only the first step.</p>
 <p>If you already design in Canva, assess whether keeping the cutout in that environment is useful. If you need a file to take elsewhere, evaluate a standalone remover. Our <a href="/compare/remove-bg">PrivaTools and remove.bg comparison</a> sets out these choices with the original sources. It is written by PrivaTools, rather than an independent testing organisation.</p>
