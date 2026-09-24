@@ -661,7 +661,7 @@ export const comparisons: ProductComparison[] = [
     ],
     sections: [
       { heading: "Two different kinds of breadth", body: [
-        "Both toolboxes are broad, in different directions. TinyWow's catalogue lists an AI Humanizer among its writing tools, alongside a PDF translator, e-signing, audio to text, background removal, a TikTok video downloader and a photo clean-up tool that uses AI to remove unwanted objects from images. PrivaTools has no AI writing tools or video downloaders, though it does generate placeholder text, passwords, UUIDs and .gitignore files.",
+        "Both toolboxes are broad, in different directions. TinyWow's catalogue lists an AI Humanizer among its writing tools, alongside a PDF translator, e-signing, audio to text, background removal, a TikTok video downloader and a photo clean-up tool that uses AI to remove unwanted objects from images. PrivaTools has no AI writing tools or video downloaders, though it does generate placeholder text, passwords, UUIDs and .gitignore files. Its Remove Image Watermark rebuilds a small area you select from the surrounding pixels, without AI, so it suits logos and marks rather than whole objects.",
         "PrivaTools' breadth is in file operations such as PDF editing and conversion, OCR, audio and video conversion, archives and developer formats. Most of its developer and text tools run in the browser, while its PDF, media and archive tools upload to its server.",
       ] },
       { heading: "How files are handled", body: [
