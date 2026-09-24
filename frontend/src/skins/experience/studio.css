@@ -5,7 +5,8 @@
 .dl-root .pt-studio-header h1{font-family:var(--pt-display);font-size:clamp(36px,4.3vw,58px);font-weight:600;line-height:1.08;letter-spacing:-2.6px;text-wrap:balance;margin:0;}
 .pt-studio-heading>p{max-width:620px;margin:18px 0 0;font-size:16px;line-height:1.75;color:var(--pt-muted);text-wrap:pretty;}
 .pt-studio-kicker{font-size:12px;font-weight:650;letter-spacing:.015em;display:flex;gap:8px;align-items:center;color:var(--pt-action);margin-bottom:20px;}
-.pt-studio-header-visual{width:175px;min-width:130px;align-self:stretch;display:grid;place-items:center;}
+/* The slot can yield width to the heading, never below its fixed-width art, which would otherwise spill past the screen at tablet widths. */
+.pt-studio-header-visual{width:175px;min-width:max-content;align-self:stretch;display:grid;place-items:center;}
 .pt-studio-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:25px;}
 .pt-studio-action{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:46px;padding:11px 20px;border:1px solid transparent;border-radius:12px;font-size:13px;font-weight:650;line-height:1.3;cursor:pointer;text-decoration:none!important;transition:background-color 180ms,transform 240ms var(--pt-ease),box-shadow 240ms;}
 .pt-studio-action-primary{background:var(--pt-action);color:var(--pt-on)!important;}

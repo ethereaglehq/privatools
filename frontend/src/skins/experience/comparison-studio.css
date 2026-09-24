@@ -1,6 +1,7 @@
 /* Air reads as an editorial directory. Play arranges tactile decision sheets. */
 .pt-comparison-page { min-width: 0; }
-.pt-comparison-page :is(section, article, aside, div) { min-width: 0; }
+/* Everything may shrink except the header art's slot, which stays as wide as its art (studio.css). */
+.pt-comparison-page :is(section, article, aside, div):not(.pt-studio-header-visual) { min-width: 0; }
 .pt-comparison-page .pt-studio-header { margin-bottom: 24px; }
 .pt-comparison-page .pt-studio-heading h1 { max-width: 940px; font-size: clamp(42px,5.1vw,72px); line-height: 1.08; letter-spacing: -.055em; text-wrap: balance; }
 .pt-comparison-page .pt-studio-heading h1 em { font-style: normal; color: var(--pt-action); }
