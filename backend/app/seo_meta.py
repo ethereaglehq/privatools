@@ -1825,11 +1825,10 @@ def _comparison_directory_body() -> str:
         groups.setdefault(str(cdata.get("category") or "More comparisons"), []).append((cslug, cdata))
     reviewed = sorted(filter(None, (_reviewed_date(cdata) for cdata in entries.values())))
     parts = [
-        "<p>Each comparison sets PrivaTools beside one product and answers the same practical questions: what it costs, "
-        "which limits apply to free and paid use, where your files are processed, whether you need an account, whether "
-        "the source code is open and which platforms it runs on. Every fact about another product comes from its own "
-        "official pages, linked beside the fact, and each page ends with when to choose that product and when to "
-        "choose PrivaTools.</p>",
+        "<p>Each comparison sets PrivaTools beside one product and answers practical questions such as what it costs, "
+        "which limits apply to free and paid use, where your files are processed, whether you need an account and "
+        "which platforms it runs on. Every fact about another product comes from its own official pages, linked beside "
+        "the fact, and each page ends with when to choose that product and when to choose PrivaTools.</p>",
     ]
     if reviewed:
         parts.append(f'<p>Most recent check: <time datetime="{reviewed[-1]}">{reviewed[-1]}</time>.</p>')
