@@ -24,7 +24,7 @@
     },
     {
       "q": "Is this the same as Extract Pages?",
-      "a": "It is the reverse. Delete Pages removes the pages you list; Extract Pages keeps only the pages you list. Both produce a new PDF and leave the original alone. Either way the pages left out are gone from the file, not hidden in it: bookmarks, links, form fields and accessibility tags that pointed to them are removed with them."
+      "a": "It is the reverse. Delete Pages removes the pages you list; Extract Pages keeps only the pages you list. Both produce a new PDF and leave the original alone. The pages left out are not carried into the new file, and neither are the bookmarks and links that lead only to them or the comments, form fields and accessibility tags that belong only to them. A form field or tag shared with a page you keep stays, the tag without its alternate or replacement text. Delete Pages keeps the metadata, attachments, layers and scripts stored for the document as a whole, including whatever in them concerns a removed page: Sanitize Document removes those, and Strip Metadata the metadata alone. Of what is stored for the whole document, Extract Pages carries over only the title, language, display settings and accessibility tags."
     },
     {
       "q": "Can I remove blank pages automatically?",
