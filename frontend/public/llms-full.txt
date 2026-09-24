@@ -811,7 +811,7 @@ URL: https://privatools.me/tool/verify-signature
 
 Check that a PDF's signatures still match the file
 
-Verify PDF digital signatures online. Every signature field is listed, and each signature shows the signer's name as recorded, the signing time and the subject and issuer of its certificate. Each one is checked: whether the signed content has changed, whether the signature matches its certificate, and what was saved to the file afterwards, such as form filling, further signatures or edits to the pages. Certificates are not checked against a trust list or for revocation, so a valid result does not prove who signed; confirm that in a PDF reader that validates certificates. Free tool.
+Verify PDF digital signatures online. Every signature field is listed, and each signature shows the signer's name as recorded and the signing time. Each signature in a supported format is checked: whether the signed content has changed, whether the signature matches its certificate, whose subject and issuer are shown, and what was saved to the file afterwards, such as form filling, further signatures or edits to the pages. Certificates are not checked against a trust list or for revocation, so a valid result does not prove who signed; confirm that in a PDF reader that validates certificates. Free tool.
 
 ### Sanitize Document
 
@@ -819,7 +819,7 @@ URL: https://privatools.me/tool/sanitize-pdf
 
 Remove scripts, attachments and hidden layers from a PDF
 
-Sanitize PDF online — remove the parts of a PDF that can run code, reach outside the file or hide content: document JavaScript and automatic actions, links and buttons that launch programs, open other files, submit form data or use javascript: or file: addresses, embedded file attachments, sound, video and 3D content, XFA form data, and anything in a layer that is switched off. The document information fields and XMP metadata are cleared too. Visible layers become ordinary page content, form fields stay fillable, and web, email and in-document links keep working. The file is rewritten, so a digital signature in it will no longer validate.
+Sanitize PDF online — remove the parts of a PDF that can run code, reach outside the file or hide content: document JavaScript, actions that run by themselves (except opening at a set page), links and buttons that launch programs, open other files, submit form data or use javascript: or file: addresses, embedded file attachments, sound, video and 3D content, XFA form data, and anything in a layer that is switched off. The document information fields and XMP metadata are cleared too. Visible layers become ordinary page content, form fields stay fillable, and web, email and in-document links keep working. The file is rewritten, so a digital signature in it will no longer validate.
 
 ### Reverse PDF
 

@@ -770,8 +770,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "Click Convert. Open in any PDF viewer."},
     ],
     "sanitize-pdf": [
-        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."},
-        {"name": "PrivaTools removes active and hidden content", "text": "It deletes document JavaScript and every automatic action; links and buttons that launch programs, open other files, submit or import form data, or use any address other than http:, https: or mailto:, such as javascript: or file:; embedded file attachments; sound, video, rich media and 3D content; XFA form data; and anything in a layer that is switched off when the file opens. It also clears the document information fields and XMP metadata."},
+        {"name": "Upload a PDF", "text": "Drop a PDF up to about 250 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."},
+        {"name": "PrivaTools removes active and hidden content", "text": "It deletes document JavaScript and every action that runs by itself, apart from a move to a page when the file opens; links and buttons that launch programs, open other files, submit or import form data, or use any address other than http:, https: or mailto:, such as javascript: or file:; embedded file attachments; sound, video, rich media and 3D content; XFA form data; and anything in a layer that is switched off when the file opens. It also clears the document information fields and XMP metadata."},
         {"name": "Download the sanitized PDF", "text": "Visible layers become ordinary page content, form fields keep their values and stay fillable, and web, email and in-document links keep working. The file is rewritten without unused objects."},
     ],
     "set-permissions": [
@@ -790,7 +790,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Set opacity and position", "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers separated by commas. Click Apply."},
     ],
     "strip-metadata": [
-        {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."},
+        {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to about 250 MB each. Multi-file batches are supported."},
         {"name": "PrivaTools removes all metadata", "text": "Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, all XMP fields, and any custom-defined metadata. The cleaned XMP keeps just two entries that the PDF library writes itself: a pikepdf producer tag and the time of processing."},
         {"name": "Download the clean PDF (or ZIP)", "text": "Single file → single PDF; multiple files → ZIP. Visible content is unchanged."},
     ],
@@ -811,8 +811,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "verify-signature": [
         {"name": "Upload a signed PDF", "text": "Drop a PDF with one or more digital signatures. A file that needs a password to open must be unlocked first."},
-        {"name": "PrivaTools checks each signature", "text": "For every signature field it checks whether the signed content still matches the digest in the signature, whether the signature matches the certificate embedded with it, and what was saved to the file after signing. Certificates are not checked against a trust list and revocation is not looked up, so nothing is fetched from the internet."},
-        {"name": "Read the result", "text": "Each field is listed with the signer's name, the signing time, the certificate's subject and issuer, and a status: valid, later additions (form filling, further signatures or comments), changed (edits that can alter the pages), invalid, not signed or not checked. Confirm who signed in a PDF reader that validates certificates."},
+        {"name": "PrivaTools checks each signature", "text": "For each signed field it checks whether the signed content still matches the digest in the signature, whether the signature matches the certificate embedded with it, and what was saved to the file after signing. Certificates are not checked against a trust list and revocation is not looked up, so nothing is fetched from the internet."},
+        {"name": "Read the result", "text": "Each field is listed with a status: valid, later additions (form filling, further signatures or comments), changed (edits that can alter the pages), invalid, not signed or not checked, and the reason where there is one. A signed field also shows the signer's name and the signing time, and a checked one its certificate's subject and issuer. Confirm who signed in a PDF reader that validates certificates."},
     ],
     "webp-to-pdf": [
         {"name": "Upload WebP images", "text": "Drop one or many .webp files, up to 100 images and 200 MB in total."},
@@ -2080,9 +2080,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     ],
     "sanitize-pdf": [
         {"q": "What is sanitization protecting against?", "a": "PDFs that run scripts, launch programs, open or send data to other places, or carry hidden files and content. Sanitize removes the scripts, actions, attachments, media and switched-off layers that do this, so opening the result cannot trigger them. It does not rebuild fonts or images, so open files from unknown senders in an up-to-date PDF reader all the same."},
-        {"q": "Does this remove form fields?", "a": "No. Fields and the values typed into them are kept and stay fillable. Their scripts (formatting, validation and calculation) and any submit or import actions are removed, along with XFA form data, so a form that relied on scripts may stop calculating totals. To remove the fields themselves, run the Flatten tool, which draws them into the page content."},
+        {"q": "Does this remove form fields?", "a": "No. Fields and the values typed into them are kept and stay fillable. Their scripts (formatting, validation and calculation) and any submit or import actions are removed, along with XFA form data, so a form that relied on scripts may stop calculating totals. To remove the fields themselves, run Flatten PDF, which draws them into the page content."},
         {"q": "Are hyperlinks removed?", "a": "Links to web pages (http and https), email links and links within the document are kept. Links that launch a program, open another file, run JavaScript or use any other kind of address are removed."},
-        {"q": "What happens to layers?", "a": "Content in layers that are switched off when the file opens is deleted, and the remaining layers become ordinary page content, so each page looks as it did but nothing is left to switch on. A form field placed in a hidden layer is kept and becomes visible, so the form stays complete."},
+        {"q": "What happens to layers?", "a": "Content in layers that are switched off when the file opens is deleted, and the remaining layers become ordinary page content, so each page looks as it did but nothing is left to switch on. The exception is visible text that continued a line of hidden text, which can shift left. A form field placed in a hidden layer is kept and becomes visible, so the form stays complete."},
         {"q": "Will a signed PDF stay signed?", "a": "No. Sanitizing rewrites the file, so any digital signature in it no longer validates. Check the signatures with Verify Digital Signature before you sanitize."},
     ],
     "set-permissions": [

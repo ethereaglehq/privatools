@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload a PDF",
-      "text": "Drop a PDF up to 500 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."
+      "text": "Drop a PDF up to about 250 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."
     },
     {
       "name": "PrivaTools removes active and hidden content",
-      "text": "It deletes document JavaScript and every automatic action; links and buttons that launch programs, open other files, submit or import form data, or use any address other than http:, https: or mailto:, such as javascript: or file:; embedded file attachments; sound, video, rich media and 3D content; XFA form data; and anything in a layer that is switched off when the file opens. It also clears the document information fields and XMP metadata."
+      "text": "It deletes document JavaScript and every action that runs by itself, apart from a move to a page when the file opens; links and buttons that launch programs, open other files, submit or import form data, or use any address other than http:, https: or mailto:, such as javascript: or file:; embedded file attachments; sound, video, rich media and 3D content; XFA form data; and anything in a layer that is switched off when the file opens. It also clears the document information fields and XMP metadata."
     },
     {
       "name": "Download the sanitized PDF",
@@ -20,7 +20,7 @@
     },
     {
       "q": "Does this remove form fields?",
-      "a": "No. Fields and the values typed into them are kept and stay fillable. Their scripts (formatting, validation and calculation) and any submit or import actions are removed, along with XFA form data, so a form that relied on scripts may stop calculating totals. To remove the fields themselves, run the Flatten tool, which draws them into the page content."
+      "a": "No. Fields and the values typed into them are kept and stay fillable. Their scripts (formatting, validation and calculation) and any submit or import actions are removed, along with XFA form data, so a form that relied on scripts may stop calculating totals. To remove the fields themselves, run Flatten PDF, which draws them into the page content."
     },
     {
       "q": "Are hyperlinks removed?",
@@ -28,7 +28,7 @@
     },
     {
       "q": "What happens to layers?",
-      "a": "Content in layers that are switched off when the file opens is deleted, and the remaining layers become ordinary page content, so each page looks as it did but nothing is left to switch on. A form field placed in a hidden layer is kept and becomes visible, so the form stays complete."
+      "a": "Content in layers that are switched off when the file opens is deleted, and the remaining layers become ordinary page content, so each page looks as it did but nothing is left to switch on. The exception is visible text that continued a line of hidden text, which can shift left. A form field placed in a hidden layer is kept and becomes visible, so the form stays complete."
     },
     {
       "q": "Will a signed PDF stay signed?",

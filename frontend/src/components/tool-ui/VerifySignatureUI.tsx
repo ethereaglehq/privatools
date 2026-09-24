@@ -119,7 +119,7 @@ export function VerifySignatureUI() {
     const verdictMeta: Record<Verdict, { tone: Tone; title: string; sub: string; icon: typeof ShieldCheck }> = {
         none: { tone: "muted", title: "No signature fields found", sub: "A visible signature image is not a digital signature field.", icon: ShieldQuestion },
         empty: { tone: "muted", title: "Signature fields are empty", sub: "The PDF has places for signatures, but none has been signed.", icon: ShieldQuestion },
-        invalid: { tone: "danger", title: "A signature does not match the document", sub: "The signed content or the signature itself has changed since signing.", icon: ShieldX },
+        invalid: { tone: "danger", title: "A signature does not match the document", sub: "The signed content has changed, a signature does not match its certificate, or part of the file is outside what was signed.", icon: ShieldX },
         altered: { tone: "danger", title: "Changed after signing", sub: "The file was saved again after signing, with changes that can alter what it shows.", icon: ShieldX },
         unchecked: { tone: "copper", title: "A signature could not be checked", sub: "The reason is shown below. Open the file in a PDF reader that validates signatures.", icon: ShieldAlert },
         changed: { tone: "copper", title: "Signed, with later additions", sub: "Each signed version is unchanged; form filling, further signatures or comments were added afterwards.", icon: ShieldAlert },

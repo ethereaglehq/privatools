@@ -6,11 +6,11 @@
     },
     {
       "name": "PrivaTools checks each signature",
-      "text": "For every signature field it checks whether the signed content still matches the digest in the signature, whether the signature matches the certificate embedded with it, and what was saved to the file after signing. Certificates are not checked against a trust list and revocation is not looked up, so nothing is fetched from the internet."
+      "text": "For each signed field it checks whether the signed content still matches the digest in the signature, whether the signature matches the certificate embedded with it, and what was saved to the file after signing. Certificates are not checked against a trust list and revocation is not looked up, so nothing is fetched from the internet."
     },
     {
       "name": "Read the result",
-      "text": "Each field is listed with the signer's name, the signing time, the certificate's subject and issuer, and a status: valid, later additions (form filling, further signatures or comments), changed (edits that can alter the pages), invalid, not signed or not checked. Confirm who signed in a PDF reader that validates certificates."
+      "text": "Each field is listed with a status: valid, later additions (form filling, further signatures or comments), changed (edits that can alter the pages), invalid, not signed or not checked, and the reason where there is one. A signed field also shows the signer's name and the signing time, and a checked one its certificate's subject and issuer. Confirm who signed in a PDF reader that validates certificates."
     }
   ],
   "faq": [

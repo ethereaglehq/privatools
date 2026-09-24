@@ -360,7 +360,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove metadata clean privacy gps exif",
     popularity: 74,
     category: "security", accepts: ".pdf", outputLabel: "stripped.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "delete-annotations", icon: MessageSquareOff, name: "Delete Annotations",
@@ -1142,24 +1142,24 @@ const _toolsRaw: Tool[] = [
   {
     slug: "verify-signature", icon: ShieldCheck, name: "Verify Digital Signature",
     description: "Check that a PDF's signatures still match the file",
-    longDescription: "Verify PDF digital signatures online. Every signature field is listed, and each signature shows the signer's name as recorded, the signing time and the subject and issuer of its certificate. Each one is checked: whether the signed content has changed, whether the signature matches its certificate, and what was saved to the file afterwards, such as form filling, further signatures or edits to the pages. Certificates are not checked against a trust list or for revocation, so a valid result does not prove who signed; confirm that in a PDF reader that validates certificates. Free tool.",
+    longDescription: "Verify PDF digital signatures online. Every signature field is listed, and each signature shows the signer's name as recorded and the signing time. Each signature in a supported format is checked: whether the signed content has changed, whether the signature matches its certificate, whose subject and issuer are shown, and what was saved to the file afterwards, such as form filling, further signatures or edits to the pages. Certificates are not checked against a trust list or for revocation, so a valid result does not prove who signed; confirm that in a PDF reader that validates certificates. Free tool.",
     seoTitle: "Verify a PDF Digital Signature Online – Integrity Check",
     metaDescription: "Check whether each signature in a PDF still matches the file and its certificate, and what changed after signing. Who signed is not verified.",
     synonyms: "digital signature check verify authentic",
     popularity: 79,
     category: "security", accepts: ".pdf", outputLabel: "verification report",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "sanitize-pdf", icon: Sparkles, name: "Sanitize Document",
     description: "Remove scripts, attachments and hidden layers from a PDF",
-    longDescription: "Sanitize PDF online — remove the parts of a PDF that can run code, reach outside the file or hide content: document JavaScript and automatic actions, links and buttons that launch programs, open other files, submit form data or use javascript: or file: addresses, embedded file attachments, sound, video and 3D content, XFA form data, and anything in a layer that is switched off. The document information fields and XMP metadata are cleared too. Visible layers become ordinary page content, form fields stay fillable, and web, email and in-document links keep working. The file is rewritten, so a digital signature in it will no longer validate.",
+    longDescription: "Sanitize PDF online — remove the parts of a PDF that can run code, reach outside the file or hide content: document JavaScript, actions that run by themselves (except opening at a set page), links and buttons that launch programs, open other files, submit form data or use javascript: or file: addresses, embedded file attachments, sound, video and 3D content, XFA form data, and anything in a layer that is switched off. The document information fields and XMP metadata are cleared too. Visible layers become ordinary page content, form fields stay fillable, and web, email and in-document links keep working. The file is rewritten, so a digital signature in it will no longer validate.",
     seoTitle: "Sanitize a PDF Online – Remove Scripts and Attachments",
     metaDescription: "Remove JavaScript, risky links and actions, attachments, hidden layers and metadata from a PDF. Web links and fillable form fields keep working.",
     synonyms: "remove javascript scripts malware safe",
     popularity: 78,
     category: "security", accepts: ".pdf", outputLabel: "sanitized.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
 
   // ── Page Order ─────────────────────────────────────────────────────────────
