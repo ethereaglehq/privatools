@@ -10,6 +10,8 @@ a scan of top-level objects never looks.
 from __future__ import annotations
 
 import io
+import threading
+import time
 
 import fitz
 import pikepdf
@@ -74,11 +76,39 @@ def _content_streams(pdf: pikepdf.Pdf) -> bytes:
     return b"\n".join(parts)
 
 
+def _all_streams(pdf: pikepdf.Pdf) -> bytes:
+    """Every reachable stream, decoded where possible, so deleted text can be searched for."""
+    parts = []
+    for obj in _reachable(pdf):
+        if isinstance(obj, pikepdf.Stream):
+            try:
+                parts.append(obj.read_bytes())
+            except pikepdf.PdfError:
+                parts.append(obj.read_raw_bytes())
+    return b"\n".join(parts)
+
+
 def _sanitize(client, data: bytes) -> bytes:
     resp = client.post("/api/sanitize", files={"file": ("in.pdf", data, "application/pdf")})
     assert resp.status_code == 200, resp.text
     assert resp.headers["content-type"] == "application/pdf"
     return resp.content
+
+
+def _sanitize_within(client, data: bytes, seconds: float) -> tuple[bytes, float]:
+    """Sanitize from a daemon thread, so a request that never ends fails the test instead of hanging the run."""
+    answer = {}
+
+    def run():
+        answer["response"] = client.post("/api/sanitize", files={"file": ("in.pdf", data, "application/pdf")})
+
+    started = time.monotonic()
+    thread = threading.Thread(target=run, daemon=True)
+    thread.start()
+    thread.join(seconds)
+    assert not thread.is_alive(), f"sanitize was still running after {seconds} seconds"
+    assert answer["response"].status_code == 200, answer["response"].text
+    return answer["response"].content, time.monotonic() - started
 
 
 def _open(data: bytes) -> pikepdf.Pdf:
@@ -238,6 +268,36 @@ def test_risky_links_are_removed_and_ordinary_links_are_kept(sanitized_hostile):
     assert len([a for a in links if "/Dest" in a]) == 1
 
 
+def test_the_open_action_keeps_only_moves_within_the_document(client):
+    """Opening the file must not open a web page: that would tell a server the file was read."""
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    pdf.add_blank_page()
+    tracker = pdf.make_indirect(Dictionary(S=Name.URI, URI=String("https://tracker.example/opened")))
+    pdf.Root.OpenAction = Dictionary(S=Name.GoTo, D=Array([pdf.pages[1].obj, Name.Fit]), Next=tracker)
+    pdf.pages[0].obj.Annots = Array([_link(pdf, 700, A=tracker)])
+    out = _open(_sanitize(client, _save(pdf)))
+    assert out.Root.OpenAction.S == Name.GoTo
+    assert "/Next" not in out.Root.OpenAction
+    # A link to the same address still works: it opens only when clicked.
+    [link] = out.pages[0].obj.Annots
+    assert str(link.A.URI) == "https://tracker.example/opened"
+
+
+@pytest.mark.parametrize("entries", [
+    {"S": "/URI", "URI": "https://tracker.example/opened"},
+    {"S": "/URI", "URI": "mailto:someone@example.com"},
+    {"S": "/ResetForm"},
+], ids=["web", "email", "reset-form"])
+def test_an_open_action_that_does_more_than_move_is_removed(client, entries):
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    pdf.Root.OpenAction = Dictionary({
+        "/" + key: Name(value) if value.startswith("/") else String(value) for key, value in entries.items()
+    })
+    assert "/OpenAction" not in _open(_sanitize(client, _save(pdf))).Root
+
+
 def test_embedded_files_are_removed(sanitized_hostile):
     pdf = _open(sanitized_hostile)
     dicts = list(_walk(pdf))
@@ -272,6 +332,14 @@ def test_form_fields_stay_fillable_without_their_actions(sanitized_hostile):
     assert "/NeedsRendering" not in pdf.Root
     doc = fitz.open(stream=sanitized_hostile, filetype="pdf")
     assert sorted(w.field_name for w in doc[0].widgets()) == ["name", "send"]
+    # Still fillable: not read-only, and a new value can be typed and saved.
+    page = doc[0]
+    widget = next(w for w in page.widgets() if w.field_name == "name")
+    assert not widget.field_flags & fitz.PDF_FIELD_IS_READ_ONLY
+    widget.field_value = "Typed after sanitizing"
+    widget.update()
+    refilled = fitz.open(stream=doc.tobytes(), filetype="pdf")
+    assert [w.field_value for w in refilled[0].widgets() if w.field_name == "name"] == ["Typed after sanitizing"]
 
 
 def test_bookmark_actions_are_filtered_but_bookmarks_are_kept(sanitized_hostile):
@@ -397,6 +465,90 @@ def test_form_widget_in_a_hidden_layer_is_kept_and_shown(client):
     annots = out.pages[0].obj.Annots
     assert [str(a.T) for a in annots] == ["layered"]
     assert "/OC" not in annots[0]
+
+
+def test_hidden_layers_inside_patterns_glyphs_and_soft_masks_are_deleted(client):
+    """These draw content streams of their own; once the layer settings go, anything hidden there would show."""
+    pdf = pikepdf.new()
+    pdf.add_blank_page(page_size=(300, 300))
+    page = pdf.pages[0]
+    hidden = pdf.make_indirect(Dictionary(Type=Name.OCG, Name=String("Hidden")))
+    pdf.Root.OCProperties = Dictionary(OCGs=Array([hidden]), D=Dictionary(OFF=Array([hidden])))
+    font = pdf.make_indirect(Dictionary(Type=Name.Font, Subtype=Name.Type1, BaseFont=Name.Helvetica))
+    inner = pdf.make_indirect(Dictionary(Font=Dictionary(F1=font), Properties=Dictionary(H=hidden)))
+
+    def layered(where: bytes) -> bytes:
+        return b"/OC /H BDC BT /F1 4 Tf (Hidden in %s) Tj ET EMC BT /F1 4 Tf (Shown in %s) Tj ET" % (where, where)
+
+    pattern = pdf.make_stream(layered(b"pattern"))
+    pattern.Type, pattern.PatternType, pattern.PaintType, pattern.TilingType = Name.Pattern, 1, 1, 1
+    pattern.BBox, pattern.XStep, pattern.YStep, pattern.Resources = Array([0, 0, 50, 50]), 50, 50, inner
+    glyph = pdf.make_stream(b"10 0 d0 " + layered(b"glyph"))
+    type3 = pdf.make_indirect(Dictionary(
+        Type=Name.Font, Subtype=Name.Type3, FontBBox=Array([0, 0, 10, 10]), FontMatrix=Array([0.1, 0, 0, 0.1, 0, 0]),
+        CharProcs=Dictionary(g=glyph), Encoding=Dictionary(Type=Name.Encoding, Differences=Array([65, Name.g])),
+        FirstChar=65, LastChar=65, Widths=Array([10]), Resources=inner,
+    ))
+    mask = pdf.make_stream(layered(b"mask"))
+    mask.Type, mask.Subtype, mask.BBox, mask.Resources = Name.XObject, Name.Form, Array([0, 0, 300, 300]), inner
+    mask.Group = Dictionary(S=Name.Transparency, CS=Name.DeviceGray)
+    page.obj.Resources = Dictionary(
+        Font=Dictionary(T3=type3),
+        Pattern=Dictionary(P1=pattern),
+        ExtGState=Dictionary(GS1=Dictionary(Type=Name.ExtGState, SMask=Dictionary(Type=Name.Mask, S=Name.Luminosity, G=mask))),
+    )
+    page.obj.Contents = pdf.make_stream(b"q /GS1 gs /Pattern cs /P1 scn 0 0 300 300 re f Q BT /T3 12 Tf 20 20 Td (A) Tj ET")
+    original = _all_streams(_open(_save(pdf, compress_streams=False)))
+    assert all(b"Hidden in " + where in original for where in (b"pattern", b"glyph", b"mask"))
+    content = _all_streams(_open(_sanitize(client, _save(pdf, compress_streams=False))))
+    for where in (b"pattern", b"glyph", b"mask"):
+        assert b"Shown in " + where in content
+        assert b"Hidden in " + where not in content
+
+
+# ── A file built to make the walks loop ──────────────────────────────────────
+
+def _looping_pdf() -> bytes:
+    """Every structure the service walks, made to refer back to itself."""
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    page = pdf.pages[0]
+    # A membership dictionary naming itself ten times: evaluated naively, some 10^16 steps.
+    group = pdf.make_indirect(Dictionary(Type=Name.OCG, Name=String("Layer")))
+    member = pdf.make_indirect(Dictionary(Type=Name.OCMD))
+    member.VE = Array([Name.And] + [member] * 10)
+    member.OCGs = Array([member] * 10)
+    pdf.Root.OCProperties = Dictionary(OCGs=Array([group]), D=Dictionary(OFF=Array([group])))
+    # A form XObject that draws itself.
+    form = pdf.make_stream(b"/OC /M BDC 0 0 10 10 re f EMC /Fm0 Do")
+    form.Type, form.Subtype, form.BBox = Name.XObject, Name.Form, Array([0, 0, 10, 10])
+    form.Resources = Dictionary(XObject=Dictionary(Fm0=form), Properties=Dictionary(M=member))
+    page.obj.Resources = Dictionary(XObject=Dictionary(Fm0=form), Properties=Dictionary(M=member))
+    page.obj.Contents = pdf.make_stream(b"/OC /M BDC BT (Kept) Tj ET EMC /Fm0 Do")
+    # Two actions that each run the other next.
+    first = pdf.make_indirect(Dictionary(S=Name.GoTo, D=Array([page.obj, Name.Fit])))
+    second = pdf.make_indirect(Dictionary(S=Name.GoTo, D=Array([page.obj, Name.Fit]), Next=first))
+    first.Next = second
+    page.obj.Annots = Array([_link(pdf, 700, A=first)])
+    # A bookmark that is its own next sibling and its own first child.
+    bookmark = pdf.make_indirect(Dictionary(Title=String("Loop"), A=second))
+    bookmark.Next = bookmark
+    bookmark.First = bookmark
+    pdf.Root.Outlines = pdf.make_indirect(Dictionary(Type=Name.Outlines, First=bookmark, Last=bookmark))
+    # A form field that is its own kid.
+    field = pdf.make_indirect(Dictionary(FT=Name.Tx, T=String("loop")))
+    field.Kids = Array([field])
+    pdf.Root.AcroForm = Dictionary(Fields=Array([field]))
+    return _save(pdf, compress_streams=False)
+
+
+def test_a_file_built_to_make_the_walks_loop_is_sanitized_quickly(client):
+    out, elapsed = _sanitize_within(client, _looping_pdf(), seconds=60)
+    assert elapsed < 10
+    pdf = _open(out)
+    assert "/OCProperties" not in pdf.Root
+    assert b"(Kept) Tj" in _content_streams(pdf)
+    assert pdf.pages[0].obj.Annots[0].A.S == Name.GoTo
 
 
 # ── Encryption and ordinary files ────────────────────────────────────────────

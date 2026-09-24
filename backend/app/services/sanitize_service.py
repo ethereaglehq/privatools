@@ -7,22 +7,27 @@ What goes:
   and form-field events;
 - every action other than moving within the document, resetting a form or
   opening an http, https or mailto link, wherever an action can fire: link
-  and widget annotations, form fields, bookmarks, the open action and each
-  /Next chain. That covers Launch, JavaScript, GoToR, GoToE, SubmitForm,
+  and widget annotations, form fields, bookmarks and each /Next chain. The
+  open action, which runs without a click, keeps only moves within the
+  document. That covers Launch, JavaScript, GoToR, GoToE, SubmitForm,
   ImportData, media and 3D actions, and URIs such as javascript: or file:;
 - embedded files: the EmbeddedFiles tree, file attachment annotations,
   associated files (/AF), portfolio (/Collection) settings and the embedded
   file streams of any file specification;
 - sound, movie, screen, rich media and 3D annotations;
 - XFA form data. AcroForm fields stay fillable and keep their values;
-- content in optional-content layers that are hidden when the file opens.
-  The visible layers become ordinary page content, so nothing hidden is left
-  to switch on;
+- content in optional-content layers that are hidden when the file opens,
+  whether in page contents, form XObjects, annotation appearances, tiling
+  patterns, Type 3 glyphs or soft masks. The visible layers become ordinary
+  page content, so nothing hidden is left to switch on;
 - XMP metadata streams, wherever they are attached, and the document
   information dictionary.
 
 A password needed to open the file is rejected by ``safe_open_pdf``; an owner
-password that only restricts printing or copying is kept.
+password, which only limits what a reader allows, is kept with its limits.
+
+Every walk is bounded: shared and cyclic structures are visited once, so a
+file built to make one loop cannot.
 """
 
 from __future__ import annotations
@@ -40,6 +45,9 @@ logger = logging.getLogger(__name__)
 
 # An allowlist, so an action type this code has never heard of is removed too.
 _SAFE_ACTIONS = frozenset({"/GoTo", "/GoToDp", "/Named", "/Thread", "/Hide", "/Trans", "/ResetForm", "/URI"})
+# The document's open action runs without a click, so it keeps only moves
+# within the document: a web or email address there would open by itself.
+_OPEN_ACTIONS = frozenset({"/GoTo", "/GoToDp", "/Named", "/Thread"})
 _SAFE_URI_SCHEMES = ("http:", "https:", "mailto:")
 # Named actions beyond these four run viewer menu commands.
 _NAVIGATION_NAMES = frozenset({"/NextPage", "/PrevPage", "/FirstPage", "/LastPage"})
@@ -85,9 +93,9 @@ def sanitize_pdf(data: bytes) -> str:
 
 # ── Actions ──────────────────────────────────────────────────────────────────
 
-def _is_safe_action(action: Dictionary) -> bool:
+def _is_safe_action(action: Dictionary, on_open: bool = False) -> bool:
     kind = action.get("/S")
-    if not isinstance(kind, Name) or str(kind) not in _SAFE_ACTIONS:
+    if not isinstance(kind, Name) or str(kind) not in (_OPEN_ACTIONS if on_open else _SAFE_ACTIONS):
         return False
     if kind == Name.URI:
         return str(action.get("/URI", "")).strip().lower().startswith(_SAFE_URI_SCHEMES)
@@ -99,24 +107,25 @@ def _is_safe_action(action: Dictionary) -> bool:
     return True
 
 
-def _keep_action(action, memo: dict, depth: int = 0) -> bool:
+def _keep_action(action, memo: dict, depth: int = 0, on_open: bool = False) -> bool:
     """Say whether ``action`` is safe, cutting unsafe steps from its /Next chain.
 
     ``memo`` records each indirect action once, so shared or cyclic chains are
-    walked a bounded number of times.
+    walked a bounded number of times. ``on_open`` applies the open action's
+    stricter rule to the whole chain.
     """
     if not isinstance(action, Dictionary) or depth > _MAX_DEPTH:
         return False
     key = action.objgen if action.is_indirect else None
     if key in memo:
         return memo[key]
-    safe = _is_safe_action(action)
+    safe = _is_safe_action(action, on_open)
     if key is not None:
         memo[key] = safe  # recorded before the chain is walked, so a cycle stops here
     following = action.get("/Next")
     if safe and following is not None:
         steps = list(following) if isinstance(following, Array) else [following]
-        kept = [step for step in steps if _keep_action(step, memo, depth + 1)]
+        kept = [step for step in steps if _keep_action(step, memo, depth + 1, on_open)]
         if not kept:
             del action["/Next"]
         elif len(kept) != len(steps):
@@ -124,8 +133,8 @@ def _keep_action(action, memo: dict, depth: int = 0) -> bool:
     return safe
 
 
-def _filter_action_key(owner: Dictionary, key: str, memo: dict) -> None:
-    if key in owner and not _keep_action(owner[key], memo):
+def _filter_action_key(owner: Dictionary, key: str, memo: dict, on_open: bool = False) -> None:
+    if key in owner and not _keep_action(owner[key], memo, on_open=on_open):
         del owner[key]
 
 
@@ -133,7 +142,9 @@ def _remove_document_actions(pdf: pikepdf.Pdf, memo: dict) -> None:
     root = pdf.Root
     # An /OpenAction array is a destination (open at this page), not an action.
     if isinstance(root.get("/OpenAction"), Dictionary):
-        _filter_action_key(root, "/OpenAction", memo)
+        # Its own memo: an action shared with a link is judged by the stricter
+        # rule here, and by the link's rule there.
+        _filter_action_key(root, "/OpenAction", {}, on_open=True)
     names = root.get("/Names")
     if isinstance(names, Dictionary):
         for key in _NAME_TREES_REMOVED:
@@ -248,49 +259,70 @@ def _default_states(properties: Dictionary) -> dict[tuple[int, int], bool]:
     return states
 
 
-def _visible(oc, states: dict, depth: int = 0) -> bool:
-    """Evaluate an optional content group or membership dictionary.
+class _Layers:
+    """Whether optional content is visible when the file opens.
 
     Anything unknown or malformed counts as visible, as it does in readers, so
-    the worst a strange file gets is content that stops being hidden.
+    the worst a strange file gets is content that stops being hidden. Each
+    membership dictionary is evaluated once per document, and one that refers
+    back to itself counts as visible, so no file can make evaluation run long:
+    without that, a dictionary naming itself ten times in its /VE took some
+    10^16 steps.
     """
-    if not isinstance(oc, Dictionary) or depth > _MAX_DEPTH:
-        return True
-    if oc.get("/Type") != Name.OCMD:
-        return states.get(oc.objgen, True) if oc.is_indirect else True
-    expression = oc.get("/VE")
-    if expression is not None:
-        return _evaluate_expression(expression, states, depth + 1)
-    groups = oc.get("/OCGs")
-    members = [groups] if isinstance(groups, Dictionary) else list(groups) if isinstance(groups, Array) else []
-    values = [_visible(member, states, depth + 1) for member in members]
-    if not values:
-        return True
-    policy = oc.get("/P")
-    if policy == Name.AllOn:
-        return all(values)
-    if policy == Name.AnyOff:
-        return not all(values)
-    if policy == Name.AllOff:
-        return not any(values)
-    return any(values)
 
+    def __init__(self, properties: Dictionary):
+        self.states = _default_states(properties)
+        self.memberships: dict[tuple[int, int], bool] = {}
 
-def _evaluate_expression(expression, states: dict, depth: int) -> bool:
-    if depth > _MAX_DEPTH:
+    def visible(self, oc, depth: int = 0) -> bool:
+        """Evaluate an optional content group or membership dictionary."""
+        if not isinstance(oc, Dictionary) or depth > _MAX_DEPTH:
+            return True
+        if oc.get("/Type") != Name.OCMD:
+            return self.states.get(oc.objgen, True) if oc.is_indirect else True
+        key = oc.objgen if oc.is_indirect else None
+        if key in self.memberships:
+            return self.memberships[key]
+        if key is not None:
+            self.memberships[key] = True  # what a reference back to it sees while it is evaluated
+        result = self._membership(oc, depth)
+        if key is not None:
+            self.memberships[key] = result
+        return result
+
+    def _membership(self, oc: Dictionary, depth: int) -> bool:
+        expression = oc.get("/VE")
+        if expression is not None:
+            return self._expression(expression, depth + 1)
+        groups = oc.get("/OCGs")
+        members = [groups] if isinstance(groups, Dictionary) else list(groups) if isinstance(groups, Array) else []
+        values = [self.visible(member, depth + 1) for member in members]
+        if not values:
+            return True
+        policy = oc.get("/P")
+        if policy == Name.AllOn:
+            return all(values)
+        if policy == Name.AnyOff:
+            return not all(values)
+        if policy == Name.AllOff:
+            return not any(values)
+        return any(values)
+
+    def _expression(self, expression, depth: int) -> bool:
+        if depth > _MAX_DEPTH:
+            return True
+        if isinstance(expression, Dictionary):
+            return self.visible(expression, depth)
+        if not isinstance(expression, Array) or len(expression) < 2:
+            return True
+        operator, operands = expression[0], [self._expression(e, depth + 1) for e in expression[1:]]
+        if operator == Name.Not:
+            return not operands[0]
+        if operator == Name.And:
+            return all(operands)
+        if operator == Name.Or:
+            return any(operands)
         return True
-    if isinstance(expression, Dictionary):
-        return _visible(expression, states, depth)
-    if not isinstance(expression, Array) or len(expression) < 2:
-        return True
-    operator, operands = expression[0], [_evaluate_expression(e, states, depth + 1) for e in expression[1:]]
-    if operator == Name.Not:
-        return not operands[0]
-    if operator == Name.And:
-        return all(operands)
-    if operator == Name.Or:
-        return any(operands)
-    return True
 
 
 def _inherited_resources(page: Dictionary):
@@ -318,6 +350,39 @@ def _appearance_streams(annot: Dictionary) -> list:
     return streams
 
 
+def _nested_content(resources) -> list:
+    """Content streams that resources draw other than form XObjects.
+
+    Tiling pattern cells, Type 3 glyphs and soft-mask groups can hold layered
+    content too; left alone, their hidden parts would show once the layer
+    settings are gone. Each comes with the resources it is drawn with.
+    """
+    if not isinstance(resources, Dictionary):
+        return []
+    found = []
+    patterns = resources.get("/Pattern")
+    if isinstance(patterns, Dictionary):
+        found += [
+            (pattern, resources) for pattern in patterns.values()
+            if isinstance(pattern, pikepdf.Stream) and pattern.get("/PatternType") == 1
+        ]
+    fonts = resources.get("/Font")
+    if isinstance(fonts, Dictionary):
+        for font in fonts.values():
+            procs = font.get("/CharProcs") if isinstance(font, Dictionary) and font.get("/Subtype") == Name.Type3 else None
+            if isinstance(procs, Dictionary):
+                glyph_resources = font.get("/Resources", resources)
+                found += [(proc, glyph_resources) for proc in procs.values() if isinstance(proc, pikepdf.Stream)]
+    states = resources.get("/ExtGState")
+    if isinstance(states, Dictionary):
+        for state in states.values():
+            mask = state.get("/SMask") if isinstance(state, Dictionary) else None
+            group = mask.get("/G") if isinstance(mask, Dictionary) else None
+            if isinstance(group, pikepdf.Stream):
+                found.append((group, resources))
+    return found
+
+
 def _hidden_equivalent(operator: str, operands) -> list | None:
     """What stays of an instruction inside hidden content; None keeps it unchanged."""
     if operator in _PAINT_OPERATORS:
@@ -335,7 +400,7 @@ def _hidden_equivalent(operator: str, operands) -> list | None:
     return None
 
 
-def _strip_hidden_content(instructions, resources, states: dict):
+def _strip_hidden_content(instructions, resources, layers: _Layers):
     """Drop hidden optional content and unwrap the visible sections.
 
     Returns the new instructions, whether anything changed, and the form
@@ -364,7 +429,7 @@ def _strip_hidden_content(instructions, resources, states: dict):
             oc = operands[1]
             if isinstance(oc, Name):
                 oc = properties.get(str(oc)) if isinstance(properties, Dictionary) else None
-            visible = _visible(oc, states)
+            visible = layers.visible(oc)
             sections.append((True, visible))
             if not visible:
                 hidden += 1
@@ -388,7 +453,7 @@ def _strip_hidden_content(instructions, resources, states: dict):
         elif operator == "Do" and operands and isinstance(xobjects, Dictionary):
             xobject = xobjects.get(str(operands[0]))
             if isinstance(xobject, pikepdf.Stream):
-                if not _visible(xobject.get("/OC"), states):
+                if not layers.visible(xobject.get("/OC")):
                     changed = True
                     continue
                 if xobject.get("/Subtype") == Name.Form:
@@ -401,8 +466,9 @@ def _remove_hidden_layers(pdf: pikepdf.Pdf) -> None:
     properties = pdf.Root.get("/OCProperties")
     if not isinstance(properties, Dictionary):
         return
-    states = _default_states(properties)
-    visited: set[tuple[int, int]] = set()
+    layers = _Layers(properties)
+    visited: set[tuple[int, int]] = set()  # content streams done
+    expanded: set[tuple[int, int]] = set()  # shared resource dictionaries whose nested content is queued
     changed_any = False
     for page in pdf.pages:
         page_resources = _inherited_resources(page.obj)
@@ -414,7 +480,7 @@ def _remove_hidden_layers(pdf: pikepdf.Pdf) -> None:
                 annot for annot in annots
                 if not isinstance(annot, Dictionary)
                 or annot.get("/Subtype") == Name.Widget
-                or _visible(annot.get("/OC"), states)
+                or layers.visible(annot.get("/OC"))
             ]
             if len(kept) != len(annots):
                 page.obj.Annots = Array(kept)
@@ -429,13 +495,18 @@ def _remove_hidden_layers(pdf: pikepdf.Pdf) -> None:
                     continue
                 visited.add(owner.objgen)
                 resources = owner.get("/Resources", resources)
+            shared = resources.objgen if isinstance(resources, Dictionary) and resources.is_indirect else None
+            if shared not in expanded:
+                if shared is not None:
+                    expanded.add(shared)
+                work += [item for item in _nested_content(resources) if item[0].objgen not in visited]
             try:
                 instructions = pikepdf.parse_content_stream(owner)
             except pikepdf.PdfError:
                 # Left as it is: without /OCProperties its layers all show.
                 logger.warning("Sanitize: could not parse a content stream; its layers become visible")
                 continue
-            out, changed, forms = _strip_hidden_content(instructions, resources, states)
+            out, changed, forms = _strip_hidden_content(instructions, resources, layers)
             work += [(form, resources) for form in forms]
             if changed:
                 data = pikepdf.unparse_content_stream(out)
