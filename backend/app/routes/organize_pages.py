@@ -8,6 +8,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 
 from ..services import organize_pages_service
+from ..utils.exceptions import ToolError
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -36,7 +37,7 @@ async def get_thumbnails(file: UploadFile = File(...)):
         thumbnails = await asyncio.to_thread(organize_pages_service.generate_thumbnails, str(temp_path))
         remove_files(str(temp_path))
         return JSONResponse({"thumbnails": thumbnails})
-    except HTTPException:
+    except (HTTPException, ToolError):
         if temp_path is not None:
             remove_files(str(temp_path))
         raise
@@ -105,7 +106,7 @@ async def organize_pages(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = ([str(temp_path)] if temp_path is not None else []) + (
             [output_path] if output_path else []
         )

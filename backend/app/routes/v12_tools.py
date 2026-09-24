@@ -19,6 +19,7 @@ from ..services import (
     view_exif_service,
     web_optimize_service,
 )
+from ..utils.exceptions import ToolError
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -91,7 +92,7 @@ async def split_by_text_endpoint(
             media_type="application/zip",
             background=BackgroundTask(remove_files, str(temp_path), output_path),
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         remove_files(*([str(temp_path)] if temp_path else []), *([output_path] if output_path else []))
         raise
     except ValueError as ve:
