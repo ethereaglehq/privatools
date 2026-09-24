@@ -115,7 +115,7 @@ export function BatesUI() {
                 const msg = e instanceof Error ? e.message : "Failed";
                 setBatchError(friendlyError(msg, "Couldn't number that set."));
                 setPhase("idle");
-                emitToolRun({ outcome: "error", files: files.length });
+                emitToolRun({ outcome: "error", files: files.length }, e);
             }
             return;
         }

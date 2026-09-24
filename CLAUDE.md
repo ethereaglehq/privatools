@@ -193,17 +193,38 @@ onnxruntime reports an unreadable model as a bare `system error number 13`,
 naming neither the file nor the permission, so the `chown` of `/app/cache` is
 load-bearing.
 
-## Analytics (changed 2026-09-17)
+## Analytics (changed 2026-09-24)
 
 - Google Analytics is **default-on for every visitor**; the Privacy page
   switch is the only opt-out. No consent prompt, no regional policy, and DNT
   or GPC are not read. `deploy/analytics.md` is the runbook.
+- **Automated browsers are never measured:** `navigator.webdriver` true, or a
+  `HeadlessChrome`/`PhantomJS` user agent, keeps the tag unloaded. No
+  screen-size or country heuristics. A Playwright check of analytics must
+  therefore launch Chromium with `--disable-blink-features=AutomationControlled`
+  and an ordinary user agent, or it sees no tag at all.
+- **Only the first page view of a page load says where the visit came from:**
+  the external referrer's origin and the five `utm_` tags, sanitized, read
+  when the beacon module loads. Never put them in `gtag("set")`: the global
+  defaults feed every automatic event and later hit.
 - **Every tool surface that processes files must call `emitToolRun`** from
   `lib/toolRun.ts` at its success and failure points, unless it runs through
   `GenericUI`, `SimpleConvertUI`, `useMultiFileProcessor` or `useMediaJob`,
   which report centrally. `src/test/tool-run-coverage.test.ts` walks
   `components/tool-ui` and fails on any file that talks to the backend without
   it. The beacon derives the slug from the route and drops unknown slugs.
+- **A failure report passes what it caught:** `emitToolRun({ outcome:
+  "error", ... }, e)`, or the run's first failure for multi-file engines, or
+  an explicit `errorKind` when the tool knows better. `toolErrorKind()`
+  classifies from `__status`, the `__kind` tag `lib/api.ts` puts on
+  status-less failures (`withErrorKind` for a tool's own throws), error names
+  and BYOK error kinds; only the fixed category reaches the beacon. Parse a
+  server's JSON with `readJson` from `lib/api.ts`, not `res.json()`, so a body
+  that does not parse counts as `server` rather than `browser`. A user
+  cancel is not a failure: cancelled files are not counted, and an error
+  caused by a cancel is dropped. The coverage test also fails on a failure
+  report with neither. `toolRun.ts` matches BYOK errors by name and
+  must never import `lib/byok`, or every tool page would need the provider CSP.
 - React Router navigations reach the beacon through `notifyNavigation()` in
   the app root; pushState fires no popstate, so page views were once lost.
 

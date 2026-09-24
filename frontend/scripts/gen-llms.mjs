@@ -36,7 +36,7 @@ const facts = `PrivaTools offers ${total} tools for PDFs, images, video, audio, 
 - The current Vault, saved signatures, and tool preferences are browser-local. Signing in does not sync them across devices or back them up.
 - Public processing has file-size, rate, resource, and tool-specific limits. Available native codecs and AI models depend on the deployment. Self-hosting has its own infrastructure costs.
 - PrivaTools does not add a promotional watermark to downloads. Watermark tools add marks only when requested.
-- Public pages use Google Analytics, on by default, for page visits, sessions, engagement and tool runs: which tool, how it ran, how many files and whether it succeeded. It receives no file contents, filenames, document text or account identity; advertising features and Google Signals are off. Visitors can turn analytics off on the privacy page.
+- Public pages use Google Analytics, on by default, for page visits, sessions, engagement, where visits come from and tool runs: which tool, how it ran, how many files, whether it succeeded and, for most failed runs, a fixed failure category such as "too_large" or "server". Where a visit came from is the referring site's origin, or the PrivaTools page it was opened from, and any standard utm_ campaign tags, sent only with the first page view of each page load and filtered by rules meant to keep out phone numbers, identifiers and tokens. It receives no file contents, filenames, document text, error messages or account identity; advertising features and Google Signals are off. Browsers that identify themselves as automated or headless are not measured. Visitors can turn analytics off on the privacy page.
 
 ## Authoritative pages
 

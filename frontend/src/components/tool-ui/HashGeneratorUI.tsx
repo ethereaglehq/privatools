@@ -27,7 +27,7 @@ export function HashGeneratorUI() {
             const bytes = mode === "file" ? await file!.arrayBuffer() : new TextEncoder().encode(input).buffer;
             const next = await hashBytes(bytes);
             if (generation.current === current) { setResults(next); emitToolRun({ outcome: "success" }); }
-        } catch { if (generation.current === current) { setError("Couldn't calculate the hashes. Try a smaller file or a browser with Web Crypto support."); emitToolRun({ outcome: "error" }); } }
+        } catch (e) { if (generation.current === current) { setError("Couldn't calculate the hashes. Try a smaller file or a browser with Web Crypto support."); emitToolRun({ outcome: "error" }, e); } }
         finally { if (generation.current === current) setComputing(false); }
     };
     return <LabWorkspace kind="hash" note="SHA hashes are calculated by Web Crypto on this device. Files and text stay in your browser.">

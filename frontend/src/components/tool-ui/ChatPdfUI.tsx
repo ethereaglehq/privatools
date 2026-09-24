@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Bot, Loader2, MessageSquareText, RotateCcw, Send, User, FileText } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { formatFileSize } from "@/lib/api";
+import { formatFileSize, withErrorKind } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone, ProcessingBar } from "./FileUploadZone";
 import { AiTaskWorkspace } from "./AiTaskWorkspace";
@@ -124,7 +124,7 @@ export function ChatPdfUI() {
         abortRef.current = controller;
         try {
             const apiKey = await getKey(byok.provider);
-            if (!apiKey) throw new Error("No key saved for this provider yet.");
+            if (!apiKey) throw withErrorKind(new Error("No key saved for this provider yet."), "provider");
             const answer = await askPdfWithByok({
                 providerId: byok.provider,
                 apiKey,
@@ -142,7 +142,7 @@ export function ChatPdfUI() {
             if ((e as DOMException)?.name === "AbortError") { setMessages(history); setInput(question); return; }
             const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "The request failed.";
             setError(friendlyError(msg, "The request failed."));
-            emitToolRun({ outcome: "error" });
+            emitToolRun({ outcome: "error" }, e);
             // Put the question back so it isn't lost.
             setMessages(history);
             setInput(question);

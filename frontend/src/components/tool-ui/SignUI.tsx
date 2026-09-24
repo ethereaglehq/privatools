@@ -138,7 +138,7 @@ export function SignUI() {
             const msg = e instanceof Error ? e.message : "Could not sign PDF";
             setError(friendlyError(msg, "Couldn't sign that PDF."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, page, x, y, width, height, sigFile, sigData]);
 

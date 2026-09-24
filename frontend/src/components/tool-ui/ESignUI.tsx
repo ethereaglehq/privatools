@@ -246,7 +246,7 @@ export function ESignUI() {
             const msg = e instanceof Error ? e.message : "Signing failed";
             setError(friendlyError(msg, "Couldn't apply that signature."));
             setStatus("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, getSignatureData, pageNumber, posX, posY, sigWidth, sigHeight]);
 

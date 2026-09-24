@@ -82,7 +82,7 @@ export function ShapesUI() {
             const msg = e instanceof Error ? e.message : "Could not draw shapes";
             setError(friendlyError(msg, "Couldn't apply those shapes."));
             setStatus("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, shapes]);
 

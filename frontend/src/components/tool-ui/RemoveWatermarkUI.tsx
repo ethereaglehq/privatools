@@ -118,7 +118,7 @@ export function RemoveWatermarkUI() {
             const msg = e instanceof Error ? e.message : "Removal failed";
             setError(friendlyError(msg, "Couldn't remove that watermark."));
             setPhase("review");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     };
 

@@ -156,6 +156,8 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         // Tiny semaphore — N workers pull from a shared cursor.
         const concurrency = Math.max(1, opts.concurrency ?? 3);
         let cursor = 0;
+        // The first failure names the run's error category in the usage signal.
+        let firstFailure: unknown = null;
         const ids = targetIds; // captured
 
         const worker = async () => {
@@ -205,6 +207,7 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
                         : x,
                     ));
                 } catch (e: unknown) {
+                    firstFailure ??= e;
                     const raw = e instanceof Error ? e.message : "Failed";
                     const msg = friendlyError(raw, "Processing failed");
                     mutate(prev => prev.map(x => x.id === id
@@ -224,7 +227,7 @@ export function useMultiFileProcessor(): UseMultiFileProcessorResult {
         const done = touched.filter(e => e.status === "done").length;
         const failed = touched.filter(e => e.status === "failed").length;
         const outcome = runOutcome(done, failed);
-        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed });
+        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed }, firstFailure);
 
         inFlight.current = false;
     }, [mutate]);

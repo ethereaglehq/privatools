@@ -205,7 +205,7 @@ export function JsonXmlFormatterUI() {
                 setIssue(null);
             } else {
                 const transformed = transformXml(input, action, indentText);
-                if (transformed.issue) { setIssue(transformed.issue); setResult(null); emitToolRun({ outcome: "error" }); return; }
+                if (transformed.issue) { setIssue(transformed.issue); setResult(null); emitToolRun({ outcome: "error", errorKind: "bad_input" }); return; }
                 setResult({ text: transformed.text!, action, mode });
                 setIssue(null);
             }
@@ -215,7 +215,8 @@ export function JsonXmlFormatterUI() {
             const message = error instanceof Error ? error.message : "We couldn't read this input.";
             setIssue(mode === "json" ? locateJsonError(input, message) : { message });
             setResult(null);
-            emitToolRun({ outcome: "error" });
+            // Anything thrown here is shown as an issue in the input.
+            emitToolRun({ outcome: "error", errorKind: "bad_input" }, error);
         }
     };
 

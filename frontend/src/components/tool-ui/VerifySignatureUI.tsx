@@ -6,7 +6,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Loader2, AlertCircle, ShieldCheck, ShieldAlert, ShieldX, RotateCcw, Search, ShieldQuestion } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile } from "@/lib/api";
+import { readJson, uploadFile } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 
@@ -97,7 +97,7 @@ export function VerifySignatureUI() {
         setStatus("processing"); setError(null);
         try {
             const res = await uploadFile("/verify-signature", file);
-            const data = await res.json();
+            const data = await readJson<SigResult>(res);
             setResult(data);
             setStatus("done");
             emitToolRun({ outcome: "success", files: 1 });
@@ -105,7 +105,7 @@ export function VerifySignatureUI() {
             const msg = e instanceof Error ? e.message : "Could not verify signatures";
             setError(friendlyError(msg, "Couldn't verify that signature."));
             setStatus("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file]);
 

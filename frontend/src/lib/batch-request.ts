@@ -1,4 +1,13 @@
+import { withErrorKind } from "./api";
 import { getToolEndpoint } from "./tool-endpoints";
+
+/** Why a batch cannot run with these settings, tagged as bad input, or null when it can. */
+export function batchConfigError(slug: string, query = ""): Error | null {
+    if (slug === "highlight-pdf" && !query.trim()) {
+        return withErrorKind(new Error("Enter the text to highlight before processing these PDFs."), "bad_input");
+    }
+    return null;
+}
 
 /** Alias pages and batch processing must ask the shared endpoint for the same format. */
 export function batchRequestFields(slug: string, query = ""): Record<string, string> {

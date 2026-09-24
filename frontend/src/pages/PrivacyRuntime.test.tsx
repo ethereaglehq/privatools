@@ -37,12 +37,38 @@ describe("Privacy disclosures match the hosted runtime", () => {
     expect(screen.getByText(/destination URL and domain/)).toBeInTheDocument();
     expect(screen.getByText(/Form interactions, file downloads, site search and browser-history page views/)).toBeInTheDocument();
     expect(screen.getByText(/automatic detection and snippet-based collection are disabled/)).toBeInTheDocument();
-    expect(container).toHaveTextContent("without URL queries or fragments");
+    expect(container).not.toHaveTextContent("without URL queries or fragments");
     expect(container).toHaveTextContent("Analytics is on by default");
     expect(container).toHaveTextContent("tool you run");
     expect(container).not.toHaveTextContent("Do Not Track");
     expect(container).not.toHaveTextContent("regional policy");
     expect(screen.getByRole("link", { name: "Google’s event and parameter documentation" })).toHaveAttribute("href", "https://support.google.com/analytics/answer/9216061?hl=en");
+  });
+
+  it("discloses arrival attribution, failure categories and the automation skip", () => {
+    const { container } = render(<PrivacyPage/>);
+    const text = container.textContent || "";
+    for (const tag of ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"]) expect(text).toContain(tag);
+    expect(text).toContain("the first page view each time a PrivaTools page loads (when you arrive, open a page in a new tab or reload)");
+    expect(text).toContain("at most 64 characters");
+    expect(text).toContain("fewer than 9 digits");
+    expect(text).toContain("no unbroken run of 16 or more characters that mixes letters and digits");
+    expect(text).not.toContain("at most 100");
+    expect(text).toContain("Every other query parameter is removed");
+    expect(text).toContain("only its origin, for example https://www.google.com/");
+    expect(text).toContain("never the page you came from there or your search terms");
+    expect(text).toContain("an IP address, localhost or a name without a dot");
+    // Arriving from another PrivaTools page records that page, not an origin.
+    expect(text).toContain("opened from another public PrivaTools page");
+    expect(text).toContain("records that PrivaTools page’s address without its query, and so does a reload of the page");
+    for (const kind of ["too_large", "rate_limited", "bad_input", "timeout", "server", "network", "provider", "browser"]) expect(text).toContain(kind);
+    // Not every screen reports a category yet, so the page must not promise one for every failure.
+    expect(text).toContain("A failed tool run can carry one fixed failure category");
+    expect(text).not.toContain("A tool run that fails carries");
+    expect(text).toContain("never the error message");
+    expect(text).toContain("navigator.webdriver");
+    expect(text).toContain("HeadlessChrome");
+    expect(text).toContain("do not load Google Analytics at all");
   });
 
   it("shows analytics on by default and lets a visitor turn it off and back on", () => {

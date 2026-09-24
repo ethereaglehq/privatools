@@ -56,7 +56,7 @@ export function HtmlToPdfUI() {
             const msg = e instanceof Error ? e.message : "Conversion failed";
             setError(friendlyError(msg, "Couldn't render that HTML to PDF."));
             setState("idle");
-            emitToolRun({ outcome: "error" });
+            emitToolRun({ outcome: "error" }, e);
         }
     }, [canProcess, mode, url, html, getOutputName]);
 

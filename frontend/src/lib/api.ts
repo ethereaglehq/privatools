@@ -3,6 +3,7 @@
  * All tool UIs use these helpers to communicate with the FastAPI backend.
  */
 import { toast } from "sonner";
+import type { ToolErrorKind } from "./toolRun";
 
 /**
  * Resolve the origin API requests are sent to. Priority:
@@ -98,6 +99,25 @@ export function getErrorStatus(err: unknown): number | undefined {
     return undefined;
 }
 
+/** Tag an error with the fixed category usage analytics reports for a failed
+ *  run (see `toolErrorKind` in toolRun.ts). HTTP errors carry `__status`
+ *  instead; this marks failures that have none. Returns the same error. */
+export function withErrorKind<T>(err: T, kind: ToolErrorKind): T {
+    if (err && typeof err === "object") (err as { __kind?: ToolErrorKind }).__kind = kind;
+    return err;
+}
+
+/** Read a JSON response body. A body that is not valid JSON (a proxy's HTML
+ *  error page, a truncated answer) is the server's failure, so it is tagged
+ *  `server`; anything else, such as a dropped connection, passes through. */
+export async function readJson<T = unknown>(res: Response): Promise<T> {
+    try {
+        return await res.json() as T;
+    } catch (err) {
+        throw err instanceof SyntaxError ? withErrorKind(err, "server") : err;
+    }
+}
+
 /** Build a clipboard-friendly bug report blob from an error. Includes the
  *  message, request ID, status, URL/User-Agent, and timestamp. Used by the
  *  "Copy error" button on every error panel. */
@@ -133,16 +153,16 @@ export const MAX_FILES_PER_REQUEST = 100;
 function validateFileSize(file: File) {
     if (file.size > MAX_FILE_SIZE) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
-        throw new Error(`File "${file.name}" is ${sizeMB} MB — max allowed is 500 MB`);
+        throw withErrorKind(new Error(`File "${file.name}" is ${sizeMB} MB — max allowed is 500 MB`), "too_large");
     }
 }
 
 function validateFileCount(files: File[]) {
     if (files.length === 0) {
-        throw new Error("Please select at least one file");
+        throw withErrorKind(new Error("Please select at least one file"), "bad_input");
     }
     if (files.length > MAX_FILES_PER_REQUEST) {
-        throw new Error(`Too many files (${files.length}). Max ${MAX_FILES_PER_REQUEST} per request — split into batches.`);
+        throw withErrorKind(new Error(`Too many files (${files.length}). Max ${MAX_FILES_PER_REQUEST} per request — split into batches.`), "bad_input");
     }
 }
 
@@ -310,11 +330,15 @@ function timeoutSignal(timeoutMs: number, external?: AbortSignal): {
 }
 
 /** Translate an AbortError that came from our timeoutSignal into a friendly
- *  message. Caller-cancels (which use a plain AbortError) get passed through. */
-function decorateTimeoutError(err: unknown): unknown {
+ *  message, and mark a request that never completed. Caller-cancels (which use
+ *  a plain AbortError) and HTTP errors get passed through. */
+function decorateTransportError(err: unknown): unknown {
     if (err instanceof DOMException && err.name === "TimeoutError") {
-        return new Error("The server didn't respond — try a smaller file or check your connection.");
+        return withErrorKind(new Error("The server didn't respond — try a smaller file or check your connection."), "timeout");
     }
+    // Only fetch() itself can throw a TypeError inside the helpers' try blocks:
+    // offline, DNS, a dropped connection, CORS or a blocked request.
+    if (err instanceof TypeError) return withErrorKind(err, "network");
     return err;
 }
 
@@ -348,7 +372,7 @@ export async function uploadFile(
             if (!res.ok) throw await describeError(res);
             return res;
         } catch (err) {
-            throw decorateTimeoutError(err);
+            throw decorateTransportError(err);
         } finally {
             cancel();
         }
@@ -421,9 +445,9 @@ export function uploadFileWithProgress(
             }
         };
 
-        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.onerror = () => reject(withErrorKind(new Error("Network error"), "network"));
         xhr.onabort  = () => reject(new DOMException("Aborted", "AbortError"));
-        xhr.ontimeout = () => reject(new Error("Request timed out"));
+        xhr.ontimeout = () => reject(withErrorKind(new Error("Request timed out"), "timeout"));
         xhr.timeout = Math.max(0, timeoutMs);
         xhr.send(fd);
     });
@@ -456,7 +480,7 @@ export async function uploadFiles(
             if (!res.ok) throw await describeError(res);
             return res;
         } catch (err) {
-            throw decorateTimeoutError(err);
+            throw decorateTransportError(err);
         } finally {
             cancel();
         }
@@ -526,9 +550,9 @@ export function uploadFilesWithProgress(
             }
         };
 
-        xhr.onerror = () => reject(new Error("Network error"));
+        xhr.onerror = () => reject(withErrorKind(new Error("Network error"), "network"));
         xhr.onabort  = () => reject(new DOMException("Aborted", "AbortError"));
-        xhr.ontimeout = () => reject(new Error("Request timed out"));
+        xhr.ontimeout = () => reject(withErrorKind(new Error("Request timed out"), "timeout"));
         xhr.timeout = Math.max(0, timeoutMs);
         xhr.send(fd);
     });
@@ -542,7 +566,7 @@ export async function uploadFileGetJson<T = unknown>(
     options?: UploadOptions,
 ): Promise<T> {
     const res = await uploadFile(endpoint, file, params, options);
-    return res.json() as Promise<T>;
+    return readJson<T>(res);
 }
 
 /** Options for non-file POST helpers — same retry/timeout knobs as uploads. */
@@ -580,7 +604,7 @@ export async function postFormData(
             if (!res.ok) throw await describeError(res);
             return res;
         } catch (err) {
-            throw decorateTimeoutError(err);
+            throw decorateTransportError(err);
         } finally {
             cancel();
         }
@@ -608,9 +632,9 @@ export async function postForm<T = unknown>(
                 signal: combined,
             });
             if (!res.ok) throw await describeError(res);
-            return res.json() as Promise<T>;
+            return readJson<T>(res);
         } catch (err) {
-            throw decorateTimeoutError(err);
+            throw decorateTransportError(err);
         } finally {
             cancel();
         }
@@ -635,9 +659,9 @@ export async function postJson<T = unknown>(
                 signal: combined,
             });
             if (!res.ok) throw await describeError(res);
-            return res.json() as Promise<T>;
+            return readJson<T>(res);
         } catch (err) {
-            throw decorateTimeoutError(err);
+            throw decorateTransportError(err);
         } finally {
             cancel();
         }

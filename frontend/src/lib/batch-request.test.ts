@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { buildBatchForm } from "./batch-request";
+import { batchConfigError, buildBatchForm } from "./batch-request";
+import { toolErrorKind } from "./toolRun";
+
+describe("batch settings that cannot run", () => {
+    it("reports Highlight PDF without a query as bad input", () => {
+        const problem = batchConfigError("highlight-pdf", "   ");
+        expect(problem?.message).toBe("Enter the text to highlight before processing these PDFs.");
+        expect(toolErrorKind(problem)).toBe("bad_input");
+    });
+    it("accepts a query, and tools that need none", () => {
+        expect(batchConfigError("highlight-pdf", "invoice")).toBeNull();
+        expect(batchConfigError("compress-pdf", "")).toBeNull();
+    });
+});
 
 describe("batch endpoint contracts", () => {
     it.each([

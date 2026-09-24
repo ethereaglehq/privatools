@@ -37,7 +37,7 @@ export function UrlToPdfUI() {
             const msg = e instanceof Error ? e.message : "Conversion failed";
             setError(friendlyError(msg, "Couldn't fetch that URL as a PDF."));
             setStatus("idle");
-            emitToolRun({ outcome: "error" });
+            emitToolRun({ outcome: "error" }, e);
         }
     }, [url, status]);
 

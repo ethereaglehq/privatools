@@ -504,7 +504,7 @@ export default function PipelinePage() {
                     setStepStatuses(prev => ({ ...prev, [i]: "queued" }));
                     break;
                 }
-                emitToolRun({ slug: steps[i].tool.slug, mode: "pipeline", outcome: "error", files: 1 });
+                emitToolRun({ slug: steps[i].tool.slug, mode: "pipeline", outcome: "error", files: 1 }, e);
                 const msg = e instanceof Error ? e.message : "Pipeline failed";
                 setError(`Step ${i + 1} (${steps[i].tool.name}) failed: ${msg}`);
                 setErrorReport(formatErrorForClipboard(e, `Pipeline step ${i + 1}: ${steps[i].tool.name} (${steps[i].tool.slug})`));
