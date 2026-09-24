@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Choose your MKV files",
-      "text": "Drop or pick one or more .mkv files; the queue holds up to 25. Keep each file under about 250 MB."
+      "text": "Drop or pick one or more .mkv files; the queue holds up to 25. Keep each file under 500 MB."
     },
     {
       "name": "Start the conversion",
@@ -40,7 +40,7 @@
     },
     {
       "q": "Are there other limits?",
-      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a big batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them from the list."
+      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a big batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them from the list."
     },
     {
       "q": "What happens to my MKV on the server?",

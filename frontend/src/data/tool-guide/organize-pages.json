@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select a PDF up to about 250 MB. A thumbnail of every page is generated so you can see what you are rearranging."
+      "text": "Drop or select a PDF up to 500 MB. A thumbnail of every page is generated so you can see what you are rearranging."
     },
     {
       "name": "Reorder the pages",

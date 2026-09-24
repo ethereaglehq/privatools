@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the videos to sample",
-      "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under about 250 MB. The preview shows how long the clip is when your browser can play it."
+      "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under 500 MB. The preview shows how long the clip is when your browser can play it."
     },
     {
       "name": "Choose the number of frames",
@@ -40,7 +40,7 @@
     },
     {
       "q": "What other limits apply?",
-      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. The route is rate-limited at 5 requests a minute per IP address. A file without a video stream, such as an audio-only recording saved as .mp4, cannot be turned into pages and fails with \"Processing failed. Please try again.\""
+      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. The route is rate-limited at 5 requests a minute per IP address. A file without a video stream, such as an audio-only recording saved as .mp4, cannot be turned into pages and fails with \"Processing failed. Please try again.\""
     },
     {
       "q": "What is a frames PDF useful for?",

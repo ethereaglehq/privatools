@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add your ODT files",
-      "text": "Drop or select one or more OpenDocument Text (.odt) files, up to 25 at a time and up to about 250 MB each. Templates (.ott) and flat .fodt files are turned away as an unsupported file type, so save them as .odt first; for Word files, use Office to PDF."
+      "text": "Drop or select one or more OpenDocument Text (.odt) files, up to 25 at a time and up to 500 MB each. Templates (.ott) and flat .fodt files are turned away as an unsupported file type, so save them as .odt first; for Word files, use Office to PDF."
     },
     {
       "name": "Convert with LibreOffice",
@@ -44,7 +44,7 @@
     },
     {
       "q": "How large a document can I convert, and how long can it take?",
-      "a": "Up to about 250 MB per file. Each conversion has two minutes; one that runs longer is stopped and the page reports \"The server took too long. Try a smaller file or try again.\" The converter also accepts up to five files a minute from one IP address, so in a longer queue some files can fail with a rate-limit message; wait a minute and click Retry."
+      "a": "Up to 500 MB per file. Each conversion has two minutes; one that runs longer is stopped and the page reports \"The server took too long. Try a smaller file or try again.\" The converter also accepts up to five files a minute from one IP address, so in a longer queue some files can fail with a rate-limit message; wait a minute and click Retry."
     },
     {
       "q": "What happens to my document after I upload it?",

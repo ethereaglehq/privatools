@@ -30,7 +30,7 @@
       },
       {
         "label": "File types and size",
-        "privatools": "JPG, PNG, WebP or BMP; the server engine takes files of about 250 MB.",
+        "privatools": "JPG, PNG, WebP or BMP; the server engine takes files of up to 500 MB.",
         "competitor": "JPG, PNG or WebP files of up to 22 MB.",
         "sourceUrl": "https://www.remove.bg/help/a/what-image-formats-are-supported"
       },
@@ -209,7 +209,7 @@
       },
       {
         "label": "Files and size",
-        "privatools": "Merge takes up to 100 PDFs in one 500 MB upload but stops waiting after 60 seconds; most single-file pages take about 250 MB.",
+        "privatools": "Merge takes up to 100 PDFs in one 500 MB upload but stops waiting after 60 seconds; most single-file pages take up to 500 MB.",
         "competitor": "Basic merges 25 files up to 100 MB and Premium 500 files up to 4 GB; Basic Office conversion and OCR take one 15 MB file.",
         "sourceUrl": "https://www.ilovepdf.com/pricing"
       },
@@ -249,7 +249,7 @@
         "heading": "Reading the Basic plan",
         "body": [
           "iLovePDF's pricing page says the free plan processes a limited number of documents, and its plan table lists limits per tool. On Basic, merging takes up to 25 files and 100 MB, compression two files up to 200 MB, and Office conversion and OCR one file of 15 MB; editing and splitting take one file on every plan. Tools including OCR conversion to Word or Excel and PDF/A are marked as not included in Basic, and Premium raises most per-task limits to 4 GB.",
-          "PrivaTools applies the same limits to everyone. An upload request can be 500 MB, which is about 250 MB for one file on most pages because the page sends the file twice. Standard tool pages queue up to 25 files, but heavy tools accept about five runs a minute from one visitor, so in a long queue some files are marked failed and need a retry. Merge, PDF to Word, OCR and Protect stop waiting after 60 seconds, upload included, so a large file on a slow connection can fail. There is no paid tier to lift any of this."
+          "PrivaTools applies the same limits to everyone. An upload request can be 500 MB, and most pages upload each file in a request of its own. Standard tool pages queue up to 25 files, but heavy tools accept about five runs a minute from one visitor, so in a long queue some files are marked failed and need a retry. Merge, PDF to Word, OCR and Protect stop waiting after 60 seconds, upload included, so a large file on a slow connection can fail. There is no paid tier to lift any of this."
         ]
       },
       {
@@ -365,7 +365,7 @@
       },
       {
         "label": "File size",
-        "privatools": "500 MB per upload request, about 250 MB per file on most pages, and some heavy pages wait 60 seconds at most.",
+        "privatools": "500 MB per upload request, which on most pages holds a single file, and some heavy pages wait 60 seconds at most.",
         "competitor": "The free file size is marked Limited without a number, paid plans Unlimited; AI files up to 50 MB.",
         "sourceUrl": "https://smallpdf.com/pricing"
       },
@@ -517,7 +517,7 @@
       },
       {
         "label": "File limits",
-        "privatools": "About 250 MB per file on most pages, 100 PDFs per merge, and a 60-second wait on several heavy pages.",
+        "privatools": "Up to 500 MB per file on most pages, 100 PDFs per merge, and a 60-second wait on several heavy pages.",
         "competitor": "PDFs up to 100 MB; PDF to Word and PowerPoint 200 MB, Split 1 GB, Compress 2 GB; Merge up to 100 files.",
         "sourceUrl": "https://helpx.adobe.com/document-cloud/faq/try-acrobat-online-services.html"
       },
@@ -695,7 +695,7 @@
       },
       {
         "label": "Paid limits",
-        "privatools": "The same limits for everyone: 500 MB per request, about 250 MB per file on most pages.",
+        "privatools": "The same limits for everyone: 500 MB per request, and a request carries one file on most pages.",
         "competitor": "No page or hourly limits, files up to 500 MB each, OCR up to 100 pages, up to 21 minutes per task.",
         "sourceUrl": "https://www.sejda.com/pricing"
       },
@@ -735,7 +735,7 @@
         "heading": "How the free limits work",
         "body": [
           "Sejda's tool pages state its free web limits. Most accept documents up to 200 pages or 50 MB, Merge up to 50 pages or 50 MB, compression up to 100 MB and OCR up to 10 pages, each with three tasks per hour. The free Desktop tier allows three tasks per day. A Week Pass lifts the web limits for seven days as a one-time charge that does not renew, and prices are in US dollars with tax calculated at checkout.",
-          "PrivaTools has no task allowance to spend. Its limits are technical instead: 500 MB per upload request, about 250 MB per file on most tool pages, about five runs a minute from one visitor on heavy jobs such as OCR and PDF to Word, and a 60-second wait on several of those pages, upload included. With nothing to buy, there is also no paid route past those limits on the public site."
+          "PrivaTools has no task allowance to spend. Its limits are technical instead: 500 MB per upload request, one file per request on most tool pages, about five runs a minute from one visitor on heavy jobs such as OCR and PDF to Word, and a 60-second wait on several of those pages, upload included. With nothing to buy, there is also no paid route past those limits on the public site."
         ]
       },
       {
@@ -854,7 +854,7 @@
       },
       {
         "label": "Limits",
-        "privatools": "Server requests are capped at 500 MB, which means about 250 MB per file on most tool pages.",
+        "privatools": "Server requests are capped at 500 MB; most tool pages send one file per request.",
         "competitor": "Its tools page says PDF24 has no artificial limits.",
         "sourceUrl": "https://tools.pdf24.org/en/"
       },
@@ -999,7 +999,7 @@
       },
       {
         "label": "Online file limits",
-        "privatools": "About 250 MB per file on most pages, but PDF to Word and OCR stop waiting after 60 seconds.",
+        "privatools": "Up to 500 MB per file on most pages, but PDF to Word and OCR stop waiting after 60 seconds.",
         "competitor": "The online PDF to Word converter takes files up to 15 MB; Foxit says its desktop version handles higher limits.",
         "sourceUrl": "https://www.foxit.com/pdf-to-word/"
       },
@@ -1497,7 +1497,7 @@
       },
       {
         "label": "File size",
-        "privatools": "Uploads of up to 500 MB per request, so roughly 250 MB for a single file on most pages.",
+        "privatools": "Uploads of up to 500 MB per request, which is the limit for a single file on most pages.",
         "competitor": "Files under 30 MB and fewer than 1,000 pages.",
         "sourceUrl": "https://help.dochub.com/knowledge-base/creating-importing-downloading-and-exporting-documents/uploading-documents-and-pdfs-to-dochub"
       },
@@ -1637,7 +1637,7 @@
     "summary": "PDFescape is a long-running online PDF editor and form filler with a free tier, paid Premium and Ultimate plans, and PDFescape Desktop for Windows. It suits annotating, filling and building simple forms, and keeps your files in an online list for days or weeks. PrivaTools has no paid tier and keeps no documents between visits; it runs each tool in the browser or on a temporary server, and adds conversions, OCR and media tools.",
     "category": "Signing & forms",
     "highlights": [
-      "10 MB and 100 pages free, 40 MB paid; PrivaTools takes about 250 MB per file on most pages.",
+      "10 MB and 100 pages free, 40 MB paid; PrivaTools takes up to 500 MB per file on most pages.",
       "Files kept in an online account, against temporary processing and local downloads.",
       "Existing-text editing in PDFescape Desktop on paid plans; PrivaTools only adds content."
     ],
@@ -1654,7 +1654,7 @@
       },
       {
         "label": "File limits",
-        "privatools": "Up to 500 MB per upload request, which is about 250 MB for one file on most pages.",
+        "privatools": "Up to 500 MB per upload request, with one file per request on most pages.",
         "competitor": "Free uploads up to 10 MB and 100 pages; Premium and Ultimate up to 40 MB and 1,000 pages.",
         "sourceUrl": "https://support.pdfescape.com/hc/en-us/articles/360028432531"
       },
@@ -1805,7 +1805,7 @@
       },
       {
         "label": "File limits",
-        "privatools": "A 500 MB request cap, so about 250 MB for one file on most pages.",
+        "privatools": "A 500 MB request cap, which most pages use for one file at a time.",
         "competitor": "Its web-based conversion tools take files up to 100 MB and 500 pages; Table Data Extract takes 25 MB.",
         "sourceUrl": "https://www.gonitro.com/user-guide/workspace/web-based-tools"
       },
@@ -2105,7 +2105,7 @@
       },
       {
         "label": "File limits",
-        "privatools": "500 MB per server request, about 250 MB per file on most pages; browser tools depend on your device.",
+        "privatools": "500 MB per server request, one file per request on most pages; browser tools depend on your device.",
         "competitor": "No server limit for merging; typically up to 150 MB across all files on a desktop, set by device memory.",
         "sourceUrl": "https://www.ihatepdf.cv/merge-pdf"
       },

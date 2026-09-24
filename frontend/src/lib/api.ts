@@ -68,7 +68,7 @@ async function describeError(res: Response): Promise<Error> {
     let message: string;
     if (detail) message = detail;
     else if (status === 0 || status >= 502) message = "The server isn't responding right now. Check your connection and try again in a moment.";
-    else if (status === 413) message = "That file is too large. The maximum is 500 MB per file.";
+    else if (status === 413) message = "That upload is too large. The maximum is 500 MB per upload.";
     else if (status === 415) message = "That file type isn't supported by this tool.";
     else if (status === 429) message = "Slow down — we're rate-limiting requests. Wait a moment and try again.";
     else if (status === 504) message = "Processing timed out. Try a smaller file or a lighter compression setting.";

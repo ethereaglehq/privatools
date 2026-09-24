@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload the host PDF",
-      "text": "Drop the PDF you want to embed a file inside (up to 500 MB)."
+      "text": "Drop the PDF you want to embed a file inside. It shares one 500 MB upload with the attachment."
     },
     {
       "name": "Add the file to attach",
