@@ -1,7 +1,9 @@
 /**
  * Thin wrappers around ImageToPdfUI that constrain the accept filter and
- * relabel the dropzone for the named SEO entries (JPG / PNG / HEIC → PDF).
- * All three POST to the same /image-to-pdf backend endpoint.
+ * relabel the dropzone for the named SEO entries (JPG, PNG, HEIC, WebP, TIFF,
+ * BMP, GIF and SVG to PDF). All of them POST to the same /image-to-pdf
+ * endpoint. A label says what the conversion does with the format;
+ * backend/tests/test_image_to_pdf_service.py checks the PNG and TIFF ones.
  */
 import { ImageToPdfUI } from "./ImageToPdfUI";
 
@@ -20,7 +22,7 @@ export function PngToPdfUI() {
     return (
         <ImageToPdfUI
             accept=".png,image/png"
-            formatsLabel="PNG images — transparency preserved, multiple allowed"
+            formatsLabel="PNG images (transparent areas are not kept) — multiple allowed"
             nounLabel="PNG"
             handoffSlug="png-to-pdf"
         />
@@ -53,7 +55,7 @@ export function TiffToPdfUI() {
     return (
         <ImageToPdfUI
             accept=".tiff,.tif,image/tiff"
-            formatsLabel="TIFF / TIF scans (multi-page TIFFs are unpacked) — multiple allowed"
+            formatsLabel="TIFF / TIF scans (only the first page of a multi-page TIFF is used) — multiple allowed"
             nounLabel="TIFF"
             handoffSlug="tiff-to-pdf"
         />
