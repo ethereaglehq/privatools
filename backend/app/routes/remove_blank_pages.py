@@ -1,4 +1,5 @@
 import asyncio
+import io
 import logging
 import uuid
 
@@ -10,8 +11,10 @@ from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
     remove_files,
+    safe_open_pdf,
     validate_pdf_content,
 )
+from ..utils.page_removal import remove_pages
 from ..utils.route_helpers import safe_stem
 from ..utils.render import safe_get_pixmap
 
@@ -67,15 +70,20 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
         if ratio < (1 - threshold):
             pages_to_keep.append(i)
 
-    if not pages_to_keep:
-        pages_to_keep = list(range(len(doc)))
-
-    new_doc = fitz.open()
-    for i in pages_to_keep:
-        new_doc.insert_pdf(doc, from_page=i, to_page=i)
-    new_doc.save(out_path)
-    new_doc.close()
+    total = len(doc)
     doc.close()
+    if not pages_to_keep:
+        pages_to_keep = list(range(total))
+    kept = set(pages_to_keep)
+
+    # Removed with pikepdf rather than by copying the kept pages into a new
+    # PyMuPDF document: a form field with a widget on a blank page pulled that
+    # whole page, content and images, back into the copy.
+    with safe_open_pdf(io.BytesIO(data)) as pdf:
+        blank = [i for i in range(total) if i not in kept]
+        if blank:
+            remove_pages(pdf, blank)
+        pdf.save(out_path)
     return out_path
 
 

@@ -9,6 +9,7 @@ from ..utils.cleanup import safe_open_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
+from ..utils.page_removal import copy_pages, prune_to_page_tree
 
 
 # Kept as a module-level export so existing route tests that import
@@ -28,15 +29,17 @@ def extract_pages(input_path: str, pages_str: str) -> str:
             raise ValidationError("No valid pages specified")
 
         with pikepdf.Pdf.new() as new_pdf:
-            for idx in indices:
-                new_pdf.pages.append(pdf.pages[idx])
+            copy_pages(new_pdf, pdf, indices)
             # Pdf.new() starts from an empty catalog, so /Lang, the title and
             # /ViewerPreferences are dropped unless carried over explicitly.
             preserve_document_properties(pdf, new_pdf)
             # Must run after the pages are appended: that is what populates the
             # object map letting each struct element's /Pg resolve to the page
             # already in new_pdf instead of a duplicate.
-            preserve_structure_tree(pdf, new_pdf)
+            preserve_structure_tree(pdf, new_pdf, pages=indices)
+            # The pages left out must not ride along with the links, form
+            # fields and threads of the pages extracted.
+            prune_to_page_tree(new_pdf)
             new_pdf.save(str(output_path))
 
     return str(output_path)

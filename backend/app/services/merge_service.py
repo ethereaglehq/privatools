@@ -23,6 +23,7 @@ from ..utils.pdf_accessibility import (
 from ..utils.cleanup import ensure_temp_dir, safe_open_pdf
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
+from ..utils.page_removal import copy_pages, prune_to_page_tree
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +60,7 @@ def merge_pdfs(
 
     dst = pikepdf.Pdf.new()
     total_pages_out = 0
+    pages_left_out = False
     struct_merger = StructureTreeMerger(dst)
     try:
         for idx, path in enumerate(input_paths):
@@ -72,19 +74,24 @@ def merge_pdfs(
                 first_page = len(dst.pages)
                 spec = (page_ranges[idx] if page_ranges is not None else None)
                 if spec is None or (isinstance(spec, str) and spec.strip().lower() in ("", "all")):
-                    dst.pages.extend(src.pages)
-                    total_pages_out += total
+                    indices = list(range(total))
+                    selected = None
                 else:
                     indices = _parse_page_range(spec, total)
-                    for i in indices:
-                        dst.pages.append(src.pages[i])
-                    total_pages_out += len(indices)
+                    selected = indices
+                    pages_left_out = pages_left_out or len(set(indices)) < total
+                copy_pages(dst, src, indices)
+                total_pages_out += len(indices)
                 # Must happen here, while `src` is still open and immediately
                 # after its pages were appended — that append is what lets each
                 # struct element's /Pg resolve to the page now in `dst`.
-                struct_merger.add_source(src, first_page, len(dst.pages) - 1)
+                struct_merger.add_source(src, first_page, len(dst.pages) - 1, pages=selected)
 
         struct_merger.finalize()
+        if pages_left_out:
+            # Pages a range left out must not ride along with the links, form
+            # fields and threads of the pages merged.
+            prune_to_page_tree(dst)
 
         # Unique per-request path (UUID) — a fixed "merged.pdf" over the shared
         # temp dir let concurrent /merge requests clobber each other's output

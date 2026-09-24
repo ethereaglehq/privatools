@@ -15,6 +15,7 @@ import pikepdf
 
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
+from ..utils.page_removal import PageCopier, prune_to_page_tree
 
 
 def split_by_text(input_path: str, search: str, case_sensitive: bool = False) -> str:
@@ -59,10 +60,13 @@ def split_by_text(input_path: str, search: str, case_sensitive: bool = False) ->
     pdf = pikepdf.open(input_path)
     chunk_paths: list = []
     try:
+        copier = PageCopier(pdf)
         for idx, (start, end) in enumerate(boundaries, start=1):
             with pikepdf.Pdf.new() as chunk:
-                for p in range(start, end):
-                    chunk.pages.append(pdf.pages[p])
+                copier.copy(chunk, range(start, end))
+                # The other parts' pages must not ride along with this part's
+                # links, form fields and threads.
+                prune_to_page_tree(chunk)
                 chunk_out = temp_output(f"split_text_part{idx}", "pdf")
                 chunk.save(str(chunk_out))
             chunk_paths.append(chunk_out)

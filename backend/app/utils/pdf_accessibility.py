@@ -29,8 +29,11 @@ can be carried without inventing structure.
 from __future__ import annotations
 
 import logging
+from collections.abc import Sequence
 
 import pikepdf
+
+from .page_removal import prune_structure_tree_to_pages
 
 logger = logging.getLogger(__name__)
 
@@ -156,120 +159,37 @@ def _preserve_title(src: pikepdf.Pdf, dst: pikepdf.Pdf) -> None:
 #   *after* the pages have been appended makes every struct element's `/Pg`
 #   resolve to the page object already in `dst`, not a duplicate.
 #
-# Verified empirically before this was written: with pages 0 and 2 extracted
-# from a 4-page tagged source, 2 of the 4 struct elements pointed at real pages
-# in the output and 2 dangled. So the work is not re-pointing references — it
-# is pruning the elements whose page didn't come along, and keeping the
-# ParentTree consistent with what survived.
-
-_MAX_PRUNE_DEPTH = 64
-
-
-def _page_objgens(pdf: pikepdf.Pdf) -> set:
-    out = set()
-    for page in pdf.pages:
-        try:
-            out.add(page.obj.objgen)
-        except Exception:
-            continue
-    return out
+# The `/Pg` of an element whose page was *not* appended comes out as null, and
+# a null `/Pg` reads exactly like no `/Pg`. Pruned after the copy, those
+# elements looked page-less and stayed, carrying the text of the pages left
+# behind (`/ActualText`, `/Alt`) and, through their OBJRs, those pages'
+# annotations. So the tree is pruned in the source first, while every page
+# reference is intact, and only then copied: see `utils.page_removal`.
 
 
-def _prune_struct_node(node, keep_objgens: set, depth: int = 0):
-    """Drop struct elements whose page is not in the output.
-
-    Returns the node to keep, or None to drop it. A container with no `/Pg`
-    survives as long as at least one descendant does — otherwise a <Sect>
-    wrapping only dropped pages would linger as an empty shell.
-    """
-    if depth > _MAX_PRUNE_DEPTH:
-        return None
-
-    if isinstance(node, pikepdf.Array):
-        kept = []
-        for kid in node:
-            result = _prune_struct_node(kid, keep_objgens, depth + 1)
-            if result is not None:
-                kept.append(result)
-        return pikepdf.Array(kept) if kept else None
-
-    if not isinstance(node, pikepdf.Dictionary):
-        # An integer MCID or another leaf — it belongs to whichever element
-        # owns it, and that element's /Pg has already been checked.
-        return node
-
-    page = node.get("/Pg")
-    if page is not None:
-        try:
-            if page.objgen not in keep_objgens:
-                return None
-        except Exception:
-            return None
-
-    kids = node.get("/K")
-    if kids is not None:
-        pruned = _prune_struct_node(kids, keep_objgens, depth + 1)
-        if pruned is None:
-            # Nothing survived underneath. Keep the element only if it is
-            # anchored to a page that did survive.
-            if page is None:
-                return None
-            del node["/K"]
-        else:
-            node["/K"] = pruned
-
-    return node
-
-
-def _prune_parent_tree(root, dst: pikepdf.Pdf, live_keys: set) -> None:
-    """Drop ParentTree entries for pages that aren't in the output.
-
-    `/StructParents` values ride along on the page objects untouched, so the
-    surviving keys stay valid and nothing needs renumbering — the dead entries
-    just have to go.
-    """
-    try:
-        parent_tree = root.get("/ParentTree")
-        if not isinstance(parent_tree, pikepdf.Dictionary):
-            return
-        nums = parent_tree.get("/Nums")
-        if not isinstance(nums, pikepdf.Array):
-            return
-        kept = []
-        for i in range(0, len(nums) - 1, 2):
-            try:
-                key = int(nums[i])
-            except (TypeError, ValueError):
-                continue
-            if key in live_keys:
-                kept.extend([key, nums[i + 1]])
-        parent_tree["/Nums"] = pikepdf.Array(kept)
-    except Exception:
-        logger.debug("preserve: could not prune ParentTree", exc_info=True)
-
-
-def _live_struct_parent_keys(dst: pikepdf.Pdf) -> set:
-    keys = set()
-    for page in dst.pages:
-        try:
-            value = page.obj.get("/StructParents")
-            if value is not None:
-                keys.add(int(value))
-        except (TypeError, ValueError):
-            continue
-    return keys
-
-
-def preserve_structure_tree(src: pikepdf.Pdf, dst: pikepdf.Pdf) -> bool:
-    """Carry `src`'s structure tree onto `dst`, pruned to `dst`'s pages.
+def preserve_structure_tree(
+    src: pikepdf.Pdf, dst: pikepdf.Pdf, pages: Sequence[int] | None = None,
+) -> bool:
+    """Carry `src`'s structure tree onto `dst`, pruned to the copied pages.
 
     Call this AFTER the pages have been appended — the object map that makes
-    `/Pg` resolve correctly is populated by those appends.
+    `/Pg` resolve correctly is populated by those appends. `pages` lists the
+    0-based indices of the source pages that were copied (None: all of them).
+    The tree is pruned to them in `src` itself, in memory, before it is
+    copied, so `src` must not be saved afterwards.
 
     Returns True when `dst` ends up genuinely tagged. Only then is it safe for
     the caller to set `/MarkInfo << /Marked true >>`; setting it otherwise
     claims the document is tagged when it is not.
     """
+    if pages is not None:
+        try:
+            prune_structure_tree_to_pages(src, pages)
+        except Exception:
+            # Copying an unpruned tree would carry the other pages' tags along.
+            logger.debug("preserve: structure tree could not be pruned", exc_info=True)
+            return False
+
     try:
         src_root = src.Root.get("/StructTreeRoot")
     except Exception:
@@ -284,17 +204,9 @@ def preserve_structure_tree(src: pikepdf.Pdf, dst: pikepdf.Pdf) -> bool:
         return False
 
     try:
-        keep = _page_objgens(dst)
         kids = copied.get("/K")
-        if kids is None:
-            return False
-        pruned = _prune_struct_node(kids, keep)
-        if pruned is None:
+        if kids is None or (isinstance(kids, pikepdf.Array) and len(kids) == 0):
             return False  # nothing survived — leave the output honestly untagged
-        copied["/K"] = pruned
-
-        _prune_parent_tree(copied, dst, _live_struct_parent_keys(dst))
-
         dst.Root["/StructTreeRoot"] = copied
         dst.Root["/MarkInfo"] = pikepdf.Dictionary(Marked=True)
         return True
@@ -341,8 +253,22 @@ class StructureTreeMerger:
         self._sources = 0
         self._tagged_sources = 0
 
-    def add_source(self, src: pikepdf.Pdf, first_page: int, last_page: int) -> None:
+    def add_source(
+        self, src: pikepdf.Pdf, first_page: int, last_page: int,
+        pages: Sequence[int] | None = None,
+    ) -> None:
+        """Add the tree of `src`, whose pages landed at `first_page..last_page`.
+
+        `pages` lists the 0-based source pages that were copied (None: all);
+        as in `preserve_structure_tree`, `src` is pruned to them in memory.
+        """
         self._sources += 1
+        if pages is not None:
+            try:
+                prune_structure_tree_to_pages(src, pages)
+            except Exception:
+                logger.debug("merge-struct: source could not be pruned", exc_info=True)
+                return
         try:
             src_root = src.Root.get("/StructTreeRoot")
         except Exception:
@@ -358,16 +284,8 @@ class StructureTreeMerger:
 
         try:
             pages = list(self.dst.pages)[first_page:last_page + 1]
-            keep = set()
-            for page in pages:
-                try:
-                    keep.add(page.obj.objgen)
-                except Exception:
-                    continue
-
-            kids = copied.get("/K")
-            pruned = _prune_struct_node(kids, keep) if kids is not None else None
-            if pruned is None:
+            pruned = copied.get("/K")
+            if pruned is None or (isinstance(pruned, pikepdf.Array) and len(pruned) == 0):
                 return
 
             offset = self._next_key
