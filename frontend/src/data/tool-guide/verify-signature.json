@@ -10,7 +10,7 @@
     },
     {
       "name": "Read the result",
-      "text": "Each field is listed with a status: valid, later additions (form filling, further signatures or comments), changed (edits that can alter the pages), invalid, not signed or not checked, and the reason where there is one. A signed field also shows the signer's name and the signing time, and a checked one its certificate's subject and issuer. Confirm who signed in a PDF reader that validates certificates."
+      "text": "Each field is listed with a status: valid, later additions (form filling, further signatures or comments), changed (edits that can alter the pages), weak algorithm (signed with SHA-1 or MD5, which can be forged), invalid, not signed or not checked, and the reason where there is one. A signed field also shows the signer's name and the signing time, and a checked one its certificate's subject and issuer. Confirm who signed in a PDF reader that validates certificates."
     }
   ],
   "faq": [
@@ -28,7 +28,7 @@
     },
     {
       "q": "Which signature formats are checked?",
-      "a": "PKCS#7 detached (adbe.pkcs7.detached) and PAdES (ETSI.CAdES.detached) signatures, and RFC 3161 document timestamps. Older formats such as adbe.x509.rsa_sha1 are listed but marked not checked."
+      "a": "PKCS#7 detached (adbe.pkcs7.detached) and PAdES (ETSI.CAdES.detached) signatures, and RFC 3161 document timestamps. Older formats such as adbe.x509.rsa_sha1 are listed but marked not checked. A signature made with the SHA-1 or MD5 digest is checked too, but marked weak algorithm rather than valid: those digests can be forged, so a match proves much less."
     }
   ]
 }

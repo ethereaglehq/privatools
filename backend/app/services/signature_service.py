@@ -64,6 +64,11 @@ _MODIFICATIONS = {
 }
 # pyHanko's SignatureCoverageLevel names for a signature over all that it signed.
 _WHOLE_REVISION = frozenset({"ENTIRE_FILE", "ENTIRE_REVISION"})
+# Digests whose collisions can be made, as pyHanko names them, and as people
+# know them. A signature made with one can be moved to a document built to
+# collide with the signed one, so a match proves much less. pyHanko's own
+# default policy calls these weak too.
+_WEAK_DIGESTS = {"md2": "MD2", "md5": "MD5", "sha1": "SHA-1"}
 
 _NOT_CHECKED = "This signature could not be checked."
 _DAMAGED_FILE = "The file is damaged, so its signatures cannot be checked."
@@ -88,7 +93,8 @@ def inspect_signatures(data: bytes) -> dict:
 def _entry(name: str, **values) -> dict:
     entry = {
         "field": name, "signed": False, "kind": "signature", "signer": "", "date": "",
-        "status": "unsigned", "modification": None, "certificate": None, "reason": "",
+        "status": "unsigned", "modification": None, "certificate": None, "digest_algorithm": None,
+        "reason": "",
     }
     entry.update(values)
     return entry
@@ -219,6 +225,18 @@ def _run_worker(data: bytes, fields: list[dict]) -> dict | str:
     return payload
 
 
+def _weak_digest(facts: dict) -> str | None:
+    """The broken digest a signature was made with, as people know it, or None.
+
+    The mechanism counts too: "sha1_rsa" hashes with SHA-1 whatever digest
+    the signature names for its content.
+    """
+    for name in (facts["digest"], facts["mechanism"].split("_")[0]):
+        if name in _WEAK_DIGESTS:
+            return _WEAK_DIGESTS[name]
+    return None
+
+
 def _apply(entry: dict, facts: dict) -> None:
     certificate = facts["certificate"]
     entry["signer"] = entry["signer"] or certificate["common_name"]
@@ -226,6 +244,7 @@ def _apply(entry: dict, facts: dict) -> None:
     entry["certificate"] = {
         key: certificate[key] for key in ("subject", "issuer", "valid_from", "valid_until", "self_signed")
     }
+    entry["digest_algorithm"] = facts["digest"] or None
     if not facts["intact"]:
         entry.update(status="invalid", reason="The signed content has changed since it was signed.")
     elif not facts["valid"]:
@@ -237,4 +256,12 @@ def _apply(entry: dict, facts: dict) -> None:
         if level is None:
             level = "NONE" if facts["coverage"] == "ENTIRE_FILE" else "OTHER"
         modification = _MODIFICATIONS.get(level, "other")
-        entry.update(status="valid" if modification == "none" else "modified", modification=modification)
+        weak = _weak_digest(facts)
+        if weak:
+            # Never plainly valid: what was saved afterwards is still reported.
+            entry.update(status="weak", modification=modification, reason=(
+                f"The signature matches, but it was made with {weak}, which can be forged, "
+                "so it cannot show that the document is unchanged."
+            ))
+        else:
+            entry.update(status="valid" if modification == "none" else "modified", modification=modification)

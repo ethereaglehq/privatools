@@ -10,7 +10,8 @@ import { uploadFile } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 
-type SignatureStatus = "valid" | "modified" | "invalid" | "unsigned" | "unchecked";
+// "weak": intact, but made with SHA-1 or MD5, which can be forged. Never shown as valid.
+type SignatureStatus = "valid" | "modified" | "weak" | "invalid" | "unsigned" | "unchecked";
 type Modification = "none" | "form_filling" | "annotations" | "other" | null;
 
 interface SignatureEntry {
@@ -22,6 +23,7 @@ interface SignatureEntry {
     status: SignatureStatus;
     modification: Modification;
     certificate: { subject: string; issuer: string; valid_from: string; valid_until: string; self_signed: boolean } | null;
+    digest_algorithm?: string | null;
     reason: string;
 }
 
@@ -32,7 +34,7 @@ interface SigResult {
 }
 
 type Tone = "accent" | "copper" | "danger" | "muted";
-type Verdict = "none" | "empty" | "invalid" | "altered" | "unchecked" | "changed" | "valid";
+type Verdict = "none" | "empty" | "invalid" | "altered" | "weak" | "unchecked" | "changed" | "valid";
 
 const CHANGES: Record<"form_filling" | "annotations" | "other", string> = {
     form_filling: "Saved after signing: form fields were filled in or signed. The signed version is unchanged.",
@@ -43,6 +45,7 @@ const CHANGES: Record<"form_filling" | "annotations" | "other", string> = {
 const STATUS_META: Record<SignatureStatus, { label: string; tone: Tone; icon: typeof ShieldCheck }> = {
     valid: { label: "Valid", tone: "accent", icon: ShieldCheck },
     modified: { label: "Later additions", tone: "copper", icon: ShieldAlert },
+    weak: { label: "Weak algorithm", tone: "copper", icon: ShieldAlert },
     invalid: { label: "Invalid", tone: "danger", icon: ShieldX },
     unsigned: { label: "Not signed", tone: "muted", icon: ShieldQuestion },
     unchecked: { label: "Not checked", tone: "copper", icon: ShieldQuestion },
@@ -59,7 +62,8 @@ function verdictOf(signatures: SignatureEntry[]): Verdict {
     const signed = signatures.filter(s => s.signed);
     if (!signed.length) return "empty";
     if (signed.some(s => s.status === "invalid")) return "invalid";
-    if (signed.some(s => s.status === "modified" && s.modification === "other")) return "altered";
+    if (signed.some(s => (s.status === "modified" || s.status === "weak") && s.modification === "other")) return "altered";
+    if (signed.some(s => s.status === "weak")) return "weak";
     if (signed.some(s => s.status === "unchecked")) return "unchecked";
     if (signed.some(s => s.status === "modified")) return "changed";
     return "valid";
@@ -75,7 +79,7 @@ function details(s: SignatureEntry) {
     if (s.certificate) {
         lines.push(`Certificate: ${s.certificate.subject} · issued by ${s.certificate.issuer}${s.certificate.self_signed ? " (self-signed)" : ""}`);
     }
-    if (s.status === "modified" && s.modification && s.modification !== "none") lines.push(CHANGES[s.modification]);
+    if ((s.status === "modified" || s.status === "weak") && s.modification && s.modification !== "none") lines.push(CHANGES[s.modification]);
     if (s.reason) lines.push(s.reason);
     return lines;
 }
@@ -121,6 +125,7 @@ export function VerifySignatureUI() {
         empty: { tone: "muted", title: "Signature fields are empty", sub: "The PDF has places for signatures, but none has been signed.", icon: ShieldQuestion },
         invalid: { tone: "danger", title: "A signature does not match the document", sub: "The signed content has changed, a signature does not match its certificate, or part of the file is outside what was signed.", icon: ShieldX },
         altered: { tone: "danger", title: "Changed after signing", sub: "The file was saved again after signing, with changes that can alter what it shows.", icon: ShieldX },
+        weak: { tone: "copper", title: "A signature uses a broken algorithm", sub: "It is intact, but it was made with SHA-1 or MD5, which can be forged, so it cannot show that the document is unchanged.", icon: ShieldAlert },
         unchecked: { tone: "copper", title: "A signature could not be checked", sub: "The reason is shown below. Open the file in a PDF reader that validates signatures.", icon: ShieldAlert },
         changed: { tone: "copper", title: "Signed, with later additions", sub: "Each signed version is unchanged; form filling, further signatures or comments were added afterwards.", icon: ShieldAlert },
         valid: { tone: "accent", title: signedCount === 1 ? "Signature matches the document" : "Signatures match the document", sub: "Nothing has changed since signing. Certificates are not checked against a trust list, so this does not confirm who signed.", icon: ShieldCheck },

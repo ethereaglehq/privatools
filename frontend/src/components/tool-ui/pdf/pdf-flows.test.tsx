@@ -107,6 +107,21 @@ describe("PDF editor backend and file handoff contracts", () => {
         const verdict = await verify([]);
         expect(verdict).toHaveTextContent("No signature fields found");
     });
+    it("never calls a SHA-1 or MD5 signature valid", async () => {
+        const reason = "The signature matches, but it was made with SHA-1, which can be forged, so it cannot show that the document is unchanged.";
+        const verdict = await verify([signature({ status: "weak", digest_algorithm: "sha1", reason })]);
+        expect(verdict).toHaveTextContent("A signature uses a broken algorithm");
+        expect(verdict).not.toHaveTextContent(/matches the document/i);
+        expect(screen.getByText("Weak algorithm")).toBeInTheDocument();
+        expect(screen.getByText(reason)).toBeInTheDocument();
+        expect(screen.queryByText("Valid")).not.toBeInTheDocument();
+    });
+    it("reports a weak signature with changes that can alter the page as changed", async () => {
+        const verdict = await verify([signature({ status: "weak", modification: "other", digest_algorithm: "md5", reason: "The signature matches, but it was made with MD5." })]);
+        expect(verdict).toHaveTextContent("Changed after signing");
+        expect(screen.getByText(/can change what the document shows/i)).toBeInTheDocument();
+        expect(screen.getByText("Weak algorithm")).toBeInTheDocument();
+    });
     it("keeps invalid bookmark JSON editable and prevents submission without crashing the row editor", async () => {
         const { container } = render(<BookmarksUI />);
         fireEvent.change(container.querySelector('input[type=file]')!, { target: { files: [new File(["%PDF"], "book.pdf")] } });

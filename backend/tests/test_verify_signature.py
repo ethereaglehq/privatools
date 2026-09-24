@@ -236,6 +236,33 @@ def test_untouched_signature_is_valid_and_its_certificate_is_described(client):
     assert "trusted" not in sig
 
 
+def test_a_modern_digest_is_reported(client):
+    [sig] = _verify(client, _sign(_unsigned_pdf()))["signatures"]
+    assert (sig["status"], sig["digest_algorithm"]) == ("valid", "sha256")
+
+
+@pytest.mark.parametrize("digest, key", [("sha1", "ec"), ("sha1", "rsa"), ("md5", "rsa")])
+def test_a_signature_with_a_broken_digest_is_weak_not_valid(client, digest, key):
+    """SHA-1 and MD5 collisions can be made, so a match proves much less."""
+    writer = IncrementalPdfFileWriter(io.BytesIO(_unsigned_pdf()))
+    meta = signers.PdfSignatureMetadata(field_name="Signature1", md_algorithm=digest)
+    signed = signers.sign_pdf(writer, meta, signer=_signer(key=key)).getvalue()
+    [sig] = _verify(client, signed)["signatures"]
+    assert sig["status"] == "weak"
+    assert sig["digest_algorithm"] == digest
+    assert {"sha1": "SHA-1", "md5": "MD5"}[digest] in sig["reason"]
+    assert sig["certificate"]["subject"] == "Common Name: Test Signer"
+    assert sig["modification"] == "none"
+
+
+def test_a_weak_signature_changed_after_signing_keeps_both_findings(client):
+    writer = IncrementalPdfFileWriter(io.BytesIO(_unsigned_pdf()))
+    signed = signers.sign_pdf(writer, signers.PdfSignatureMetadata(field_name="Signature1", md_algorithm="sha1"), signer=_signer()).getvalue()
+    changed = _replace_page_content(signed, b"BT /F1 12 Tf 72 700 Td (Pay Bob 900 dollars) Tj ET")
+    [sig] = _verify(client, changed)["signatures"]
+    assert (sig["status"], sig["modification"], sig["digest_algorithm"]) == ("weak", "other", "sha1")
+
+
 def test_signature_from_another_implementation_is_checked(client):
     [sig] = _verify(client, _sign_by_hand())["signatures"]
     assert (sig["status"], sig["signer"]) == ("valid", "Hand Signer")
@@ -300,7 +327,7 @@ def test_empty_signature_field_is_listed_as_unsigned(client):
     assert result["has_signatures"] is False
     assert result["signatures"] == [
         {"field": "Empty", "signed": False, "kind": "signature", "signer": "", "date": "", "status": "unsigned",
-         "modification": None, "certificate": None, "reason": ""},
+         "modification": None, "certificate": None, "digest_algorithm": None, "reason": ""},
     ]
 
 

@@ -93,6 +93,9 @@ def _facts(status, kind: str) -> dict:
         "modification_level": level.name if level is not None else None,
         "when": when.isoformat() if when else "",
         "certificate": _certificate(status.signing_cert),
+        # pyHanko names them in lower case: "sha256", and "sha256_rsa" or "ecdsa".
+        "digest": str(status.md_algorithm or ""),
+        "mechanism": str(status.pkcs7_signature_mechanism or ""),
     }
 
 
