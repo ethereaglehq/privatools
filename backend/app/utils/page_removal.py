@@ -44,8 +44,9 @@ page. Whatever points at them, the catalog, the page tree and the kept pages
 are never removed or rewritten.
 
 A mistake in a pass could still hide a page reference from the sweep, so
-:meth:`PageRemoval.save` checks what it wrote, with a walk that shares nothing
-with the sweep. If any page object outside the page tree reached the output,
+:meth:`PageRemoval.save` checks what it wrote, with a walk of its own that
+takes none of the sweep's verdicts. If any page object outside the page tree
+reached the output,
 it sweeps again skipping nothing and saves again; if one is still there it
 deletes the output and raises :class:`PageLeakError` (HTTP 422) rather than
 return a file that holds removed pages.
@@ -427,11 +428,11 @@ def _pages_outside_tree(pdf: pikepdf.Pdf, inert: set = frozenset()) -> int:
     """Page objects reachable from the trailer that the page tree does not list.
 
     That is what a save writes: qpdf writes every object reachable from the
-    trailer, and nothing else. The walk shares nothing with the sweep, neither
-    its shortcuts nor its judgements, and reads every value. A page dictionary
-    written in place, which no page tree can list, counts too. ``inert``
-    names long arrays already found to hold no reference, which it does not
-    read again.
+    trailer, and nothing else. The walk is not the sweep's and takes none of
+    its verdicts: it reads every value, except the long arrays that hold no
+    reference or page (:func:`_holds_no_objects`). ``inert`` names indirect
+    ones the sweep already found so, which it does not search again. A page
+    dictionary written in place, which no page tree can list, counts too.
     """
     listed = {page.objgen for page in _page_objs(pdf)}
     names = pdf.Root.get("/Names")
