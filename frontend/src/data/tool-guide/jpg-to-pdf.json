@@ -14,7 +14,7 @@
     },
     {
       "name": "Create the PDF",
-      "text": "Convert and download a single PDF containing all the images, one per page."
+      "text": "Convert and download a single PDF containing all the images, one per page. Photos a phone stored sideways are turned upright, as the phone shows them. Location and camera details (EXIF, XMP and IPTC metadata) are removed. Each photo is copied into the PDF without re-encoding; the rare JPEG that can't be copied as it is, such as a lossless one, is stored from its decoded pixels instead."
     }
   ],
   "faq": [

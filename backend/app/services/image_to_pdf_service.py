@@ -12,13 +12,20 @@ Each image goes into the PDF file as soon as it is read, so memory follows
 one page, not the whole document. ReportLab, which this service used before,
 keeps every page in memory until it formats the whole file on save, at about
 three times the finished PDF: 100 web-size WebPs took +1.6 GB. The images are
-embedded as ReportLab embedded them: a JPEG byte for byte (DCTDecode);
-anything else decoded to 8-bit Gray, RGB or CMYK the way ReportLab's
+embedded as ReportLab embedded them: a JPEG's compressed picture unchanged
+(DCTDecode); anything else decoded to 8-bit Gray, RGB or CMYK the way ReportLab's
 ImageReader converted it (alpha dropped, other modes to RGB) and deflated at
 zlib's default level (FlateDecode). Two differences: a 16-bit grayscale image
 keeps each sample's high byte, where ReportLab clipped it nearly white; and
 a JPEG whose coding DCTDecode does not read (lossless or arithmetic) is
 decoded like the rest, where ReportLab drew a placeholder.
+
+And two things ReportLab did not do. A photo is drawn upright, as its EXIF
+Orientation says (the turn Rotate and Flip Image apply), by the page matrix
+rather than by decoding it. And no metadata reaches the PDF: a JPEG keeps
+only what a decoder needs, so its EXIF (GPS position, camera, serial
+numbers, times), XMP, IPTC, comments and thumbnails are dropped, and every
+other format contributes pixels only.
 
 Refusals are `ImageRefused` errors naming the file as it was uploaded:
 `ImageTooLarge` and `DecodeBudgetExceeded` (413), `UnreadableImage` (400).
@@ -29,15 +36,17 @@ import io
 import logging
 import math
 import os
+import re
 import time
 import uuid
 import zlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from functools import lru_cache
+from pathlib import Path
 from typing import BinaryIO, Iterable, Iterator
 
-from PIL import Image, UnidentifiedImageError
+from PIL import ExifTags, Image, UnidentifiedImageError
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path
 from .svg_safety import ExternalReferenceBlocked, block_external_refs
@@ -142,9 +151,20 @@ class _Source:
     name: str  # what it was called when it was uploaded
     width: int  # pixels as embedded: an SVG's as it will be drawn
     height: int
-    kind: str  # "jpeg" (embedded as it is), "heic", "svg" or "decoded"
+    kind: str  # "jpeg" (its picture copied as it is), "heic", "svg" or "decoded"
     mode: str  # Pillow's mode for the file
     format: str  # Pillow's format, or "SVG"
+    orientation: int = 1  # EXIF Orientation: how the stored pixels turn to show upright
+    # For a JPEG: what is copied into the PDF (ranges of the file, and headers
+    # rewritten without their extras), found when the batch is planned, and
+    # the file's size then.
+    parts: tuple[tuple[int, int] | bytes, ...] = ()
+    file_size: int = 0
+
+    @property
+    def upright_size(self) -> tuple[int, int]:
+        """Width and height as shown: orientations 5 to 8 turn the picture a quarter."""
+        return (self.height, self.width) if self.orientation >= 5 else (self.width, self.height)
 
 
 def _fetch_for_svg(url: str, resource_type: str | None = None) -> bytes:
@@ -244,26 +264,24 @@ def _signed_as_ours(path: str) -> bool:
             or (head[4:8] == b"ftyp" and head[8:12] in _HEIF_BRANDS))
 
 
-def _jpeg_frame(path: str) -> int | None:
-    """The JPEG's frame marker (SOFn), read from its header, or None if there is none to read."""
-    with open(path, "rb") as fh:
-        if fh.read(2) != b"\xff\xd8":
-            return None
-        while True:
-            head = fh.read(2)
-            while head[:1] == b"\xff" and head[1:] == b"\xff":  # fill bytes
-                head = head[1:] + fh.read(1)
-            if len(head) < 2 or head[0] != 0xFF:
-                return None
-            marker = head[1]
-            if marker in _DCT_FRAMES or marker in _OTHER_FRAMES:
-                return marker
-            if 0xD0 <= marker <= 0xD9 or marker == 0x01:  # no length; nothing before a frame
-                return None
-            length = int.from_bytes(fh.read(2), "big")
-            if length < 2:
-                return None
-            fh.seek(length - 2, os.SEEK_CUR)
+def _orientation(img: Image.Image) -> int:
+    """The EXIF Orientation: the turn Rotate and Flip Image apply with
+    ImageOps.exif_transpose.
+
+    Read as Image.getexif reads it (EXIF or XMP), but from the header only:
+    PngImageFile.getexif decodes the pixels to look for EXIF after them.
+    Pillow turns a TIFF itself as it decodes it (and reports the turned size),
+    and pillow-heif has already applied a HEIC photo's turn, so those are
+    drawn as they come. EXIF that can't be read means no turn: one odd file
+    must not fail the batch.
+    """
+    if img.format == "TIFF":
+        return 1
+    try:
+        value = Image.Image.getexif(img).get(ExifTags.Base.Orientation, 1)
+        return int(value) if value in _PLACEMENT else 1
+    except Exception:  # noqa: BLE001 - Pillow raises many kinds for broken EXIF
+        return 1
 
 
 def _source(path: str, name: str) -> _Source:
@@ -279,6 +297,7 @@ def _source(path: str, name: str) -> _Source:
     try:
         with Image.open(path, formats=_OPEN_FORMATS) as img:
             (w, h), image_format, mode = img.size, img.format, img.mode
+            orientation = _orientation(img)
     except Image.DecompressionBombError:
         raise ImageTooLarge(f"{name} has more than {cap // 1_000_000:,} megapixels, the most one image can have.") from None
     except UnidentifiedImageError:
@@ -300,12 +319,15 @@ def _source(path: str, name: str) -> _Source:
             f"{noun} can have at most {format_cap // 1_000_000:,} megapixels."
         )
     if image_format == "HEIF":
-        kind = "heic"
-    elif image_format in ("JPEG", "MPO") and mode in _COLOUR_SPACES and _jpeg_frame(path) in _DCT_FRAMES:
-        kind = "jpeg"
-    else:
-        kind = "decoded"
-    return _Source(path, name, w, h, kind, mode, image_format)
+        return _Source(path, name, w, h, "heic", mode, image_format, orientation)
+    if image_format in ("JPEG", "MPO") and mode in _COLOUR_SPACES:
+        data = Path(path).read_bytes()
+        parts = _jpeg_parts(data)
+        if parts is not None:
+            return _Source(path, name, w, h, "jpeg", mode, image_format, orientation, parts, len(data))
+    # Including a JPEG that can't be embedded as it is: its pixels are
+    # embedded instead, so its metadata can't come along.
+    return _Source(path, name, w, h, "decoded", mode, image_format, orientation)
 
 
 def _check_decode_budget(sources: list[_Source]) -> None:
@@ -337,6 +359,130 @@ def _check_decode_budget(sources: list[_Source]) -> None:
     raise DecodeBudgetExceeded(message)
 
 
+# The page matrix that draws an image upright in the box (x, y, w, h), for
+# each EXIF Orientation. PDF draws an image in the unit square with its first
+# stored row at the top; these map that square onto the box and turn or
+# mirror it as ImageOps.exif_transpose would turn the pixels, so the picture
+# is shown upright without decoding it.
+_PLACEMENT = {
+    1: lambda x, y, w, h: (w, 0, 0, h, x, y),
+    2: lambda x, y, w, h: (-w, 0, 0, h, x + w, y),
+    3: lambda x, y, w, h: (-w, 0, 0, -h, x + w, y + h),
+    4: lambda x, y, w, h: (w, 0, 0, -h, x, y + h),
+    5: lambda x, y, w, h: (0, -h, -w, 0, x + w, y + h),
+    6: lambda x, y, w, h: (0, -h, w, 0, x, y + h),
+    7: lambda x, y, w, h: (0, h, w, 0, x, y),
+    8: lambda x, y, w, h: (0, h, -w, 0, x + w, y),
+}
+
+# What of a JPEG is copied into the PDF: an allow-list of what a decoder
+# needs. The frame (one DCT coding DCTDecode reads, see _DCT_FRAMES), the
+# Huffman and quantization tables, the restart interval, a DNL and the scans
+# are copied as they are, each table checked to hold exactly the tables it
+# declares. JFIF's header is rewritten without its thumbnail, Adobe's
+# colour-transform marker (which CMYK and some RGB JPEGs need) without any
+# extra bytes, and the ICC profile's segments are copied. Every other APPn
+# segment (EXIF, which holds GPS, camera, serial numbers and times; XMP; IPTC
+# in APP13; JFXX thumbnails; vendor notes) and comments are dropped, and
+# nothing after the first picture's end is kept (a multi-picture file's other
+# pictures carry EXIF of their own, a motion photo a video). Any other marker,
+# a table that doesn't add up, or no picture at all, and the JPEG is decoded
+# instead.
+_ENTROPY_END = re.compile(rb"\xff[^\x00\xd0-\xd7\xff]")
+_TABLES = {0xC4, 0xDB}  # DHT, DQT
+
+
+def _tables_fit(marker: int, payload: bytes) -> bool:
+    """Whether a DHT or DQT segment holds exactly the tables it declares."""
+    at = 0
+    while at < len(payload):
+        if marker == 0xDB:  # precision and id, then 64 values of one or two bytes
+            if payload[at] >> 4 > 1:
+                return False
+            at += 1 + (128 if payload[at] >> 4 else 64)
+        else:  # class and id, 16 code counts, then the symbols
+            if at + 17 > len(payload):
+                return False
+            at += 17 + sum(payload[at + 1:at + 17])
+    return 0 < at == len(payload)
+
+
+def _jpeg_parts(data: bytes) -> tuple[tuple[int, int] | bytes, ...] | None:
+    """What of a JPEG goes into the PDF (see above), or None if it can't be
+    embedded as it is."""
+    if not data.startswith(b"\xff\xd8"):
+        return None
+    parts: list[tuple[int, int] | bytes] = [(0, 2)]
+    framed = scanned = False
+    pos, end = 2, len(data)
+
+    def keep(start: int, stop: int) -> None:
+        last = parts[-1]
+        if isinstance(last, tuple) and last[1] == start:
+            parts[-1] = (last[0], stop)
+        else:
+            parts.append((start, stop))
+
+    while pos < end:
+        if data[pos] != 0xFF:
+            return None
+        while pos < end and data[pos] == 0xFF:  # fill bytes
+            pos += 1
+        if pos >= end:
+            return None
+        marker = data[pos]
+        pos += 1
+        # From here on, data[pos - 2:pos] is 0xFF and the marker.
+        if marker == 0xD9:  # EOI: the first picture ends here
+            if not scanned:
+                return None  # tables and no picture
+            keep(pos - 2, pos)
+            return tuple(parts)
+        if pos + 2 > end or not 0xC0 <= marker <= 0xFE:
+            return None  # TEM or a reserved marker
+        length = int.from_bytes(data[pos:pos + 2], "big")
+        body = pos + 2  # the segment's payload runs from body to pos + length
+        if length < 2 or pos + length > end:
+            return None
+        if marker in _DCT_FRAMES:
+            if framed or length < 11 or length != 8 + 3 * data[body + 5]:
+                return None
+            framed = True
+            keep(pos - 2, pos + length)
+        elif marker in _TABLES:
+            if not _tables_fit(marker, data[body:pos + length]):
+                return None
+            keep(pos - 2, pos + length)
+        elif marker in (0xDD, 0xDC):  # DRI, DNL
+            if length != 4:
+                return None
+            keep(pos - 2, pos + length)
+        elif marker == 0xDA:  # SOS: the compressed scan runs to the next marker
+            if not framed or length < 8 or length != 6 + 2 * data[body] or data[body] > 4:
+                return None
+            scanned = True
+            found = _ENTROPY_END.search(data, pos + length)
+            pos = found.start() if found else end
+            keep(body - 4, pos)
+            continue
+        elif marker == 0xE0:  # APP0: JFIF's header only, without a thumbnail
+            if data.startswith(b"JFIF\x00", body) and length >= 16:
+                parts.append(b"\xff\xe0\x00\x10" + data[body:body + 12] + b"\x00\x00")
+        elif marker == 0xE2:  # APP2: the ICC colour profile only
+            if data.startswith(b"ICC_PROFILE\x00", body):
+                keep(pos - 2, pos + length)
+        elif marker == 0xEE:  # APP14: Adobe's colour transform, without extras
+            if data.startswith(b"Adobe", body) and length >= 14:
+                parts.append(b"\xff\xee\x00\x0e" + data[body:body + 12])
+        elif not (0xE0 <= marker <= 0xEF or marker == 0xFE):
+            # Not something a DCT decoder needs, nor metadata to drop: another
+            # coding's frame or tables, a restart marker outside a scan...
+            return None
+        pos += length
+    # A file cut short in its last scan: keep what there is.
+    return tuple(parts) if scanned else None
+
+
 def _number(value: float) -> bytes:
     text = f"{value:.4f}".rstrip("0").rstrip(".")
     return (text if text not in ("", "-0") else "0").encode()
@@ -349,12 +495,6 @@ def _image_dict(width: int, height: int, mode: str, filter_name: bytes) -> bytes
         # ReportLab treated every 4-channel JPEG as Adobe's inverted CMYK.
         entries += b" /Decode [1 0 1 0 1 0 1 0]"
     return entries
-
-
-def _file_chunks(path: str) -> Iterator[bytes]:
-    with open(path, "rb") as fh:
-        while block := fh.read(1024 * 1024):
-            yield block
 
 
 def _sixteen_bit(mode: str) -> bool:
@@ -393,8 +533,11 @@ def _deflated_rows(img: Image.Image, mode: str) -> Iterator[bytes]:
 def _image_stream(source: _Source, temp_files: list[str]) -> tuple[bytes, int | None, Iterable[bytes]]:
     """(image dictionary entries, length if known, data) for one page."""
     if source.kind == "jpeg":
-        return (_image_dict(source.width, source.height, source.mode, b"/DCTDecode"),
-                os.path.getsize(source.path), _file_chunks(source.path))
+        data = memoryview(Path(source.path).read_bytes())
+        if len(data) != source.file_size:
+            raise _ImageChanged(f"{source.name} changed while it was being read")
+        chunks = [data[part[0]:part[1]] if isinstance(part, tuple) else part for part in source.parts]
+        return _image_dict(source.width, source.height, source.mode, b"/DCTDecode"), sum(map(len, chunks)), chunks
     if source.kind == "svg":
         path = str(get_temp_path(f"svg_to_png_{uuid.uuid4().hex}.png"))
         temp_files.append(path)
@@ -495,15 +638,16 @@ class _PdfWriter:
         if length_ref:
             self._object(length_ref, b"%d" % written)
 
-    def add_page(self, page_size: tuple[float, float], stream, box: tuple[float, float, float, float] | None) -> None:
+    def add_page(self, page_size: tuple[float, float], stream, box: tuple[float, float, float, float] | None,
+                 orientation: int = 1) -> None:
         page_ref = self._reserve()
         resources = b"<<>>"
         content = b""
         if stream is not None:
             image_ref, content_ref = self._reserve(), self._reserve()
             self._stream(image_ref, *stream)
-            x, y, width, height = box
-            content = b"q %s 0 0 %s %s %s cm /Im0 Do Q\n" % (_number(width), _number(height), _number(x), _number(y))
+            matrix = b" ".join(_number(value) for value in _PLACEMENT[orientation](*box))
+            content = b"q %s cm /Im0 Do Q\n" % matrix
             self._stream(content_ref, b"", len(content), [content])
             resources = b"<</XObject <</Im0 %d 0 R>> /ProcSet [/PDF /ImageB /ImageC /ImageI]>>" % image_ref
         self._object(page_ref, b"<</Type /Page /Parent %d 0 R /MediaBox [0 0 %s %s] /Resources %s%s>>" % (
@@ -563,16 +707,17 @@ def images_to_pdf(input_paths: list, page_size: str = "A4", names: list[str] | N
         with open(output_path, "wb") as fh:
             writer = _PdfWriter(fh)
             for source in sources:
+                shown_width, shown_height = source.upright_size
                 if auto:
-                    page = (source.width, source.height)
-                    box = (0, 0, source.width, source.height)
+                    page = (shown_width, shown_height)
+                    box = (0, 0, shown_width, shown_height)
                 else:
                     page = fixed_size
                     page_width, page_height = fixed_size
-                    ratio = min((page_width - 2 * MARGIN) / source.width, (page_height - 2 * MARGIN) / source.height)
-                    width, height = source.width * ratio, source.height * ratio
+                    ratio = min((page_width - 2 * MARGIN) / shown_width, (page_height - 2 * MARGIN) / shown_height)
+                    width, height = shown_width * ratio, shown_height * ratio
                     box = ((page_width - width) / 2, (page_height - height) / 2, width, height)
-                writer.add_page(page, _page_image(source, intermediates), box)
+                writer.add_page(page, _page_image(source, intermediates), box, source.orientation)
                 while intermediates:
                     _remove(intermediates.pop())
             if not sources:

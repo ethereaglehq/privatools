@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "All GIFs are combined into one PDF, one image per page in upload order."
+      "text": "All GIFs are combined into one PDF, one image per page in upload order. Only the pixels are copied, so comments, location and camera details in the files do not go into the PDF."
     }
   ],
   "faq": [

@@ -114,7 +114,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "image-to-pdf": [
         {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 100 images with a combined size of up to 200 MB, which is roughly 50 phone photos as JPG but fewer than 10 saved as PNG. Images other than JPEG can also add up to 750 megapixels, with HEIC photos counting half: 100 photos from a 12-megapixel iPhone fit, but only about 60 phone-size WebP photos."},
         {"name": "Arrange and configure", "text": "Reorder images by dragging thumbnails or with the arrow buttons. Choose Auto (the default), which makes each page the size of its image, or A4 or Letter, which fit each image on a portrait page with a half-inch margin."},
-        {"name": "Convert to PDF", "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution."},
+        {"name": "Convert to PDF", "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution. Photos a phone stored sideways are turned upright, as the phone shows them. Location and camera details (EXIF, XMP and IPTC metadata) are removed."},
     ],
     "txt-to-pdf": [
         {"name": "Upload a text file", "text": "Select one or more .txt files, up to 500 MB each; each file becomes its own PDF. Save the text as UTF-8 so accented characters come through."},
@@ -557,7 +557,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "bmp-to-pdf": [
         {"name": "Upload BMP images", "text": "Drop one or many .bmp files. BMP is the legacy Windows bitmap format — uncompressed and lossless."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image. Letter (8.5 × 11 in) or A4 (210 × 297 mm) scale each BMP to fit the page while preserving aspect ratio."},
-        {"name": "Download the PDF", "text": "Click Convert. All input images are combined into a single PDF, one image per page in upload order."},
+        {"name": "Download the PDF", "text": "Click Convert. All input images are combined into a single PDF, one image per page in upload order. Only the pixels are copied, so no location or camera details go into the PDF."},
     ],
     "booklet-pdf": [
         {"name": "Add the PDF", "text": "Drop or select the document you want to print as a folded booklet, up to 500 MB."},
@@ -618,7 +618,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "gif-to-pdf": [
         {"name": "Upload GIF images", "text": "Drop one or many .gif files. Animated GIFs use only the first frame."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its GIF; Letter or A4 scale each GIF to fit while preserving aspect ratio."},
-        {"name": "Download the PDF", "text": "All GIFs are combined into one PDF, one image per page in upload order."},
+        {"name": "Download the PDF", "text": "All GIFs are combined into one PDF, one image per page in upload order. Only the pixels are copied, so comments, location and camera details in the files do not go into the PDF."},
     ],
     "grayscale-pdf": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
@@ -633,7 +633,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "heic-to-pdf": [
         {"name": "Upload HEIC images", "text": "Drop one or many .heic / .heif files (e.g. from iPhone photos), up to 100 photos, 200 MB and 1,500 megapixels in total. 100 photos from a 12-megapixel iPhone fit, and about 60 from a 24-megapixel one."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its photo; A4 or Letter scale each photo to fit a standard page. Each HEIC is decoded with libheif."},
-        {"name": "Download the PDF", "text": "All images become one PDF, one photo per page. Camera EXIF metadata, including GPS location, is not copied into the PDF."},
+        {"name": "Download the PDF", "text": "All images become one PDF, one photo per page, upright as your phone shows them. Location and camera details (EXIF and XMP metadata, including GPS) are removed."},
     ],
     "invert-colors": [
         {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB."},
@@ -644,7 +644,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Add your images", "text": "Drop or select JPG images; each one becomes a page, in the order shown."},
         {"name": "Arrange the pages", "text": "Put the images in the order you want the pages to appear before converting."},
         {"name": "Choose a page size", "text": "Auto (the default) makes every page exactly the size of its image. A4 and Letter place each image on a standard page instead, which prints predictably."},
-        {"name": "Create the PDF", "text": "Convert and download a single PDF containing all the images, one per page."},
+        {"name": "Create the PDF", "text": "Convert and download a single PDF containing all the images, one per page. Photos a phone stored sideways are turned upright, as the phone shows them. Location and camera details (EXIF, XMP and IPTC metadata) are removed. Each photo is copied into the PDF without re-encoding; the rare JPEG that can't be copied as it is, such as a lossless one, is stored from its decoded pixels instead."},
     ],
     "markdown-to-pdf": [
         {"name": "Upload a Markdown file", "text": "Drop a .md file up to 500 MB."},
@@ -732,7 +732,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "png-to-pdf": [
         {"name": "Upload PNG images", "text": "Drop one or many .png files, up to 100 images, 200 MB and 750 megapixels in total. 100 phone screenshots come to about 300."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."},
-        {"name": "Download the PDF", "text": "All images become a single PDF, one per page. The pixels are stored with lossless compression at 8 bits per channel, so a 16-bit PNG is reduced to 8 bits."},
+        {"name": "Download the PDF", "text": "All images become a single PDF, one per page. The pixels are stored with lossless compression at 8 bits per channel, so a 16-bit PNG is reduced to 8 bits. Only the pixels are copied, so text notes, location and camera details stored in the PNGs are removed."},
     ],
     "pptx-to-pdf-convert": [
         {"name": "Upload a .pptx file", "text": "Drop a PowerPoint presentation up to 500 MB."},
@@ -797,12 +797,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "svg-to-pdf": [
         {"name": "Upload SVG images", "text": "Drop one or many .svg files, up to 100 files, 200 MB and 750 megapixels in total. Each drawing counts at the size it will be rendered, 2,400 pixels wide, and the total is checked before any is drawn. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."},
         {"name": "Choose page size", "text": "Auto (the default) sizes the page to the rendered image, which is 2400 points wide (narrower for a drawing over 13.6 times as tall as it is wide), so choose A4 or Letter for a printable page; each SVG is then scaled to fit while preserving its aspect ratio."},
-        {"name": "Download the PDF", "text": "All SVGs become one PDF, one per page. Each drawing is rasterized into an image first, so the PDF contains pictures rather than vector paths or selectable text."},
+        {"name": "Download the PDF", "text": "All SVGs become one PDF, one per page. Each drawing is rasterized into an image first, so the PDF contains pictures rather than vector paths or selectable text. Only the drawing is copied, so the files' metadata, such as author and editor details, is removed."},
     ],
     "tiff-to-pdf": [
         {"name": "Upload TIFF images", "text": "Drop one or more .tif / .tiff files, up to 100 files, 200 MB and 750 megapixels in total. Only the first page of a multi-page TIFF is converted."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter scale each image to fit a standard page."},
-        {"name": "Download the PDF", "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF."},
+        {"name": "Download the PDF", "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF. Only the pixels are copied, so camera, author and location details in the TIFF tags are removed."},
     ],
     "transparent-background": [
         {"name": "Upload a PDF", "text": "Drop one or more PDFs, up to 500 MB each. PrivaTools renders each page as an image at the DPI you choose, 144 by default (72-300)."},
@@ -817,7 +817,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "webp-to-pdf": [
         {"name": "Upload WebP images", "text": "Drop one or many .webp files, up to 100 images, 200 MB and 750 megapixels in total. The megapixels run out at about 60 phone-size photos; 100 web images fit."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."},
-        {"name": "Download the PDF", "text": "All images become one PDF in upload order. The PDF is usually much larger than the WebP files, because the pixels are stored with lossless compression."},
+        {"name": "Download the PDF", "text": "All images become one PDF in upload order. The PDF is usually much larger than the WebP files, because the pixels are stored with lossless compression. Only the pixels are copied, so location and camera details stored in the WebPs are removed."},
     ],
     "whiteout-pdf": [
         {"name": "Upload your PDF", "text": "Drop a PDF up to 500 MB."},
@@ -1928,7 +1928,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "heic-to-pdf": [
         {"q": "Will the PDF be much larger than the HEIC?", "a": "Often, yes. Each photo is re-encoded as a JPEG at quality 92 inside the PDF, and JPEG generally needs more space than HEIC for the same picture. How much larger depends on the photo."},
         {"q": "Does this preserve image quality?", "a": "Photos keep their full pixel dimensions and are re-encoded once as JPEG at quality 92, a high setting. For a lossless copy, convert the photos to PNG first and use PNG to PDF, which gives much larger files."},
-        {"q": "What happens to GPS metadata?", "a": "Stripped during conversion. Use View EXIF first if you want to record GPS coordinates before they're gone."},
+        {"q": "What happens to GPS metadata?", "a": "It is removed, with the rest of the location and camera details, as for every image-to-PDF tool. Use View EXIF first if you want to record GPS coordinates before they're gone."},
     ],
     "invert-colors": [
         {"q": "Why would I invert colors?", "a": "Dark-mode reading on tablets, contrast-flipped scanning of light text on dark backgrounds, or accessibility for users sensitive to bright whites."},

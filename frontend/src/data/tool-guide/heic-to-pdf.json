@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "All images become one PDF, one photo per page. Camera EXIF metadata, including GPS location, is not copied into the PDF."
+      "text": "All images become one PDF, one photo per page, upright as your phone shows them. Location and camera details (EXIF and XMP metadata, including GPS) are removed."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "What happens to GPS metadata?",
-      "a": "Stripped during conversion. Use View EXIF first if you want to record GPS coordinates before they're gone."
+      "a": "It is removed, with the rest of the location and camera details, as for every image-to-PDF tool. Use View EXIF first if you want to record GPS coordinates before they're gone."
     }
   ]
 }

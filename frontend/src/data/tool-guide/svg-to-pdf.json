@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "All SVGs become one PDF, one per page. Each drawing is rasterized into an image first, so the PDF contains pictures rather than vector paths or selectable text."
+      "text": "All SVGs become one PDF, one per page. Each drawing is rasterized into an image first, so the PDF contains pictures rather than vector paths or selectable text. Only the drawing is copied, so the files' metadata, such as author and editor details, is removed."
     }
   ],
   "faq": [
