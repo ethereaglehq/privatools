@@ -112,7 +112,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
 
     # ── PDF conversion ────────────────────────────────────────────────
     "image-to-pdf": [
-        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 100 images with a combined size of up to 200 MB, which is roughly 50 phone photos. Images other than JPEG can also add up to 750 megapixels, with HEIC photos counting half: 100 photos from a 12-megapixel iPhone fit, but only about 60 phone-size PNG or WebP photos."},
+        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 100 images with a combined size of up to 200 MB, which is roughly 50 phone photos as JPG but fewer than 10 saved as PNG. Images other than JPEG can also add up to 750 megapixels, with HEIC photos counting half: 100 photos from a 12-megapixel iPhone fit, but only about 60 phone-size WebP photos."},
         {"name": "Arrange and configure", "text": "Reorder images by dragging thumbnails or with the arrow buttons. Choose Auto (the default), which makes each page the size of its image, or A4 or Letter, which fit each image on a portrait page with a half-inch margin."},
         {"name": "Convert to PDF", "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution."},
     ],
@@ -732,7 +732,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     "png-to-pdf": [
         {"name": "Upload PNG images", "text": "Drop one or many .png files, up to 100 images, 200 MB and 750 megapixels in total. 100 phone screenshots come to about 300."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."},
-        {"name": "Download the PDF", "text": "All images become a single PDF, one per page. Lossless — PNG pixels map directly to PDF image objects."},
+        {"name": "Download the PDF", "text": "All images become a single PDF, one per page. The pixels are stored with lossless compression at 8 bits per channel, so a 16-bit PNG is reduced to 8 bits."},
     ],
     "pptx-to-pdf-convert": [
         {"name": "Upload a .pptx file", "text": "Drop a PowerPoint presentation up to 500 MB."},
@@ -795,8 +795,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the clean PDF (or ZIP)", "text": "Single file → single PDF; multiple files → ZIP. Visible content is unchanged."},
     ],
     "svg-to-pdf": [
-        {"name": "Upload SVG images", "text": "Drop one or many .svg files, up to 100 files, 200 MB and 750 megapixels in total, counted once each drawing is rendered. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."},
-        {"name": "Choose page size", "text": "Auto (the default) sizes the page to the rendered image, which is 2400 points wide, so choose A4 or Letter for a printable page; each SVG is then scaled to fit while preserving its aspect ratio."},
+        {"name": "Upload SVG images", "text": "Drop one or many .svg files, up to 100 files, 200 MB and 750 megapixels in total. Each drawing counts at the size it will be rendered, 2,400 pixels wide, and the total is checked before any is drawn. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."},
+        {"name": "Choose page size", "text": "Auto (the default) sizes the page to the rendered image, which is 2400 points wide (narrower for a drawing over 13.6 times as tall as it is wide), so choose A4 or Letter for a printable page; each SVG is then scaled to fit while preserving its aspect ratio."},
         {"name": "Download the PDF", "text": "All SVGs become one PDF, one per page. Each drawing is rasterized into an image first, so the PDF contains pictures rather than vector paths or selectable text."},
     ],
     "tiff-to-pdf": [
@@ -2109,12 +2109,12 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Is this the same as Sanitize?", "a": "No — Strip Metadata removes only informational fields, including XMP. Sanitize clears those too, and also removes JavaScript, risky links and actions, embedded files, media and switched-off layers."},
     ],
     "svg-to-pdf": [
-        {"q": "Will my SVG stay as vector inside the PDF?", "a": "No. Each SVG is rendered with CairoSVG to a PNG image 2400 pixels wide, and that image is placed on the page. It looks sharp at normal sizes, but edges soften when you zoom in far, and text cannot be selected or searched."},
+        {"q": "Will my SVG stay as vector inside the PDF?", "a": "No. Each SVG is rendered with CairoSVG to a PNG image 2400 pixels wide (narrower if the drawing is very tall), and that image is placed on the page. It looks sharp at normal sizes, but edges soften when you zoom in far, and text cannot be selected or searched."},
         {"q": "What about embedded raster images inside SVG?", "a": "Images embedded in the SVG as data: URIs are drawn. References to images in other files or at web addresses are blocked for security, and an SVG that contains one is rejected with an error."},
         {"q": "Does it handle CSS styles inside SVG?", "a": "Styles written inside the SVG, in a style element or style attributes, are applied, but external stylesheets are not loaded. Note that transparency is not kept: areas with no background come out black, so add a white background rectangle to drawings that need one."},
     ],
     "tiff-to-pdf": [
-        {"q": "Will quality be preserved?", "a": "For standard 8-bit TIFFs, yes: the decoded pixels are stored with lossless Flate compression and no JPEG step is added. The trade-off is file size, since nothing is recompressed to save space."},
+        {"q": "Will quality be preserved?", "a": "For standard 8-bit TIFFs, yes: the decoded pixels are stored with lossless Flate compression and no JPEG step is added. The trade-off is file size, since nothing is recompressed to save space. A 16-bit TIFF is reduced to 8 bits per channel."},
         {"q": "What about CMYK TIFFs (for print)?", "a": "CMYK TIFFs stay CMYK: the pixels are embedded as DeviceCMYK image data. An embedded ICC colour profile is not carried over, so check colour-critical print jobs with your printer."},
         {"q": "How are multi-page TIFFs handled?", "a": "Only the first page of each TIFF is converted; the other pages are ignored. Every TIFF file you add becomes one PDF page, in the order shown, so save each page as a separate TIFF first if you need them all."},
     ],

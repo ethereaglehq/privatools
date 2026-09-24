@@ -143,4 +143,30 @@ describe("Image to PDF decode budget", { timeout: 20_000 }, () => {
         expect(await screen.findByRole("alert")).toHaveTextContent(refusal);
         expect(screen.getByText("3 of 100 images selected")).toBeVisible();
     });
+
+    it.each([
+        [413, "IMG_2041.png has more than 178 megapixels, the most one image can have."],
+        [400, "notes.png is not a JPEG, PNG, WebP, HEIC, TIFF, BMP or GIF image."],
+        // friendlyError would say "That file is empty (0 bytes)" and drop the name.
+        [400, "File IMG_2.png is empty"],
+    ])("shows the server's own words for a %i naming the file", async (status, detail) => {
+        const refusal = Object.assign(new Error(detail), { __status: status, __detail: detail });
+        vi.mocked(processFilesAndDownload).mockRejectedValueOnce(refusal);
+        render(<ImageToPdfUI />);
+        choose(photos(3, { ext: "png" }));
+        fireEvent.click(screen.getByRole("button", { name: "Convert 3 images → PDF" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(detail);
+    });
+
+    it("keeps the friendly wording when the server gave no reason of its own", async () => {
+        // What lib/api writes for a proxy's bare 413 page; it is not this tool's limit.
+        const refusal = Object.assign(new Error("That file is too large. The maximum is 500 MB per file."), { __status: 413 });
+        vi.mocked(processFilesAndDownload).mockRejectedValueOnce(refusal);
+        render(<ImageToPdfUI />);
+        choose(photos(3, { ext: "png" }));
+        fireEvent.click(screen.getByRole("button", { name: "Convert 3 images → PDF" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent("File is too big for the server. Try compressing it first.");
+    });
 });

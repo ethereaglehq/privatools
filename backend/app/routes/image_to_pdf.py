@@ -1,3 +1,4 @@
+import os
 import uuid
 from typing import List
 import logging
@@ -48,6 +49,7 @@ async def image_to_pdf(
 
     ensure_temp_dir()
     input_paths: list[str] = []
+    names: list[str] = []
     output_path: str | None = None
     total_bytes = 0
 
@@ -74,11 +76,15 @@ async def image_to_pdf(
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
             temp_path.write_bytes(content)
             input_paths.append(str(temp_path))
+            # A refusal names the file as the person uploaded it.
+            names.append(os.path.basename(filename.replace("\\", "/")))
 
         # Heavy pool: a full batch can hold a core for well over a minute
         # (100 iPhone HEICs: about 90 s of CPU), so it shares
         # MAX_CONCURRENT_HEAVY with the other heavy tools.
-        output_path = await run_bounded(image_to_pdf_service.images_to_pdf, input_paths, page_size=normalized_page_size)
+        output_path = await run_bounded(
+            image_to_pdf_service.images_to_pdf, input_paths, page_size=normalized_page_size, names=names,
+        )
         cleanup = BackgroundTask(remove_files, *input_paths, output_path)
         return FileResponse(
             path=output_path,
@@ -90,13 +96,15 @@ async def image_to_pdf(
         to_remove = input_paths + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise
-    except ValueError as e:
-        # From the service: one image over its pixel cap, or a batch over the
-        # decode budget (DecodeBudgetExceeded), whose message the page shows
-        # as it is.
+    except image_to_pdf_service.ImageRefused as e:
+        # The service's refusals name the upload, and the page shows them as
+        # they are: too many pixels in one image or in the batch (413), or a
+        # file that is not an image these tools take or cannot be read (400).
+        # Any other error is the server's (500), whatever its type.
         to_remove = input_paths + ([output_path] if output_path else [])
         remove_files(*to_remove)
-        raise HTTPException(status_code=413, detail=str(e))
+        too_large = isinstance(e, (image_to_pdf_service.ImageTooLarge, image_to_pdf_service.DecodeBudgetExceeded))
+        raise HTTPException(status_code=413 if too_large else 400, detail=str(e))
     except Exception as e:
         to_remove = input_paths + ([output_path] if output_path else [])
         remove_files(*to_remove)

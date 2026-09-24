@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { Download, X, Image as ImageIcon, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
-import { processFilesAndDownload, formatFileSize, buildOutputFilename } from "@/lib/api";
+import { processFilesAndDownload, formatFileSize, buildOutputFilename, getErrorDetail, getErrorStatus } from "@/lib/api";
 import { loadSampleJpg } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
@@ -137,9 +137,13 @@ export function ImageToPdfUI({
             emitToolRun({ outcome: "success", files: files.length });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : "Conversion failed";
-            setError(friendlyError(msg, "Couldn't pack those images into a PDF."));
+            // The server's refusals name the file and the limit it passed;
+            // friendlyError's general wording would lose both.
+            const detail = getErrorDetail(e);
+            const status = getErrorStatus(e);
+            setError(detail && (status === 400 || status === 413) ? detail : friendlyError(msg, "Couldn't pack those images into a PDF."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: files.length });
+            emitToolRun({ outcome: "error", files: files.length }, e);
         }
     }, [files, pageSize]);
 

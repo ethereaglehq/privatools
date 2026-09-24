@@ -39,9 +39,7 @@ const WORKFLOW_PAGES = ["src/pages/BatchPage.tsx", "src/pages/PipelinePage.tsx"]
  * when failure categories arrived (2026-09-24); pass the caught error as
  * emitToolRun's second argument there, then remove the entry.
  */
-const FAILURE_CAUSE_PENDING = [
-    "src/components/tool-ui/ImageToPdfUI.tsx",
-];
+const FAILURE_CAUSE_PENDING: string[] = [];
 
 function walk(dir: string): string[] {
     return readdirSync(dir).flatMap(name => {

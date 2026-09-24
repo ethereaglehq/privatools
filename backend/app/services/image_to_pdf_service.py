@@ -3,19 +3,25 @@
 Pages appear in the same order they were supplied (the route hands us
 `input_paths` in upload order — FastAPI's `List[UploadFile]` preserves
 multipart order, and we iterate that list directly without sorting).
-Each image is checked against the per-image pixel cap (`MAX_IMAGE_PIXELS`,
-or Pillow's lower decompression-bomb limit) before any decoding, so a "1 GB
-pixel bomb" upload fails fast, and a batch is checked against
-`MAX_DECODED_MEGAPIXELS` before any page is made.
+Pillow opens only the formats the nine tools take, whatever a file is called.
+Each image is checked against its pixel cap before any decoding, so a "1 GB
+pixel bomb" upload fails fast, and the batch against `MAX_DECODED_MEGAPIXELS`
+before any page is made; an SVG is measured without being drawn.
 
 Each image goes into the PDF file as soon as it is read, so memory follows
 one page, not the whole document. ReportLab, which this service used before,
 keeps every page in memory until it formats the whole file on save, at about
 three times the finished PDF: 100 web-size WebPs took +1.6 GB. The images are
-embedded exactly as ReportLab embedded them: a JPEG byte for byte
-(DCTDecode); anything else decoded to 8-bit Gray, RGB or CMYK the way
-ReportLab's ImageReader converted it (alpha dropped, other modes to RGB) and
-deflated at zlib's default level (FlateDecode).
+embedded as ReportLab embedded them: a JPEG byte for byte (DCTDecode);
+anything else decoded to 8-bit Gray, RGB or CMYK the way ReportLab's
+ImageReader converted it (alpha dropped, other modes to RGB) and deflated at
+zlib's default level (FlateDecode). Two differences: a 16-bit grayscale image
+keeps each sample's high byte, where ReportLab clipped it nearly white; and
+a JPEG whose coding DCTDecode does not read (lossless or arithmetic) is
+decoded like the rest, where ReportLab drew a placeholder.
+
+Refusals are `ImageRefused` errors naming the file as it was uploaded:
+`ImageTooLarge` and `DecodeBudgetExceeded` (413), `UnreadableImage` (400).
 """
 from __future__ import annotations
 
@@ -28,16 +34,25 @@ import uuid
 import zlib
 from dataclasses import dataclass
 from datetime import datetime, timezone
+from functools import lru_cache
 from typing import BinaryIO, Iterable, Iterator
 
-from PIL import Image
+from PIL import Image, UnidentifiedImageError
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path
+from .svg_safety import ExternalReferenceBlocked, block_external_refs
 
 logger = logging.getLogger(__name__)
 
-_HEIC_EXTS = {".heic", ".heif"}
 _SVG_EXTS = {".svg"}
+
+# What the nine tools take, by content, whatever a file is called: Pillow can
+# decode more (JPEG 2000, AVIF and others), outside every cap below, and did
+# under these tools' extensions; a 36-megapixel JPEG 2000 of 540 KB took
+# +667 MB. Pillow's JPEG opener returns MPO for a multi-picture JPEG, so MPO
+# has no entry of its own. SVGs go by their extension to cairosvg instead.
+_OPEN_FORMATS = ("JPEG", "PNG", "GIF", "BMP", "TIFF", "WEBP", "HEIF")
+_ACCEPTED = "JPEG, PNG, WebP, HEIC, TIFF, BMP or GIF"
 
 # Page sizes in PDF points, as ReportLab defines them.
 A4 = (595.2755905511812, 841.8897637795277)
@@ -49,14 +64,12 @@ PAGE_SIZES = {
 }
 MARGIN = 36  # 0.5 inch around the image on an A4 or Letter page
 
-# Memory cap to prevent OOM on huge images — 200 MP per source image. A 16K
-# (15360×8640) image is ~130 MP, so this still allows generous photo sizes
-# while blocking malicious "1 GB pixel array" uploads. Pillow refuses to open
-# anything over twice its `Image.MAX_IMAGE_PIXELS` as a possible decompression
-# bomb, and `app/utils/__init__.py` leaves that at Pillow's default (89.5 MP),
-# so the cap in force is 179 MP. Both answer "too large" (413): Pillow's
-# DecompressionBombError used to reach the route as a 500.
-MAX_IMAGE_PIXELS = 200_000_000
+# The most pixels one image may have. Pillow refuses to open anything over
+# twice its `Image.MAX_IMAGE_PIXELS` as a possible decompression bomb, and
+# `app/utils/__init__.py` leaves that at Pillow's default, so Pillow's limit
+# is 178,956,970 pixels. This cap sits just under it, so a refusal can state
+# the limit exactly. A 16K frame (15360 x 8640) is 133 megapixels.
+MAX_IMAGE_PIXELS = 178_000_000
 
 # Lower caps where decoding one image costs more memory. Peak bytes per pixel
 # of one page, measured on the 2-core ARM VM: Pillow's WebP decoder 17-19, a
@@ -66,14 +79,15 @@ MAX_IMAGE_PIXELS = 200_000_000
 # 1-bit, grayscale and palette images at one byte per pixel, so such a TIFF
 # (1.4-2.4 bytes per pixel) keeps Pillow's limit too.
 FORMAT_PIXEL_CAPS = {
-    "WEBP": ("WebP", 50_000_000),
-    "HEIF": ("HEIC", 100_000_000),
-    "TIFF": ("colour TIFF", 120_000_000),
+    "WEBP": ("a WebP image", 50_000_000),
+    "HEIF": ("a HEIC photo", 100_000_000),
+    "TIFF": ("a colour TIFF", 120_000_000),
 }
 _ONE_BYTE_MODES = {"1", "L", "P"}
 
 # How many megapixels one PDF may decode. A JPEG is embedded as it is and
-# costs almost nothing; every other image is decoded, which costs CPU in
+# costs almost nothing; every other image is decoded (a rare JPEG too, see
+# _DCT_FRAMES) or drawn (an SVG), which costs CPU in
 # proportion to its pixels. Measured on the 2-core ARM VM: about 0.14 s per
 # megapixel to decode and deflate a photo in PNG, WebP, TIFF, BMP, GIF or SVG,
 # and about 0.075 s to decode a HEIC photo and re-encode it as JPEG, so a HEIC
@@ -86,44 +100,117 @@ HEIC_MEGAPIXEL_WEIGHT = 0.5
 _DECODED_FORMATS = "PNG, WebP, TIFF, BMP, GIF and SVG images"
 _BAND_BYTES = 4 * 1024 * 1024  # decoded rows deflated per step
 _COLOUR_SPACES = {"L": b"/DeviceGray", "RGB": b"/DeviceRGB", "CMYK": b"/DeviceCMYK"}
+# The JPEG codings DCTDecode reads, embedded as they are: baseline, extended
+# and progressive DCT with Huffman coding. Lossless (SOF3), arithmetic-coded
+# and hierarchical JPEGs are decoded instead and count in the budget: MuPDF
+# drew a lossless JPEG black ("Unsupported JPEG process"), and ReportLab put
+# its placeholder in the image's place.
+_DCT_FRAMES = {0xC0, 0xC1, 0xC2}
+_OTHER_FRAMES = {0xC3, 0xC5, 0xC6, 0xC7, 0xC9, 0xCA, 0xCB, 0xCD, 0xCE, 0xCF}
+
+# An SVG is drawn 2,400 pixels wide, its height following its aspect ratio,
+# unless that is taller than cairo can draw: then it is drawn that tall and
+# narrower.
+_SVG_WIDTH = 2400
+_SVG_MAX_SIDE = 32_767
 
 
-class DecodeBudgetExceeded(ValueError):
-    """A batch would decode more megapixels than one PDF may.
+class ImageRefused(ValueError):
+    """An upload this service will not convert; the message names it for the person who sent it."""
 
-    A ValueError, so the route answers 413 with this message.
-    """
+
+class ImageTooLarge(ImageRefused):
+    """One image has more pixels than it may (413)."""
+
+
+class DecodeBudgetExceeded(ImageRefused):
+    """A batch would decode more megapixels than one PDF may (413)."""
+
+
+class UnreadableImage(ImageRefused):
+    """A file that is not an image these tools take, or cannot be read or drawn (400)."""
+
+
+class _ImageChanged(OSError):
+    """A file changed on disk between planning its page and writing it: the server's fault."""
 
 
 @dataclass
 class _Source:
-    path: str  # what is read into the page: the rendered PNG for an SVG
-    width: int
+    path: str  # the upload; an SVG is drawn when its page is made
+    name: str  # what it was called when it was uploaded
+    width: int  # pixels as embedded: an SVG's as it will be drawn
     height: int
-    kind: str  # "jpeg" (embedded as it is), "heic" or "decoded"
+    kind: str  # "jpeg" (embedded as it is), "heic", "svg" or "decoded"
     mode: str  # Pillow's mode for the file
+    format: str  # Pillow's format, or "SVG"
 
 
-def _svg_to_png(svg_path: str) -> str:
-    """Rasterize an SVG to a high-res PNG temp file via cairosvg."""
+def _fetch_for_svg(url: str, resource_type: str | None = None) -> bytes:
+    # block_external_refs denies absolute file:// (LFI) and http(s):// (SSRF)
+    # references; only inline data: URIs are drawn.
+    return block_external_refs(url, resource_type)["string"]
+
+
+class _SvgSize(Exception):
+    def __init__(self, width: int, height: int) -> None:
+        super().__init__(width, height)
+        self.width, self.height = width, height
+
+
+@lru_cache(maxsize=1)
+def _measuring_surface():
     from cairosvg.surface import PNGSurface
 
-    from .svg_safety import block_external_refs
+    class MeasuringSurface(PNGSurface):
+        # cairosvg works out the drawing's size from its width, height and
+        # viewBox, then asks for a surface that size: stop there, before any
+        # pixel is allocated or drawn.
+        def _create_surface(self, width, height):
+            raise _SvgSize(int(round(width)), int(round(height)))
 
-    out_path = get_temp_path(f"svg_to_png_{uuid.uuid4().hex}.png")
+    return MeasuringSurface
+
+
+def _svg_error(name: str, exc: BaseException) -> UnreadableImage:
+    if isinstance(exc, ExternalReferenceBlocked):
+        return UnreadableImage(f"{name} loads an image from another file or a web address, which is not allowed.")
+    return UnreadableImage(f"{name} could not be drawn.")
+
+
+def _svg_size(path: str, name: str) -> tuple[int, int]:
+    """The size an SVG will be drawn at, in pixels, without drawing it."""
+    with open(path, "rb") as fh:
+        data = fh.read()
+    try:
+        # bytestring= (not url=), so relative references can't resolve
+        # against the server's files.
+        _measuring_surface().convert(bytestring=data, output_width=_SVG_WIDTH, url_fetcher=_fetch_for_svg)
+    except _SvgSize as size:
+        width, height = size.width, size.height
+    except ExternalReferenceBlocked as exc:
+        raise _svg_error(name, exc) from None
+    except MemoryError:
+        raise
+    except Exception:
+        raise UnreadableImage(f"{name} could not be drawn: it is not a valid SVG.") from None
+    else:  # cairosvg asks for its surface before it draws anything
+        raise UnreadableImage(f"{name} could not be drawn.")
+    if width <= 0 or height <= 0:
+        raise UnreadableImage(f"{name} could not be drawn: it has no width or height.")
+    if height > _SVG_MAX_SIDE:
+        width, height = max(1, round(width * _SVG_MAX_SIDE / height)), _SVG_MAX_SIDE
+    return width, height
+
+
+def _svg_to_png(svg_path: str, out_path: str, width: int, height: int) -> None:
+    """Draw an SVG at width x height pixels into a PNG file via cairosvg."""
+    from cairosvg.surface import PNGSurface
+
     with open(svg_path, "rb") as f:
         svg_data = f.read()
-    # Pass bytestring= (NOT url=) so relative refs can't resolve against the
-    # server filesystem, and block_external_refs denies absolute file:// (LFI)
-    # and http(s):// (SSRF) references — only inline data: URIs are allowed.
-    # Render at 2x for crisp output even after PDF embed scaling.
-    PNGSurface.convert(
-        bytestring=svg_data,
-        write_to=str(out_path),
-        output_width=2400,
-        url_fetcher=lambda url, resource_type: block_external_refs(url, resource_type)["string"],
-    )
-    return str(out_path)
+    PNGSurface.convert(bytestring=svg_data, write_to=out_path, output_width=width, output_height=height,
+                       url_fetcher=_fetch_for_svg)
 
 
 def _pixel_cap() -> int:
@@ -132,56 +219,107 @@ def _pixel_cap() -> int:
     return MAX_IMAGE_PIXELS if pillow is None else min(MAX_IMAGE_PIXELS, 2 * pillow)
 
 
-def _source(path: str, intermediates: list[str]) -> _Source:
-    """Size and kind of one upload, read from its header without decoding it.
+def _megapixels(pixels: int) -> str:
+    """Pixels in megapixels, rounded up to a tenth, so a size just over a cap never reads as within it."""
+    return f"{math.ceil(pixels / 100_000) / 10:,.1f}".removesuffix(".0")
+
+
+def _is_server_fault(exc: BaseException) -> bool:
+    # Pillow's decoding errors carry no errno; a real I/O error (a missing
+    # file, a full disk) does, and is the server's to answer for.
+    if isinstance(exc, (MemoryError, _ImageChanged)):
+        return True
+    return isinstance(exc, OSError) and exc.errno is not None
+
+
+def _jpeg_frame(path: str) -> int | None:
+    """The JPEG's frame marker (SOFn), read from its header, or None if there is none to read."""
+    with open(path, "rb") as fh:
+        if fh.read(2) != b"\xff\xd8":
+            return None
+        while True:
+            head = fh.read(2)
+            while head[:1] == b"\xff" and head[1:] == b"\xff":  # fill bytes
+                head = head[1:] + fh.read(1)
+            if len(head) < 2 or head[0] != 0xFF:
+                return None
+            marker = head[1]
+            if marker in _DCT_FRAMES or marker in _OTHER_FRAMES:
+                return marker
+            if 0xD0 <= marker <= 0xD9 or marker == 0x01:  # no length; nothing before a frame
+                return None
+            length = int.from_bytes(fh.read(2), "big")
+            if length < 2:
+                return None
+            fh.seek(length - 2, os.SEEK_CUR)
+
+
+def _source(path: str, name: str) -> _Source:
+    """Size and kind of one upload, read without decoding it.
 
     Enforces the per-image pixel cap so callers can fail fast before any
     decoding work runs.
     """
-    ext = os.path.splitext(path)[1].lower()
-    if ext in _SVG_EXTS:
-        path = _svg_to_png(path)
-        intermediates.append(path)
-    name, cap = os.path.basename(path), _pixel_cap()
+    if os.path.splitext(path)[1].lower() in _SVG_EXTS:
+        width, height = _svg_size(path, name)
+        return _Source(path, name, width, height, "svg", "RGBA", "SVG")
+    cap = _pixel_cap()
     try:
-        with Image.open(path) as img:
+        with Image.open(path, formats=_OPEN_FORMATS) as img:
             (w, h), image_format, mode = img.size, img.format, img.mode
     except Image.DecompressionBombError:
-        raise ValueError(f"Image {name} is too large. Max {cap // 1_000_000} MP per image.") from None
-    label, format_cap = FORMAT_PIXEL_CAPS.get(image_format, ("", cap))
+        raise ImageTooLarge(f"{name} has more than {cap // 1_000_000:,} megapixels, the most one image can have.") from None
+    except UnidentifiedImageError:
+        raise UnreadableImage(f"{name} is not a {_ACCEPTED} image.") from None
+    except Exception as exc:
+        if _is_server_fault(exc):
+            raise
+        raise UnreadableImage(f"{name} could not be read as an image.") from None
+    noun, format_cap = FORMAT_PIXEL_CAPS.get(image_format, ("one image", cap))
     if image_format == "TIFF" and mode in _ONE_BYTE_MODES:
-        format_cap = cap
-    if w * h > min(cap, format_cap):
-        per = f"per {label} image" if format_cap < cap else "per image"
-        raise ValueError(
-            f"Image {name} is too large ({w}x{h} = {(w * h) // 1_000_000} MP). "
-            f"Max {min(cap, format_cap) // 1_000_000} MP {per}."
+        noun, format_cap = "one image", cap
+    if format_cap > cap:
+        noun, format_cap = "one image", cap
+    if w * h > format_cap:
+        raise ImageTooLarge(
+            f"{name} is {w:,} × {h:,} pixels, which is {_megapixels(w * h)} megapixels; "
+            f"{noun} can have at most {format_cap // 1_000_000:,} megapixels."
         )
-    if ext in _HEIC_EXTS:
+    if image_format == "HEIF":
         kind = "heic"
-    elif image_format in ("JPEG", "MPO") and mode in _COLOUR_SPACES:
+    elif image_format in ("JPEG", "MPO") and mode in _COLOUR_SPACES and _jpeg_frame(path) in _DCT_FRAMES:
         kind = "jpeg"
     else:
         kind = "decoded"
-    return _Source(path, w, h, kind, mode)
+    return _Source(path, name, w, h, kind, mode, image_format)
 
 
 def _check_decode_budget(sources: list[_Source]) -> None:
-    decoded = sum(s.width * s.height for s in sources if s.kind == "decoded") / 1e6
-    heic = sum(s.width * s.height for s in sources if s.kind == "heic") / 1e6
-    total = decoded + heic * HEIC_MEGAPIXEL_WEIGHT
+    decoded = [s for s in sources if s.kind in ("decoded", "svg")]
+    heic = [s for s in sources if s.kind == "heic"]
+    decoded_megapixels = sum(s.width * s.height for s in decoded) / 1e6
+    heic_megapixels = sum(s.width * s.height for s in heic) / 1e6
+    total = decoded_megapixels + heic_megapixels * HEIC_MEGAPIXEL_WEIGHT
     if total <= MAX_DECODED_MEGAPIXELS:
         return
     # Rounded up, so a batch just over the limit never reads as within it.
-    if not heic:
-        message = (f"One PDF can take up to {MAX_DECODED_MEGAPIXELS:,} megapixels of {_DECODED_FORMATS}; "
-                   f"these add up to {math.ceil(decoded):,}.")
-    elif not decoded:
-        message = (f"One PDF can take up to {MAX_DECODED_MEGAPIXELS / HEIC_MEGAPIXEL_WEIGHT:,.0f} megapixels "
-                   f"of HEIC photos; these add up to {math.ceil(heic):,}.")
+    if not decoded:
+        raise DecodeBudgetExceeded(
+            f"One PDF can take up to {MAX_DECODED_MEGAPIXELS / HEIC_MEGAPIXEL_WEIGHT:,.0f} megapixels "
+            f"of HEIC photos; these add up to {math.ceil(heic_megapixels):,}.")
+    jpegs = sum(s.format in ("JPEG", "MPO") for s in decoded)
+    if jpegs:
+        what = "images that have to be decoded"
+    elif heic:
+        what = "images other than JPEG"
     else:
-        message = (f"One PDF can take up to {MAX_DECODED_MEGAPIXELS:,} megapixels of images other than JPEG, "
-                   f"with HEIC photos counting half; these add up to {math.ceil(total):,}.")
+        what = _DECODED_FORMATS
+    counting = ", with HEIC photos counting half" if heic else ""
+    message = (f"One PDF can take up to {MAX_DECODED_MEGAPIXELS:,} megapixels of {what}{counting}; "
+               f"these add up to {math.ceil(total):,}.")
+    if jpegs:
+        message += (" That includes a JPEG that can't be copied into the PDF as it is." if jpegs == 1 else
+                    f" That includes {jpegs} JPEGs that can't be copied into the PDF as they are.")
     raise DecodeBudgetExceeded(message)
 
 
@@ -205,6 +343,12 @@ def _file_chunks(path: str) -> Iterator[bytes]:
             yield block
 
 
+def _sixteen_bit(mode: str) -> bool:
+    # Pillow holds 16-bit grayscale as I;16 (I;16B, I;16L...), and some 16-bit
+    # data, signed TIFF samples among it, as 32-bit I.
+    return mode.startswith("I;16") or mode == "I"
+
+
 def _deflated_rows(img: Image.Image, mode: str) -> Iterator[bytes]:
     """The image's pixels in `mode`, deflated a band of rows at a time."""
     try:
@@ -218,6 +362,11 @@ def _deflated_rows(img: Image.Image, mode: str) -> Iterator[bytes]:
             band = img.crop((0, top, width, min(height, top + rows)))
             if via:
                 band = band.convert(via)
+            if _sixteen_bit(band.mode):
+                # Each sample's high byte, as Pillow reduces a 16-bit colour
+                # PNG. Converting I;16 straight to 8 bits clips every sample
+                # over 255, which left all but the darkest 0.4% white.
+                band = band.convert("I").point(lambda value: value * (1 / 256))
             if band.mode != mode:
                 band = band.convert(mode)
             if out := compressor.compress(band.tobytes()):
@@ -227,12 +376,21 @@ def _deflated_rows(img: Image.Image, mode: str) -> Iterator[bytes]:
         img.close()
 
 
-def _image_stream(source: _Source) -> tuple[bytes, int | None, Iterable[bytes]]:
+def _image_stream(source: _Source, temp_files: list[str]) -> tuple[bytes, int | None, Iterable[bytes]]:
     """(image dictionary entries, length if known, data) for one page."""
     if source.kind == "jpeg":
         return (_image_dict(source.width, source.height, source.mode, b"/DCTDecode"),
                 os.path.getsize(source.path), _file_chunks(source.path))
-    img = Image.open(source.path)
+    if source.kind == "svg":
+        path = str(get_temp_path(f"svg_to_png_{uuid.uuid4().hex}.png"))
+        temp_files.append(path)
+        _svg_to_png(source.path, path, source.width, source.height)
+        img = Image.open(path, formats=("PNG",))
+    else:
+        img = Image.open(source.path, formats=_OPEN_FORMATS)
+    if img.size != (source.width, source.height):
+        img.close()
+        raise _ImageChanged(f"{source.name} changed while it was being read")
     if source.kind == "heic":
         # PDF has no HEVC filter: decode and embed a JPEG, as before.
         buffer = io.BytesIO()
@@ -241,9 +399,48 @@ def _image_stream(source: _Source) -> tuple[bytes, int | None, Iterable[bytes]]:
         data = buffer.getvalue()
         return _image_dict(source.width, source.height, "RGB", b"/DCTDecode"), len(data), [data]
     # ReportLab's ImageReader.getRGBData conversions: alpha dropped, every mode
-    # other than L, RGB and CMYK converted to RGB.
-    mode = img.mode[:-1] if img.mode in ("LA", "RGBA") else img.mode if img.mode in _COLOUR_SPACES else "RGB"
+    # other than L, RGB and CMYK converted to RGB; 16-bit grayscale is gray.
+    if _sixteen_bit(img.mode):
+        mode = "L"
+    elif img.mode in ("LA", "RGBA"):
+        mode = img.mode[:-1]
+    else:
+        mode = img.mode if img.mode in _COLOUR_SPACES else "RGB"
     return _image_dict(source.width, source.height, mode, b"/FlateDecode"), None, _deflated_rows(img, mode)
+
+
+def _remove(path: str) -> None:
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
+
+
+def _unreadable(source: _Source, exc: BaseException) -> UnreadableImage:
+    if source.kind == "svg":
+        return _svg_error(source.name, exc)
+    return UnreadableImage(f"{source.name} could not be read as an image.")
+
+
+def _page_image(source: _Source, temp_files: list[str]) -> tuple[bytes, int | None, Iterable[bytes]]:
+    """The page's image stream. A file that fails to read or draw, now or
+    while its rows are deflated, is refused by its name."""
+    try:
+        entries, length, chunks = _image_stream(source, temp_files)
+    except Exception as exc:
+        if _is_server_fault(exc):
+            raise
+        raise _unreadable(source, exc) from exc
+
+    def reading() -> Iterator[bytes]:
+        try:
+            yield from chunks
+        except Exception as exc:
+            if _is_server_fault(exc):
+                raise
+            raise _unreadable(source, exc) from exc
+
+    return entries, length, reading()
 
 
 class _PdfWriter:
@@ -279,7 +476,7 @@ class _PdfWriter:
             self._fh.write(chunk)
         written = self._fh.tell() - start
         if length is not None and written != length:
-            raise OSError("an image changed while it was being read")
+            raise _ImageChanged("an image changed while it was being read")
         self._fh.write(b"\nendstream\nendobj\n")
         if length_ref:
             self._object(length_ref, b"%d" % written)
@@ -315,8 +512,13 @@ class _PdfWriter:
             len(self._offsets) + 1, catalog, info, file_id, file_id, xref))
 
 
-def images_to_pdf(input_paths: list, page_size: str = "A4") -> str:
+def images_to_pdf(input_paths: list, page_size: str = "A4", names: list[str] | None = None) -> str:
+    """One PDF page per image, in order. `names` are the files' names as
+    uploaded, for refusals; they default to the paths' own."""
     ensure_temp_dir()
+    names = [os.path.basename(p) for p in input_paths] if names is None else list(names)
+    if len(names) != len(input_paths):
+        raise TypeError("images_to_pdf needs one name per path")
     started = time.monotonic()
     total_input_bytes = 0
     for p in input_paths:
@@ -337,11 +539,12 @@ def images_to_pdf(input_paths: list, page_size: str = "A4") -> str:
     if fixed_size == "auto":  # paranoia
         fixed_size = A4
 
-    # Rendered SVGs, deleted even on error.
+    # Drawn SVGs, each deleted once its page is written, and even on error.
     intermediates: list[str] = []
     try:
-        # Every size is known, and the batch checked, before any image is decoded.
-        sources = [_source(path, intermediates) for path in input_paths]
+        # Every size is known, and the batch checked, before any image is
+        # decoded or drawn.
+        sources = [_source(path, name) for path, name in zip(input_paths, names)]
         _check_decode_budget(sources)
         with open(output_path, "wb") as fh:
             writer = _PdfWriter(fh)
@@ -355,7 +558,9 @@ def images_to_pdf(input_paths: list, page_size: str = "A4") -> str:
                     ratio = min((page_width - 2 * MARGIN) / source.width, (page_height - 2 * MARGIN) / source.height)
                     width, height = source.width * ratio, source.height * ratio
                     box = ((page_width - width) / 2, (page_height - height) / 2, width, height)
-                writer.add_page(page, _image_stream(source), box)
+                writer.add_page(page, _page_image(source, intermediates), box)
+                while intermediates:
+                    _remove(intermediates.pop())
             if not sources:
                 # Empty input — write a minimal blank A4 PDF rather than crash.
                 writer.add_page(A4, None, None)
@@ -368,10 +573,7 @@ def images_to_pdf(input_paths: list, page_size: str = "A4") -> str:
         raise
     finally:
         for p in intermediates:
-            try:
-                os.unlink(p)
-            except OSError:
-                pass
+            _remove(p)
 
     duration_ms = int((time.monotonic() - started) * 1000)
     try:

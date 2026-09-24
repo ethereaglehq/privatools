@@ -14,7 +14,7 @@ from pathlib import Path
 
 import fitz
 import pytest
-from PIL import Image
+from PIL import Image, features
 
 from backend.app.routes import image_to_pdf as route
 from backend.app.services import image_to_pdf_service
@@ -65,9 +65,9 @@ def test_the_conversion_runs_in_the_bounded_heavy_pool(client, monkeypatch):
     seen: dict[str, str] = {}
     convert = image_to_pdf_service.images_to_pdf
 
-    def spy(paths, page_size="A4"):
+    def spy(paths, page_size="A4", **kwargs):
         seen["thread"] = threading.current_thread().name
-        return convert(paths, page_size=page_size)
+        return convert(paths, page_size=page_size, **kwargs)
 
     monkeypatch.setattr(image_to_pdf_service, "images_to_pdf", spy)
 
@@ -105,16 +105,29 @@ def _png_header(width: int, height: int) -> bytes:
     return b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", header) + chunk(b"IDAT", zlib.compress(bytes(64))) + chunk(b"IEND", b"")
 
 
-def test_an_image_over_pillows_pixel_limit_is_too_large_not_a_server_error(client, monkeypatch):
-    # Pillow refuses to open anything over twice its MAX_IMAGE_PIXELS (179 MP)
-    # as a possible decompression bomb. That error used to reach the route as
-    # a 500, "Processing failed", below the service's own 200 MP cap.
+def test_an_image_over_pillows_pixel_limit_is_refused_by_the_name_it_was_uploaded_under(client, monkeypatch):
+    # Pillow refuses to open anything over twice its MAX_IMAGE_PIXELS (178.96
+    # million pixels) as a possible decompression bomb. That error used to reach
+    # the route as a 500, and then as a 413 naming the server's temporary copy.
     _no_page_may_be_made(monkeypatch)
 
-    response = client.post("/api/image-to-pdf", files=[("files", ("panorama.png", _png_header(14000, 13000), "image/png"))])
+    response = client.post("/api/image-to-pdf", files=[("files", ("IMG_2041.png", _png_header(14000, 13000), "image/png"))])
 
     assert response.status_code == 413
-    assert re.fullmatch(r"Image \S+ is too large\. Max 178 MP per image\.", response.json()["detail"]), response.json()
+    assert response.json()["detail"] == "IMG_2041.png has more than 178 megapixels, the most one image can have."
+
+
+def test_an_image_over_the_general_pixel_cap_is_told_its_size_rounded_up(client, monkeypatch):
+    monkeypatch.setattr(image_to_pdf_service, "MAX_IMAGE_PIXELS", 2_000_000)
+    _no_page_may_be_made(monkeypatch)
+
+    response = client.post("/api/image-to-pdf", files=[("files", ("shot.png", _image("PNG", (2000, 1001)), "image/png"))])
+
+    assert response.status_code == 413
+    # 2,002,000 pixels: rounded down, "2 megapixels" would sit next to "at most 2".
+    assert response.json()["detail"] == (
+        "shot.png is 2,000 × 1,001 pixels, which is 2.1 megapixels; one image can have at most 2 megapixels."
+    )
 
 
 def _image(fmt: str, size=(1000, 1000), colour=(30, 90, 160)) -> bytes:
@@ -133,24 +146,28 @@ def test_formats_that_take_more_memory_to_decode_have_lower_pixel_caps():
     # 17-19 bytes per pixel; a HEIC photo takes 9 and a compressed colour TIFF
     # up to 8, PNG and BMP about 5. These caps keep one page under about 1 GB.
     assert image_to_pdf_service.FORMAT_PIXEL_CAPS == {
-        "WEBP": ("WebP", 50_000_000),
-        "HEIF": ("HEIC", 100_000_000),
-        "TIFF": ("colour TIFF", 120_000_000),
+        "WEBP": ("a WebP image", 50_000_000),
+        "HEIF": ("a HEIC photo", 100_000_000),
+        "TIFF": ("a colour TIFF", 120_000_000),
     }
 
 
-@pytest.mark.parametrize("fmt, name, label", [
-    ("WEBP", "large.webp", "WebP"), ("HEIF", "IMG_1.heic", "HEIC"), ("TIFF", "scan.tiff", "colour TIFF"),
+@pytest.mark.parametrize("fmt, name, noun", [
+    ("WEBP", "holiday-panorama.webp", "a WebP image"),
+    ("HEIF", "IMG_1.heic", "a HEIC photo"),
+    ("TIFF", "scan.tiff", "a colour TIFF"),
 ])
-def test_an_image_over_its_formats_pixel_cap_is_too_large(client, monkeypatch, fmt, name, label):
-    small = {key: (text, 1_000_000) for key, (text, _) in image_to_pdf_service.FORMAT_PIXEL_CAPS.items()}
+def test_an_image_over_its_formats_pixel_cap_is_refused_by_name_and_true_size(client, monkeypatch, fmt, name, noun):
+    small = {key: (text, 2_000_000) for key, (text, _) in image_to_pdf_service.FORMAT_PIXEL_CAPS.items()}
     monkeypatch.setattr(image_to_pdf_service, "FORMAT_PIXEL_CAPS", small)
     _no_page_may_be_made(monkeypatch)
 
-    response = client.post("/api/image-to-pdf", files=[("files", (name, _image(fmt, (1200, 1000)), "image/octet-stream"))])
+    response = client.post("/api/image-to-pdf", files=[("files", (name, _image(fmt, (2000, 1001)), "image/octet-stream"))])
 
     assert response.status_code == 413
-    assert response.json()["detail"].endswith(f"is too large (1200x1000 = 1 MP). Max 1 MP per {label} image.")
+    assert response.json()["detail"] == (
+        f"{name} is 2,000 × 1,001 pixels, which is 2.1 megapixels; {noun} can have at most 2 megapixels."
+    )
 
 
 def test_png_jpeg_and_grayscale_tiff_keep_the_general_pixel_cap(client, monkeypatch):
@@ -224,6 +241,166 @@ def test_a_mixed_batch_is_told_how_heic_counts(client, monkeypatch):
         "One PDF can take up to 2 megapixels of images other than JPEG, with HEIC photos counting half; "
         "these add up to 3."
     )
+
+
+ACCEPTED = "JPEG, PNG, WebP, HEIC, TIFF, BMP or GIF"
+
+
+def _encoded(fmt: str, **options) -> bytes:
+    if not features.check({"JPEG2000": "jpg_2000", "AVIF": "avif"}.get(fmt, fmt.lower())):
+        pytest.skip(f"this Pillow cannot write {fmt}")
+    buffer = io.BytesIO()
+    Image.new("RGB", (120, 90), (40, 90, 160)).save(buffer, fmt, **options)
+    return buffer.getvalue()
+
+
+@pytest.mark.parametrize("name", ["picture.png", "picture.webp", "IMG_1.heic"])
+@pytest.mark.parametrize("fmt, options", [("JPEG2000", {}), ("AVIF", {"quality": 50})])
+def test_a_format_none_of_the_nine_tools_takes_is_refused_whatever_its_name(client, monkeypatch, fmt, options, name):
+    # Pillow decodes JPEG 2000 and AVIF too, and did under these names, outside
+    # every per-format cap: a 36-megapixel JPEG 2000 of 540 KB took +667 MB.
+    _no_page_may_be_made(monkeypatch)
+
+    response = client.post("/api/image-to-pdf", files=[("files", (name, _encoded(fmt, **options), "application/octet-stream"))])
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"{name} is not a {ACCEPTED} image."
+
+
+def test_a_file_that_is_no_image_at_all_is_a_400_naming_it(client):
+    response = client.post("/api/image-to-pdf", files=[("files", ("notes.png", b"these are my notes", "image/png"))])
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"notes.png is not a {ACCEPTED} image."
+
+
+def test_an_image_cut_short_is_a_400_naming_it(client):
+    whole = _image("PNG", (600, 400), colour=(10, 20, 30))
+    cut = whole[: len(whole) // 2]
+
+    response = client.post("/api/image-to-pdf", files=[("files", ("shot.png", cut, "image/png"))])
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "shot.png could not be read as an image."
+
+
+def test_a_multi_picture_jpeg_is_still_embedded_as_it_is(client):
+    buffer = io.BytesIO()
+    first = Image.new("RGB", (64, 48), (200, 30, 30))
+    first.save(buffer, "MPO", save_all=True, append_images=[Image.new("RGB", (64, 48), (30, 30, 200))])
+
+    response = client.post("/api/image-to-pdf", files=[("files", ("DSC_0001.jpg", buffer.getvalue(), "image/jpeg"))])
+
+    assert response.status_code == 200, response.text
+    with fitz.open(stream=response.content, filetype="pdf") as document:
+        (xref, *_), = document[0].get_images()
+        assert document.xref_get_key(xref, "Filter") == ("name", "/DCTDecode")
+
+
+def test_a_png_named_heic_counts_in_full(client, monkeypatch):
+    # HEIC's half weight used to be decided by the file name.
+    monkeypatch.setattr(image_to_pdf_service, "MAX_DECODED_MEGAPIXELS", 2)
+    _no_page_may_be_made(monkeypatch)
+    files = [("files", (f"IMG_{i}.heic", _image("PNG"), "image/heic")) for i in range(3)]
+
+    response = client.post("/api/image-to-pdf", files=files)
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == (
+        "One PDF can take up to 2 megapixels of PNG, WebP, TIFF, BMP, GIF and SVG images; these add up to 3."
+    )
+
+
+def test_a_heic_photo_counts_half_and_becomes_a_jpeg_whatever_its_name(client, monkeypatch):
+    monkeypatch.setattr(image_to_pdf_service, "MAX_DECODED_MEGAPIXELS", 1)
+    files = [("files", (f"IMG_{i}.png", _image("HEIF"), "image/png")) for i in range(2)]
+
+    response = client.post("/api/image-to-pdf", files=files)
+
+    assert response.status_code == 200, response.text
+    with fitz.open(stream=response.content, filetype="pdf") as document:
+        for page in document:
+            (xref, *_), = page.get_images()
+            assert document.xref_get_key(xref, "Filter") == ("name", "/DCTDecode")
+
+
+def _svg(width: int, height: int, body: str = '<rect width="100%" height="100%" fill="#2a6"/>') -> bytes:
+    return f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}">{body}</svg>'.encode()
+
+
+def test_svgs_are_counted_in_the_budget_before_any_is_drawn(client, monkeypatch):
+    # A 274-byte SVG draws at up to 78 megapixels (3.9 s of CPU, +307 MB), and
+    # every SVG used to be drawn before the budget was checked.
+    monkeypatch.setattr(image_to_pdf_service, "MAX_DECODED_MEGAPIXELS", 10)
+    monkeypatch.setattr(image_to_pdf_service, "_svg_to_png", lambda *args, **kwargs: pytest.fail("must not draw"))
+    _no_page_may_be_made(monkeypatch)
+    # Each draws 2,400 pixels wide: 2,400 × 2,400 is 5.76 megapixels.
+    files = [("files", (f"logo-{i}.svg", _svg(100, 100), "image/svg+xml")) for i in range(2)]
+
+    response = client.post("/api/image-to-pdf", files=files)
+
+    assert response.status_code == 413
+    assert response.json()["detail"] == (
+        "One PDF can take up to 10 megapixels of PNG, WebP, TIFF, BMP, GIF and SVG images; these add up to 12."
+    )
+
+
+def test_an_svg_too_tall_to_draw_2400_pixels_wide_is_drawn_narrower(client, monkeypatch):
+    # 32,767 pixels is the tallest image cairo draws; past it the SVG was a 500.
+    monkeypatch.setattr(image_to_pdf_service, "_SVG_MAX_SIDE", 3000)
+
+    response = client.post("/api/image-to-pdf", files=[("files", ("timeline.svg", _svg(100, 200), "image/svg+xml"))],
+                           data={"page_size": "auto"})
+
+    assert response.status_code == 200, response.text
+    with fitz.open(stream=response.content, filetype="pdf") as document:
+        assert (document[0].rect.width, document[0].rect.height) == (1500, 3000)
+
+
+@pytest.mark.parametrize("svg, reason", [
+    (b'<svg xmlns="http://www.w3.org/2000/svg" width="10"', "could not be drawn: it is not a valid SVG."),
+    (_svg(10, 10, '<image href="http://169.254.169.254/latest" width="10" height="10"/>'),
+     "loads an image from another file or a web address, which is not allowed."),
+    (b'<svg xmlns="http://www.w3.org/2000/svg"><rect width="5" height="5"/></svg>',
+     "could not be drawn: it has no width or height."),
+])
+def test_an_svg_that_cannot_be_drawn_is_a_400_naming_it(client, svg, reason):
+    response = client.post("/api/image-to-pdf", files=[("files", ("drawing.svg", svg, "image/svg+xml"))])
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == f"drawing.svg {reason}"
+
+
+def test_only_a_refusal_for_size_is_a_413(client, monkeypatch):
+    # Any ValueError used to become a 413 carrying its text, such as Pillow's
+    # "non-hexadecimal number found in fromhex() arg at position 0".
+    def fail(*args, **kwargs):
+        raise ValueError("non-hexadecimal number found in fromhex() arg at position 0")
+
+    monkeypatch.setattr(image_to_pdf_service, "images_to_pdf", fail)
+
+    response = client.post("/api/image-to-pdf", files=_images(1))
+
+    assert response.status_code == 500
+    assert "hexadecimal" not in response.text
+
+
+def test_the_counts_the_guides_give_follow_from_the_limits():
+    megabytes = route.MAX_TOTAL_UPLOAD_BYTES / MB
+    budget = image_to_pdf_service.MAX_DECODED_MEGAPIXELS
+    # A 12-megapixel phone photo is about 3.8 MB as a JPEG, 1.8 MB as a HEIC
+    # or a lossy WebP, and 23 MB saved as a PNG.
+    assert 45 <= megabytes / 3.8 <= 55  # JPEG photos: the megabytes run out
+    assert 55 <= budget / 12.2 <= 65  # WebP photos: the megapixels run out
+    assert megabytes / 23 < 10  # PNG photos: the megabytes run out
+    assert 100 * 12.2 * image_to_pdf_service.HEIC_MEGAPIXEL_WEIGHT <= budget and 100 * 1.8 <= megabytes  # HEIC
+
+    image = " ".join(step["text"] for step in TOOL_HOWTO["image-to-pdf"])
+    for claim in ("roughly 50 phone photos", "fewer than 10", "about 60 phone-size WebP photos",
+                  "100 photos from a 12-megapixel iPhone"):
+        assert claim in image, claim
+    # A phone photo saved as PNG is not one of the ~60 that fit the megapixels.
+    assert "PNG or WebP photos" not in image
 
 
 def test_images_past_the_combined_cap_are_refused_with_a_413_naming_the_cap(client, monkeypatch):

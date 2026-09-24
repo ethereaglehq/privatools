@@ -24,6 +24,10 @@ import base64
 from urllib.parse import unquote_to_bytes
 
 
+class ExternalReferenceBlocked(ValueError):
+    """An SVG referred to something other than an inline data: URI."""
+
+
 def block_external_refs(url: str, resource_type: str | None = None) -> dict:
     """cairosvg ``url_fetcher`` that permits only inline ``data:`` URIs.
 
@@ -33,7 +37,7 @@ def block_external_refs(url: str, resource_type: str | None = None) -> dict:
     ``file://`` or network reference is ever fetched.
     """
     if not isinstance(url, str) or not url.startswith("data:"):
-        raise ValueError(f"external SVG reference blocked: {url!r}")
+        raise ExternalReferenceBlocked(f"external SVG reference blocked: {url!r}")
 
     meta, _, payload = url[len("data:") :].partition(",")
     if meta.endswith(";base64"):

@@ -2,11 +2,11 @@
   "howto": [
     {
       "name": "Upload SVG images",
-      "text": "Drop one or many .svg files, up to 100 files, 200 MB and 750 megapixels in total, counted once each drawing is rendered. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."
+      "text": "Drop one or many .svg files, up to 100 files, 200 MB and 750 megapixels in total. Each drawing counts at the size it will be rendered, 2,400 pixels wide, and the total is checked before any is drawn. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."
     },
     {
       "name": "Choose page size",
-      "text": "Auto (the default) sizes the page to the rendered image, which is 2400 points wide, so choose A4 or Letter for a printable page; each SVG is then scaled to fit while preserving its aspect ratio."
+      "text": "Auto (the default) sizes the page to the rendered image, which is 2400 points wide (narrower for a drawing over 13.6 times as tall as it is wide), so choose A4 or Letter for a printable page; each SVG is then scaled to fit while preserving its aspect ratio."
     },
     {
       "name": "Download the PDF",
@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Will my SVG stay as vector inside the PDF?",
-      "a": "No. Each SVG is rendered with CairoSVG to a PNG image 2400 pixels wide, and that image is placed on the page. It looks sharp at normal sizes, but edges soften when you zoom in far, and text cannot be selected or searched."
+      "a": "No. Each SVG is rendered with CairoSVG to a PNG image 2400 pixels wide (narrower if the drawing is very tall), and that image is placed on the page. It looks sharp at normal sizes, but edges soften when you zoom in far, and text cannot be selected or searched."
     },
     {
       "q": "What about embedded raster images inside SVG?",

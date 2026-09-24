@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "All images become a single PDF, one per page. Lossless — PNG pixels map directly to PDF image objects."
+      "text": "All images become a single PDF, one per page. The pixels are stored with lossless compression at 8 bits per channel, so a 16-bit PNG is reduced to 8 bits."
     }
   ],
   "faq": [

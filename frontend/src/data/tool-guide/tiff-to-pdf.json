@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "Will quality be preserved?",
-      "a": "For standard 8-bit TIFFs, yes: the decoded pixels are stored with lossless Flate compression and no JPEG step is added. The trade-off is file size, since nothing is recompressed to save space."
+      "a": "For standard 8-bit TIFFs, yes: the decoded pixels are stored with lossless Flate compression and no JPEG step is added. The trade-off is file size, since nothing is recompressed to save space. A 16-bit TIFF is reduced to 8 bits per channel."
     },
     {
       "q": "What about CMYK TIFFs (for print)?",

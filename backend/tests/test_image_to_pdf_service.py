@@ -67,8 +67,9 @@ def test_svg_pdf_blocks_external_image_fetches(tmp_path, monkeypatch):
     monkeypatch.setattr(cairosvg.url, "urlopen", lambda *args, **kwargs: pytest.fail("External fetch must not run"))
     source = tmp_path / "external.svg"
     source.write_text('<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="40" height="30"><image width="40" height="30" xlink:href="https://example.invalid/private.png"/></svg>')
-    with pytest.raises(ValueError, match="external SVG reference blocked"):
+    with pytest.raises(image_to_pdf_service.UnreadableImage, match="^external.svg loads an image from another file"):
         image_to_pdf_service.images_to_pdf([str(source)], "A4")
+    assert not list(tmp_path.glob("svg_to_png_*.png")), "The drawing that failed must not be left behind"
 
 
 REPO = Path(__file__).resolve().parents[2]

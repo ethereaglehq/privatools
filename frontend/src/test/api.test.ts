@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
     apiUrl,
     chooseDownloadFilename,
+    getErrorDetail,
     getErrorStatus,
     getRequestId,
     postFormData,
@@ -104,6 +105,21 @@ describe("api form-data helpers", () => {
         expect((caught as Error).message).toBe("Unsupported output format");
         expect(getErrorStatus(caught)).toBe(415);
         expect(getRequestId(caught)).toBe("req-test-123");
+        expect(getErrorDetail(caught)).toBe("Unsupported output format");
+    });
+
+    it("tells the server's own words apart from a message written for a bare status", async () => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("<html>413</html>", { status: 413 }));
+
+        let caught: unknown;
+        try {
+            await postFormData("/convert", new FormData(), { retry: noRetry });
+        } catch (err) {
+            caught = err;
+        }
+
+        expect(getErrorStatus(caught)).toBe(413);
+        expect(getErrorDetail(caught)).toBeUndefined();
     });
 
     it("rebuilds FormData bodies for retry attempts", async () => {

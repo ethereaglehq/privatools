@@ -299,7 +299,7 @@ URL: https://privatools.me/tool/png-to-pdf
 
 Convert PNG images into a single PDF document
 
-Convert PNG to PDF online for free — turn one or more PNG images into a single PDF, one image per page (transparent areas are not kept). Bulk convert screenshots, design exports, or charts. No quality loss, no watermark, no sign-up.
+Convert PNG to PDF online for free — turn one or more PNG images into a single PDF, one image per page (transparent areas are not kept). Bulk convert screenshots, design exports, or charts. Pixels are stored losslessly at 8 bits per channel; no watermark, no sign-up.
 
 ### HEIC to PDF
 
