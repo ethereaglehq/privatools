@@ -9,7 +9,10 @@ one file only half of the 500 MB request cap.
 
 These tests hold that list to the FastAPI app. A route that starts or stops
 reading ``files: list[UploadFile]`` fails here until the list agrees, instead
-of answering the site with a 422 in production.
+of answering the site with a 422 in production. They see only uploads a route
+declares as parameters: one that parses them itself with ``await
+request.form()`` is invisible here (today only ``/api/v1/jobs``, which the site
+never calls).
 """
 from __future__ import annotations
 
@@ -39,9 +42,14 @@ OTHER_UPLOAD_FIELDS = {
 
 
 def _listed_files_routes() -> list[str]:
-    text = UPLOAD_FIELDS_TS.read_text(encoding="utf-8")
+    # Drop comments first, so a route commented out of the list does not count.
+    text = re.sub(r"/\*.*?\*/|//[^\n]*", "", UPLOAD_FIELDS_TS.read_text(encoding="utf-8"), flags=re.S)
     block = re.search(r"export const FILES_FIELD_ROUTES\b[^=]*=\s*\[(.*?)\]", text, re.S)
     assert block, f"FILES_FIELD_ROUTES not found in {UPLOAD_FIELDS_TS.relative_to(ROOT)}"
+    # Only quoted strings may remain; anything else is a form this parser cannot read.
+    assert re.fullmatch(r"""\s*(?:(["'])[^"']*\1\s*,?\s*)*""", block.group(1)), (
+        f"FILES_FIELD_ROUTES must be a plain list of quoted routes: [{block.group(1)}]"
+    )
     return re.findall(r"""["']([^"']+)["']""", block.group(1))
 
 

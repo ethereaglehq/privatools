@@ -1,17 +1,19 @@
 /**
  * The form field each backend route reads an upload from.
  *
- * Every tool route reads its upload either as `file: UploadFile` or as
- * `files: list[UploadFile]`. The single-file helpers in api.ts once appended
- * the file under both names so one request suited either kind, which sent
- * every file twice and left one file only half of the 500 MB request cap. They
- * now send it once, under the name `uploadFieldFor` gives.
+ * Almost every tool route reads its upload either as `file: UploadFile` or as
+ * `files: list[UploadFile]`; backend/tests/test_upload_fields.py names the
+ * exceptions, whose pages build their own forms. The single-file helpers in
+ * api.ts once appended the file under both names so one request suited either
+ * kind, which sent every file twice and left one file only half of the 500 MB
+ * request cap. They now send it once, under the name `uploadFieldFor` gives.
  *
- * FILES_FIELD_ROUTES lists the routes that read `files`; every other route
- * reads `file`. backend/tests/test_upload_fields.py compares this list with the
- * FastAPI app in both directions, so a route that starts or stops reading
- * `files` fails CI until the list agrees, instead of answering 422 in
- * production. Keep it sorted, one path per line, without the /api prefix.
+ * FILES_FIELD_ROUTES lists the routes that read `files`; the helpers send
+ * `file` to every other route. backend/tests/test_upload_fields.py compares
+ * this list with the FastAPI app in both directions, so a route that starts or
+ * stops reading `files` fails CI until the list agrees, instead of answering
+ * 422 in production. Keep it a plain list of quoted paths, sorted, one per
+ * line, without the /api prefix.
  */
 export const FILES_FIELD_ROUTES: readonly string[] = [
     "/audio-merge",
