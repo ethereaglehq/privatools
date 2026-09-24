@@ -1785,7 +1785,8 @@ def _comparison_body(entry: dict) -> str:
     parts: list[str] = []
     if reviewed := _reviewed_date(entry):
         parts.append(f'<p>By PrivaTools · Facts about {escape(name)} checked on <time datetime="{reviewed}">{reviewed}</time> '
-                     'against its official pages, which are linked beside each fact and listed under Sources.</p>')
+                     'against its official pages, which are listed under Sources and linked beside each row of the '
+                     'side-by-side table.</p>')
     if summary := entry.get("summary"):
         parts.append(f"<h2>Where each one fits</h2><p>{escape(summary)}</p>")
     if overview := _strings(entry, "overview"):
@@ -1827,8 +1828,9 @@ def _comparison_directory_body() -> str:
     parts = [
         "<p>Each comparison sets PrivaTools beside one product and answers practical questions such as what it costs, "
         "which limits apply to free and paid use, where your files are processed, whether you need an account and "
-        "which platforms it runs on. Every fact about another product comes from its own official pages, linked beside "
-        "the fact, and each page ends with when to choose that product and when to choose PrivaTools.</p>",
+        "which platforms it runs on. Every fact about another product comes from its own official pages. Each row of "
+        "a comparison's side-by-side table links its source, every comparison lists all the pages it used, and each "
+        "one says when to choose that product and when to choose PrivaTools.</p>",
     ]
     if reviewed:
         parts.append(f'<p>Most recent check: <time datetime="{reviewed[-1]}">{reviewed[-1]}</time>.</p>')

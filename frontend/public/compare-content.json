@@ -29,9 +29,15 @@
         "sourceUrl": "https://www.remove.bg/help/a/can-i-use-remove-bg-for-commercial-purposes"
       },
       {
-        "label": "File limits",
-        "privatools": "JPG, PNG, WebP or BMP. The browser engine takes up to 40 megapixels; the server engine refuses images over 300 megapixels and takes files of about 250 MB.",
-        "competitor": "JPG, PNG or WebP up to 22 MB and 50 megapixels; website previews are capped at 0.25 megapixels.",
+        "label": "File types and size",
+        "privatools": "JPG, PNG, WebP or BMP; the server engine takes files of about 250 MB.",
+        "competitor": "JPG, PNG or WebP files of up to 22 MB.",
+        "sourceUrl": "https://www.remove.bg/help/a/what-image-formats-are-supported"
+      },
+      {
+        "label": "Resolution",
+        "privatools": "The browser engine takes up to 40 megapixels; the server engine refuses images over 300 megapixels.",
+        "competitor": "Up to 50 megapixels in and out, with larger images resized; website previews are capped at 0.25 megapixels.",
         "sourceUrl": "https://www.remove.bg/help/a/what-is-the-maximum-image-resolution-file-size"
       },
       {
@@ -76,7 +82,7 @@
       {
         "heading": "Replacing it with PrivaTools",
         "body": [
-          "PrivaTools' Background Remover returns a transparent PNG at the original dimensions, without an account, credits or a personal-use restriction. Its default server engine runs the compact U-2-Net model, u2netp, on the PrivaTools server and accepts five runs a minute from one visitor. The in-browser engine downloads the same model, about 4.4 MB plus its runtime, and then processes images on your device, so they are not uploaded for that path.",
+          "PrivaTools' Background Remover returns a transparent PNG at the original dimensions, without an account, credits or a personal-use restriction. Its default server engine runs the compact U-2-Net model, u2netp, on the PrivaTools server and accepts about five runs a minute from one visitor. The in-browser engine downloads the same model, about 4.4 MB plus its runtime, and then processes images on your device, so they are not uploaded for that path.",
           "remove.bg's home page highlights bulk editing of up to 500 images a minute and an AI background generator, and its desktop app page says its algorithms are trained to handle difficult elements such as hair. PrivaTools only produces the cut-out, and u2netp is a small model: hair, fur, glass and motion blur can come out rough. We have not compared the two services, so test your hardest images before you move a product catalogue."
         ]
       }
@@ -181,7 +187,7 @@
     "category": "Everyday PDF",
     "highlights": [
       "Per-tool limits on the free Basic plan, lifted by Premium; PrivaTools has one free tier.",
-      "Premium desktop tools process files on your computer; PrivaTools runs in the browser.",
+      "Premium desktop tools process files on your computer; nearly all of PrivaTools' PDF tools upload to its server.",
       "Files deleted within two hours there, or sooner by hand; PrivaTools cleans up after each response."
     ],
     "overview": [
@@ -197,7 +203,7 @@
       },
       {
         "label": "Free-plan limits",
-        "privatools": "No daily task count; heavy tools such as OCR take five runs a minute from one visitor.",
+        "privatools": "No daily task count; heavy tools such as OCR take about five runs a minute from one visitor.",
         "competitor": "Basic processes a limited number of documents, and tools such as OCR to Word and PDF/A are Premium only.",
         "sourceUrl": "https://www.ilovepdf.com/pricing"
       },
@@ -243,7 +249,7 @@
         "heading": "Reading the Basic plan",
         "body": [
           "iLovePDF's pricing page says the free plan processes a limited number of documents, and its plan table lists limits per tool. On Basic, merging takes up to 25 files and 100 MB, compression two files up to 200 MB, and Office conversion and OCR one file of 15 MB; editing and splitting take one file on every plan. Tools including OCR conversion to Word or Excel and PDF/A are marked as not included in Basic, and Premium raises most per-task limits to 4 GB.",
-          "PrivaTools applies the same limits to everyone. An upload request can be 500 MB, which is about 250 MB for one file on most pages because the page sends the file twice. Standard tool pages queue up to 25 files, but heavy tools accept five runs a minute from one visitor, so in a long queue some files are marked failed and need a retry. Merge, PDF to Word, OCR and Protect stop waiting after 60 seconds, upload included, so a large file on a slow connection can fail. There is no paid tier to lift any of this."
+          "PrivaTools applies the same limits to everyone. An upload request can be 500 MB, which is about 250 MB for one file on most pages because the page sends the file twice. Standard tool pages queue up to 25 files, but heavy tools accept about five runs a minute from one visitor, so in a long queue some files are marked failed and need a retry. Merge, PDF to Word, OCR and Protect stop waiting after 60 seconds, upload included, so a large file on a slow connection can fail. There is no paid tier to lift any of this."
         ]
       },
       {
@@ -342,7 +348,7 @@
     ],
     "overview": [
       "Smallpdf's pricing page lists Free, Pro, Team and Business plans. The free plan offers limited document downloads, limited mobile app access and a Sign.com account limited to two documents a month. Pro adds unlimited downloads, text editing, OCR to Word, Excel and PowerPoint, strong compression, unlimited AI tools and unlimited mobile access. Its download page offers apps for Windows, iOS and Android, and marks its macOS app as unsupported since 1 October 2021.",
-      "Uploaded files are processed on Hetzner servers in the European Union; the privacy notice says they may be stored there temporarily and that this does not involve permanent storage. The support page says files are removed an hour after processing for most tools. AI features use OpenAI, and Smallpdf's AI terms say usage data is not shared with OpenAI to train OpenAI's models and is deleted from Smallpdf's own database after 90 days. It states that it is ISO/IEC 27001 certified."
+      "Uploaded files are processed on Hetzner servers in the European Union; the privacy notice says they may be stored there temporarily and that this does not involve permanent storage. The support page says files are removed an hour after processing for most tools. AI features use OpenAI. Smallpdf's AI terms treat what you give its AI tools and what they return as your Customer Data, which Smallpdf does not use, or let others use, to train the models behind those tools; usage data is not shared with OpenAI for training and is deleted from Smallpdf's own database after 90 days. It states that it is ISO/IEC 27001 certified."
     ],
     "features": [
       {
@@ -353,7 +359,7 @@
       },
       {
         "label": "Free-plan limits",
-        "privatools": "No daily count; five runs a minute per visitor on heavy tools.",
+        "privatools": "No daily count; about five runs a minute per visitor on heavy tools.",
         "competitor": "Most tools carry a daily download limit, PDF OCR included; AI tools allow up to 4 documents a day.",
         "sourceUrl": "https://smallpdf.com/pricing"
       },
@@ -399,7 +405,7 @@
         "heading": "What the free plan leaves out",
         "body": [
           "Smallpdf meters its free plan by day. Most tools, including PDF OCR and conversion to and from Word, carry a daily download limit, and the mobile apps a daily task limit. Strong compression, batch processing, OCR that outputs Word, Excel or PowerPoint, text editing and image extraction are Pro features. Its support page says free users can process up to two conversions a day.",
-          "PrivaTools does not count use by day. Its strongest compression preset, OCR and PDF to Word are available without an account, but heavy tools accept five runs a minute from one visitor, so a long batch partly fails and needs retries, and the OCR and PDF to Word pages stop waiting after 60 seconds, upload included. It cannot edit existing PDF text on any plan: Edit PDF adds new content on top of the page."
+          "PrivaTools does not count use by day. Its strongest compression preset, OCR and PDF to Word are available without an account, but heavy tools accept about five runs a minute from one visitor, so a long batch partly fails and needs retries, and the OCR and PDF to Word pages stop waiting after 60 seconds, upload included. It cannot edit existing PDF text on any plan: Edit PDF adds new content on top of the page."
         ]
       },
       {
@@ -423,7 +429,7 @@
     ],
     "tradeoffs": [
       "Its privacy notice gives different deletion rules for signed-in and signed-out use; check which applies before uploading sensitive files.",
-      "PrivaTools' free runs have their own ceiling: heavy tools take five a minute from one visitor.",
+      "PrivaTools' free runs have their own ceiling: heavy tools take about five a minute from one visitor.",
       "We did not benchmark output quality or speed."
     ],
     "sources": [
@@ -488,13 +494,13 @@
     "summary": "Adobe Acrobat spans free Acrobat Reader, free online tools with limits on free use, and paid Acrobat Express, Standard, Pro and Studio plans that add, depending on the plan, AI Assistant, editing of existing text, signature requests, redaction and comparison. PrivaTools is free without an account for any tool and covers media and developer tasks too, but it cannot edit existing PDF text or run signature workflows, and it has no desktop app.",
     "category": "Desktop & teams",
     "highlights": [
-      "Most free online tools allow one free transaction without signing in; PrivaTools has no transaction count, only a five-a-minute limit on heavy tools.",
+      "Most free online tools allow one free transaction without signing in; PrivaTools has no transaction count, only a limit of about five runs a minute on heavy tools.",
       "Existing-text editing on paid plans, which PrivaTools does not offer.",
       "Certificate signatures and signature requests; PrivaTools places signature images only."
     ],
     "overview": [
-      "Adobe Acrobat comes as free Acrobat Reader, free online tools and subscription plans: Acrobat Express, Standard, Pro and Studio. Editing text and images requires Standard or Pro, not Reader. Standard adds signature requests with tracking; Pro adds version comparison, redaction, bulk e-signature requests, OCR and web forms. Acrobat Express combines AI Assistant, PDF Spaces and Adobe Express Premium, and Studio includes everything in Pro plus those three.",
-      "Acrobat is available on desktop, web and mobile, plus browser extensions; the desktop apps need 64-bit Windows 10 or 11, or macOS 13 or later. Acrobat's online services upload files to Adobe cloud storage and protect them with AES-256 encryption and TLS 1.2. If you don't sign in, Adobe soon deletes the file from its servers even after you download it, and Adobe says it does not use your documents or data to train AI models."
+      "Adobe Acrobat comes as free Acrobat Reader, free online tools and subscription plans: Acrobat Express, Standard, Pro and Studio. Editing text and images requires Standard or Pro, not Reader. Standard adds signature requests with tracking; Pro adds version comparison, redaction, bulk e-signature requests, OCR and web forms. Acrobat Express combines AI Assistant, PDF Spaces and Adobe Express Premium, and Studio includes everything in Pro plus those three. Adobe also sells Acrobat Pro 2024 as a one-time purchase that gives three years of access to the desktop app.",
+      "Acrobat is available on desktop, web and mobile, plus browser extensions; the desktop apps need 64-bit Windows 10 or 11, or macOS 13 or later. Acrobat's online services upload files to Adobe cloud storage, which runs in data centres in North America, EMEA and Japan, and protect them with AES-256 encryption and TLS 1.2. If you don't sign in, Adobe soon deletes the file from its servers even after you download it, and Adobe says it does not use your documents or data to train AI models."
     ],
     "features": [
       {
@@ -505,7 +511,7 @@
       },
       {
         "label": "Free online limits",
-        "privatools": "No task count, though heavy tools are limited to five runs a minute.",
+        "privatools": "No task count, though heavy tools are limited to about five runs a minute.",
         "competitor": "Without signing in, most tools allow one free transaction and one download; signed in, one premium-tool transaction every 30 days.",
         "sourceUrl": "https://helpx.adobe.com/document-cloud/faq/try-acrobat-online-services.html"
       },
@@ -518,8 +524,8 @@
       {
         "label": "Where files are processed",
         "privatools": "No cloud library: server tools work on temporary copies, and browser-only tools process on your device.",
-        "competitor": "Online tools upload to Adobe cloud storage, in data centres in North America, EMEA and Japan.",
-        "sourceUrl": "https://helpx.adobe.com/acrobat/web/manage-cloud-storage/manage-adobe-cloud-files/cloud-storage-data-centers.html"
+        "competitor": "Online tools upload to Adobe cloud storage; if you don't sign in, Adobe soon deletes the file from its servers, even after you download it.",
+        "sourceUrl": "https://helpx.adobe.com/document-cloud/faq/try-acrobat-online-services.html"
       },
       {
         "label": "Account",
@@ -557,13 +563,13 @@
         "heading": "Free online tools and their limits",
         "body": [
           "Adobe's free online tools come with limits on free use. Without an Adobe ID, most tools let you complete one free transaction and download the result once; signed in, you can share, fill, sign and comment on PDFs for free and make one free transaction with a premium tool every 30 days. Removing a password needs a subscription or the seven-day Acrobat Pro trial, and a password added with the free Protect PDF tool cannot then be removed with it. Page tools such as rotate and extract handle up to 1,500 pages.",
-          "PrivaTools has no trial logic. Protect PDF, Unlock PDF, compression, conversion, OCR and redaction are free on every run and need no sign-in, within the 500 MB upload cap, the five-a-minute limit on heavy tools and a 60-second wait on pages such as Protect, OCR and PDF to Word."
+          "PrivaTools has no trial logic. Protect PDF, Unlock PDF, compression, conversion, OCR and redaction are free on every run and need no sign-in, within the 500 MB upload cap, a limit of about five runs a minute on heavy tools and a 60-second wait on pages such as Protect, OCR and PDF to Word."
         ]
       },
       {
         "heading": "Where Acrobat does more",
         "body": [
-          "Acrobat edits existing text and images and adjusts the formatting, compares versions, creates web forms and reusable e-sign templates, repairs accessibility tagging in Pro and saves PDF/A, PDF/X and PDF/E files in Pro. It signs with certificates and validates signed files, and Standard and above request signatures and track responses. Its AI Assistant, included in Acrobat Express and Studio, sends content extracted from your documents to Microsoft Azure OpenAI split and encrypted, and Adobe says the documents themselves are not stored there.",
+          "Acrobat edits existing text and images and adjusts the formatting, compares versions, creates web forms and reusable e-sign templates, repairs accessibility tagging in Pro and saves PDF/A, PDF/X and PDF/E files in Pro. It signs with certificates and validates signed files, and Standard and above request signatures and track responses. Its AI Assistant, included in Acrobat Express and Studio or added to other plans, sends content extracted from your documents to Microsoft Azure OpenAI split and encrypted, and Adobe says the documents themselves are not stored there.",
           "PrivaTools covers parts of this with separate free tools: Compare PDF shows visual or text differences, Form Creator adds fillable fields, the Accessibility Checker audits tagging without changing the file, Redact PDF removes the content under each box, and Verify Digital Signature checks whether each signature still matches the file, without checking the certificate against a trust list. It cannot edit existing text or sign with a certificate, and its document AI tools use on-device models or your own provider key."
         ]
       }
@@ -596,6 +602,10 @@
       {
         "label": "Adobe Acrobat Express",
         "url": "https://www.adobe.com/acrobat/acrobat-express.html"
+      },
+      {
+        "label": "Acrobat Pro free trial and AI Assistant Plus",
+        "url": "https://www.adobe.com/acrobat/free-trial-download.html"
       },
       {
         "label": "Acrobat online services: free use and limits",
@@ -679,7 +689,7 @@
       },
       {
         "label": "Free-use limits",
-        "privatools": "No hourly allowance; OCR and conversions are limited to five runs a minute.",
+        "privatools": "No hourly allowance; OCR and heavy conversions such as PDF to Word are limited to about five runs a minute.",
         "competitor": "Most free web tools: documents up to 200 pages or 50 MB, and 3 tasks per hour.",
         "sourceUrl": "https://www.sejda.com/pdf-editor"
       },
@@ -725,7 +735,7 @@
         "heading": "How the free limits work",
         "body": [
           "Sejda's tool pages state its free web limits. Most accept documents up to 200 pages or 50 MB, Merge up to 50 pages or 50 MB, compression up to 100 MB and OCR up to 10 pages, each with three tasks per hour. The free Desktop tier allows three tasks per day. A Week Pass lifts the web limits for seven days as a one-time charge that does not renew, and prices are in US dollars with tax calculated at checkout.",
-          "PrivaTools has no task allowance to spend. Its limits are technical instead: 500 MB per upload request, about 250 MB per file on most tool pages, five runs a minute from one visitor on heavy jobs such as OCR and conversions, and a 60-second wait on several of those pages, upload included. With nothing to buy, there is also no paid route past those limits on the public site."
+          "PrivaTools has no task allowance to spend. Its limits are technical instead: 500 MB per upload request, about 250 MB per file on most tool pages, about five runs a minute from one visitor on heavy jobs such as OCR and PDF to Word, and a 60-second wait on several of those pages, upload included. With nothing to buy, there is also no paid route past those limits on the public site."
         ]
       },
       {
@@ -869,8 +879,8 @@
       {
         "label": "Platforms",
         "privatools": "Any modern browser; installable as a web app.",
-        "competitor": "Creator for Windows only, also in the Microsoft Store; the online tools run in the browser.",
-        "sourceUrl": "https://tools.pdf24.org/en/creator"
+        "competitor": "The online tools install as an app on phones, tablets and computers; the offline PDF24 Creator is for Windows.",
+        "sourceUrl": "https://tools.pdf24.org/en/install-app"
       }
     ],
     "sections": [
@@ -901,7 +911,7 @@
     ],
     "tradeoffs": [
       "PDF24's Creator manual documents a setting that stops Creator from using the online converter when no local converter is available; check it if files must stay on the PC.",
-      "PrivaTools' heavy tools take five runs a minute from one visitor, and several of their pages stop waiting after 60 seconds.",
+      "PrivaTools' heavy tools take about five runs a minute from one visitor, and several of their pages stop waiting after 60 seconds.",
       "We did not benchmark output quality for either product."
     ],
     "sources": [
@@ -1053,7 +1063,7 @@
       "You want AI that runs on your computer inside a desktop editor."
     ],
     "choosePrivaTools": [
-      "You need to add text, sign, annotate or redact PDFs without a licence or trial.",
+      "You need redaction or page editing without a licence or trial.",
       "Your files exceed the caps of Foxit's free online converters and you do not want the desktop editor.",
       "You want image, audio, video and developer tools, and code you can host."
     ],
@@ -1157,7 +1167,7 @@
       },
       {
         "label": "Free-plan limits",
-        "privatools": "No account or daily count; each heavy tool allows five runs a minute.",
+        "privatools": "No account or daily count; each heavy tool allows about five runs a minute.",
         "competitor": "Free: files up to 10 MB, AI agent 3 questions a day, ChatPDF 1 file a day, no batch processing; paid plans lift the size cap.",
         "sourceUrl": "https://lightpdf.com/pricing"
       },
@@ -1202,7 +1212,7 @@
       {
         "heading": "AI in the plan or on your own key",
         "body": [
-          "LightPDF includes AI in its plans and meters it in credits: its pricing page lists 20 credits per ChatPDF chat, 5 per AI agent request and 5 a page for translation, or 40 a page for scanned PDFs, with extra credits for sale. Free users get three AI agent questions a day and one ChatPDF file a day of up to 100 pages. It says your data and chat contents are not used to train AI models.",
+          "LightPDF includes AI in its plans and meters it in credits: its pricing page lists 20 credits per ChatPDF chat, 5 per AI chat with the AI agent, whose other tasks vary in cost, and 5 a page for translation, or 40 a page for scanned PDFs, with extra credits for sale. Free users get three AI agent questions a day and one ChatPDF file a day of up to 100 pages.",
           "PrivaTools does not resell AI. Chat with PDF, and the provider modes of Summarize, Translate and Transcribe, send requests from your browser straight to the provider whose key you add, and that provider bills you. Summarize, Translate and Transcribe can also run on-device models after a one-time download, with nothing sent to a provider."
         ]
       },
@@ -1226,7 +1236,7 @@
     ],
     "tradeoffs": [
       "PrivaTools' Chat with PDF needs your own provider key, and that provider's terms and charges apply.",
-      "PrivaTools' conversions cost nothing but are rate-limited, at five runs a minute on heavy tools.",
+      "PrivaTools' conversions cost nothing but are rate-limited, at about five runs a minute on heavy tools.",
       "AI answers from either product need checking against the document; we did not test their accuracy."
     ],
     "sources": [
@@ -1305,7 +1315,7 @@
     ],
     "overview": [
       "Stirling PDF's README calls it open-core: its repository is MIT-licensed except for listed directories that carry a proprietary Stirling PDF User License, and production use of that proprietary code needs a valid licence. It offers desktop apps for Windows, macOS and Linux, self-hosting with Docker, Kubernetes or a Java .jar, and a hosted version at stirling.com/app.",
-      "Its pricing page lists a Free plan at $0 a month, a Team plan at $99 a month with 100 users included, an Enterprise plan on custom terms, and a PDF Processor billed at 1 cent per credit. Its documentation adds that a Team licence covers one installation, and that the licence tier decides which features, such as single sign-on, SAML and audit logs, are unlocked."
+      "Its pricing page lists a Free plan at $0 a month, a Team plan at $99 a month with 100 users included, an Enterprise plan on custom terms, and a PDF Processor billed at 1 cent per credit. Its documentation adds that a Team licence covers one installation, that the free plan covers up to five users and already includes OAuth2 single sign-on with Google, GitHub, Keycloak or any OIDC provider, and that SAML sign-in and audit logs come with Enterprise."
     ],
     "features": [
       {
@@ -1317,8 +1327,8 @@
       {
         "label": "Free tier",
         "privatools": "No user or seat limit, on the public site or your own server.",
-        "competitor": "The free self-hosted tier covers up to 5 users; more need a Team or Enterprise plan.",
-        "sourceUrl": "https://docs.stirlingpdf.com/Modes%20and%20Licensing/"
+        "competitor": "The Free plan covers up to 5 users, with all PDF operations and OAuth2 single sign-on; more users need Team or Enterprise.",
+        "sourceUrl": "https://docs.stirlingpdf.com/Paid-Offerings/"
       },
       {
         "label": "File size",
@@ -1329,8 +1339,8 @@
       {
         "label": "Where files are processed",
         "privatools": "In your browser for browser-only tools, otherwise on privatools.me or your own server.",
-        "competitor": "Desktop local mode runs basic tools on the device with no sign-in; OCR, conversion, compression and repair need a server or its cloud.",
-        "sourceUrl": "https://docs.stirlingpdf.com/Modes%20and%20Licensing/"
+        "competitor": "The desktop app runs its Ultra-Lite tools on your device, fully offline; OCR, Office conversions and other Full-only tools need Stirling Cloud or your own server.",
+        "sourceUrl": "https://docs.stirlingpdf.com/Installation/Versions/"
       },
       {
         "label": "Account",
@@ -1353,7 +1363,7 @@
       {
         "label": "Team administration",
         "privatools": "Optional accounts, with Google or GitHub sign-in through Clerk, issue API keys; no roles, SAML or audit logs.",
-        "competitor": "OAuth2 single sign-on on Team; SAML sign-in and audit logs on Enterprise.",
+        "competitor": "OAuth2 single sign-on with Google, GitHub, Keycloak or any OIDC provider on every plan, Free included; SAML sign-in and audit logs on Enterprise.",
         "sourceUrl": "https://docs.stirlingpdf.com/Paid-Offerings/"
       }
     ],
@@ -1361,7 +1371,7 @@
       {
         "heading": "Licences and what you pay for",
         "body": [
-          "Stirling PDF's free tier suits individuals and small groups: its documentation limits free self-hosted installations to five users and says a Team licence, at $99 a month, covers one installation with 100 users. Enterprise adds SAML sign-in, audit logs, SCIM provisioning and air-gapped deployment. Because proprietary directories sit inside an otherwise MIT repository, check which features your deployment uses before assuming all of it is freely licensed.",
+          "Stirling PDF's free tier suits individuals and small groups: its documentation limits the free plan to five users, who can already sign in with OAuth2 single sign-on, and says a Team licence, at $99 a month, covers one installation with 100 users. Enterprise adds SAML sign-in, audit logs, SCIM provisioning and air-gapped deployment. Because proprietary directories sit inside an otherwise MIT repository, check which features your deployment uses before assuming all of it is freely licensed.",
           "PrivaTools has no licence tiers. The same code runs the public site and any copy you host, its own code is MIT-licensed, and nothing is unlocked by payment. The trade-off is that PrivaTools has no organisation features: accounts exist to issue developer API keys, not to manage teams."
         ]
       },
@@ -1375,7 +1385,7 @@
     ],
     "chooseCompetitor": [
       "You want a PDF editor that also runs as a desktop app on Windows, macOS or Linux.",
-      "Your organisation needs single sign-on, audit logs or user management and can budget for a licence.",
+      "You want user accounts with OAuth2 single sign-on, or can budget for Enterprise to add SAML sign-in and audit logs.",
       "You want to automate PDF work with its pipelines, folder scanning or REST API on your own server.",
       "You need certificate signing from a USB token or smart card on the desktop."
     ],
@@ -1387,7 +1397,7 @@
     ],
     "tradeoffs": [
       "Self-hosting either product makes you responsible for updates, backups, logs and capacity, and for how the copy you run handles files.",
-      "PrivaTools' own code is MIT-licensed, but it depends on libraries with other licences, including PyMuPDF under the AGPL; check them before you redistribute a modified copy.",
+      "PrivaTools' own code is MIT-licensed, but it depends on libraries with other licences, including PyMuPDF under the AGPL; check them before you redistribute a modified copy or run one as a network service, which the AGPL also covers.",
       "We did not benchmark conversion quality, OCR accuracy or speed for either product."
     ],
     "sources": [
@@ -1400,8 +1410,12 @@
         "url": "https://www.stirling.com/download"
       },
       {
-        "label": "Stirling PDF modes and licensing",
+        "label": "Stirling PDF modes",
         "url": "https://docs.stirlingpdf.com/Modes%20and%20Licensing/"
+      },
+      {
+        "label": "Stirling PDF versions and desktop tools",
+        "url": "https://docs.stirlingpdf.com/Installation/Versions/"
       },
       {
         "label": "Stirling PDF paid offerings",
@@ -1529,8 +1543,8 @@
       {
         "heading": "The free plan in practice",
         "body": [
-          "DocHub's free plan fits a few documents a month: its core features share a limit of three uses a month, and Basic keeps that cap on selected Pro features while adding unlimited downloads, self-signing and templates. Pro makes PDF editing and sign requests unlimited.",
-          "PrivaTools has no monthly allowance, but it has other limits: 500 MB per upload request, lower caps on some tools, such as 200 MB for Mute Video and Trim Media, a 60-second wait on pages such as OCR and PDF to Word, a five-minute limit on the server, and five runs a minute on heavy tools. It also has no account to keep documents in, so download a completed form before you leave the page."
+          "DocHub's free plan suits occasional use: its core features share a limit of three uses a month, and Basic keeps that cap on selected Pro features while adding unlimited downloads, self-signing and templates. Pro makes PDF editing and sign requests unlimited.",
+          "PrivaTools has no monthly allowance, but it has other limits: 500 MB per upload request, lower caps on some tools, such as 200 MB for Mute Video and Trim Media, a 60-second wait on pages such as OCR and PDF to Word, a five-minute limit on the server, and about five runs a minute on heavy tools. It also has no account to keep documents in, so download a completed form before you leave the page."
         ]
       }
     ],
@@ -1542,7 +1556,7 @@
     ],
     "choosePrivaTools": [
       "You need a conversion, page operation or form fill without creating an account.",
-      "You handle more than three documents a month and do not want a subscription.",
+      "You would use core features such as editing and signing more than three times a month, without a subscription.",
       "You want conversions, OCR, compression and media tools alongside PDF editing."
     ],
     "tradeoffs": [
@@ -1991,14 +2005,14 @@
         "heading": "Two different kinds of breadth",
         "body": [
           "Both toolboxes are broad, in different directions. TinyWow's catalogue lists an AI Humanizer among its writing tools, alongside a PDF translator, e-signing, audio to text, background removal, a TikTok video downloader and a photo clean-up tool that uses AI to remove unwanted objects from images. PrivaTools has no AI writing tools or video downloaders, though it does generate placeholder text, passwords, UUIDs and .gitignore files. Its Remove Image Watermark rebuilds a small area you select from the surrounding pixels, without AI, so it suits logos and marks rather than whole objects.",
-          "PrivaTools' breadth is in file operations such as PDF editing and conversion, OCR, audio and video conversion, archives and developer formats. Most of its developer and text tools run in the browser, while its PDF, media and archive tools upload to its server."
+          "PrivaTools' breadth is in file operations such as PDF editing and conversion, OCR, audio and video conversion, archives and developer formats. Most of its developer and text tools run in the browser, while most of its PDF, media and archive tools upload to its server."
         ]
       },
       {
         "heading": "How files are handled",
         "body": [
           "TinyWow processes uploads on servers in the United States. Its privacy policy, last revised in March 2023, says files are deleted one hour after processing; its tool pages say one hour after upload, and its terms say 15 minutes after processing. The privacy policy also says TinyWow does not sell information about its users or their files.",
-          "PrivaTools labels each tool before it runs: browser tools keep the input on the device, and server tools write it to temporary per-request storage that is cleaned after the response. It uses Google Analytics by default for page visits, where visits come from, including campaign tags, and each tool run with its outcome and, for failures, a fixed category. Analytics never receives file names or contents, and you can switch it off on the Privacy page."
+          "PrivaTools labels each tool before it runs: browser tools keep the input on the device, and server tools write it to temporary per-request storage that is cleaned after the response. It uses Google Analytics by default to record page visits and where they come from, including campaign tags; Google's automatic scroll, outbound-click and video events; and each tool run with its outcome and, for failures, a fixed category. Analytics never receives file names or contents, and you can switch it off on the Privacy page."
         ]
       }
     ],
@@ -2013,7 +2027,7 @@
       "You want to read the code or run the service on your own server."
     ],
     "tradeoffs": [
-      "PrivaTools' free server tools are rate-limited, with heavy jobs capped at five runs a minute from one visitor.",
+      "PrivaTools' free server tools are rate-limited, with heavy jobs capped at about five runs a minute from one visitor.",
       "We did not benchmark output quality for either toolbox."
     ],
     "sources": [
@@ -2070,7 +2084,7 @@
     "slug": "ihatepdf",
     "name": "ihatepdf.cv",
     "title": "PrivaTools vs ihatepdf.cv: browser-only PDF tools compared",
-    "description": "ihatepdf.cv runs most PDF tools in the browser but sends text to AI services for chat and summaries; PrivaTools mixes browser and server tools openly.",
+    "description": "ihatepdf.cv runs most PDF tools in the browser but sends text to AI services for chat and summaries; PrivaTools mixes browser and server tools.",
     "summary": "Both sites let you work without an account. ihatepdf.cv says its PDF tools run in the browser with WebAssembly, is free without ads and is funded by donations; its terms say the code is not open source. PrivaTools runs some tools in the browser and others on its server, covers images, media and developer tasks too, and publishes its own code under the MIT licence.",
     "category": "Local & self-hosted",
     "highlights": [
@@ -2127,7 +2141,7 @@
       },
       {
         "label": "Analytics",
-        "privatools": "Google Analytics on by default: visits, referrers, campaign tags and tool outcomes, never file names or contents.",
+        "privatools": "Google Analytics on by default: visits, referrers, campaign tags, tool outcomes and Google's scroll, outbound-click and video events, never file names or contents.",
         "competitor": "Microsoft Clarity records how pages are used, with the tool workspace masked.",
         "sourceUrl": "https://www.ihatepdf.cv/about"
       }
