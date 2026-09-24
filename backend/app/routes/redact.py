@@ -27,7 +27,8 @@ REDACTIONS_DESCRIPTION = (
     "JSON array of rectangles to redact. Each has `page`, the page's index counted "
     "from 0 (0 is the first page), and either `x`, `y`, `width` and `height` or "
     "`x0`, `y0`, `x1` and `y1`, in points (1/72 inch) from the top-left corner of "
-    "the page as stored, ignoring any /Rotate setting it has. Optional `code`, an "
+    "the page's visible area (its CropBox), before any /Rotate setting it has is "
+    "applied. Optional `code`, an "
     "exemption code of up to 32 characters, is printed inside the box."
 )
 

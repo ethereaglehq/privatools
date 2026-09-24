@@ -14,7 +14,7 @@
     },
     {
       "name": "Apply redactions and download",
-      "text": "Click Redact. The text and image pixels under the boxes are removed from the file, not just covered, so removing a black box brings nothing back. The questions below say what redaction leaves in place."
+      "text": "Click Redact. The text and image pixels under the boxes are removed from the file, not just covered, so removing a black box does not bring them back. The questions below say what redaction leaves in place."
     }
   ],
   "faq": [
@@ -32,7 +32,7 @@
     },
     {
       "q": "Will the redacted PDF still be searchable for non-redacted text?",
-      "a": "Yes. Text outside the boxes stays searchable, including the hidden text layer that OCR adds to a scan, and bookmarks are kept. Two things go beyond a box: a character it covers only in part is removed whole, and a link whose clickable area overlaps it is removed."
+      "a": "Yes. Text outside the boxes stays searchable, including the hidden text layer that OCR adds to a scan, and bookmarks are kept. Three things go beyond a box: a character it covers only in part is removed whole, a link whose clickable area overlaps it is removed, and so is a typed text-box comment that overlaps it."
     },
     {
       "q": "Is metadata also redacted?",
