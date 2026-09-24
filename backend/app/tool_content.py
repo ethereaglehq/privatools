@@ -112,7 +112,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
 
     # ── PDF conversion ────────────────────────────────────────────────
     "image-to-pdf": [
-        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 50 images with a combined size of up to 200 MB."},
+        {"name": "Upload images", "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 100 images with a combined size of up to 200 MB, which is roughly 50 phone photos."},
         {"name": "Arrange and configure", "text": "Reorder images by dragging thumbnails or with the arrow buttons. Choose Auto (the default), which makes each page the size of its image, or A4 or Letter, which fit each image on a portrait page with a half-inch margin."},
         {"name": "Convert to PDF", "text": "Click Convert. Each image becomes a full page in the resulting PDF, maintaining original resolution."},
     ],
@@ -631,7 +631,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Apply and download", "text": "Click Apply. The text is stamped at the top and bottom of every page in the chosen font size."},
     ],
     "heic-to-pdf": [
-        {"name": "Upload HEIC images", "text": "Drop one or many .heic / .heif files (e.g. from iPhone photos)."},
+        {"name": "Upload HEIC images", "text": "Drop one or many .heic / .heif files (e.g. from iPhone photos), up to 100 photos and 200 MB in total."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its photo; A4 or Letter scale each photo to fit a standard page. Each HEIC is decoded with libheif."},
         {"name": "Download the PDF", "text": "All images become one PDF, one photo per page. Camera EXIF metadata, including GPS location, is not copied into the PDF."},
     ],
@@ -730,7 +730,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Read the validation report", "text": "It shows whether a PDF/A label was found and lists any warnings. A pass means those basic checks passed, not that the file conforms to PDF/A."},
     ],
     "png-to-pdf": [
-        {"name": "Upload PNG images", "text": "Drop one or many .png files, up to 50 images and 200 MB in total."},
+        {"name": "Upload PNG images", "text": "Drop one or many .png files, up to 100 images and 200 MB in total."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."},
         {"name": "Download the PDF", "text": "All images become a single PDF, one per page. Lossless — PNG pixels map directly to PDF image objects."},
     ],
@@ -795,12 +795,12 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the clean PDF (or ZIP)", "text": "Single file → single PDF; multiple files → ZIP. Visible content is unchanged."},
     ],
     "svg-to-pdf": [
-        {"name": "Upload SVG images", "text": "Drop one or many .svg files, up to 50 files and 200 MB in total. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."},
+        {"name": "Upload SVG images", "text": "Drop one or many .svg files, up to 100 files and 200 MB in total. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."},
         {"name": "Choose page size", "text": "Auto (the default) sizes the page to the rendered image, which is 2400 points wide, so choose A4 or Letter for a printable page; each SVG is then scaled to fit while preserving its aspect ratio."},
         {"name": "Download the PDF", "text": "All SVGs become one PDF, one per page. Each drawing is rasterized into an image first, so the PDF contains pictures rather than vector paths or selectable text."},
     ],
     "tiff-to-pdf": [
-        {"name": "Upload TIFF images", "text": "Drop one or more .tif / .tiff files, up to 50 files and 200 MB in total. Only the first page of a multi-page TIFF is converted."},
+        {"name": "Upload TIFF images", "text": "Drop one or more .tif / .tiff files, up to 100 files and 200 MB in total. Only the first page of a multi-page TIFF is converted."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter scale each image to fit a standard page."},
         {"name": "Download the PDF", "text": "All TIFFs become one PDF. Whatever compression the TIFF used (LZW, Deflate, or JPEG), the pixels are decoded and stored with lossless Flate compression, so JPEG-compressed TIFFs can give a larger PDF."},
     ],
@@ -815,7 +815,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Read the result", "text": "Any fields found are listed with the status detected, beside a note that cryptographic verification is not supported. For a real check, open the file in a PDF reader that validates signatures."},
     ],
     "webp-to-pdf": [
-        {"name": "Upload WebP images", "text": "Drop one or many .webp files, up to 50 images and 200 MB in total."},
+        {"name": "Upload WebP images", "text": "Drop one or many .webp files, up to 100 images and 200 MB in total."},
         {"name": "Choose page size", "text": "Auto (the default) makes each page the size of its image; A4 or Letter fit each image on a standard page. Transparency is not kept: transparent areas show the colour stored underneath, which is often black."},
         {"name": "Download the PDF", "text": "All images become one PDF in upload order. The PDF is usually much larger than the WebP files, because the pixels are stored with lossless compression."},
     ],
@@ -1292,7 +1292,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Will the document look different after conversion?", "a": "No. Pages are not re-rendered, and text, images, links, bookmarks, form fields and annotations stay as they were. Because fonts are not embedded, text in a font that was not already embedded still depends on the fonts of the computer that opens the file."},
     ],
     "image-to-pdf": [
-        {"q": "What image formats are supported?", "a": "JPG, PNG, WebP, BMP, TIFF, GIF, HEIC/HEIF, and SVG, up to 50 images and 200 MB in total per PDF. Animated GIF and WebP files and multi-page TIFFs contribute only their first frame, SVGs are converted to images, and transparent areas are not kept."},
+        {"q": "What image formats are supported?", "a": "JPG, PNG, WebP, BMP, TIFF, GIF, HEIC/HEIF, and SVG, up to 100 images and 200 MB in total per PDF. Animated GIF and WebP files and multi-page TIFFs contribute only their first frame, SVGs are converted to images, and transparent areas are not kept."},
         {"q": "Can I control the page size?", "a": "Yes. Auto (the default) makes each page match its image, one point per pixel. A4 and Letter place each image on a portrait page, scaled to fit inside a half-inch margin. There is no separate orientation setting."},
         {"q": "Are multiple images combined into one PDF?", "a": "Yes. All uploaded images become pages in a single PDF. Drag to reorder them before converting."},
     ],
@@ -1841,7 +1841,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "bmp-to-pdf": [
         {"q": "Will the PDF be smaller than the BMPs?", "a": "Usually, because BMP is uncompressed and the PDF stores the pixels with lossless Flate compression. How much depends on the picture: screenshots and flat graphics shrink dramatically, photos much less, and very noisy images may not shrink at all."},
         {"q": "Will quality degrade?", "a": "No. The BMP pixels are stored with lossless compression, so the PDF shows exactly the same image; there is no JPEG step."},
-        {"q": "How many BMPs can I convert at once?", "a": "Up to 50 images, with a combined size of up to 200 MB, in one PDF. Uncompressed BMPs are large, so big photos reach the size limit first."},
+        {"q": "How many BMPs can I convert at once?", "a": "Up to 100 images, with a combined size of up to 200 MB, in one PDF. Uncompressed BMPs are large, so big photos reach the size limit first."},
     ],
     "booklet-pdf": [
         {"q": "Why were blank pages added?", "a": "A folded booklet is made from sheets that each carry four pages, two on each side. When your page count is not a multiple of four, blank pages are added at the end so the imposition works."},
@@ -1940,7 +1940,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can I combine many images into one PDF?", "a": "Yes. Every image you add becomes a page of the same PDF, in the order shown — the usual way to turn photos of a multi-page document into a single file."},
         {"q": "Will the images lose quality?", "a": "No detail is removed on purpose: each photo is placed in the PDF at its full resolution and scaled on the page to fit. That also means large photos produce a large PDF; run Compress PDF afterwards if you need it smaller."},
         {"q": "What about other image formats?", "a": "This page takes JPG. Image to PDF accepts other common formats, such as PNG and WebP, with the same page-size options."},
-        {"q": "Is there a limit on image size?", "a": "Very large images are rejected rather than processed, to protect the server's memory; normal photos and scans are far below that limit. One PDF can take up to 50 images with a combined size of up to 200 MB."},
+        {"q": "Is there a limit on image size?", "a": "Very large images are rejected rather than processed, to protect the server's memory; normal photos and scans are far below that limit. One PDF can take up to 100 images with a combined size of up to 200 MB, which is roughly 50 phone photos; convert the rest as a second PDF."},
         {"q": "Can I make the text in my photographed pages searchable?", "a": "Not in this step — a PDF of photos is just pictures. Run OCR PDF on the result to add a searchable text layer."},
         {"q": "What happens to my images after I upload them?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, using local libraries rather than a third-party service. Response cleanup removes the images and the PDF and the result after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
@@ -2035,7 +2035,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
     "png-to-pdf": [
         {"q": "Will the PDF be larger than the PNGs?", "a": "It depends on the image. Screenshots and flat graphics come out about the same size, but photographic PNGs can come out noticeably larger, because the pixels are recompressed losslessly without the filters PNG uses."},
         {"q": "How is transparency handled?", "a": "It is not kept. The PDF stores only the colour of each pixel, so fully transparent areas show whatever colour is stored beneath them, often black rather than white. Flatten the image onto a white background before converting if that matters; Image to PDF behaves the same way."},
-        {"q": "Is there a max number of images?", "a": "Yes. One conversion takes up to 50 images with a combined size of up to 200 MB. For more, convert them in batches and join the PDFs with Merge PDF."},
+        {"q": "Is there a max number of images?", "a": "Yes. One conversion takes up to 100 images with a combined size of up to 200 MB. For more, convert them in batches and join the PDFs with Merge PDF."},
     ],
     "pptx-to-pdf-convert": [
         {"q": "Will animations be preserved?", "a": "No. Animations are ignored and every text box on a slide is drawn, including text that would only appear later in the animation."},

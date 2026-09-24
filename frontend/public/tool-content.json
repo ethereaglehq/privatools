@@ -507,7 +507,7 @@
     "category": "to-pdf",
     "accepts": ".jpg,.jpeg,.png,.tiff,.bmp,.webp,.heic,.heif",
     "outputLabel": "images.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/image-to-pdf",
     "priority": 0.8
   },
@@ -515,7 +515,7 @@
     "slug": "jpg-to-pdf",
     "name": "JPG to PDF",
     "description": "Convert JPG / JPEG photos into a single PDF",
-    "longDescription": "Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 50 images and 200 MB per PDF, no watermarks, no sign-up.",
+    "longDescription": "Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 100 images and 200 MB per PDF, which is roughly 50 phone photos; no watermarks, no sign-up.",
     "seoTitle": "Convert JPG to PDF Online Free – Batch in Seconds",
     "metaDescription": "JPG to PDF combines one or many JPEG photos into a single document, sized to each photo or to A4 or Letter pages. Free tool, batch conversion, no watermark.",
     "synonyms": "jpeg to pdf image to pdf photo to pdf convert jpg",
@@ -523,7 +523,7 @@
     "category": "to-pdf",
     "accepts": ".jpg,.jpeg",
     "outputLabel": "images.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/jpg-to-pdf",
     "priority": 0.8
   },
@@ -539,7 +539,7 @@
     "category": "to-pdf",
     "accepts": ".png",
     "outputLabel": "images.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/png-to-pdf",
     "priority": 0.6
   },
@@ -555,7 +555,7 @@
     "category": "to-pdf",
     "accepts": ".heic,.heif",
     "outputLabel": "images.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/heic-to-pdf",
     "priority": 0.6
   },
@@ -571,7 +571,7 @@
     "category": "to-pdf",
     "accepts": ".webp",
     "outputLabel": "images.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/webp-to-pdf",
     "priority": 0.6
   },
@@ -587,7 +587,7 @@
     "category": "to-pdf",
     "accepts": ".tiff,.tif",
     "outputLabel": "images.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/tiff-to-pdf",
     "priority": 0.6
   },
@@ -595,7 +595,7 @@
     "slug": "bmp-to-pdf",
     "name": "BMP to PDF",
     "description": "Convert Windows BMP bitmaps into a PDF",
-    "longDescription": "Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 50 images and 200 MB per PDF.",
+    "longDescription": "Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 100 images and 200 MB per PDF.",
     "seoTitle": "Convert BMP to PDF Online – For Legacy Windows Files",
     "metaDescription": "BMP to PDF turns legacy Windows bitmap images into a standard document you can share easily. Free tool, combine multiple files at once.",
     "synonyms": "bitmap windows to pdf",
@@ -603,7 +603,7 @@
     "category": "to-pdf",
     "accepts": ".bmp",
     "outputLabel": "images.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/bmp-to-pdf",
     "priority": 0.6
   },
@@ -635,7 +635,7 @@
     "category": "to-pdf",
     "accepts": ".svg",
     "outputLabel": "vectors.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-24",
     "path": "/tool/svg-to-pdf",
     "priority": 0.6
   },

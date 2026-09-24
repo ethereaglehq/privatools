@@ -36,7 +36,7 @@
     },
     {
       "q": "Is there a limit on image size?",
-      "a": "Very large images are rejected rather than processed, to protect the server's memory; normal photos and scans are far below that limit. One PDF can take up to 50 images with a combined size of up to 200 MB."
+      "a": "Very large images are rejected rather than processed, to protect the server's memory; normal photos and scans are far below that limit. One PDF can take up to 100 images with a combined size of up to 200 MB, which is roughly 50 phone photos; convert the rest as a second PDF."
     },
     {
       "q": "Can I make the text in my photographed pages searchable?",

@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload images",
-      "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 50 images with a combined size of up to 200 MB."
+      "text": "Select one or more images (JPG, PNG, WebP, BMP, TIFF, GIF, HEIC, or SVG). One PDF can take up to 100 images with a combined size of up to 200 MB, which is roughly 50 phone photos."
     },
     {
       "name": "Arrange and configure",
@@ -16,7 +16,7 @@
   "faq": [
     {
       "q": "What image formats are supported?",
-      "a": "JPG, PNG, WebP, BMP, TIFF, GIF, HEIC/HEIF, and SVG, up to 50 images and 200 MB in total per PDF. Animated GIF and WebP files and multi-page TIFFs contribute only their first frame, SVGs are converted to images, and transparent areas are not kept."
+      "a": "JPG, PNG, WebP, BMP, TIFF, GIF, HEIC/HEIF, and SVG, up to 100 images and 200 MB in total per PDF. Animated GIF and WebP files and multi-page TIFFs contribute only their first frame, SVGs are converted to images, and transparent areas are not kept."
     },
     {
       "q": "Can I control the page size?",

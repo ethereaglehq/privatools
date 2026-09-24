@@ -291,7 +291,7 @@ URL: https://privatools.me/tool/jpg-to-pdf
 
 Convert JPG / JPEG photos into a single PDF
 
-Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 50 images and 200 MB per PDF, no watermarks, no sign-up.
+Convert JPG to PDF online for free — combine one or many JPEG photos into a single PDF document, with pages sized to each photo or to A4 or Letter. Bulk convert phone photos, scans, or screenshots in seconds. Up to 100 images and 200 MB per PDF, which is roughly 50 phone photos; no watermarks, no sign-up.
 
 ### PNG to PDF
 
@@ -331,7 +331,7 @@ URL: https://privatools.me/tool/bmp-to-pdf
 
 Convert Windows BMP bitmaps into a PDF
 
-Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 50 images and 200 MB per PDF.
+Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 100 images and 200 MB per PDF.
 
 ### GIF to PDF
 
