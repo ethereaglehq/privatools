@@ -28,7 +28,7 @@
     },
     {
       "q": "What happens to layers?",
-      "a": "Content in layers that are switched off when the file opens is deleted, and the remaining layers become ordinary page content, so each page looks as it did but nothing is left to switch on. The exception is visible text that continued a line of hidden text, which can shift left. A form field placed in a hidden layer is kept and becomes visible, so the form stays complete."
+      "a": "Content in layers that are switched off when the file opens is deleted, and the remaining layers become ordinary page content, so each page looks as it did but nothing is left to switch on. The exception is visible text that continued a line of hidden text, which can shift left. A form field placed in a hidden layer is kept and becomes visible, so the form stays complete. A file whose layered page content is damaged, or too large to process safely, is refused rather than returned with hidden content left in it."
     },
     {
       "q": "Will a signed PDF stay signed?",

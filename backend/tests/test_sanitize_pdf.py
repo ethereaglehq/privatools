@@ -10,13 +10,20 @@ a scan of top-level objects never looks.
 from __future__ import annotations
 
 import io
+import os
+import subprocess
+import sys
 import threading
 import time
+import zlib
+from pathlib import Path
 
 import fitz
 import pikepdf
 import pytest
 from pikepdf import Array, Dictionary, Name, String
+
+REPO_ROOT = Path(__file__).resolve().parents[2]
 
 XMP_PACKET = (
     b'<?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>'
@@ -653,6 +660,112 @@ def test_a_file_built_to_make_the_walks_loop_is_sanitized_quickly(client):
     assert "/OCProperties" not in pdf.Root
     assert b"(Kept) Tj" in _content_streams(pdf)
     assert pdf.pages[0].obj.Annots[0].A.S == Name.GoTo
+
+
+# ── Decompression bombs and a sanitizer that fails ───────────────────────────
+
+def _layered_bomb(decoded_mb: int = 300) -> bytes:
+    """A layered page whose one content stream inflates from about 300 KB to ``decoded_mb`` MB.
+
+    Layers make the sanitizer decode and parse every content stream. The
+    stream is compressed in chunks, so building it never holds the whole.
+    """
+    compressor = zlib.compressobj(9)
+    chunk = b" " * (1 << 20)
+    body = b"".join(compressor.compress(chunk) for _ in range(decoded_mb)) + compressor.flush()
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    layer = pdf.make_indirect(Dictionary(Type=Name.OCG, Name=String("Layer")))
+    pdf.Root.OCProperties = Dictionary(OCGs=Array([layer]), D=Dictionary(OFF=Array([layer])))
+    contents = pdf.make_stream(b"")
+    contents.write(body, filter=Name.FlateDecode)
+    pdf.pages[0].obj.Contents = contents
+    return _save(pdf, stream_decode_level=pikepdf.StreamDecodeLevel.none)
+
+
+@pytest.mark.skipif(not sys.platform.startswith("linux"), reason="reads peak memory from /proc")
+def test_a_decompression_bomb_is_refused_without_the_web_process_decoding_it(tmp_path):
+    """300 KB that inflates to 300 MB: the web process must stay small and the answer must be clear.
+
+    The service runs in a fresh interpreter, so its peak memory is its own:
+    VmHWM starts again at exec, while ru_maxrss would carry over pytest's.
+    """
+    bomb = tmp_path / "bomb.pdf"
+    bomb.write_bytes(_layered_bomb())
+    assert bomb.stat().st_size < 400_000
+    script = (
+        "import resource, sys\n"
+        "sys.path.insert(0, {root!r})\n"
+        "from backend.app.services import sanitize_service\n"
+        "outcome = 'sanitized'\n"
+        "try:\n"
+        "    sanitize_service.sanitize_pdf(open({pdf!r}, 'rb').read())\n"
+        "except Exception as exc:\n"
+        "    outcome = type(exc).__name__\n"
+        "own = next(int(line.split()[1]) for line in open('/proc/self/status') if line.startswith('VmHWM')) // 1024\n"
+        "worker = resource.getrusage(resource.RUSAGE_CHILDREN).ru_maxrss // 1024\n"
+        "print(outcome, own, worker)\n"
+    ).format(root=str(REPO_ROOT), pdf=str(bomb))
+    run = subprocess.run(
+        [sys.executable, "-c", script], capture_output=True, text=True, cwd=REPO_ROOT, timeout=180,
+        env={**os.environ, "TEMP_DIR": str(tmp_path)},
+    )
+    assert run.returncode == 0, run.stderr
+    outcome, own_mb, worker_mb = run.stdout.split()
+    assert outcome == "FileTooLargeError"
+    assert int(own_mb) < 150, f"the web process reached {own_mb} MB"
+    assert int(worker_mb) < 600, f"the sanitizer process reached {worker_mb} MB"
+
+
+def test_a_decompression_bomb_gets_a_clear_413(client):
+    resp = client.post("/api/sanitize", files={"file": ("bomb.pdf", _layered_bomb(), "application/pdf")})
+    assert resp.status_code == 413
+    assert "too large" in resp.json()["detail"].lower()
+
+
+def test_layered_content_that_will_not_decode_is_refused(client):
+    """Skipping it, as a parse failure once was, would hand back the file with its hidden layers in it."""
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    layer = pdf.make_indirect(Dictionary(Type=Name.OCG, Name=String("Layer")))
+    pdf.Root.OCProperties = Dictionary(OCGs=Array([layer]), D=Dictionary(OFF=Array([layer])))
+    contents = pdf.make_stream(b"")
+    contents.write(b"this is not flate data", filter=Name.FlateDecode)
+    pdf.pages[0].obj.Contents = contents
+    data = _save(pdf, stream_decode_level=pikepdf.StreamDecodeLevel.none)
+    resp = client.post("/api/sanitize", files={"file": ("in.pdf", data, "application/pdf")})
+    assert resp.status_code == 400
+    assert "damaged" in resp.json()["detail"]
+
+
+def _stub_sanitizer(tmp_path, monkeypatch, body: str) -> None:
+    from backend.app.services import sanitize_service
+
+    stub = tmp_path / "stub_sanitizer.py"
+    stub.write_text(body)
+    monkeypatch.setattr(sanitize_service, "_SANITIZE_WORKER", stub)
+
+
+def test_a_sanitizer_that_never_finishes_is_stopped(client, monkeypatch, tmp_path, sample_pdf):
+    from backend.app.services import sanitize_service
+
+    _stub_sanitizer(tmp_path, monkeypatch, "import time\ntime.sleep(600)\n")
+    monkeypatch.setattr(sanitize_service, "_SANITIZE_SECONDS_BASE", 1)
+    started = time.monotonic()
+    resp = client.post("/api/sanitize", files={"file": ("in.pdf", sample_pdf, "application/pdf")})
+    assert resp.status_code == 504
+    assert time.monotonic() - started < 15
+
+
+@pytest.mark.parametrize("body", [
+    "import os, signal\nos.kill(os.getpid(), signal.SIGKILL)\n",
+    "print('not json')\n",
+    "print('{\"ok\": true}')\n",
+], ids=["killed", "garbage", "no-output-file"])
+def test_a_sanitizer_that_fails_gives_a_500(client, monkeypatch, tmp_path, sample_pdf, body):
+    _stub_sanitizer(tmp_path, monkeypatch, body)
+    resp = client.post("/api/sanitize", files={"file": ("in.pdf", sample_pdf, "application/pdf")})
+    assert resp.status_code == 500
 
 
 # ── Encryption and ordinary files ────────────────────────────────────────────

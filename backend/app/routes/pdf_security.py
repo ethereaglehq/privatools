@@ -19,6 +19,7 @@ from starlette.background import BackgroundTask
 from ..services import sanitize_service, signature_service
 from ..utils.cleanup import remove_files, validate_pdf_content
 from ..utils.concurrency import run_bounded
+from ..utils.exceptions import ToolError
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -111,11 +112,16 @@ async def sanitize_pdf(file: UploadFile = File(...)):
     data = await _read_pdf(file)
 
     try:
-        # A full object walk, and content-stream rewriting for layered pages.
+        # A wait for the bounded sanitize process, which is stopped after 20
+        # to 90 seconds depending on the file's size.
         output_path = await run_bounded(sanitize_service.sanitize_pdf, data)
     except ValueError as exc:
-        # safe_open_pdf: password-protected or unreadable.
+        # Password-protected or unreadable.
         raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except ToolError:
+        # Too large to sanitize safely (413), too slow (504) or failed (500):
+        # the global handler gives each its status.
+        raise
     except Exception as exc:
         logger.exception("Sanitize PDF error")
         raise HTTPException(status_code=500, detail="Failed to sanitize PDF") from exc
