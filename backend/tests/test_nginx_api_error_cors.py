@@ -14,12 +14,17 @@ The PR that added it ran the same file in nginx 1.18 against a stub upstream
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
+import subprocess
+
+import pytest
 
 from .test_nginx_country_boundary import ORACLE, ROOT, direct, named, parse_config, walk
 
 NGINX_ERRORS = {"413", "502", "503", "504"}
+RUNBOOK_DOC = ROOT / "deploy" / "api-subdomain-split.md"
 
 
 def _nodes():
@@ -107,3 +112,41 @@ def test_answers_from_the_app_pass_through_with_its_own_cors_headers():
     # error_page applies to the app's own 413/502/503/504 only if nginx
     # intercepts them; it must not, or their JSON and CORS headers would be lost.
     assert not [item for item in walk(nodes) if item.name == "proxy_intercept_errors" and item.args != ["off"]]
+
+
+def _runbook_block() -> str:
+    match = re.search(r"```bash\n(bash -eu <<'RUNBOOK'\n.*?\nRUNBOOK\n)```", RUNBOOK_DOC.read_text(), re.S)
+    assert match, f"no runbook block in {RUNBOOK_DOC}"
+    return match.group(1)
+
+
+def _pinned() -> dict[str, str]:
+    """The runbook's checksums of the files step 1 copies, by file name."""
+    sums = _runbook_block().split("<<'SUMS'", 1)[1].split("\n", 1)[1].split("\nSUMS\n", 1)[0]
+    return {name: digest for digest, name in (line.split() for line in sums.splitlines())}
+
+
+def test_the_runbook_installs_exactly_this_file():
+    # The runbook refuses any input but the files step 1 copies, so a change to
+    # this file needs its checksum there, and a look at whether the runbook
+    # still fits the change.
+    assert _pinned()["nginx-privatools.conf"] == hashlib.sha256(ORACLE.read_bytes()).hexdigest(), (
+        f"{ORACLE.name} changed: update its SHA-256 in the runbook in {RUNBOOK_DOC.name}, "
+        "and check that the runbook still applies it correctly")
+
+
+@pytest.mark.parametrize("name,rev", [("nginx-privatools.main.conf", "c39b151"), ("nginx-privatools.v2.6.1.conf", "v2.6.1")])
+def test_the_runbook_pins_the_files_it_replaces(name, rev):
+    shown = subprocess.run(["git", "-C", str(ROOT), "show", f"{rev}:deploy/oracle-vm/nginx-privatools.conf"],
+                           capture_output=True)
+    if shown.returncode != 0:
+        pytest.skip(f"{rev} is not in this clone (CI's backend job checks out one commit)")
+    assert _pinned()[name] == hashlib.sha256(shown.stdout).hexdigest()
+
+
+def test_the_runbook_never_edits_its_input():
+    # Editing the input in place left a copy without the upstream include in
+    # /tmp, which a later run installed after the cut-over (PR #282's review).
+    block = _runbook_block()
+    assert "sed -i" not in block and "> \"$src\"" not in block
+    assert "sed -e" in block and "\"$src\" > \"$new\"" in block
