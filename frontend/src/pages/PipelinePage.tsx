@@ -32,6 +32,7 @@ import { emitToolRun } from "@/lib/toolRun";
 import { navigateTo } from "@/lib/navigation";
 import { tools } from "@/data/tools";
 import { getToolEndpoint } from "@/lib/tool-endpoints";
+import { uploadFieldFor } from "@/lib/upload-fields";
 import { downloadBlob, formatErrorForClipboard, postFormData } from "@/lib/api";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import "@/skins/experience/workflows.css";
@@ -487,8 +488,7 @@ export default function PipelinePage() {
             try {
                 const resp = await postFormData(steps[i].tool.endpoint, () => {
                     const formData = new FormData();
-                    formData.append("file", currentBlob, file.name);
-                    formData.append("files", currentBlob, file.name);
+                    formData.append(uploadFieldFor(steps[i].tool.endpoint), currentBlob, file.name);
                     return formData;
                 }, {
                     signal: controller.signal,

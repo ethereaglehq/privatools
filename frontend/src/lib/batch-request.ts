@@ -1,5 +1,6 @@
 import { withErrorKind } from "./api";
 import { getToolEndpoint } from "./tool-endpoints";
+import { uploadFieldFor } from "./upload-fields";
 
 /** Why a batch cannot run with these settings, tagged as bad input, or null when it can. */
 export function batchConfigError(slug: string, query = ""): Error | null {
@@ -25,8 +26,7 @@ export function batchRequestFields(slug: string, query = ""): Record<string, str
 
 export function buildBatchForm(slug: string, file: File, query = ""): FormData {
     const form = new FormData();
-    form.append("file", file);
-    form.append("files", file);
+    form.append(uploadFieldFor(getToolEndpoint(slug)), file);
     for (const [key, value] of Object.entries(batchRequestFields(slug, query))) form.append(key, value);
     return form;
 }

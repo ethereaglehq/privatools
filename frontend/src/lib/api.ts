@@ -4,6 +4,7 @@
  */
 import { toast } from "sonner";
 import type { ToolErrorKind } from "./toolRun";
+import { uploadFieldFor } from "./upload-fields";
 
 /**
  * Resolve the origin API requests are sent to. Priority:
@@ -355,9 +356,8 @@ function decorateTransportError(err: unknown): unknown {
 }
 
 /** Upload a single file with optional form-data parameters. Returns the response.
- *  Attaches both `file` (singular) and `files` (plural) so the request works
- *  against endpoints that expect either convention — without forcing every UI
- *  to know which name the backend chose. */
+ *  The file goes once, under the field its route reads (`file`, or `files` for
+ *  the routes listed in upload-fields.ts), so UIs never need to know which. */
 export async function uploadFile(
     endpoint: string,
     file: File,
@@ -366,10 +366,10 @@ export async function uploadFile(
 ): Promise<Response> {
     validateFileSize(file);
     const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+    const field = uploadFieldFor(endpoint);
     const buildBody = () => {
         const fd = new FormData();
-        fd.append("file", file);
-        fd.append("files", file);
+        fd.append(field, file);
         if (params) for (const [k, v] of Object.entries(params)) fd.append(k, String(v));
         return fd;
     };
@@ -392,8 +392,8 @@ export async function uploadFile(
 }
 
 /**
- * Upload a single file with real upload progress via XMLHttpRequest.
- * Falls back to fetch() if XHR is unavailable.
+ * Upload a single file with real upload progress via XMLHttpRequest. Like
+ * uploadFile, it sends the file once, under the field its route reads.
  */
 export function uploadFileWithProgress(
     endpoint: string,
@@ -406,8 +406,7 @@ export function uploadFileWithProgress(
     validateFileSize(file);
     const timeoutMs = options?.timeoutMs ?? DEFAULT_PROGRESS_TIMEOUT_MS;
     const fd = new FormData();
-    fd.append("file", file);
-    fd.append("files", file);
+    fd.append(uploadFieldFor(endpoint), file);
     if (params) {
         for (const [k, v] of Object.entries(params)) {
             fd.append(k, String(v));
