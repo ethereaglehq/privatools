@@ -88,6 +88,17 @@ def _all_streams(pdf: pikepdf.Pdf) -> bytes:
     return b"\n".join(parts)
 
 
+def _decoded(data: bytes) -> bytes:
+    """The PDF rewritten with every object and stream in plain view, so a search misses nothing."""
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        buf = io.BytesIO()
+        pdf.save(
+            buf, compress_streams=False, object_stream_mode=pikepdf.ObjectStreamMode.disable,
+            stream_decode_level=pikepdf.StreamDecodeLevel.all,
+        )
+    return buf.getvalue()
+
+
 def _sanitize(client, data: bytes) -> bytes:
     resp = client.post("/api/sanitize", files={"file": ("in.pdf", data, "application/pdf")})
     assert resp.status_code == 200, resp.text
@@ -296,6 +307,99 @@ def test_an_open_action_that_does_more_than_move_is_removed(client, entries):
         "/" + key: Name(value) if value.startswith("/") else String(value) for key, value in entries.items()
     })
     assert "/OpenAction" not in _open(_sanitize(client, _save(pdf))).Root
+
+
+# ── Actions wherever they are stored ─────────────────────────────────────────
+# Readers take an action or its owner from a stream object as readily as from a
+# dictionary, and act on objects no walk from the page tree or the form visits.
+
+def _assert_gone(out: bytes, *payloads: bytes) -> None:
+    for payload in payloads:
+        assert payload not in out, payload
+        assert payload not in _decoded(out), payload
+
+
+def test_outline_items_stored_as_streams_lose_unsafe_actions(client):
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    pdf.add_blank_page()
+    launch = pdf.make_stream(b"", Title=String("Launch item"), A=Dictionary(S=Name.Launch, F=String("calc.exe")))
+    hosts = pdf.make_stream(b"", Title=String("File item"), A=Dictionary(S=Name.URI, URI=String("file:///etc/hosts")))
+    move = pdf.make_stream(b"", Title=String("Page two"), A=Dictionary(S=Name.GoTo, D=Array([pdf.pages[1].obj, Name.Fit])))
+    outlines = pdf.make_indirect(Dictionary(Type=Name.Outlines, First=launch, Last=move, Count=3))
+    for item, before, after in ((launch, None, hosts), (hosts, launch, move), (move, hosts, None)):
+        item.Parent = outlines
+        if before is not None:
+            item.Prev = before
+        if after is not None:
+            item.Next = after
+    pdf.Root.Outlines = outlines
+    original = _save(pdf, compress_streams=False)
+    before = fitz.open(stream=original, filetype="pdf").get_toc(simple=False)
+    assert [entry[3].get("file") for entry in before[:2]] == ["calc.exe", "/etc/hosts"]  # readers resolve them
+
+    out = _sanitize(client, original)
+    _assert_gone(out, b"calc.exe", b"/etc/hosts", b"/Launch")
+    toc = fitz.open(stream=out, filetype="pdf").get_toc(simple=False)
+    assert [entry[1] for entry in toc] == ["Launch item", "File item", "Page two"]
+    assert not [entry for entry in toc if entry[3].get("kind") in (fitz.LINK_LAUNCH, fitz.LINK_GOTOR, fitz.LINK_URI)]
+    assert toc[2][3]["kind"] == fitz.LINK_GOTO  # the move within the document is kept
+
+
+def test_an_open_action_stored_as_a_stream_is_removed(client):
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    pdf.Root.OpenAction = pdf.make_stream(b"", S=Name.JavaScript, JS=String("app.alert('stream open action')"))
+    out = _sanitize(client, _save(pdf, compress_streams=False))
+    assert "/OpenAction" not in _open(out).Root
+    _assert_gone(out, b"stream open action")
+    doc = fitz.open(stream=out, filetype="pdf")
+    assert doc.xref_get_key(doc.pdf_catalog(), "OpenAction") == ("null", "null")
+
+
+def test_an_action_on_a_parent_field_missing_from_the_form_is_removed(client):
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    page = pdf.pages[0]
+    parent = pdf.make_indirect(Dictionary(FT=Name.Btn, Ff=65536, T=String("parent"), A=_js("app.alert('parent action')")))
+    kid = pdf.make_indirect(Dictionary(Type=Name.Annot, Subtype=Name.Widget, Parent=parent, Rect=Array([72, 72, 150, 90]), P=page.obj))
+    parent.Kids = Array([kid])
+    page.obj.Annots = Array([kid])
+    pdf.Root.AcroForm = Dictionary(Fields=Array([]))  # the parent is not listed
+    out = _sanitize(client, _save(pdf, compress_streams=False))
+    sanitized = _open(out)
+    [widget] = sanitized.pages[0].obj.Annots
+    assert "/A" not in widget.Parent
+    _assert_gone(out, b"parent action")
+    doc = fitz.open(stream=out, filetype="pdf")
+    assert doc.xref_get_key(widget.Parent.objgen[0], "A") == ("null", "null")
+
+
+def test_template_pages_are_removed(client):
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    template = pdf.make_indirect(Dictionary(
+        Type=Name.Page, MediaBox=Array([0, 0, 612, 792]), Resources=Dictionary(),
+        Annots=Array([_link(pdf, 700, A=Dictionary(S=Name.Launch, F=String("template.exe")))]),
+    ))
+    pdf.Root.Names = Dictionary(Templates=Dictionary(Names=Array([String("t1"), template])))
+    out = _sanitize(client, _save(pdf, compress_streams=False))
+    assert "/Templates" not in _open(out).Root.get("/Names", Dictionary())
+    _assert_gone(out, b"template.exe", b"/Launch")
+
+
+def test_structure_attributes_named_a_are_kept(client):
+    """In a tagged PDF, /A on a structure element holds layout attributes, not an action."""
+    pdf = pikepdf.new()
+    pdf.add_blank_page()
+    attributes = Dictionary(O=Name.Layout, Placement=Name.Block, TextAlign=Name.Center)
+    paragraph = pdf.make_indirect(Dictionary(Type=Name.StructElem, S=Name.P, A=attributes, K=0, Pg=pdf.pages[0].obj))
+    root = pdf.make_indirect(Dictionary(Type=Name.StructTreeRoot, K=Array([paragraph])))
+    paragraph.P = root
+    pdf.Root.StructTreeRoot = root
+    out = _open(_sanitize(client, _save(pdf)))
+    kept = out.Root.StructTreeRoot.K[0].A
+    assert (kept.O, kept.Placement, kept.TextAlign) == (Name.Layout, Name.Block, Name.Center)
 
 
 def test_embedded_files_are_removed(sanitized_hostile):

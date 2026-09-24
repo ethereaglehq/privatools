@@ -6,14 +6,17 @@ What goes:
   and every additional-actions (/AA) dictionary: document, page, annotation
   and form-field events;
 - every action other than moving within the document, resetting a form or
-  opening an http, https or mailto link, wherever an action can fire: link
-  and widget annotations, form fields, bookmarks and each /Next chain. The
-  open action, which runs without a click, keeps only moves within the
-  document. That covers Launch, JavaScript, GoToR, GoToE, SubmitForm,
-  ImportData, media and 3D actions, and URIs such as javascript: or file:;
+  opening an http, https or mailto link, wherever an action can fire: on
+  every reachable dictionary or stream that holds one, whether a link,
+  widget, form field, bookmark or anything else, and along each /Next
+  chain. The open action, which runs without a click, keeps only moves
+  within the document. That covers Launch, JavaScript, GoToR, GoToE,
+  SubmitForm, ImportData, media and 3D actions, and URIs such as javascript:
+  or file:;
 - embedded files: the EmbeddedFiles tree, file attachment annotations,
   associated files (/AF), portfolio (/Collection) settings and the embedded
   file streams of any file specification;
+- page templates (/Names /Templates), which only scripts use;
 - sound, movie, screen, rich media and 3D annotations;
 - XFA form data. AcroForm fields stay fillable and keep their values;
 - content in optional-content layers that are hidden when the file opens,
@@ -52,10 +55,14 @@ _SAFE_URI_SCHEMES = ("http:", "https:", "mailto:")
 # Named actions beyond these four run viewer menu commands.
 _NAVIGATION_NAMES = frozenset({"/NextPage", "/PrevPage", "/FirstPage", "/LastPage"})
 _MEDIA_ANNOTATIONS = frozenset({"/FileAttachment", "/Sound", "/Movie", "/Screen", "/RichMedia", "/3D"})
-_NAME_TREES_REMOVED = ("/JavaScript", "/EmbeddedFiles", "/AlternatePresentations", "/Renditions")
+# Templates are pages kept outside the page tree for scripts to copy in.
+_NAME_TREES_REMOVED = ("/JavaScript", "/EmbeddedFiles", "/AlternatePresentations", "/Renditions", "/Templates")
 # These keys only ever hold event scripts, attached files, XMP metadata or
 # optional-content membership, so they can go wherever they appear.
 _KEYS_REMOVED_EVERYWHERE = ("/AA", "/AF", "/EF", "/RF", "/Metadata", "/OC")
+# Keys whose value is an action on any owner: a link, widget, field or
+# bookmark's /A, and a link's /PA. The catalog's /OpenAction is handled apart.
+_ACTION_KEYS = ("/A", "/PA")
 # Bounds /Next chains, visibility expressions and page-tree inheritance.
 _MAX_DEPTH = 32
 
@@ -74,13 +81,11 @@ def sanitize_pdf(data: bytes) -> str:
     output_path = temp_output("sanitized", "pdf")
     with safe_open_pdf(io.BytesIO(data)) as pdf:
         _remove_hidden_layers(pdf)
+        _remove_document_features(pdf)
         memo: dict[tuple[int, int], bool] = {}
-        _remove_document_actions(pdf, memo)
         for page in pdf.pages:
             _sanitize_annotations(page.obj, memo)
-        _filter_field_actions(pdf, memo)
-        _filter_bookmark_actions(pdf, memo)
-        _remove_keys_everywhere(pdf)
+        _clean_everywhere(pdf, memo)
         if "/Info" in pdf.trailer:
             del pdf.trailer["/Info"]
         try:
@@ -110,6 +115,7 @@ def _is_safe_action(action: Dictionary, on_open: bool = False) -> bool:
 def _keep_action(action, memo: dict, depth: int = 0, on_open: bool = False) -> bool:
     """Say whether ``action`` is safe, cutting unsafe steps from its /Next chain.
 
+    Only a dictionary can be kept: an action stored as a stream is removed.
     ``memo`` records each indirect action once, so shared or cyclic chains are
     walked a bounded number of times. ``on_open`` applies the open action's
     stricter rule to the whole chain.
@@ -133,18 +139,29 @@ def _keep_action(action, memo: dict, depth: int = 0, on_open: bool = False) -> b
     return safe
 
 
-def _filter_action_key(owner: Dictionary, key: str, memo: dict, on_open: bool = False) -> None:
+def _filter_action_key(owner, key: str, memo: dict, on_open: bool = False) -> None:
+    """Remove ``owner[key]`` unless it is a safe action; the owner may be a stream."""
     if key in owner and not _keep_action(owner[key], memo, on_open=on_open):
         del owner[key]
 
 
-def _remove_document_actions(pdf: pikepdf.Pdf, memo: dict) -> None:
+def _is_action(value) -> bool:
+    """Whether a value under /A or /PA is an action, not something else by that name.
+
+    In a tagged PDF a structure element's /A holds layout attributes: a
+    dictionary without /S, or an array of them. Readers know an action by its
+    /S, so a dictionary with /S, a script or a following action is one, and
+    so is anything stored as a stream, which attributes never are.
+    """
+    if isinstance(value, pikepdf.Stream):
+        return True
+    if not isinstance(value, Dictionary):
+        return False
+    return any(key in value for key in ("/S", "/JS", "/Next")) or value.get("/Type") == Name.Action
+
+
+def _remove_document_features(pdf: pikepdf.Pdf) -> None:
     root = pdf.Root
-    # An /OpenAction array is a destination (open at this page), not an action.
-    if isinstance(root.get("/OpenAction"), Dictionary):
-        # Its own memo: an action shared with a link is judged by the stricter
-        # rule here, and by the link's rule there.
-        _filter_action_key(root, "/OpenAction", {}, on_open=True)
     names = root.get("/Names")
     if isinstance(names, Dictionary):
         for key in _NAME_TREES_REMOVED:
@@ -159,6 +176,10 @@ def _remove_document_actions(pdf: pikepdf.Pdf, memo: dict) -> None:
 
 
 def _sanitize_annotations(page: Dictionary, memo: dict) -> None:
+    """Drop media and file annotations, and links left doing nothing.
+
+    An annotation stored as a stream is dropped too: no reader can draw one.
+    """
     annots = page.get("/Annots")
     if not isinstance(annots, Array):
         return
@@ -190,39 +211,16 @@ def _sanitize_annotations(page: Dictionary, memo: dict) -> None:
         page.Annots = Array(kept)
 
 
-def _filter_field_actions(pdf: pikepdf.Pdf, memo: dict) -> None:
-    """Filter the actions of widgets that appear only in the form's field tree."""
-    acroform = pdf.Root.get("/AcroForm")
-    if not isinstance(acroform, Dictionary):
-        return
-    stack, seen = list(acroform.get("/Fields", Array())), set()
-    while stack:
-        field = stack.pop()
-        if not isinstance(field, Dictionary) or (field.is_indirect and field.objgen in seen):
-            continue
-        if field.is_indirect:
-            seen.add(field.objgen)
-        _filter_action_key(field, "/A", memo)
-        stack.extend(field.get("/Kids", Array()))
+def _clean_everywhere(pdf: pikepdf.Pdf, memo: dict) -> None:
+    """Visit every reachable dictionary and stream once, whatever it is.
 
-
-def _filter_bookmark_actions(pdf: pikepdf.Pdf, memo: dict) -> None:
-    outlines = pdf.Root.get("/Outlines")
-    if not isinstance(outlines, Dictionary):
-        return
-    stack, seen = [outlines.get("/First")], set()
-    while stack:
-        item = stack.pop()
-        if not isinstance(item, Dictionary) or (item.is_indirect and item.objgen in seen):
-            continue
-        if item.is_indirect:
-            seen.add(item.objgen)
-        _filter_action_key(item, "/A", memo)
-        stack += [item.get("/Next"), item.get("/First")]
-
-
-def _remove_keys_everywhere(pdf: pikepdf.Pdf) -> None:
-    """Delete the keys in ``_KEYS_REMOVED_EVERYWHERE`` from every reachable dictionary."""
+    Each loses the keys in ``_KEYS_REMOVED_EVERYWHERE``, and each action it
+    holds is judged by the allowlist. Nothing here assumes where an action
+    lives or what holds it: readers take a stream as a bookmark, an action or
+    an open action, and act on objects that no walk from the page tree or the
+    form's field list reaches, such as a parent field missing from /Fields.
+    """
+    open_memo: dict[tuple[int, int], bool] = {}  # the open action's stricter rule
     stack, seen = [pdf.trailer], set()
     while stack:
         obj = stack.pop()
@@ -238,6 +236,12 @@ def _remove_keys_everywhere(pdf: pikepdf.Pdf) -> None:
         for key in _KEYS_REMOVED_EVERYWHERE:
             if key in obj:
                 del obj[key]
+        for key in _ACTION_KEYS:
+            if key in obj and _is_action(obj[key]):
+                _filter_action_key(obj, key, memo)
+        # An /OpenAction array, name or string is a destination: open at a page.
+        if isinstance(obj.get("/OpenAction"), (Dictionary, pikepdf.Stream)):
+            _filter_action_key(obj, "/OpenAction", open_memo, on_open=True)
         stack.extend(obj.values())
 
 
