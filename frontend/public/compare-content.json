@@ -249,7 +249,7 @@
         "heading": "Reading the Basic plan",
         "body": [
           "iLovePDF's pricing page says the free plan processes a limited number of documents, and its plan table lists limits per tool. On Basic, merging takes up to 25 files and 100 MB, compression two files up to 200 MB, and Office conversion and OCR one file of 15 MB; editing and splitting take one file on every plan. Tools including OCR conversion to Word or Excel and PDF/A are marked as not included in Basic, and Premium raises most per-task limits to 4 GB.",
-          "PrivaTools applies the same limits to everyone. An upload request can be 500 MB, and most pages upload each file in a request of its own. Standard tool pages queue up to 25 files, but heavy tools accept about five runs a minute from one visitor, so in a long queue some files are marked failed and need a retry. A page keeps waiting while an upload is moving, however slow, but the server then gives each request five minutes and a PDF to Word conversion 60 seconds, so a very large or complex document can fail. There is no paid tier to lift any of this."
+          "PrivaTools applies the same limits to everyone. An upload request can be 500 MB, and most pages upload each file in a request of its own. Standard tool pages queue up to 25 files, but heavy tools accept about five runs a minute from one visitor, so in a long queue some files are marked failed and need a retry. A page keeps waiting while an upload is moving, but the server then gives each request five minutes and a PDF to Word conversion 60 seconds, so a very large or complex document can fail. There is no paid tier to lift any of this."
         ]
       },
       {

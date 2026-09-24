@@ -224,11 +224,22 @@ export const SERVER_TIME_LIMIT_MS = 300_000;
 /** How long a request may go with nothing happening before the page gives up
  *  on it: no upload progress while a file is being sent, no answer once the
  *  last byte has gone, no bytes while the answer arrives. It is a minute longer
- *  than the server's own limit, so the server's answer, a 504 included, always
- *  comes first, and a page's own deadline only ends a connection that has died.
- *  An upload that keeps moving is never cut off, however long it takes. A
- *  request without a file cannot report upload progress, so for it the wait
- *  runs from the start. */
+ *  than the server's own limit, so the server's answer, a 504 included,
+ *  normally comes first. It may not when something between the browser and
+ *  the server holds the upload after the browser has sent it, such as a
+ *  corporate proxy that scans uploads, for more than that minute: the
+ *  server's clock starts only once the whole body has reached it.
+ *
+ *  What this deadline guarantees: it never ends an upload that keeps moving,
+ *  however long that takes. What it cannot guarantee: that the browser or the
+ *  network will not end one. Over HTTP/2, Chrome closes a connection whose
+ *  PING goes unanswered for 10 s, which happens when the PING queues behind
+ *  upload bytes on a slow, deeply buffered uplink. It then sends the upload
+ *  again from the start, and once its own retries run out the request fails
+ *  as a network error.
+ *
+ *  A request without a file cannot report upload progress, so for it the
+ *  wait runs from the start. */
 export const DEFAULT_TIMEOUT_MS = SERVER_TIME_LIMIT_MS + 60_000;
 
 /** Decide whether an error from a single attempt should be retried.
@@ -410,10 +421,11 @@ function xhrHeaders(xhr: XMLHttpRequest): Headers {
  *  The deadline restarts whenever something happens: a chunk of the upload
  *  goes out, the answer's headers come in, a chunk of the answer comes in. So
  *  once the last byte has gone, the page waits `timeoutMs` for the answer,
- *  which is the server's own limit plus a minute by default, and an upload is
- *  only given up once it has not moved for that long. The request then fails
- *  as a timeout; `timeoutMs` 0 turns the deadline off. A cancel through
- *  `signal` rejects with an AbortError. */
+ *  which is the server's own limit plus a minute by default, and the page
+ *  gives up on an upload only once it has not moved for that long (the
+ *  browser can still end one itself; see DEFAULT_TIMEOUT_MS). The request
+ *  then fails as a timeout; `timeoutMs` 0 turns the deadline off. A cancel
+ *  through `signal` rejects with an AbortError. */
 function sendForm(
     endpoint: string,
     body: FormData,

@@ -4,9 +4,11 @@
  * The server's own limit on a request is five minutes, counted once the whole
  * upload has reached it (REQUEST_TIMEOUT_SECONDS=300 in docker-compose.yml;
  * production nginx buffers the upload before passing the request on, and gives
- * the backend proxy_read_timeout 300s). A page must not give up while an upload
- * is still moving, however long it takes, nor before that limit has passed; and
- * a dead connection must still end in an error classified as a timeout.
+ * the backend proxy_read_timeout 300s). The page's own deadline must not end an
+ * upload that is still moving, however long it takes, nor come before that
+ * limit has passed; and a dead connection must still end in an error
+ * classified as a timeout. (The browser and the network can still end an
+ * upload on their own; see DEFAULT_TIMEOUT_MS in lib/api.ts.)
  *
  * Each test scripts what the connection does with the fake network, which
  * serves fetch and XMLHttpRequest alike, and moves Vitest's fake clock.

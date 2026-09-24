@@ -121,6 +121,31 @@ describe("api form-data helpers", () => {
         expect(getErrorDetail(caught)).toBe("Unsupported output format");
     });
 
+    it.each([204, 205])("resolves an upload answered %i, a status that cannot carry a body, with an empty body", async status => {
+        // A browser hands XMLHttpRequest an empty Blob here, never null, and
+        // new Response(blob, { status }) throws for these statuses.
+        installNetwork({ uploadMs: 0, answerAfterMs: 0, status, body: "" });
+
+        const res = await uploadFile("/split", new File(["%PDF"], "a.pdf"), undefined, { retry: noRetry });
+
+        expect(res.ok).toBe(true);
+        expect(res.status).toBe(status);
+        expect((await res.blob()).size).toBe(0);
+    });
+
+    it("reports an upload answered 304 with its status, rather than as an answer it could not read", async () => {
+        installNetwork({ uploadMs: 0, answerAfterMs: 0, status: 304, body: "" });
+
+        let caught: unknown;
+        try {
+            await uploadFile("/split", new File(["%PDF"], "a.pdf"), undefined, { retry: noRetry });
+        } catch (err) {
+            caught = err;
+        }
+
+        expect(getErrorStatus(caught)).toBe(304);
+    });
+
     it("tells the server's own words apart from a message written for a bare status", async () => {
         vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("<html>413</html>", { status: 413 }));
 
