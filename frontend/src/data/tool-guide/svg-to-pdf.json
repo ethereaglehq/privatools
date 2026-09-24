@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload SVG images",
-      "text": "Drop one or many .svg files, up to 50 files and 200 MB in total. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."
+      "text": "Drop one or many .svg files, up to 100 files and 200 MB in total. Images embedded as data: URIs are fine, but an SVG that loads an image from another file or a web address is rejected."
     },
     {
       "name": "Choose page size",

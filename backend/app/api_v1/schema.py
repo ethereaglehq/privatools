@@ -86,7 +86,7 @@ def _body_schema(document, operation):
 def _request_overrides(document, path, operation):
     """Constraints checked inside handlers are absent from Form annotations."""
     fields = _body_schema(document, operation).get("properties", {})
-    if path in {PREFIX + "/merge", PREFIX + "/compress"}:
+    if path in {PREFIX + "/merge", PREFIX + "/compress", PREFIX + "/image-to-pdf"}:
         fields["files"].update(minItems=2 if path.endswith("/merge") else 1, maxItems=100)
     if path == PREFIX + "/compress":
         fields["level"]["enum"] = ["light", "recommended", "extreme", "email", "print", "archive", "web", "custom"]

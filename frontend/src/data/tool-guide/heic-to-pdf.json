@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload HEIC images",
-      "text": "Drop one or many .heic / .heif files (e.g. from iPhone photos)."
+      "text": "Drop one or many .heic / .heif files (e.g. from iPhone photos), up to 100 photos and 200 MB in total."
     },
     {
       "name": "Choose page size",

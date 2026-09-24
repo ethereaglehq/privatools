@@ -2,7 +2,7 @@
  * ImageToPdfUI — batch images → single PDF, with page-size choice.
  * Arrange real image previews on a working sheet before binding the PDF.
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { Download, X, Image as ImageIcon, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
 import { friendlyError } from "@/lib/utils";
@@ -13,6 +13,27 @@ import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { FileIntake, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
+import { IMAGE_TO_PDF_MAX_FILES as MAX_FILES, IMAGE_TO_PDF_MAX_TOTAL_MB as MAX_TOTAL_MB } from "./image-to-pdf-limits";
+
+const MAX_TOTAL_BYTES = MAX_TOTAL_MB * 1024 * 1024;
+const LIMITS = `One PDF takes up to ${MAX_FILES} images, ${MAX_TOTAL_MB} MB in total.`;
+
+/** Why a selection was refused, or null when it fits beside the images already chosen. */
+function selectionProblem(current: File[], incoming: File[]): string | null {
+    const count = current.length + incoming.length;
+    if (count > MAX_FILES) {
+        return current.length
+            ? `One PDF takes up to ${MAX_FILES} images. Adding these ${incoming.length} would make ${count}, so they were not added.`
+            : `One PDF takes up to ${MAX_FILES} images and this selection has ${count}, so it was not added.`;
+    }
+    const bytes = [...current, ...incoming].reduce((total, file) => total + file.size, 0);
+    if (bytes > MAX_TOTAL_BYTES) {
+        return current.length
+            ? `One PDF takes up to ${MAX_TOTAL_MB} MB of images. Adding these ${incoming.length} would make ${formatFileSize(bytes)}, so they were not added.`
+            : `One PDF takes up to ${MAX_TOTAL_MB} MB of images and this selection is ${formatFileSize(bytes)}, so it was not added.`;
+    }
+    return null;
+}
 
 type PageSize = "auto" | "a4" | "letter";
 const sizes: { id: PageSize; label: string; desc: string }[] = [
@@ -20,6 +41,8 @@ const sizes: { id: PageSize; label: string; desc: string }[] = [
     { id: "a4",     label: "A4",     desc: "210 × 297 mm" },
     { id: "letter", label: "Letter", desc: "8.5 × 11 in" },
 ];
+
+type SelectedImage = { id: string; name: string; size: string; raw: File };
 
 interface ImageToPdfUIProps {
     accept?: string;
@@ -41,16 +64,24 @@ export function ImageToPdfUI({
     const [config, , { setField }] = useToolDefaults("image-to-pdf", IMAGE_TO_PDF_DEFAULTS);
     const { pageSize } = config;
     const setPageSize = useCallback((v: React.SetStateAction<typeof IMAGE_TO_PDF_DEFAULTS["pageSize"]>) => setField("pageSize", v), [setField]);
-    const [files, setFiles] = useState<{ id: string; name: string; size: string; raw: File }[]>([]);
+    const [files, setFiles] = useState<SelectedImage[]>([]);
+    // Synchronous mirror: two selections in a row must each see the other's
+    // images when checking the limits, before React re-renders.
+    const filesRef = useRef<SelectedImage[]>([]);
+    const replaceFiles = useCallback((next: SelectedImage[]) => { filesRef.current = next; setFiles(next); }, []);
 
     const [state, setState] = useState<"idle" | "processing" | "done">("idle");
     const [error, setError] = useState<string | null>(null);
     const [dragIdx, setDragIdx] = useState<number | null>(null);
 
     const add = useCallback((fl: FileList | File[]) => {
-        setFiles(p => [...p, ...Array.from(fl).map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), raw: f }))]);
+        const incoming = Array.from(fl);
+        if (!incoming.length) return;
+        const problem = selectionProblem(filesRef.current.map(f => f.raw), incoming);
+        if (problem) { setError(problem); return; }
+        replaceFiles([...filesRef.current, ...incoming.map(f => ({ id: Math.random().toString(36).slice(2), name: f.name, size: formatFileSize(f.size), raw: f }))]);
         setState("idle"); setError(null);
-    }, []);
+    }, [replaceFiles]);
 
     useEffect(() => {
         let cancelled = false;
@@ -84,21 +115,24 @@ export function ImageToPdfUI({
     }, [loadingSample, sampleSupported, add]);
 
     const moveFile = (from: number, to: number) => {
-        if (to < 0 || to >= files.length || from === to) return;
-        setFiles(p => {
-            const next = [...p];
-            const [moved] = next.splice(from, 1);
-            next.splice(to, 0, moved);
-            return next;
-        });
+        const current = filesRef.current;
+        if (to < 0 || to >= current.length || from === to) return;
+        const next = [...current];
+        const [moved] = next.splice(from, 1);
+        next.splice(to, 0, moved);
+        replaceFiles(next);
     };
+    const removeFile = (id: string) => { replaceFiles(filesRef.current.filter(item => item.id !== id)); setError(null); };
+    const clearFiles = () => { replaceFiles([]); setError(null); };
 
     const process = useCallback(async () => {
         if (!files.length) return;
         setState("processing"); setError(null);
         try {
             const outName = buildOutputFilename(files[0]?.name, null, "pdf");
-            await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), outName, { page_size: pageSize });
+            // No client-side deadline: a full selection can take minutes to
+            // upload, and the server bounds the conversion once it arrives.
+            await processFilesAndDownload("/image-to-pdf", files.map(f => f.raw), outName, { page_size: pageSize }, undefined, undefined, { timeoutMs: 0 });
             setState("done");
             emitToolSuccess("Image to PDF");
             emitToolRun({ outcome: "success", files: files.length });
@@ -123,22 +157,24 @@ export function ImageToPdfUI({
 
     if (state === "done") return <StudioResult title={`${files.length} ${nounLabel}${files.length > 1 ? "s" : ""}, one PDF.`} detail="Your download has started. Each image has its own page, in your chosen order.">
         <StudioFile name={buildOutputFilename(files[0]?.name, null, "pdf")} detail={`${files.length} pages · ${sizes.find(size => size.id === pageSize)?.label} page size`} status="done" />
-        <div className="ts-actions"><button className="ts-text-button" onClick={() => { setFiles([]); setState("idle"); }}>Convert more</button></div>
+        <div className="ts-actions"><button className="ts-text-button" onClick={() => { replaceFiles([]); setState("idle"); }}>Convert more</button></div>
     </StudioResult>;
+    const totalBytes = files.reduce((total, file) => total + file.raw.size, 0);
     return <StudioLayout className="ts-image-binding" options={<>
         <div><p className="ts-eyebrow">The shape of your document</p><h3>Page size</h3><div className="ts-choices">{sizes.map(size => <button className="ts-choice" key={size.id} onClick={() => setPageSize(size.id)} aria-pressed={pageSize === size.id} disabled={state === "processing"}><strong>{size.label}</strong><span>{size.desc}</span></button>)}</div></div>
-        <div><p>Every image gets a page. Drag images into order, or use the arrow controls.</p><p className="ts-caption">{files.length} {nounLabel}{files.length !== 1 ? "s" : ""} selected</p></div>
-        <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!files.length || state === "processing"}><Download size={16} /> Convert {files.length} {nounLabel}{files.length !== 1 ? "s" : ""} → PDF</button>{files.length > 0 && <button className="ts-text-button" disabled={state === "processing"} onClick={() => setFiles([])} aria-label="Clear all images">Clear</button>}</div>
+        <div><p>Every image gets a page. Drag images into order, or use the arrow controls.</p><p className="ts-caption">{files.length} of {MAX_FILES} {nounLabel}s selected</p>{files.length > 0 && <p className="ts-caption">{formatFileSize(totalBytes)} of {MAX_TOTAL_MB} MB</p>}</div>
+        <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!files.length || state === "processing"}><Download size={16} /> Convert {files.length} {nounLabel}{files.length !== 1 ? "s" : ""} → PDF</button>{files.length > 0 && <button className="ts-text-button" disabled={state === "processing"} onClick={clearFiles} aria-label="Clear all images">Clear</button>}</div>
     </>}>
-        <FileIntake accepts={accept} multiple onFiles={add} label="Upload images" title="Turn pictures into pages." detail={formatsLabel} disabled={state === "processing"} compact={files.length > 0} />
+        <FileIntake accepts={accept} multiple onFiles={add} label="Upload images" title="Turn pictures into pages." detail={`${formatsLabel}. ${LIMITS}`} disabled={state === "processing"} compact={files.length > 0} />
+        {/* Status sits under the intake, not after up to 100 thumbnails, so it is seen where the user acted. */}
+        {error && <div role="alert" className="ts-error">{error}</div>}
+        {state === "processing" && <StudioProgress label="Making a home for your images" detail={`${files.length} images, arranged in one PDF.${files.length > 10 ? " Large batches can take a few minutes." : ""}`} />}
         {files.length === 0 && sampleSupported && <button className="ts-text-button" onClick={trySample} disabled={loadingSample}><Sparkles size={15} /> {loadingSample ? "Loading sample…" : "Try with a sample image"}</button>}
         {files.length > 0 && <section className="ts-image-pages" aria-label="Page order">{files.map((file, i) => <article key={file.id} className="ts-image-page" draggable={state !== "processing"}
             onDragStart={() => setDragIdx(i)} onDragOver={event => event.preventDefault()} onDrop={event => { event.preventDefault(); if (dragIdx !== null && state !== "processing") moveFile(dragIdx, i); setDragIdx(null); }} onDragEnd={() => setDragIdx(null)} data-dragging={dragIdx === i}>
             <ImagePagePreview file={file.raw} /><div className="ts-image-page-info"><span>{i + 1}</span><p>{file.name}<small>{file.size}</small></p></div>
-            <div className="ts-image-page-actions"><button className="ts-icon-button" onClick={() => moveFile(i, i - 1)} disabled={i === 0 || state === "processing"} aria-label="Move up"><ChevronUp size={16} /></button><button className="ts-icon-button" onClick={() => moveFile(i, i + 1)} disabled={i === files.length - 1 || state === "processing"} aria-label="Move down"><ChevronDown size={16} /></button><button className="ts-icon-button" disabled={state === "processing"} onClick={() => setFiles(prev => prev.filter(item => item.id !== file.id))} aria-label="Remove"><X size={16} /></button></div>
+            <div className="ts-image-page-actions"><button className="ts-icon-button" onClick={() => moveFile(i, i - 1)} disabled={i === 0 || state === "processing"} aria-label="Move up"><ChevronUp size={16} /></button><button className="ts-icon-button" onClick={() => moveFile(i, i + 1)} disabled={i === files.length - 1 || state === "processing"} aria-label="Move down"><ChevronDown size={16} /></button><button className="ts-icon-button" disabled={state === "processing"} onClick={() => removeFile(file.id)} aria-label="Remove"><X size={16} /></button></div>
         </article>)}</section>}
-        {state === "processing" && <StudioProgress label="Making a home for your images" detail={`${files.length} images, arranged in one PDF.`} />}
-        {error && <div role="alert" className="ts-error">{error}</div>}
     </StudioLayout>;
 }
 function ImagePagePreview({ file }: { file: File }) {

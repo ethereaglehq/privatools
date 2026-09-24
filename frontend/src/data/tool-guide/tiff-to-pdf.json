@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload TIFF images",
-      "text": "Drop one or more .tif / .tiff files, up to 50 files and 200 MB in total. Only the first page of a multi-page TIFF is converted."
+      "text": "Drop one or more .tif / .tiff files, up to 100 files and 200 MB in total. Only the first page of a multi-page TIFF is converted."
     },
     {
       "name": "Choose page size",

@@ -24,7 +24,7 @@
     },
     {
       "q": "How many BMPs can I convert at once?",
-      "a": "Up to 50 images, with a combined size of up to 200 MB, in one PDF. Uncompressed BMPs are large, so big photos reach the size limit first."
+      "a": "Up to 100 images, with a combined size of up to 200 MB, in one PDF. Uncompressed BMPs are large, so big photos reach the size limit first."
     }
   ]
 }

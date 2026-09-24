@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload WebP images",
-      "text": "Drop one or many .webp files, up to 50 images and 200 MB in total."
+      "text": "Drop one or many .webp files, up to 100 images and 200 MB in total."
     },
     {
       "name": "Choose page size",
