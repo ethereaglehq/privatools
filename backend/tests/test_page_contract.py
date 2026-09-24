@@ -17,10 +17,13 @@ import base64
 import hashlib
 import io
 import json
+import math
 import sys
 from pathlib import Path
 
 import fitz  # PyMuPDF
+import numpy as np
+import pikepdf
 import pytest
 from fastapi.routing import APIRoute
 from PIL import Image
@@ -28,7 +31,8 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-CONTRACT = json.loads((ROOT / "frontend" / "src" / "test" / "page-contract.json").read_text(encoding="utf-8"))["tools"]
+CONTRACT_FILE = json.loads((ROOT / "frontend" / "src" / "test" / "page-contract.json").read_text(encoding="utf-8"))
+CONTRACT = CONTRACT_FILE["tools"]
 
 # Form fields that carry page numbers. A route with one of these must have a
 # contract, or be listed below as one no page of the site calls with it.
@@ -227,3 +231,333 @@ def test_every_route_that_takes_page_numbers_has_a_contract():
     )
     stale = sorted(set(API_ONLY) - set(routes))
     assert not stale, f"API_ONLY names routes that no longer take page numbers: {stale}"
+
+
+# ─── A page the PDF does not have is refused, not skipped ───────────────────
+#
+# White-Out, Annotate, Add Shapes and Edit PDF skipped an item whose page the
+# PDF does not have and sent the file back unchanged, so the visitor got a
+# download and thought the region was covered. Like Redact, they now refuse it.
+
+SKIPPING_TOOLS = ["whiteout-pdf", "annotate-pdf", "add-shapes", "edit-pdf"]
+
+
+def _post_items(client, slug: str, item: dict, pdf: bytes = TWO_PAGES):
+    spec = CONTRACT[slug]
+    data = {spec["field"]: json.dumps([item])}
+    return client.post("/api" + spec["endpoint"], files={"file": ("contract.pdf", pdf, "application/pdf")}, data=data)
+
+
+@pytest.mark.parametrize("page", [0, 3, -1, 1.5, True, None, "two"])
+@pytest.mark.parametrize("slug", SKIPPING_TOOLS)
+def test_an_item_on_a_page_the_pdf_does_not_have_is_refused(client, slug, page):
+    res = _post_items(client, slug, {**ITEMS[slug], CONTRACT[slug]["key"]: page})
+    assert res.status_code == 400, f"{slug} page={page!r}: {res.status_code} {res.text[:200]}"
+    detail = res.json()["detail"]
+    assert "#1" in detail and "page" in detail, detail
+    if type(page) is int:
+        assert f"page {page}, which this PDF does not have" in detail, detail
+        assert "1 to 2" in detail, detail
+    else:
+        assert "which is not a page number" in detail, detail
+
+
+@pytest.mark.parametrize("page", [2, "2", 2.0])
+@pytest.mark.parametrize("slug", SKIPPING_TOOLS)
+def test_a_page_number_written_as_text_or_a_whole_float_still_counts(client, slug, page):
+    res = _post_items(client, slug, {**ITEMS[slug], CONTRACT[slug]["key"]: page})
+    assert res.status_code == 200, f"{slug} page={page!r}: {res.status_code} {res.text[:200]}"
+    assert _changed_pages(TWO_PAGES, res.content) == {2}
+
+
+# ─── Boxes drawn on turned pages and on pages that do not start at 0,0 ──────
+#
+# The preview shows a page as pdf.js draws it: turned by /Rotate and cut to its
+# visible area. On such pages a box sent as the preview showed it landed
+# somewhere else or off the page, and a redaction hid nothing. Even with the
+# right numbers, PyMuPDF drew White-Out, shapes, signatures and Redact's black
+# fill in the wrong place on a turned page whose visible area does not start at
+# 0,0, and Sign and Edit PDF shrank and moved everything on pages turned a
+# quarter or cut by a CropBox.
+#
+# page-contract.json ("turned") records, for each page, the box the visitor
+# draws and what the page sends for it. These tests build each page with a
+# secret line upright under the drawn box, send what the page sends through
+# the real routes, and look at the result as the page is shown.
+
+TURNED = CONTRACT_FILE["turned"]
+DRAWN = TURNED["drawn"]
+SECRET_LINE = "SECRET 4111-0001"
+PUBLIC_LINE = "Public words stay"
+# Baselines as the page is shown: the secret line inside the drawn box, the
+# public line well below it.
+SECRET_AT = (DRAWN["x"] + 12, DRAWN["y"] + DRAWN["height"] - 10)
+PUBLIC_AT = (72, 300)
+
+
+def _visible_area(spec: dict) -> list[float]:
+    media = spec["mediabox"]
+    crop = spec.get("cropbox") or media
+    return [max(media[0], crop[0]), max(media[1], crop[1]), min(media[2], crop[2]), min(media[3], crop[3])]
+
+
+def _turned_pdf(name: str) -> bytes:
+    """The contract's page, with both lines written to read upright where the
+    page is shown."""
+    spec = TURNED["pages"][name]
+    pdf = pikepdf.new()
+    font = pdf.make_indirect(pikepdf.Dictionary(
+        Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type1, BaseFont=pikepdf.Name.Helvetica,
+        Encoding=pikepdf.Name.WinAnsiEncoding,
+    ))
+    page = pikepdf.Dictionary(
+        Type=pikepdf.Name.Page, MediaBox=pikepdf.Array(spec["mediabox"]),
+        Resources=pikepdf.Dictionary(Font=pikepdf.Dictionary(F1=font)),
+    )
+    if "cropbox" in spec:
+        page.CropBox = pikepdf.Array(spec["cropbox"])
+    if spec["rotate"]:
+        page.Rotate = spec["rotate"]
+    pdf.pages.append(pikepdf.Page(page))
+    blank = io.BytesIO()
+    pdf.save(blank)
+    with fitz.open(stream=blank.getvalue(), filetype="pdf") as doc:
+        derotate = doc[0].derotation_matrix
+    left, _, _, top = _visible_area(spec)
+    # Text turned against /Rotate reads upright once the page is turned.
+    angle = math.radians(spec["rotate"])
+    a, b = round(math.cos(angle)), round(math.sin(angle))
+    content = ""
+    for text, shown_at in ((SECRET_LINE, SECRET_AT), (PUBLIC_LINE, PUBLIC_AT)):
+        at = fitz.Point(shown_at) * derotate  # on the unturned page, from the visible area's top-left
+        content += f"BT /F1 14 Tf {a} {b} {-b} {a} {left + at.x:g} {top - at.y:g} Tm ({text}) Tj ET\n"
+    pdf.pages[0].Contents = pdf.make_stream(content.encode())
+    out = io.BytesIO()
+    pdf.save(out)
+    return out.getvalue()
+
+
+TURNED_PDFS = {name: _turned_pdf(name) for name in TURNED["pages"]}
+DRAWN_RECT = fitz.Rect(DRAWN["x"], DRAWN["y"], DRAWN["x"] + DRAWN["width"], DRAWN["y"] + DRAWN["height"])
+
+
+def _shown(pdf: bytes) -> np.ndarray:
+    """The page as shown, in grey, one pixel per point."""
+    with fitz.open(stream=pdf, filetype="pdf") as doc:
+        pix = doc[0].get_pixmap(dpi=72, colorspace=fitz.csGRAY, annots=True)
+        return np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width).copy()
+
+
+def _bounds(mask: np.ndarray):
+    ys, xs = np.nonzero(mask)
+    if not len(xs):
+        return None
+    return (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+
+
+def _page_text(pdf: bytes) -> str:
+    with fitz.open(stream=pdf, filetype="pdf") as doc:
+        return " ".join(doc[0].get_text().split())
+
+
+@pytest.mark.parametrize("name", sorted(TURNED["pages"]))
+def test_each_turned_page_is_built_as_the_contract_says(name):
+    """The fixture itself: PyMuPDF shows the page at the size pdf.js shows it,
+    with the secret line upright inside the drawn box and the public line
+    outside it."""
+    spec = TURNED["pages"][name]
+    with fitz.open(stream=TURNED_PDFS[name], filetype="pdf") as doc:
+        page = doc[0]
+        assert page.rotation == spec["rotate"]
+        assert [round(page.rect.width), round(page.rect.height)] == spec["shown"]
+        words = page.get_text("words")
+        secret = [fitz.Rect(w[:4]) * page.rotation_matrix for w in words if w[4] in SECRET_LINE.split()]
+        public = [fitz.Rect(w[:4]) * page.rotation_matrix for w in words if w[4] in PUBLIC_LINE.split()]
+    assert len(secret) == 2 and len(public) == 3, words
+    for rect in secret:
+        assert DRAWN_RECT.contains(rect), f"{name}: {SECRET_LINE} shows at {rect}"
+    for rect in public:
+        assert not DRAWN_RECT.intersects(rect)
+    line = secret[0] | secret[1]
+    assert line.width > 3 * line.height, f"{name}: the secret line is not upright as shown: {line}"
+
+
+def _marked_signature() -> str:
+    """A signature image whose left third is black, so a turned result shows."""
+    image = Image.new("RGB", (90, 30), (150, 150, 150))
+    image.paste((0, 0, 0), (0, 0, 30, 30))
+    out = io.BytesIO()
+    image.save(out, "PNG")
+    return "data:image/png;base64," + base64.b64encode(out.getvalue()).decode("ascii")
+
+
+SIGNATURE_MARKED = _marked_signature()
+
+# (tool, what its page sends for a box already in the route's frame)
+TURNED_KINDS = {
+    "redact": ("redact-pdf", lambda box: {"redactions": json.dumps([{"page": 0, **box}]), "color": "#000000"}),
+    "whiteout": ("whiteout-pdf", lambda box: {"regions": json.dumps([{"page": 1, **box}])}),
+    **{
+        f"annotate-{kind}": ("annotate-pdf", lambda box, kind=kind: {"annotations": json.dumps(
+            [{"type": kind, "page": 1, **box, "color": "#e54a3c", "text": ""}])})
+        for kind in ("highlight", "underline", "strikethrough")
+    },
+    **{
+        f"shapes-{kind}": ("add-shapes", lambda box, kind=kind: {"shapes": json.dumps([{
+            "type": kind, "page": 1, **box, "x2": box["x"] + box["width"], "y2": box["y"] + box["height"],
+            "color": "#000000", "fill": "#000000" if kind in ("rectangle", "circle") else "", "stroke_width": 2,
+        }])})
+        for kind in ("rectangle", "circle", "line", "arrow")
+    },
+    "form-text": ("form-creator", lambda box: {"form_fields": json.dumps([{
+        "name": "contract_field", "type": "text", "page": 1, **box, "required": False, "value": "FIELDVALUE", "multiline": False,
+    }])}),
+    "form-checkbox": ("form-creator", lambda box: {"form_fields": json.dumps([{
+        "name": "contract_field", "type": "checkbox", "page": 1, **box, "required": False, "checked": True,
+    }])}),
+    "esign": ("esign-pdf", lambda box: {"signature": SIGNATURE_MARKED, "page": "1", **{k: str(v) for k, v in box.items()}}),
+    "sign": ("sign-pdf", lambda box: {"signature_data": SIGNATURE_MARKED, "page": "1", **{k: str(v) for k, v in box.items()}}),
+    "edit-rectangle": ("edit-pdf", lambda box: {"edits": json.dumps([{
+        "type": "rectangle", "page": 1, **box, "stroke_color": "#000000", "fill_color": "#000000", "stroke_width": 0,
+    }])}),
+    "edit-image": ("edit-pdf", lambda box: {"edits": json.dumps([{"type": "image", "page": 1, **box, "image_data": SIGNATURE_MARKED}])}),
+    "edit-text": ("edit-pdf", lambda box: {"edits": json.dumps([{
+        "type": "text", "page": 1, "x": box["x"] + 4, "y": box["y"] + 10, "text": "EDITED", "font_size": 14,
+        "color": "#000000", "font_family": "Helvetica",
+    }])}),
+}
+# How far a mark may reach past the drawn box: half a stroke, an arrow's barbs,
+# or the rounded ends MuPDF gives a highlight on any page (a fifth of the box's
+# height beyond each end of the line; before the fix, on a page turned a
+# quarter, that was a fifth of the box's length, 57 points past it).
+REACH = {"shapes-arrow": 7, "annotate-highlight": 7}
+
+
+def _box_for_route(slug: str, name: str) -> dict:
+    """The drawn box as the tool's page sends it (page-contract.json, frame)."""
+    spec = TURNED["pages"][name]
+    if CONTRACT[slug]["frame"] == "unrotated":
+        return dict(spec["unrotated"])
+    assert CONTRACT[slug]["frame"] == "shown-from-bottom"
+    return {**DRAWN, "y": spec["shown"][1] - DRAWN["y"] - DRAWN["height"]}
+
+
+@pytest.mark.parametrize("kind", sorted(TURNED_KINDS))
+@pytest.mark.parametrize("name", sorted(TURNED["pages"]))
+def test_a_box_drawn_on_a_turned_page_lands_where_it_was_drawn(client, name, kind):
+    slug, form = TURNED_KINDS[kind]
+    pdf = TURNED_PDFS[name]
+    res = client.post("/api" + CONTRACT[slug]["endpoint"], files={"file": ("turned.pdf", pdf, "application/pdf")},
+                      data=form(_box_for_route(slug, name)))
+    assert res.status_code == 200, f"{kind} on {name}: {res.status_code} {res.text[:300]}"
+    before, after = _shown(pdf), _shown(res.content)
+    assert before.shape == after.shape, f"{kind} on {name}: the page changed size"
+    landed = _bounds(np.abs(before.astype(int) - after.astype(int)) > 48)
+    assert landed is not None, f"{kind} on {name}: nothing changed on the page"
+    reach = REACH.get(kind, 2)
+    assert (landed[0] >= DRAWN_RECT.x0 - reach and landed[1] >= DRAWN_RECT.y0 - reach
+            and landed[2] <= DRAWN_RECT.x1 + reach and landed[3] <= DRAWN_RECT.y1 + reach), (
+        f"{kind} on {name}: drawn at {tuple(DRAWN_RECT)}, changed {landed} as the page is shown"
+    )
+    inside = after[int(DRAWN_RECT.y0) + 1:int(DRAWN_RECT.y1) - 1, int(DRAWN_RECT.x0) + 1:int(DRAWN_RECT.x1) - 1]
+    if kind in ("redact", "shapes-rectangle", "edit-rectangle"):
+        assert (inside < 60).mean() > 0.97, f"{kind} on {name}: the drawn box is not filled"
+    if kind == "whiteout":
+        assert (inside == 255).mean() > 0.995, f"{name}: something still shows under the white-out"
+    if kind == "redact":
+        text = _page_text(res.content)
+        assert "SECRET" not in text and "4111" not in text, f"{name}: the secret is still in the file: {text!r}"
+        assert PUBLIC_LINE in text, f"{name}: text outside the box went too: {text!r}"
+    if kind in ("esign", "sign", "edit-image"):
+        ys, xs = np.nonzero(after[landed[1]:landed[3], landed[0]:landed[2]] < 60)
+        across = (xs.mean() + 0.5) / (landed[2] - landed[0])
+        down = (ys.mean() + 0.5) / (landed[3] - landed[1])
+        assert across < 0.4 and 0.3 < down < 0.7, (
+            f"{kind} on {name}: the signature is turned (its black third sits at {across:.2f}, {down:.2f})"
+        )
+    if kind == "edit-text":
+        assert (landed[2] - landed[0]) > 2 * (landed[3] - landed[1]), f"{name}: the text is not upright: {landed}"
+
+
+@pytest.mark.parametrize("code", ["(b)(6)", "Exemption 3: 26 U.S.C. 6103"])
+@pytest.mark.parametrize("name", sorted(TURNED["pages"]))
+def test_an_exemption_code_reads_upright_in_its_box_on_a_turned_page(client, name, code):
+    """PyMuPDF printed a code along the page as stored: sideways on a page
+    turned a quarter, upside down on one turned half, and a long code broken
+    over several sideways lines."""
+    box = TURNED["pages"][name]["unrotated"]
+    res = client.post("/api/redact", files={"file": ("turned.pdf", TURNED_PDFS[name], "application/pdf")},
+                      data={"redactions": json.dumps([{"page": 0, **box, "code": code}])})
+    assert res.status_code == 200, res.text[:300]
+    with fitz.open(stream=res.content, filetype="pdf") as doc:
+        page = doc[0]
+        turn = fitz.Matrix(page.rotation_matrix)
+        turn.e = turn.f = 0
+        lines = [(fitz.Point(line["dir"]) * turn, "".join(span["text"] for span in line["spans"]), fitz.Rect(line["bbox"]) * page.rotation_matrix)
+                 for block in page.get_text("dict")["blocks"] for line in block.get("lines", [])]
+    printed = [(direction, text, where) for direction, text, where in lines if text == code]
+    assert printed, f"{name}: the code is not printed whole: {[text for _, text, _ in lines]}"
+    direction, _, where = printed[0]
+    assert (round(direction.x, 3), round(direction.y, 3)) == (1, 0), f"{name}: the code runs {direction} as shown"
+    assert DRAWN_RECT.contains(where), f"{name}: the code shows at {where}, outside the box"
+
+
+@pytest.mark.parametrize("name", sorted(TURNED["pages"]))
+def test_smart_redact_paints_its_box_on_the_words_it_removes(client, name):
+    """Smart Redact finds words on the page as stored and removed the right
+    ones, but on a turned page whose visible area does not start at 0,0 it
+    painted the black box somewhere else."""
+    pdf = TURNED_PDFS[name]
+    with fitz.open(stream=pdf, filetype="pdf") as doc:
+        page = doc[0]
+        word = next(fitz.Rect(w[:4]) * page.rotation_matrix for w in page.get_text("words") if w[4] == "SECRET")
+    res = client.post("/api/smart-redact", files={"file": ("turned.pdf", pdf, "application/pdf")},
+                      data={"needles": json.dumps(["SECRET"]), "color": "#000000"})
+    assert res.status_code == 200, res.text[:300]
+    assert "SECRET" not in _page_text(res.content)
+    before, after = _shown(pdf), _shown(res.content)
+    painted = _bounds((after < 60) & (np.abs(before.astype(int) - after.astype(int)) > 48))
+    assert painted is not None, f"{name}: no black box"
+    assert (painted[0] >= word.x0 - 2 and painted[1] >= word.y0 - 2
+            and painted[2] <= word.x1 + 2 and painted[3] <= word.y1 + 2), f"{name}: the word shows at {word}, the box at {painted}"
+
+
+CROP = TURNED["crop-pdf"]
+
+
+def _crop_margins(name: str) -> dict:
+    """The margins Crop's page sends when the drawn box is the area to keep."""
+    width, height = TURNED["pages"][name]["shown"]
+    return {
+        "top": DRAWN["y"], "left": DRAWN["x"],
+        "right": width - DRAWN["x"] - DRAWN["width"], "bottom": height - DRAWN["y"] - DRAWN["height"],
+    }
+
+
+@pytest.mark.parametrize("name", sorted(TURNED["pages"]))
+def test_the_area_drawn_to_keep_on_a_turned_page_is_the_area_kept(client, name):
+    """Crop's margins are drawn on the page as shown. Measured from the MediaBox
+    before /Rotate, the route trimmed the wrong sides of a turned page and, on a
+    page already cropped, kept more than the preview showed."""
+    pdf = TURNED_PDFS[name]
+    data = {k: str(v) for k, v in _crop_margins(name).items()} | {"margins_from": CROP["margins_from"]}
+    res = client.post("/api" + CROP["endpoint"], files={"file": ("turned.pdf", pdf, "application/pdf")}, data=data)
+    assert res.status_code == 200, res.text[:300]
+    before, after = _shown(pdf), _shown(res.content)
+    assert after.shape == (DRAWN["height"], DRAWN["width"]), f"{name}: kept {after.shape[::-1]} as shown"
+    kept = before[DRAWN["y"]:DRAWN["y"] + DRAWN["height"], DRAWN["x"]:DRAWN["x"] + DRAWN["width"]]
+    assert np.abs(kept.astype(int) - after.astype(int)).mean() < 2, f"{name}: the page shows another part of the page"
+    assert SECRET_LINE in _page_text(res.content)
+
+
+def test_crop_margins_are_measured_from_the_mediabox_unless_the_caller_asks():
+    """The API's default is unchanged: margins from the MediaBox as stored."""
+    from backend.app.services.crop_service import crop_pdf
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as folder:
+        source = Path(folder) / "turned.pdf"
+        source.write_bytes(TURNED_PDFS["cropped-rotate-90"])
+        out = crop_pdf(str(source), top=10, bottom=20, left=30, right=40)
+        with pikepdf.open(out) as pdf:
+            assert [float(v) for v in pdf.pages[0].CropBox] == [30, 20, 612 - 40, 792 - 10]

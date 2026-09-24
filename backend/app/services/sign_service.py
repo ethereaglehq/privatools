@@ -7,6 +7,7 @@ from reportlab.pdfgen import canvas
 
 from ..utils.cleanup import safe_open_pdf
 from ..utils.filenames import temp_output
+from ..utils.page_space import shown_area
 
 
 def sign_pdf(
@@ -18,26 +19,29 @@ def sign_pdf(
     width: float = 200,
     height: float = 80,
 ) -> str:
+    """Place the signature image at x, y (its bottom-left corner), in points
+    from the bottom-left corner of the page as it is shown: its visible area
+    (CropBox), after /Rotate. The signature stays upright as shown."""
     output_path = temp_output("signed", "pdf")
 
     with safe_open_pdf(input_path) as pdf:
         page_count = len(pdf.pages)
         page_idx = max(0, min(page - 1, page_count - 1))
-        target_page = pdf.pages[page_idx]
+        target_page = pikepdf.Page(pdf.pages[page_idx])
 
-        mediabox = target_page.mediabox
-        pg_width = float(mediabox[2]) - float(mediabox[0])
-        pg_height = float(mediabox[3]) - float(mediabox[1])
+        # An overlay the size of the page as shown, laid on the visible area:
+        # pikepdf turns it with the page, so it maps 1:1 (utils/page_space.py).
+        area, shown_width, shown_height = shown_area(target_page)
 
         packet = io.BytesIO()
-        c = canvas.Canvas(packet, pagesize=(pg_width, pg_height))
+        c = canvas.Canvas(packet, pagesize=(shown_width, shown_height))
         c.drawImage(ImageReader(signature_path), x, y, width=width, height=height, mask="auto")
         c.save()
         packet.seek(0)
 
         overlay_pdf = pikepdf.Pdf.open(packet)
         overlay_page = overlay_pdf.pages[0]
-        pikepdf.Page(target_page).add_overlay(overlay_page)
+        target_page.add_overlay(overlay_page, rect=area)
 
         pdf.save(str(output_path))
 

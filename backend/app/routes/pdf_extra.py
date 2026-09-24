@@ -16,6 +16,7 @@ from PIL import Image
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import remove_files, validate_pdf_content
+from ..utils.page_space import drawing_unturned
 from ..utils.render import safe_get_pixmap
 
 router = APIRouter()
@@ -606,10 +607,20 @@ def _add_radio_group(doc: fitz.Document, page: fitz.Page, field: dict, rect: fit
     _replace_fields(doc, [xref for _, xref in buttons], parent)
 
 
+FORM_FIELDS_DESCRIPTION = (
+    "JSON array of fields. Each has `name`, `type` (text, checkbox, radio, combobox, listbox "
+    "or signature), `page`, counted from 1, and `x`, `y`, `width` and `height` in points "
+    "(1/72 inch) from the top-left corner of the page's visible area (its CropBox), before any "
+    "/Rotate setting it has is applied; the box must lie on the page. Optional `required`; "
+    "`value` and `multiline` (text), `checked` (checkbox), `options` and `value` (radio, "
+    "combobox, listbox)."
+)
+
+
 @router.post("/form-creator")
 async def form_creator(
     file: UploadFile = File(...),
-    form_fields: str = Form(...),
+    form_fields: str = Form(..., description=FORM_FIELDS_DESCRIPTION),
 ):
     """Create fillable form fields in an existing PDF."""
     if not (file.filename or "").lower().endswith(".pdf"):
@@ -649,45 +660,12 @@ async def form_creator(
                         float(field["x"]) + float(field["width"]),
                         float(field["y"]) + float(field["height"]),
                     )
-                    if not page.rect.contains(rect):
-                        raise HTTPException(status_code=400, detail=f"Field '{name}' rectangle is out of page bounds")
-
-                    if field_type == "radio":
-                        _add_radio_group(doc, page, field, rect)
-                        continue
-
-                    widget = fitz.Widget()
-                    widget.field_name = name
-                    widget.field_label = name
-                    widget.rect = rect
-                    widget.text_font = "Helv"
-                    widget.text_fontsize = 11
-                    widget.field_flags = 0
-                    if bool(field.get("required")):
-                        widget.field_flags |= (1 << 1)
-
-                    if field_type == "text":
-                        widget.field_type = fitz.PDF_WIDGET_TYPE_TEXT
-                        widget.field_value = str(field.get("value", ""))
-                        if bool(field.get("multiline", False)):
-                            widget.field_flags |= (1 << 12)
-                    elif field_type == "checkbox":
-                        widget.field_type = fitz.PDF_WIDGET_TYPE_CHECKBOX
-                        widget.field_value = "Yes" if bool(field.get("checked", False)) else "Off"
-                    elif field_type == "combobox":
-                        widget.field_type = fitz.PDF_WIDGET_TYPE_COMBOBOX
-                        widget.choice_values = [str(o) for o in field.get("options", [])]
-                        widget.field_value = str(field.get("value", ""))
-                    elif field_type == "listbox":
-                        widget.field_type = fitz.PDF_WIDGET_TYPE_LISTBOX
-                        widget.choice_values = [str(o) for o in field.get("options", [])]
-                        widget.field_value = str(field.get("value", ""))
-                    elif field_type == "signature":
-                        widget.field_type = fitz.PDF_WIDGET_TYPE_SIGNATURE
-                    else:
-                        raise HTTPException(status_code=400, detail=f"Unsupported field type: {field_type}")
-
-                    page.add_widget(widget)
+                    # Fields are measured on the page as stored, from the top-left
+                    # corner of its visible area, before /Rotate. Unturned, the
+                    # page's rect is that area; turned, it is the page as shown,
+                    # which refused good fields and passed ones off the page.
+                    with drawing_unturned(page):
+                        _add_field(doc, page, field, name, field_type, rect)
 
                 try:
                     doc.need_appearances(True)
@@ -710,6 +688,49 @@ async def form_creator(
             remove_files(tmp.name)
         logger.exception("form-creator error")
         raise HTTPException(status_code=500, detail="Form creation failed") from exc
+
+
+def _add_field(doc: fitz.Document, page: fitz.Page, field: dict, name: str, field_type: str, rect: fitz.Rect) -> None:
+    """Add one field to `page`, which the caller has unturned (drawing_unturned)."""
+    if not page.rect.contains(rect):
+        raise HTTPException(status_code=400, detail=f"Field '{name}' rectangle is out of page bounds")
+
+    if field_type == "radio":
+        _add_radio_group(doc, page, field, rect)
+        return
+
+    widget = fitz.Widget()
+    widget.field_name = name
+    widget.field_label = name
+    widget.rect = rect
+    widget.text_font = "Helv"
+    widget.text_fontsize = 11
+    widget.field_flags = 0
+    if bool(field.get("required")):
+        widget.field_flags |= (1 << 1)
+
+    if field_type == "text":
+        widget.field_type = fitz.PDF_WIDGET_TYPE_TEXT
+        widget.field_value = str(field.get("value", ""))
+        if bool(field.get("multiline", False)):
+            widget.field_flags |= (1 << 12)
+    elif field_type == "checkbox":
+        widget.field_type = fitz.PDF_WIDGET_TYPE_CHECKBOX
+        widget.field_value = "Yes" if bool(field.get("checked", False)) else "Off"
+    elif field_type == "combobox":
+        widget.field_type = fitz.PDF_WIDGET_TYPE_COMBOBOX
+        widget.choice_values = [str(o) for o in field.get("options", [])]
+        widget.field_value = str(field.get("value", ""))
+    elif field_type == "listbox":
+        widget.field_type = fitz.PDF_WIDGET_TYPE_LISTBOX
+        widget.choice_values = [str(o) for o in field.get("options", [])]
+        widget.field_value = str(field.get("value", ""))
+    elif field_type == "signature":
+        widget.field_type = fitz.PDF_WIDGET_TYPE_SIGNATURE
+    else:
+        raise HTTPException(status_code=400, detail=f"Unsupported field type: {field_type}")
+
+    page.add_widget(widget)
 
 
 @router.post("/transparent-background")

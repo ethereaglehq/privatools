@@ -9,6 +9,7 @@ from json import JSONDecodeError
 from pathlib import Path
 from typing import Any
 
+import fitz  # PyMuPDF
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
@@ -25,13 +26,36 @@ from ..services import (
     xml_to_pdf_service,
 )
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, remove_files, validate_pdf_content
-from ..utils.route_helpers import read_upload, cleanup_on_error, MAX_SIZE
+from ..utils.route_helpers import read_upload, cleanup_on_error, require_item_pages, MAX_SIZE
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
 MAX_JSON_ITEMS = 1000
 SAFE_FILENAME_RE = re.compile(r"[^A-Za-z0-9._ -]+")
+
+# Where the boxes go. Undocumented until 2026-09-24; these say what the routes
+# have always measured. The website's pages convert what the visitor draws on
+# their turned preview into it (frontend/src/components/tool-ui/pdf/).
+_PAGE_BOX = (
+    "`page`, counted from 1 (1 is the first page; a page the PDF does not have is refused "
+    "with 400), and `x`, `y`, `width` and `height` in points (1/72 inch) from the top-left "
+    "corner of the page's visible area (its CropBox), before any /Rotate setting it has is applied"
+)
+REGIONS_DESCRIPTION = (
+    f"JSON array of rectangles to cover with white. Each has {_PAGE_BOX}. White-out covers "
+    "what is under a rectangle; it does not remove it from the file (Redact does)."
+)
+ANNOTATIONS_DESCRIPTION = (
+    "JSON array of annotations. Each has `type` (highlight, underline, strikethrough or note), "
+    f"{_PAGE_BOX}; a note is pinned at `x`, `y`. Highlights, underlines and strikethroughs run "
+    "across the page as it is shown. Optional `color` (hex) and `text` (a note's text)."
+)
+SHAPES_DESCRIPTION = (
+    "JSON array of shapes. Each has `type` (rectangle, circle, line or arrow) and "
+    f"{_PAGE_BOX}; a line or an arrow runs from `x`, `y` to `x2`, `y2`, in the same terms. "
+    "Optional `color` and `fill` (hex) and `stroke_width` (points)."
+)
 
 
 async def _read_upload(file: UploadFile, *, label: str, max_bytes: int = MAX_SIZE) -> bytes:
@@ -80,11 +104,20 @@ def _parse_json_list(raw: str, *, field_name: str) -> list[dict[str, Any]]:
     return parsed
 
 
+def _require_pages(path: Path, items: list[dict[str, Any]], *, noun: str) -> None:
+    """Refuse items on pages the PDF does not have, before any work is done."""
+    with fitz.open(str(path)) as probe:
+        page_count = len(probe)
+    if page_count == 0:
+        raise HTTPException(status_code=400, detail="PDF has no pages")
+    require_item_pages(items, page_count, noun=noun)
+
+
 # ─── White-Out / Eraser ──────────────────────────────────
 @router.post("/whiteout-pdf")
 async def whiteout_pdf(
     file: UploadFile = File(...),
-    regions: str = Form("[]"),
+    regions: str = Form("[]", description=REGIONS_DESCRIPTION),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
@@ -99,6 +132,7 @@ async def whiteout_pdf(
         validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
+        _require_pages(temp, region_list, noun="Region")
         out = await asyncio.to_thread(whiteout_service.whiteout_pdf, str(temp), region_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="whiteout.pdf", media_type="application/pdf", background=cleanup)
@@ -256,7 +290,7 @@ async def xml_to_pdf(file: UploadFile = File(...)):
 @router.post("/annotate-pdf")
 async def annotate_pdf(
     file: UploadFile = File(...),
-    annotations: str = Form("[]"),
+    annotations: str = Form("[]", description=ANNOTATIONS_DESCRIPTION),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
@@ -271,6 +305,7 @@ async def annotate_pdf(
         validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
+        _require_pages(temp, ann_list, noun="Annotation")
         out = await asyncio.to_thread(annotate_service.annotate_pdf, str(temp), ann_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="annotated.pdf", media_type="application/pdf", background=cleanup)
@@ -287,7 +322,7 @@ async def annotate_pdf(
 @router.post("/add-shapes")
 async def add_shapes(
     file: UploadFile = File(...),
-    shapes: str = Form("[]"),
+    shapes: str = Form("[]", description=SHAPES_DESCRIPTION),
 ):
     if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Please upload a PDF")
@@ -302,6 +337,7 @@ async def add_shapes(
         validate_pdf_content(content)
         temp = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp.write_bytes(content)
+        _require_pages(temp, shape_list, noun="Shape")
         out = await asyncio.to_thread(shapes_service.add_shapes, str(temp), shape_list)
         cleanup = BackgroundTask(remove_files, str(temp), out)
         return FileResponse(out, filename="shapes.pdf", media_type="application/pdf", background=cleanup)

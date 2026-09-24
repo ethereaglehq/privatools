@@ -38,11 +38,18 @@ def _cleanup_on_error(*paths: str | Path | None) -> None:
 async def esign_pdf(
     file: UploadFile = File(...),
     signature: str = Form(...),
-    page: int = Form(1, ge=1),
-    x: float = Form(100, ge=0),
-    y: float = Form(600, ge=0),
-    width: float = Form(200, ge=1, le=2000),
-    height: float = Form(80, ge=1, le=2000),
+    page: int = Form(1, ge=1, description="The page to sign, counted from 1."),
+    x: float = Form(100, ge=0, description=(
+        "Left edge of the signature's box, in points (1/72 inch) from the left edge of the page's "
+        "visible area (its CropBox), before any /Rotate setting the page has is applied."
+    )),
+    y: float = Form(600, ge=0, description=(
+        "Top edge of the signature's box, in points from the top edge of the page's visible area "
+        "(its CropBox), before any /Rotate setting the page has is applied. The signature keeps "
+        "its proportions inside the box and stays upright as the page is shown."
+    )),
+    width: float = Form(200, ge=1, le=2000, description="Width of the signature's box, in points, measured like `x`."),
+    height: float = Form(80, ge=1, le=2000, description="Height of the signature's box, in points, measured like `y`."),
 ):
     """Sign a PDF with an uploaded/drawn signature image."""
     if not file.filename or not file.filename.lower().endswith(".pdf"):

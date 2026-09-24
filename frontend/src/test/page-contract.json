@@ -1,15 +1,15 @@
 {
   "about": "The value each tool's page sends to its route to mean the first and the second page of a PDF. src/test/page-contract.test.tsx checks that the pages send these values; backend/tests/test_page_contract.py sends them through the real routes and checks that the change lands on that page and nowhere else. A page and a route that count pages differently fail one of the two.",
   "tools": {
-    "redact-pdf": { "endpoint": "/redact", "field": "redactions", "key": "page", "first": 0, "second": 1 },
-    "whiteout-pdf": { "endpoint": "/whiteout-pdf", "field": "regions", "key": "page", "first": 1, "second": 2 },
-    "annotate-pdf": { "endpoint": "/annotate-pdf", "field": "annotations", "key": "page", "first": 1, "second": 2 },
-    "add-shapes": { "endpoint": "/add-shapes", "field": "shapes", "key": "page", "first": 1, "second": 2 },
-    "edit-pdf": { "endpoint": "/edit-pdf", "field": "edits", "key": "page", "first": 1, "second": 2 },
-    "form-creator": { "endpoint": "/form-creator", "field": "form_fields", "key": "page", "first": 1, "second": 2 },
+    "redact-pdf": { "endpoint": "/redact", "field": "redactions", "key": "page", "first": 0, "second": 1, "frame": "unrotated" },
+    "whiteout-pdf": { "endpoint": "/whiteout-pdf", "field": "regions", "key": "page", "first": 1, "second": 2, "frame": "unrotated" },
+    "annotate-pdf": { "endpoint": "/annotate-pdf", "field": "annotations", "key": "page", "first": 1, "second": 2, "frame": "unrotated" },
+    "add-shapes": { "endpoint": "/add-shapes", "field": "shapes", "key": "page", "first": 1, "second": 2, "frame": "unrotated" },
+    "edit-pdf": { "endpoint": "/edit-pdf", "field": "edits", "key": "page", "first": 1, "second": 2, "frame": "shown-from-bottom" },
+    "form-creator": { "endpoint": "/form-creator", "field": "form_fields", "key": "page", "first": 1, "second": 2, "frame": "unrotated" },
     "bookmarks": { "endpoint": "/bookmarks", "field": "bookmarks", "key": "page", "first": 1, "second": 2 },
-    "esign-pdf": { "endpoint": "/esign-pdf", "field": "page", "first": 1, "second": 2 },
-    "sign-pdf": { "endpoint": "/sign-pdf", "field": "page", "first": 1, "second": 2 },
+    "esign-pdf": { "endpoint": "/esign-pdf", "field": "page", "first": 1, "second": 2, "frame": "unrotated" },
+    "sign-pdf": { "endpoint": "/sign-pdf", "field": "page", "first": 1, "second": 2, "frame": "shown-from-bottom" },
     "delete-pages": { "endpoint": "/delete-pages", "field": "pages", "first": "1", "second": "2" },
     "extract-pages": { "endpoint": "/extract-pages", "field": "pages", "first": "1", "second": "2" },
     "split-pdf": { "endpoint": "/split", "field": "pages", "first": "1", "second": "2" },
@@ -17,5 +17,19 @@
     "stamp-pdf": { "endpoint": "/stamp-pdf", "field": "pages", "first": "1", "second": "2" },
     "organize-pages": { "endpoint": "/organize-pages", "field": "page_order", "first": [1], "second": [2] },
     "merge-pdf": { "endpoint": "/merge", "field": "page_ranges", "first": "1", "second": "2" }
+  },
+  "turned": {
+    "about": "Where a box drawn on the preview goes, on pages stored turned (/Rotate) or whose visible area (the CropBox, else the MediaBox) does not start at 0,0. `drawn` is the box the visitor drags on the preview, in points from the top-left corner of the page as shown; `shown` is the size pdf.js shows the page at. A tool's `frame` says what its route measures in: `unrotated` routes take the box from the top-left corner of the visible area before /Rotate, which for each page is `unrotated` below; `shown-from-bottom` routes take the drawn box measured from the bottom-left corner of the page as shown. page-contract.test.tsx draws `drawn` on each page with real pdf.js and expects those values in the request; test_page_contract.py builds the same pages with text under the box, sends those values through the real routes and checks that the change lands on the drawn box as the page is shown, and nowhere else.",
+    "drawn": { "x": 60, "y": 80, "width": 320, "height": 34 },
+    "crop-pdf": { "about": "Crop's page sends the margins around the drawn area to keep, as shown, and asks the route to measure them there.", "endpoint": "/crop", "margins_from": "shown" },
+    "pages": {
+      "rotate-90": { "mediabox": [0, 0, 612, 792], "rotate": 90, "shown": [792, 612], "unrotated": { "x": 80, "y": 412, "width": 34, "height": 320 } },
+      "rotate-180": { "mediabox": [0, 0, 612, 792], "rotate": 180, "shown": [612, 792], "unrotated": { "x": 232, "y": 678, "width": 320, "height": 34 } },
+      "rotate-270": { "mediabox": [0, 0, 612, 792], "rotate": 270, "shown": [792, 612], "unrotated": { "x": 498, "y": 60, "width": 34, "height": 320 } },
+      "cropped": { "mediabox": [0, 0, 612, 792], "cropbox": [36, 48, 576, 744], "rotate": 0, "shown": [540, 696], "unrotated": { "x": 60, "y": 80, "width": 320, "height": 34 } },
+      "cropped-rotate-90": { "mediabox": [0, 0, 612, 792], "cropbox": [36, 48, 576, 744], "rotate": 90, "shown": [696, 540], "unrotated": { "x": 80, "y": 316, "width": 34, "height": 320 } },
+      "cropped-rotate-270": { "mediabox": [0, 0, 612, 792], "cropbox": [36, 48, 576, 744], "rotate": 270, "shown": [696, 540], "unrotated": { "x": 426, "y": 60, "width": 34, "height": 320 } },
+      "offset-rotate-180": { "mediabox": [100, 50, 712, 842], "rotate": 180, "shown": [612, 792], "unrotated": { "x": 232, "y": 678, "width": 320, "height": 34 } }
+    }
   }
 }

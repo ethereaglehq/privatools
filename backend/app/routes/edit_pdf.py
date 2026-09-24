@@ -3,11 +3,13 @@ import json
 import logging
 import uuid
 
+import fitz  # PyMuPDF
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.route_helpers import require_item_pages
 from ..services import edit_pdf_service
 
 router = APIRouter()
@@ -61,10 +63,19 @@ def _sanitize_edits(edits_list: list) -> list:
     return cleaned
 
 
+EDITS_DESCRIPTION = (
+    "JSON array of edits. Each has `type` (text, rectangle, circle, line, arrow, pen, highlight "
+    "or image) and `page`, counted from 1 (a page the PDF does not have is refused with 400). "
+    "Positions (`x`, `y`, `x1`, `y1`, `x2`, `y2` and pen `points`) are in points (1/72 inch) "
+    "from the bottom-left corner of the page as it is shown: its visible area (CropBox), after "
+    "any /Rotate setting it has. Text and images stay upright as the page is shown."
+)
+
+
 @router.post("/edit-pdf")
 async def edit_pdf(
     file: UploadFile = File(...),
-    edits: str = Form(...),
+    edits: str = Form(..., description=EDITS_DESCRIPTION),
 ):
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
@@ -103,6 +114,14 @@ async def edit_pdf(
         validate_pdf_content(content)
         temp_pdf = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_pdf.write_bytes(content)
+
+        # An edit on a page the PDF does not have used to be skipped, and the
+        # visitor got an unchanged file back. Numbered as the caller sent them.
+        with fitz.open(str(temp_pdf)) as probe:
+            page_count = len(probe)
+        if page_count == 0:
+            raise HTTPException(status_code=400, detail="PDF has no pages")
+        require_item_pages(edits_list, page_count, noun="Edit")
 
         output_path = await asyncio.to_thread(edit_pdf_service.edit_pdf, str(temp_pdf), cleaned_edits)
         cleanup = BackgroundTask(remove_files, str(temp_pdf), output_path)

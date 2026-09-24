@@ -12,6 +12,7 @@ from PIL import Image
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
+from ..utils.page_space import shown_area
 from ..services import sign_service
 
 router = APIRouter()
@@ -39,11 +40,18 @@ async def sign_pdf(
     file: UploadFile = File(...),
     signature: Optional[UploadFile] = File(None),
     signature_data: Optional[str] = Form(None),
-    page: int = Form(1),
-    x: float = Form(50),
-    y: float = Form(50),
-    width: float = Form(200),
-    height: float = Form(80),
+    page: int = Form(1, description="The page to sign, counted from 1."),
+    x: float = Form(50, description=(
+        "Left edge of the signature image, in points (1/72 inch) from the left edge of the page "
+        "as it is shown: its visible area (CropBox), after any /Rotate setting it has."
+    )),
+    y: float = Form(50, description=(
+        "Bottom edge of the signature image, in points from the bottom edge of the page as it is "
+        "shown: its visible area (CropBox), after any /Rotate setting it has. The image fills "
+        "the box and stays upright as the page is shown."
+    )),
+    width: float = Form(200, description="Width of the signature image, in points, measured like `x`."),
+    height: float = Form(80, description="Height of the signature image, in points, measured like `y`."),
 ):
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
@@ -139,16 +147,15 @@ async def sign_pdf(
                     status_code=400,
                     detail=f"Page {page} is out of range (PDF has {page_count} page{'s' if page_count != 1 else ''})",
                 )
-            target_page = pdf.pages[page - 1]
-            mediabox = target_page.mediabox
-            pg_width = float(mediabox[2]) - float(mediabox[0])
-            pg_height = float(mediabox[3]) - float(mediabox[1])
+            # x and y count from the bottom-left corner of the page as shown
+            # (its visible area, after /Rotate), so that is what the box must fit.
+            _, pg_width, pg_height = shown_area(pikepdf.Page(pdf.pages[page - 1]))
             if x + width > pg_width + 0.5 or y + height > pg_height + 0.5:
                 raise HTTPException(
                     status_code=400,
                     detail=(
                         f"Signature position is out of bounds (page is "
-                        f"{pg_width:.0f}×{pg_height:.0f} pt)"
+                        f"{pg_width:.0f}×{pg_height:.0f} pt as shown)"
                     ),
                 )
 
