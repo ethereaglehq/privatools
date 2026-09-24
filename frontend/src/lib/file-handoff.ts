@@ -102,7 +102,8 @@ function dataUrlToFile(dataUrl: string, name: string, type?: string): File {
   const body = dataUrl.slice(comma + 1);
   const mime = type || header.match(/^data:([^;,]*)/)?.[1] || "application/octet-stream";
 
-  let bytes: Uint8Array;
+  // ArrayBuffer-backed, which Blob and File accept (TypeScript 5.9 lib.dom).
+  let bytes: Uint8Array<ArrayBuffer>;
   if (/;base64/i.test(header)) {
     const bin = atob(body);
     bytes = new Uint8Array(bin.length);

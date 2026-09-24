@@ -32,7 +32,7 @@ function allowance(value: unknown): Allowance | null {
     return { key_id: candidate.key_id, resets_at: candidate.resets_at, units: { used: candidate.units.used, remaining: candidate.units.remaining }, bytes: { used: candidate.bytes.used } };
 }
 
-async function boundedBody(response: Response, limit: number): Promise<Uint8Array> {
+async function boundedBody(response: Response, limit: number): Promise<Uint8Array<ArrayBuffer>> {
     if (Number(response.headers.get("Content-Length")) > limit) {
         await response.body?.cancel();
         throw new Error("The response was larger than this sample playground can display.");
