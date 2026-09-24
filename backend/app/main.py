@@ -744,9 +744,10 @@ _PUBLIC_API_CORS_HEADERS = public_api_cors(None)
 
 
 async def _apply_cors_headers(request: Request, response: Response) -> None:
-    # As in the stack: the site's layer, and for /api/v1 the public API's around it.
+    # As in the stack: the site's layer, and for /api/v1 the public API's around
+    # it, chosen by the same scope path V1CORSMiddleware tests.
     layers = [_SITE_CORS_HEADERS]
-    if request.url.path.startswith("/api/v1/"):
+    if request.scope.get("path", "").startswith("/api/v1/"):
         layers.append(_PUBLIC_API_CORS_HEADERS)
     await add_cors_headers(request, response, layers)
 

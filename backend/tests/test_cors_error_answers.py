@@ -14,11 +14,17 @@ timeout middlewares answer inside the CORS layer and always had them.
 An origin the app does not allow gets no CORS header on any answer. Starlette
 used to send it the list of exposed headers anyway, which a browser ignores
 without an Access-Control-Allow-Origin.
+
+The app runs here with production's origins (ALLOWED_ORIGINS in
+docker-compose.yml), and each answer is asked for by the first of them and by
+origins that only look like it.
 """
 
 from __future__ import annotations
 
+import re
 import time
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -27,12 +33,40 @@ from backend.app import main
 from backend.app.auth import accounts
 from backend.app.services import url_to_pdf_service
 
-DISALLOWED = "https://evil.example"
-ORIGINS = ["allowed", "disallowed"]
+_COMPOSE = Path(__file__).resolve().parents[2] / "docker-compose.yml"
+PRODUCTION_ORIGINS = re.search(r"ALLOWED_ORIGINS=(\S+)", _COMPOSE.read_text()).group(1).split(",")
+ALLOWED = PRODUCTION_ORIGINS[0]
+# What each test asks with: the Origin header(s) sent. The same site under
+# another name, scheme or port is another origin; so is "null", which sandboxed
+# frames and some redirects send. Two Origin headers are decided by the first.
+ORIGINS = {
+    "allowed": [ALLOWED],
+    "unknown": ["https://evil.example"],
+    "null": ["null"],
+    "suffix": [ALLOWED + ".evil.com"],
+    "prefix": [ALLOWED.replace("://", "://evil", 1)],
+    "http": [ALLOWED.replace("https://", "http://", 1)],
+    "default-port": [ALLOWED + ":443"],
+    "two-headers-evil-first": ["https://evil.example", ALLOWED],
+}
 
 
-def _allowed() -> str:
-    return main._origins[0]
+@pytest.fixture(autouse=True)
+def production_origins(client):
+    """Let the app allow production's origins for the test, then restore its
+    own. The CORS layers read this list each time, so it is replaced in place."""
+    saved = list(main._origins)
+    main._origins[:] = PRODUCTION_ORIGINS
+    try:
+        answer = client.get("/api/health", headers={"Origin": ALLOWED})
+        assert answer.headers.get("access-control-allow-origin") == ALLOWED, "the app no longer reads main._origins"
+        yield
+    finally:
+        main._origins[:] = saved
+
+
+def _origin_headers(name: str) -> list[tuple[str, str]]:
+    return [("Origin", origin) for origin in ORIGINS[name]]
 
 
 def cors(response) -> dict[str, str]:
@@ -53,31 +87,32 @@ def quiet_client():
 
 @pytest.fixture
 def expected(client, request):
-    """What every answer to the test's origin must carry: a success's CORS
-    headers for the allowed origin, none for any other. Taken before the test
-    patches anything, since a patched timeout would end this request too."""
-    success = client.get("/api/health", headers={"Origin": _allowed()})
+    """The Origin headers the test sends, and what every answer to them must
+    carry: a success's CORS headers for the allowed origin, none for any other.
+    Taken before the test patches anything, since a patched timeout would end
+    this request too."""
+    success = client.get("/api/health", headers={"Origin": ALLOWED})
     assert success.status_code == 200
     allowed = cors(success)
-    assert allowed["access-control-allow-origin"] == _allowed()
+    assert allowed["access-control-allow-origin"] == ALLOWED
     assert allowed["vary"] == "Origin"
     assert "x-request-id" in allowed["access-control-expose-headers"].lower()
-    return (_allowed(), allowed) if request.param == "allowed" else (DISALLOWED, {})
+    return _origin_headers(request.param), allowed if request.param == "allowed" else {}
 
 
 @pytest.mark.parametrize("expected", ORIGINS, indirect=True)
 def test_a_success(client, expected):
     origin, headers = expected
-    assert cors(client.get("/api/health", headers={"Origin": origin})) == headers
+    assert cors(client.get("/api/health", headers=origin)) == headers
 
 
 @pytest.mark.parametrize("expected", ORIGINS, indirect=True)
 def test_413_from_the_upload_size_limit(client, expected):
     origin, headers = expected
-    response = client.post("/api/compress", content=b"x", headers={
-        "Origin": origin, "content-type": "application/octet-stream",
-        "content-length": str(600 * 1024 * 1024),
-    })
+    response = client.post("/api/compress", content=b"x", headers=[
+        *origin, ("content-type", "application/octet-stream"),
+        ("content-length", str(600 * 1024 * 1024)),
+    ])
     assert response.status_code == 413
     assert cors(response) == headers
 
@@ -96,7 +131,7 @@ def test_504_from_the_request_timeout(quiet_client, monkeypatch, tmp_path, expec
 
     monkeypatch.setattr(url_to_pdf_service, "url_to_pdf", slow)
     monkeypatch.setattr(main, "_REQUEST_TIMEOUT", 0.1)
-    response = quiet_client.post("/api/url-to-pdf", data={"url": "https://example.com/"}, headers={"Origin": origin})
+    response = quiet_client.post("/api/url-to-pdf", data={"url": "https://example.com/"}, headers=origin)
     assert response.status_code == 504
     assert cors(response) == headers
 
@@ -127,7 +162,7 @@ def test_answers_from_the_catch_all_handler(quiet_client, monkeypatch, expected,
     response = quiet_client.post(
         "/api/image-compressor",
         files={"file": ("photo.png", b"\x89PNG\r\n\x1a\n", "image/png")},
-        headers={"Origin": origin},
+        headers=origin,
     )
     assert response.status_code == status
     assert cors(response) == headers
@@ -135,9 +170,8 @@ def test_answers_from_the_catch_all_handler(quiet_client, monkeypatch, expected,
     assert response.headers["X-Request-ID"] == response.json()["request_id"]
 
 
-@pytest.mark.parametrize("origin", ["https://developer.example", "allowed"])
+@pytest.mark.parametrize("origin", ["https://developer.example", ALLOWED])
 def test_public_api_answers_from_the_catch_all_handler(client, quiet_client, monkeypatch, origin):
-    origin = _allowed() if origin == "allowed" else origin
     # Any other /api/v1 answer: this one is refused inside the stack.
     refused = client.get("/api/v1/whoami", headers={"Origin": origin})
     assert refused.status_code == 401

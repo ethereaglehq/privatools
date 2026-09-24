@@ -40,6 +40,12 @@ _READS = [
 ]
 # A file that calls the public API reads its answers under that API's policy.
 _CALLS_V1 = re.compile(r"""apiUrl\(\s*[`"']/v1/|["'`]/api/v1/""")
+# Any string that is an X- header's name, however the code then uses it.
+_X_NAME = re.compile(r"""(["'`])([Xx]-[A-Za-z0-9-]+)\1""")
+# X- headers the page only sends, never reads: the public API's key header,
+# which the API page and its playground send and document, and the key headers
+# of the visitor's own AI providers (lib/byok/providers.ts).
+REQUEST_ONLY = {"x-api-key", "x-goog-api-key"}
 
 
 def _sources() -> list[Path]:
@@ -51,17 +57,29 @@ def _sources() -> list[Path]:
     ]
 
 
-def headers_read() -> dict[str, dict[str, set[str]]]:
-    """{"site" | "v1": {header name, lower case: {files that read it}}}."""
+def _scan(patterns: list[re.Pattern]) -> dict[str, dict[str, set[str]]]:
+    """{"site" | "v1": {header name, lower case: {files where a pattern finds it}}}."""
     found: dict[str, dict[str, set[str]]] = {"site": {}, "v1": {}}
     for path in _sources():
         text = path.read_text(encoding="utf-8")
         surface = "v1" if _CALLS_V1.search(text) else "site"
-        for pattern in _READS:
+        for pattern in patterns:
             for match in pattern.finditer(text):
                 name = match.group(2).lower()
                 found[surface].setdefault(name, set()).add(str(path.relative_to(FRONTEND)))
     return found
+
+
+def headers_read() -> dict[str, dict[str, set[str]]]:
+    """The headers the page reads off an answer, found by how it reads them."""
+    return _scan(_READS)
+
+
+def x_header_names() -> dict[str, dict[str, set[str]]]:
+    """Every X- header name the page's code spells out, read or not. The
+    readers above miss a read through another name (const h = res.headers;
+    h.get("X-E")), a constant, or destructuring; the name itself is still here."""
+    return _scan([_X_NAME])
 
 
 def exposed(response) -> set[str]:
@@ -100,6 +118,19 @@ def test_the_api_exposes_only_headers_the_pages_read(client):
     assert not unread, (
         "Exposed, but no page reads them (or this test no longer finds the read): "
         f"remove them from SITE_EXPOSED_HEADERS, or fix the reader patterns here. {unread}"
+    )
+
+
+def test_every_x_header_the_pages_name_is_exposed_or_only_sent(client):
+    exposed = {"site": site_exposed(client), "v1": v1_exposed(client)}
+    names = x_header_names()
+    assert names["site"], "no X- header names found in frontend/src: update _X_NAME"
+    unknown = {f"{surface} {name}": sorted(files) for surface, found in names.items()
+               for name, files in found.items() if name not in exposed[surface] | REQUEST_ONLY}
+    assert not unknown, (
+        "The page names these X- headers, which the API does not expose and which are not in "
+        "REQUEST_ONLY. If the page reads one, expose it (SITE_EXPOSED_HEADERS in "
+        f"backend/app/middleware/cors.py); if it only sends it, add it to REQUEST_ONLY here. {unknown}"
     )
 
 
