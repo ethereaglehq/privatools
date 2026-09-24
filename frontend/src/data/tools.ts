@@ -1065,7 +1065,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "fillable form fields acroform text checkbox",
     popularity: 170,
     category: "advanced", accepts: ".pdf", outputLabel: "form.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "transparent-background", icon: Droplets, name: "Transparent Background",

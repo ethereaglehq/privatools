@@ -6,7 +6,7 @@
     },
     {
       "name": "Add form fields",
-      "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. Give each field a name and choose its type: text, checkbox, radio buttons, dropdown, list or signature."
+      "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. On a page the PDF stores turned, typed values count from the corner that is top left before the turn; the preview shows where each field goes. Give each field a name and choose its type: text, checkbox, radio buttons, dropdown, list or signature."
     },
     {
       "name": "Configure form properties",
