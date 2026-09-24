@@ -7,40 +7,32 @@ carries, and what was saved to the file afterwards.
 Certificates are not checked against any trust list, and revocation
 information is never fetched. A valid result therefore means the file matches
 its signature and certificate; it says nothing about who holds the
-certificate. Validation runs with an empty trust list and fetching disabled,
-so it never touches the network, and pyHanko never loads oscrypto, which it
-only uses to read the operating system's trust store.
+certificate.
 
-Fields are found with pikepdf, which opens damaged files the way readers do
-and applies the same password handling as every other tool; pyHanko, which is
-stricter, is only asked to read files that contain a signature.
+Fields are found here with pikepdf, which opens damaged files the way readers
+do and applies the same password handling as every other tool. pyHanko, which
+is stricter, only reads files that contain a signature, and only in a separate
+process (``_signature_check_worker.py``) with a time limit, a memory limit and
+no network access, because some malformed files make its parser loop for ever.
 """
 
 from __future__ import annotations
 
 import io
+import json
 import logging
+import subprocess
+import sys
+from pathlib import Path
 
 import pikepdf
 from pikepdf import Array, Dictionary, Name
 from pyhanko.pdf_utils.generic import parse_pdf_date
-from pyhanko.pdf_utils.reader import PdfFileReader
-from pyhanko.sign.diff_analysis import ModificationLevel
-from pyhanko.sign.fields import SigSeedSubFilter, enumerate_sig_fields
-from pyhanko.sign.validation import validate_pdf_signature, validate_pdf_timestamp
-from pyhanko.sign.validation.pdf_embedded import EmbeddedPdfSignature
-from pyhanko.sign.validation.status import SignatureCoverageLevel
-from pyhanko_certvalidator import ValidationContext
 
-from ..utils.cleanup import safe_open_pdf
+from ..utils.cleanup import remove_files, safe_open_pdf
+from ..utils.filenames import temp_output
 
 logger = logging.getLogger(__name__)
-
-# With no trusted roots, every certificate path fails to validate, and pyHanko
-# logs each failure as a warning with a full traceback. That is the expected
-# outcome here, not an error.
-for _library in ("pyhanko", "pyhanko_certvalidator"):
-    logging.getLogger(_library).setLevel(logging.ERROR)
 
 NOTE = (
     "Certificates are not checked against a trust list, and revocation is not checked. "
@@ -48,16 +40,35 @@ NOTE = (
     "shown; it does not prove who holds that certificate."
 )
 
-_SUPPORTED_SUBFILTERS = frozenset(subfilter.value for subfilter in SigSeedSubFilter)
+_CHECK_WORKER = Path(__file__).with_name("_signature_check_worker.py")
+# A small signed file takes about half a second, mostly starting Python and
+# importing pyHanko, and a 150 MB file with two signatures and a thousand
+# changes between them took under three. A file that makes the parser loop
+# never finishes, so the check is stopped at this limit.
+_CHECK_SECONDS_BASE = 10
+_CHECK_SECONDS_PER_MB = 0.1
+_CHECK_SECONDS_MAX = 60
+_MAX_OUTPUT_BYTES = 8 * 1024 * 1024
+
+# The signature formats pyHanko validates: the values of its SigSeedSubFilter,
+# written out so the web process never imports pyHanko's validation code.
+_SUPPORTED_SUBFILTERS = frozenset({"/adbe.pkcs7.detached", "/ETSI.CAdES.detached", "/ETSI.RFC3161"})
+# pyHanko's ModificationLevel names, as the worker reports them.
 _MODIFICATIONS = {
-    ModificationLevel.NONE: "none",
+    "NONE": "none",
     # Only validation data for long-term checking was added: the content is as signed.
-    ModificationLevel.LTA_UPDATES: "none",
-    ModificationLevel.FORM_FILLING: "form_filling",
-    ModificationLevel.ANNOTATIONS: "annotations",
-    ModificationLevel.OTHER: "other",
+    "LTA_UPDATES": "none",
+    "FORM_FILLING": "form_filling",
+    "ANNOTATIONS": "annotations",
+    "OTHER": "other",
 }
-_WHOLE_REVISION = (SignatureCoverageLevel.ENTIRE_FILE, SignatureCoverageLevel.ENTIRE_REVISION)
+# pyHanko's SignatureCoverageLevel names for a signature over all that it signed.
+_WHOLE_REVISION = frozenset({"ENTIRE_FILE", "ENTIRE_REVISION"})
+
+_NOT_CHECKED = "This signature could not be checked."
+_DAMAGED_FILE = "The file is damaged, so its signatures cannot be checked."
+_DAMAGED_SIGNATURE = "The signature data is damaged or in a form that cannot be read."
+_TIMED_OUT = "Checking this signature took too long, so it was stopped."
 
 
 def inspect_signatures(data: bytes) -> dict:
@@ -139,62 +150,91 @@ def _signature_fields(pdf: pikepdf.Pdf) -> list[tuple[dict, str]]:
 
 def _check(data: bytes, signed: list[tuple[dict, str]]) -> None:
     """Fill in each signed entry's status from pyHanko's validation."""
-    try:
-        reader = PdfFileReader(io.BytesIO(data), strict=False)
-        if reader.encrypted:
-            reader.decrypt("")  # pikepdf has already opened it without a password
-        in_reader = {name: field for name, _, field in enumerate_sig_fields(reader, filled_status=True)}
-    except Exception:  # noqa: BLE001 - pyHanko cannot read files that readers repair
-        logger.info("verify-signature: pyHanko could not read the file", exc_info=True)
-        for entry, _ in signed:
-            entry["reason"] = "The file is damaged, so its signatures cannot be checked."
-        return
-    context = ValidationContext(trust_roots=[], allow_fetching=False)
+    to_check = []
     for entry, subfilter in signed:
-        if subfilter not in _SUPPORTED_SUBFILTERS:
+        if subfilter in _SUPPORTED_SUBFILTERS:
+            to_check.append(entry)
+        else:
             entry["reason"] = f"This signature uses the {subfilter.lstrip('/') or 'unnamed'} format, which cannot be checked here."
-            continue
-        if entry["field"] not in in_reader:
-            entry["reason"] = "This signature could not be checked."
-            continue
-        try:
-            signature = EmbeddedPdfSignature(reader, in_reader[entry["field"]], entry["field"])
-            if entry["kind"] == "timestamp":
-                status = validate_pdf_timestamp(signature, validation_context=context)
-            else:
-                status = validate_pdf_signature(signature, signer_validation_context=context)
-        except Exception:  # noqa: BLE001 - unreadable signature data is reported, not raised
-            logger.info("verify-signature: could not validate %s", entry["field"], exc_info=True)
-            entry["reason"] = "The signature data is damaged or in a form that cannot be read."
-            continue
-        _apply(entry, status)
+    if not to_check:
+        return
+    outcome = _run_worker(data, [{"name": entry["field"], "kind": entry["kind"]} for entry in to_check])
+    if outcome in ("timeout", "failed"):
+        for entry in to_check:
+            entry["reason"] = _TIMED_OUT if outcome == "timeout" else _NOT_CHECKED
+        return
+    if outcome.get("readable") is not True:
+        for entry in to_check:
+            entry["reason"] = _DAMAGED_FILE
+        return
+    results = outcome.get("fields")
+    for entry in to_check:
+        facts = results.get(entry["field"]) if isinstance(results, dict) else None
+        if not isinstance(facts, dict) or facts.get("error") == "missing":
+            entry["reason"] = _NOT_CHECKED
+        elif "error" in facts:
+            entry["reason"] = _DAMAGED_SIGNATURE
+        else:
+            try:
+                _apply(entry, facts)
+            except (KeyError, TypeError, AttributeError):
+                logger.warning("verify-signature: the signature check answered in an unexpected form")
+                entry.update(status="unchecked", modification=None, certificate=None, reason=_NOT_CHECKED)
 
 
-def _apply(entry: dict, status) -> None:
-    certificate = status.signing_cert
-    common_name = certificate.subject.native.get("common_name", "")
-    if isinstance(common_name, list):
-        common_name = ", ".join(common_name)
-    entry["signer"] = entry["signer"] or common_name
-    if not entry["date"]:
-        when = status.timestamp if entry["kind"] == "timestamp" else status.signer_reported_dt
-        entry["date"] = when.isoformat() if when else ""
+def _time_limit(size: int) -> float:
+    return min(_CHECK_SECONDS_MAX, _CHECK_SECONDS_BASE + _CHECK_SECONDS_PER_MB * size / 1_000_000)
+
+
+def _run_worker(data: bytes, fields: list[dict]) -> dict | str:
+    """Run pyHanko on ``data`` in its own process. A string names a failure."""
+    pdf_path = temp_output("signature-check", "pdf")
+    limit = _time_limit(len(data))
+    try:
+        pdf_path.write_bytes(data)
+        process = subprocess.run(
+            [sys.executable, "-I", str(_CHECK_WORKER), str(pdf_path)],
+            input=json.dumps({"fields": fields}).encode() + b"\n",
+            stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            timeout=limit, check=False,
+        )
+    except subprocess.TimeoutExpired:
+        logger.warning("verify-signature: the signature check was stopped after %.0f seconds", limit)
+        return "timeout"
+    except OSError:
+        logger.exception("verify-signature: the signature check could not run")
+        return "failed"
+    finally:
+        remove_files(pdf_path)
+    # A crash, or the memory or CPU limit, stays inside the child.
+    if process.returncode != 0 or len(process.stdout) > _MAX_OUTPUT_BYTES:
+        logger.warning("verify-signature: the signature check failed with exit status %s", process.returncode)
+        return "failed"
+    try:
+        payload = json.loads(process.stdout)
+    except (ValueError, UnicodeDecodeError):
+        return "failed"
+    if not isinstance(payload, dict) or payload.get("ok") is not True:
+        return "failed"
+    return payload
+
+
+def _apply(entry: dict, facts: dict) -> None:
+    certificate = facts["certificate"]
+    entry["signer"] = entry["signer"] or certificate["common_name"]
+    entry["date"] = entry["date"] or facts["when"]
     entry["certificate"] = {
-        "subject": certificate.subject.human_friendly,
-        "issuer": certificate.issuer.human_friendly,
-        "valid_from": certificate.not_valid_before.isoformat(),
-        "valid_until": certificate.not_valid_after.isoformat(),
-        "self_signed": certificate.self_signed in ("yes", "maybe"),
+        key: certificate[key] for key in ("subject", "issuer", "valid_from", "valid_until", "self_signed")
     }
-    if not status.intact:
+    if not facts["intact"]:
         entry.update(status="invalid", reason="The signed content has changed since it was signed.")
-    elif not status.valid:
+    elif not facts["valid"]:
         entry.update(status="invalid", reason="The signature does not match its certificate.")
-    elif status.coverage not in _WHOLE_REVISION:
+    elif facts["coverage"] not in _WHOLE_REVISION:
         entry.update(status="invalid", reason="The signature does not cover the whole document as it was signed.")
     else:
-        level = status.modification_level
+        level = facts["modification_level"]
         if level is None:
-            level = ModificationLevel.NONE if status.coverage == SignatureCoverageLevel.ENTIRE_FILE else ModificationLevel.OTHER
+            level = "NONE" if facts["coverage"] == "ENTIRE_FILE" else "OTHER"
         modification = _MODIFICATIONS.get(level, "other")
         entry.update(status="valid" if modification == "none" else "modified", modification=modification)

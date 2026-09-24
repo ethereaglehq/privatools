@@ -91,11 +91,12 @@ async def verify_signature(file: UploadFile = File(...)):
     data = await _read_pdf(file)
 
     try:
-        # pyHanko's pure-Python parsing and change analysis grow with the file.
+        # A pikepdf walk, then a wait for the pyHanko process, which is
+        # stopped after 10 to 60 seconds depending on the file's size.
         result = await run_bounded(signature_service.inspect_signatures, data)
     except ValueError as exc:
-        # safe_open_pdf: password-protected or unreadable. pyHanko's own errors
-        # are ValueErrors too, but the service reports those per signature.
+        # safe_open_pdf: password-protected or unreadable. pyHanko runs in its
+        # own process, and the service reports its failures per signature.
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         logger.exception("Verify signature error")
