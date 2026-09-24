@@ -59,7 +59,7 @@ export function AlternateMixUI() {
             const msg = e instanceof Error ? e.message : "Alternate mix failed";
             setError(friendlyError(msg, "Couldn't alternate-mix those PDFs."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: 2 });
+            emitToolRun({ outcome: "error", files: 2 }, e);
         }
     }, [file1, file2, mode, outputName]);
 

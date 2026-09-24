@@ -85,7 +85,7 @@ export function AnnotateUI() {
             const msg = e instanceof Error ? e.message : "Could not apply annotations";
             setError(friendlyError(msg, "Couldn't annotate that PDF."));
             setStatus("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, annotations]);
 

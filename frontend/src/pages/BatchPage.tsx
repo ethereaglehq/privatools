@@ -25,7 +25,7 @@ import { tools } from "@/data/tools";
 import { nonPdfTools } from "@/data/non-pdf-tools";
 import { getToolEndpoint, getFilenameFromContentDisposition, guessExtensionFromContentType } from "@/lib/tool-endpoints";
 import { setBatchActive, clearBatchActive } from "@/lib/persistence";
-import { chooseDownloadFilename, formatErrorForClipboard, postFormData } from "@/lib/api";
+import { chooseDownloadFilename, formatErrorForClipboard, postFormData, withErrorKind } from "@/lib/api";
 import { buildBatchForm } from "@/lib/batch-request";
 import { emitToolRun, runOutcome } from "@/lib/toolRun";
 
@@ -248,6 +248,7 @@ export default function BatchPage() {
         originalFile: File,
         signal: AbortSignal,
         updater: (mutate: (prev: BatchFile[]) => BatchFile[]) => void,
+        onFailure?: (cause: unknown) => void,
     ): Promise<"done" | "error" | "aborted"> => {
         const startedAt = performance.now();
 
@@ -268,7 +269,7 @@ export default function BatchPage() {
             if (selectedTool.slug === "subtitle-converter") {
                 const { convertSubtitles } = await import("@/components/tool-ui/subtitle-conversion");
                 const converted = convertSubtitles(await originalFile.text(), subtitleTarget);
-                if (!converted.ok) throw new Error(converted.error);
+                if (!converted.ok) throw withErrorKind(new Error(converted.error), "bad_input");
                 if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
                 const blob = new Blob([converted.output], { type: subtitleTarget === "vtt" ? "text/vtt" : "application/x-subrip" });
                 const filename = `${originalFile.name.replace(/\.[^.]+$/, "")}.${subtitleTarget}`;
@@ -324,6 +325,7 @@ export default function BatchPage() {
                 next[targetIdx] = { ...next[targetIdx], status: "error", error: msg, errorReport: report };
                 return next;
             });
+            onFailure?.(e);
             return "error";
         }
     }, [selectedTool.endpoint, selectedTool.name, selectedTool.slug, buildFallbackFilename, highlightQuery, subtitleTarget]);
@@ -354,8 +356,9 @@ export default function BatchPage() {
 
         const updater = (mutate: (prev: BatchFile[]) => BatchFile[]) => setFiles(mutate);
         // Tally terminal results as they return so the usage signal never reads React state.
-        const tally = { done: 0, failed: 0 };
+        const tally: { done: number; failed: number; firstFailure: unknown } = { done: 0, failed: 0, firstFailure: null };
         const record = (result: "done" | "error" | "aborted") => { if (result === "done") tally.done++; else if (result === "error") tally.failed++; };
+        const onFailure = (cause: unknown) => { tally.firstFailure ??= cause; };
 
         if (parallel) {
             // Bounded parallel — 3 at a time is generous without overloading the API.
@@ -367,7 +370,7 @@ export default function BatchPage() {
                     while (queue.length > 0 && !controller.signal.aborted) {
                         const item = queue.shift();
                         if (!item) break;
-                        record(await processOne(item.i, item.f.file, controller.signal, updater));
+                        record(await processOne(item.i, item.f.file, controller.signal, updater, onFailure));
                     }
                 })());
             }
@@ -375,7 +378,7 @@ export default function BatchPage() {
         } else {
             for (const { i } of targets) {
                 if (controller.signal.aborted) break;
-                record(await processOne(i, files[i].file, controller.signal, updater));
+                record(await processOne(i, files[i].file, controller.signal, updater, onFailure));
             }
         }
 
@@ -385,7 +388,7 @@ export default function BatchPage() {
         // resume banner doesn't appear on the next visit.
         clearBatchActive();
         const outcome = runOutcome(tally.done, tally.failed);
-        if (outcome) emitToolRun({ slug: selectedTool.slug, mode: "batch", outcome, files: tally.done + tally.failed });
+        if (outcome) emitToolRun({ slug: selectedTool.slug, mode: "batch", outcome, files: tally.done + tally.failed }, tally.firstFailure);
 
         // Record history. Read fresh state via the setter to avoid stale closure.
         setFiles(curr => {

@@ -122,7 +122,7 @@ export function MultiFileUI({
             const msg = e instanceof Error ? e.message : "Processing failed";
             setError(friendlyError(msg, "Couldn't process those files."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: files.length });
+            emitToolRun({ outcome: "error", files: files.length }, e);
         } finally { request.current = null; }
     }, [files, minFiles, fileLabel, outputFilename, actionVerb, endpoint, params]);
 

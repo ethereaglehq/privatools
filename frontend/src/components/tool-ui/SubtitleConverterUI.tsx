@@ -12,7 +12,7 @@ import "./SpecialistTools.css";
 import { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { Upload, AlertCircle, Download, ShieldCheck, Sparkles, CheckCircle2, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { downloadBlob } from "@/lib/api";
+import { downloadBlob, withErrorKind } from "@/lib/api";
 import { buildZip } from "@/lib/zip";
 import { emitToolRun, runOutcome } from "@/lib/toolRun";
 import type { FileEntry } from "@/hooks/useMultiFileProcessor";
@@ -119,6 +119,7 @@ export function SubtitleConverterUI() {
             .map(e => e.id);
         setEntries(prev => prev.map(e => ids.includes(e.id) ? { ...e, status: "queued", error: undefined } : e));
         let done = 0, failed = 0;
+        let firstFailure: unknown = null;
         for (const id of ids) {
             const en = entries.find(e => e.id === id);
             if (!en) continue;
@@ -126,7 +127,7 @@ export function SubtitleConverterUI() {
             try {
                 const text = texts[id] ?? await en.file.text();
                 const r = convertSubtitles(text, target);
-                if (!r.ok) throw new Error(r.error);
+                if (!r.ok) throw withErrorKind(new Error(r.error), "bad_input");
                 const baseName = (en.name || "subtitles").replace(/\.[^.]+$/, "");
                 const blob = new Blob([r.output], { type: target === "srt" ? "application/x-subrip" : "text/vtt" });
                 setEntries(prev => prev.map(e => e.id === id
@@ -138,10 +139,11 @@ export function SubtitleConverterUI() {
                 const msg = err instanceof Error ? err.message : String(err);
                 setEntries(prev => prev.map(e => e.id === id ? { ...e, status: "failed", error: msg } : e));
                 failed++;
+                firstFailure ??= err;
             }
         }
         const outcome = runOutcome(done, failed);
-        if (outcome) emitToolRun({ outcome, files: done + failed });
+        if (outcome) emitToolRun({ outcome, files: done + failed }, firstFailure);
         setPhase("done");
     }, [entries, texts, target]);
 

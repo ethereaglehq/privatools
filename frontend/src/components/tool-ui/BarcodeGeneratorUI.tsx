@@ -82,7 +82,7 @@ export function BarcodeGeneratorUI() {
             const msg = e instanceof Error ? e.message : "Generation failed";
             setError(friendlyError(msg, "Couldn't generate that barcode."));
             setStatus("idle");
-            emitToolRun({ outcome: "error" });
+            emitToolRun({ outcome: "error" }, e);
         }
     }, [barcodeType, data, previewUrl, status]);
 

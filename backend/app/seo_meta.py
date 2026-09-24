@@ -37,7 +37,7 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "Privacy Policy — PrivaTools",
         "PrivaTools privacy policy: local-first tools, isolated temporary processing deleted on "
         "response, on-device AI models, and bring-your-own-key AI that talks to your provider "
-        "directly — never through us. Updated September 1, 2026.",
+        "directly — never through us. Updated September 24, 2026.",
     ),
     "/security": (
         "Security & Trust — PrivaTools",
@@ -1619,7 +1619,7 @@ def _get_jsonld_for_path(path: str, _blog_mtime_ns: int) -> dict | None:
                     "inLanguage": "en",
                     "isPartOf": {"@id": f"{BASE_URL}/#website"},
                     "datePublished": "2026-03-15",
-                    "dateModified": "2026-03-29" if path == "/privacy" else "2026-03-29",
+                    "dateModified": "2026-09-24" if path == "/privacy" else "2026-03-29",
                     "publisher": {"@type": "Organization", "name": "PrivaTools", "url": BASE_URL, "logo": {"@type": "ImageObject", "url": BRAND_LOGO_URL}},
                 },
                 {"@type": "BreadcrumbList", "itemListElement": breadcrumbs},
@@ -1954,15 +1954,27 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
     # ── Privacy page ───────────────────────────────────────────────────────
     if path == "/privacy":
         parts.append("<h1>Privacy Policy</h1>")
-        parts.append("<p><strong>Last updated:</strong> September 17, 2026</p>")
+        parts.append("<p><strong>Last updated:</strong> September 24, 2026</p>")
         parts.append(
             "<p>Browser tools process files on your device. Server tools upload files for temporary processing: "
             "response cleanup removes them, and a background sweep removes files left by interrupted requests. "
-            "Google Analytics is on by default and measures public page visits, sessions, engagement and each "
-            "tool run: which tool, how it ran, how many files and whether it succeeded. It uses pseudonymous "
-            "browser identifiers and cookies, and it never receives file contents, filenames, document text or "
-            "account identity. Advertising features and Google Signals are off. Turn analytics off at any time "
-            "with the switch on this page.</p>"
+            "Google Analytics is on by default and measures public page visits, sessions, engagement, where a "
+            "visit came from and each tool run: which tool, how it ran, how many files, whether it succeeded "
+            "and, if it failed, a fixed failure category (too_large, rate_limited, bad_input, timeout, server, "
+            "network, provider or browser), never the error message. It uses pseudonymous browser identifiers "
+            "and cookies, and it never receives file contents, filenames, document text or account identity. "
+            "Advertising features and Google Signals are off. Turn analytics off at any time with the switch "
+            "on this page.</p>"
+        )
+        parts.append(
+            "<p>Page views use canonical page addresses without fragments or query parameters, except the first "
+            "page view after you arrive. That one keeps any utm_source, utm_medium, utm_campaign, utm_term and "
+            "utm_content campaign tags from the address you arrived at, when each value is at most 100 letters, "
+            "digits, spaces or . _ ~ - characters, and names the site or app that linked you here by its origin "
+            "only, for example https://www.google.com/, never the page you came from or your search terms. "
+            "Every other query parameter is removed. Browsers that identify themselves as automated "
+            "(navigator.webdriver) or headless (a HeadlessChrome or PhantomJS user agent) do not load Google "
+            "Analytics at all.</p>"
         )
         parts.append("<h2>1. Files You Upload</h2>")
         parts.append(
@@ -1983,7 +1995,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.append(
             "<p>No account needed, no behavioural profiling, no advertising cookies, "
             "no remarketing audiences, no session recordings, no file metadata, no canvas / browser "
-            "fingerprints. Optional Google Analytics receives technical connection and browser data, but never file contents, filenames, account identity, passwords, or API keys. Advertising features are disabled.</p>"
+            "fingerprints. Google Analytics, on by default and switchable off on this page, receives technical connection and browser data, but never file contents, filenames, error messages, account identity, passwords, or API keys. Advertising features are disabled.</p>"
         )
         parts.append("<h2>4. Open Source &amp; Self-Hosting</h2>")
         parts.append(

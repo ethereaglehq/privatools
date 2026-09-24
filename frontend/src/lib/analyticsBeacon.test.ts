@@ -13,8 +13,12 @@ beforeEach(() => {
   delete win.dataLayer; delete win.gtag; delete win.ptSetAnalyticsDisabled;
   Object.defineProperty(navigator, "globalPrivacyControl", { configurable: true, value: false });
   Object.defineProperty(navigator, "doNotTrack", { configurable: true, value: null });
+  // Own properties shadow jsdom's getters; deleting them restores the defaults.
+  Reflect.deleteProperty(document, "referrer"); Reflect.deleteProperty(navigator, "webdriver"); Reflect.deleteProperty(navigator, "userAgent");
 });
 afterEach(() => { stop?.(); stop = undefined; vi.useRealTimers(); vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
+function setReferrer(value: string) { Object.defineProperty(document, "referrer", { configurable: true, value }); }
+function pageViews() { return events().filter(command => command[1] === "page_view").map(command => command[2] as Record<string, unknown>); }
 async function start() { const module = await import("./analyticsBeacon"); stop = module.startPageviewTracking(); return module; }
 function commands(): unknown[][] { return (win.dataLayer || []).map(item => Array.from(item)); }
 function events() { return commands().filter(command => command[0] === "event"); }
@@ -164,6 +168,170 @@ describe("tool_run usage events", () => {
     const { setAnalyticsOptOut } = await import("./analyticsPrivacy"); setAnalyticsOptOut(true);
     toolRun({ outcome: "success" });
     expect(runs()).toHaveLength(0);
+  });
+});
+
+describe("where visits come from", () => {
+  it("sends only the external referrer's origin on the landing page view", async () => {
+    setReferrer("https://www.google.com/search?q=private+medical+terms&client=firefox");
+    await start();
+    expect(pageViews()).toEqual([expect.objectContaining({ page_location: "https://privatools.me/", page_referrer: "https://www.google.com/" })]);
+    const text = JSON.stringify(commands());
+    for (const hidden of ["search", "private", "medical", "client=", "firefox"]) expect(text).not.toContain(hidden);
+  });
+
+  it("carries only the allowlisted campaign tags into the landing page location", async () => {
+    history.replaceState(null, "", "/tools/image-compressor?utm_source=newsletter&utm_medium=email&utm_campaign=Spring+Sale&utm_term=pdf%20tools&utm_content=hero-1&gclid=secret-click&email=me%40example.com&utm_id=77&UTM_SOURCE=upper#secret-fragment");
+    setReferrer("https://news.example.org/issue/42?reader=secret-reader");
+    await start();
+    expect(pageViews()).toEqual([expect.objectContaining({
+      page_location: "https://privatools.me/tools/image-compressor?utm_source=newsletter&utm_medium=email&utm_campaign=Spring%20Sale&utm_term=pdf%20tools&utm_content=hero-1",
+      page_referrer: "https://news.example.org/",
+    })]);
+    const text = JSON.stringify(commands());
+    for (const hidden of ["secret", "gclid", "email=", "example.com", "utm_id", "upper", "issue"]) expect(text).not.toContain(hidden);
+  });
+
+  it("drops campaign values outside the safe character set or longer than 100 characters", async () => {
+    const max = "b".repeat(100);
+    history.replaceState(null, "", `/?utm_source=${max}&utm_medium=${"c".repeat(101)}&utm_campaign=%3Cscript%3Ealert(1)%3C%2Fscript%3E&utm_term=jane%40example.com&utm_content=caf%C3%A9-%E0%A4%B9%E0%A4%BF`);
+    await start();
+    expect(pageViews()[0].page_location).toBe(`https://privatools.me/?utm_source=${max}&utm_content=${encodeURIComponent("café-हि")}`);
+    const text = JSON.stringify(commands());
+    for (const hidden of ["ccc", "script", "jane", "example.com"]) expect(text).not.toContain(hidden);
+  });
+
+  it("uses the first value of a repeated tag and ignores empty ones", async () => {
+    history.replaceState(null, "", "/?utm_source=first&utm_source=second&utm_medium=&utm_campaign=%20%20");
+    await start();
+    expect(pageViews()[0].page_location).toBe("https://privatools.me/?utm_source=first");
+  });
+
+  it("sends the landing attribution on the first page view only and never through the global set", async () => {
+    history.replaceState(null, "", "/?utm_source=newsletter&utm_campaign=launch");
+    setReferrer("https://www.google.com/");
+    const module = await start();
+    history.pushState(null, "", "/tools/image-compressor"); module.notifyNavigation(); await vi.advanceTimersByTimeAsync(0);
+    toolRun({ outcome: "error", errorKind: "server" });
+    window.dispatchEvent(new CustomEvent("privatools:tool-success"));
+    const views = pageViews();
+    expect(views).toHaveLength(2);
+    expect(views[0]).toMatchObject({ page_location: "https://privatools.me/?utm_source=newsletter&utm_campaign=launch", page_referrer: "https://www.google.com/" });
+    expect(views[1]).toMatchObject({ page_location: "https://privatools.me/tools/image-compressor", page_referrer: "https://privatools.me/" });
+    // Everything after the landing hit, and every global default, is clean.
+    const later = [...commands().filter(command => command[0] !== "event"), ...events().slice(1)];
+    expect(later.length).toBeGreaterThan(3);
+    for (const command of later) {
+      expect(JSON.stringify(command)).not.toContain("utm_");
+      expect(JSON.stringify(command)).not.toContain("google.com");
+    }
+  });
+
+  it("keeps the landing attribution for the first page view a private landing page never sent", async () => {
+    history.replaceState(null, "", "/account/sign-in?utm_source=newsletter&token=secret");
+    setReferrer("https://mail.example.net/inbox/123");
+    const module = await start();
+    expect(commands()).toEqual([]);
+    history.pushState(null, "", "/"); module.notifyNavigation(); await vi.advanceTimersByTimeAsync(0);
+    history.pushState(null, "", "/tools"); module.notifyNavigation(); await vi.advanceTimersByTimeAsync(0);
+    expect(pageViews()).toEqual([
+      expect.objectContaining({ page_location: "https://privatools.me/?utm_source=newsletter", page_referrer: "https://mail.example.net/" }),
+      expect.objectContaining({ page_location: "https://privatools.me/tools", page_referrer: "https://privatools.me/" }),
+    ]);
+    expect(JSON.stringify(commands())).not.toContain("secret");
+    expect(JSON.stringify(commands())).not.toContain("inbox");
+  });
+
+  it("treats this site as internal and ignores referrers that are not web or app links", async () => {
+    setReferrer("https://privatools.me/tool/merge-pdf?input=secret");
+    await start();
+    expect(pageViews()[0].page_referrer).toBe("https://privatools.me/tool/merge-pdf");
+    expect(JSON.stringify(commands())).not.toContain("secret");
+    for (const [referrer, expected] of [
+      [`${location.origin}/tools`, "https://privatools.me/tools"],
+      ["file:///home/me/secret.html", ""],
+      ["android-app://com.google.android.googlequicksearchbox/https/www.google.com", "android-app://com.google.android.googlequicksearchbox/"],
+      ["not a url", ""],
+    ]) {
+      stop?.(); vi.resetModules(); delete win.dataLayer; delete win.gtag; document.head.innerHTML = '<meta name="privatools:google-analytics" content="enabled">';
+      setReferrer(referrer);
+      await start();
+      expect(pageViews()[0].page_referrer).toBe(expected);
+    }
+    expect(JSON.stringify(commands())).not.toContain("secret");
+  });
+});
+
+describe("automated browsers", () => {
+  it("does not load the tag or send anything in a WebDriver-controlled browser", async () => {
+    Object.defineProperty(navigator, "webdriver", { configurable: true, value: true });
+    history.replaceState(null, "", "/tool/merge-pdf");
+    await start();
+    toolRun({ outcome: "success", files: 1 });
+    window.dispatchEvent(new CustomEvent("privatools:tool-success"));
+    const { setAnalyticsOptOut } = await import("./analyticsPrivacy"); setAnalyticsOptOut(false);
+    await navigate("/tools");
+    expect(commands()).toEqual([]);
+    expect(document.querySelector("script")).toBeNull();
+    expect(disabled()).toBe(true);
+  });
+
+  it.each([
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/131.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Unknown; Linux x86_64) AppleWebKit/538.1 (KHTML, like Gecko) PhantomJS/2.1.1 Safari/538.1",
+  ])("does not load the tag for a headless user agent: %s", async userAgent => {
+    Object.defineProperty(navigator, "userAgent", { configurable: true, value: userAgent });
+    await start();
+    toolRun({ slug: "merge-pdf", outcome: "success" });
+    expect(commands()).toEqual([]);
+    expect(document.querySelector("script")).toBeNull();
+    expect(disabled()).toBe(true);
+  });
+
+  it("still measures an ordinary browser, whatever its screen or language", async () => {
+    Object.defineProperty(navigator, "webdriver", { configurable: true, value: false });
+    Object.defineProperty(navigator, "userAgent", { configurable: true, value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36" });
+    await start();
+    expect(pageViews()).toHaveLength(1);
+  });
+});
+
+describe("why tool runs fail", () => {
+  it("adds a validated failure category to error and partial runs only", async () => {
+    history.replaceState(null, "", "/tool/merge-pdf"); await start();
+    toolRun({ outcome: "error", files: 1, errorKind: "too_large" });
+    toolRun({ outcome: "partial", files: 2, errorKind: "server" });
+    toolRun({ outcome: "success", errorKind: "server" });
+    toolRun({ outcome: "error", errorKind: "Could not read secret-contract.pdf" });
+    toolRun({ outcome: "error", errorKind: "cancelled" });
+    toolRun({ outcome: "error", errorKind: 413 });
+    expect(runs().map(run => run.error_kind)).toEqual(["too_large", "server", undefined, undefined, undefined, undefined]);
+    expect(runs()[2]).not.toHaveProperty("error_kind");
+    expect(JSON.stringify(commands())).not.toContain("secret");
+  });
+
+  it("accepts every category in the fixed list", async () => {
+    history.replaceState(null, "", "/tool/merge-pdf"); await start();
+    const { TOOL_ERROR_KINDS } = await import("./toolRun");
+    for (const errorKind of TOOL_ERROR_KINDS) toolRun({ outcome: "error", errorKind });
+    expect(runs().map(run => run.error_kind)).toEqual([...TOOL_ERROR_KINDS]);
+    expect([...TOOL_ERROR_KINDS].sort()).toEqual(["bad_input", "browser", "network", "provider", "rate_limited", "server", "timeout", "too_large"]);
+  });
+
+  it("classifies a failure centrally and never sends its message", async () => {
+    history.replaceState(null, "", "/tool/merge-pdf"); await start();
+    const { emitToolRun } = await import("./toolRun");
+    emitToolRun({ outcome: "error", files: 1 }, Object.assign(new Error("secret-contract.pdf is too large"), { __status: 413 }));
+    emitToolRun({ outcome: "error", files: 1 }, new TypeError("Failed to fetch"));
+    emitToolRun({ outcome: "error", files: 1 }, new Error("Could not parse secret text on page 3"));
+    emitToolRun({ outcome: "error", files: 1 }, new DOMException("Aborted", "AbortError"));
+    expect(runs()).toEqual([
+      expect.objectContaining({ outcome: "error", file_count: 1, error_kind: "too_large" }),
+      expect.objectContaining({ outcome: "error", file_count: 1, error_kind: "network" }),
+      expect.objectContaining({ outcome: "error", file_count: 1, error_kind: "browser" }),
+    ]);
+    const text = JSON.stringify(commands());
+    for (const hidden of ["secret", "Failed to fetch", "parse", "Aborted"]) expect(text).not.toContain(hidden);
   });
 });
 

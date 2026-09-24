@@ -90,7 +90,7 @@ export function FillFormUI() {
             if (lower.includes("network") || lower.includes("fetch")) msg = "Network hiccup — check your connection and retry";
             else if (lower.includes("encrypted") || lower.includes("password")) msg = "PDF is password-protected — unlock it before filling";
             setError(msg); setState("editing");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, values]);
 

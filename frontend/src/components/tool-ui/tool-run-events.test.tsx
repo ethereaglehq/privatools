@@ -17,6 +17,8 @@ function listen(): Detail[] {
 }
 function pdf(name: string) { return new File(["%PDF synthetic"], name, { type: "application/pdf" }); }
 function ok() { return { blob: async () => new Blob(["out"], { type: "application/pdf" }), headers: new Headers() } as Response; }
+/** The shape api.ts gives an HTTP error: a message the UI shows, plus the status. */
+function httpError(status: number) { return Object.assign(new Error("boom secret"), { __status: status }); }
 
 beforeEach(() => {
     vi.clearAllMocks(); vi.mocked(consumeFileHandoffs).mockResolvedValue([]);
@@ -36,27 +38,39 @@ describe("GenericUI usage events", () => {
         expect(seen).toEqual([{ mode: "single", outcome: "success", files: 2 }]);
         expect(JSON.stringify(seen)).not.toContain("secret");
     });
-    it("reports a failed single-file run as an error without the message", async () => {
+    it("reports a failed single-file run as an error with its category, without the message", async () => {
         const seen = listen();
-        vi.mocked(uploadFileWithProgress).mockRejectedValue(new Error("boom secret"));
+        vi.mocked(uploadFileWithProgress).mockRejectedValue(httpError(413));
         const { container } = render(<GenericUI slug="rotate-pdf" toolName="Rotate PDF" actionLabel="Rotate now" outputLabel="rotated.pdf" accepts=".pdf" />);
         fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [pdf("secret.pdf")] } });
         fireEvent.click(screen.getByRole("button", { name: /^Rotate now/ }));
         await waitFor(() => expect(seen).toHaveLength(1));
-        expect(seen).toEqual([{ mode: "single", outcome: "error", files: 1 }]);
+        expect(seen).toEqual([{ mode: "single", outcome: "error", files: 1, errorKind: "too_large" }]);
         expect(JSON.stringify(seen)).not.toContain("secret");
+    });
+    it("reports nothing when the visitor cancels the run", async () => {
+        const seen = listen();
+        vi.mocked(uploadFileWithProgress).mockImplementation((_endpoint, _file, _params, _onProgress, signal) => new Promise<Response>((_resolve, reject) => {
+            signal?.addEventListener("abort", () => reject(new DOMException("Aborted", "AbortError")));
+        }));
+        const { container } = render(<GenericUI slug="rotate-pdf" toolName="Rotate PDF" actionLabel="Rotate now" outputLabel="rotated.pdf" accepts=".pdf" />);
+        fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [pdf("secret.pdf")] } });
+        fireEvent.click(screen.getByRole("button", { name: /^Rotate now/ }));
+        fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
+        await waitFor(() => expect(screen.getByRole("button", { name: /^Rotate now/ })).toBeEnabled());
+        expect(seen).toEqual([]);
     });
 });
 
 describe("SimpleConvertUI usage events", () => {
     it("emits a partial run when one of two conversions fails", async () => {
         const seen = listen();
-        vi.mocked(uploadFileWithProgress).mockResolvedValueOnce(ok()).mockRejectedValueOnce(new Error("boom secret"));
+        vi.mocked(uploadFileWithProgress).mockResolvedValueOnce(ok()).mockRejectedValueOnce(httpError(503));
         const { container } = render(<SimpleConvertUI slug="bmp-to-pdf" label="Convert to PDF" outputExt="pdf" outputFilename="converted.pdf" acceptFileTypes=".bmp" description="Convert BMP images to PDF" />);
         fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [new File(["x"], "secret-a.bmp", { type: "image/bmp" }), new File(["x"], "secret-b.bmp", { type: "image/bmp" })] } });
         fireEvent.click(screen.getByRole("button", { name: /Convert to PDF/ }));
         await waitFor(() => expect(seen).toHaveLength(1));
-        expect(seen).toEqual([{ mode: "single", outcome: "partial", files: 2 }]);
+        expect(seen).toEqual([{ mode: "single", outcome: "partial", files: 2, errorKind: "server" }]);
         expect(JSON.stringify(seen)).not.toContain("secret");
     });
 });

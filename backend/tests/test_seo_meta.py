@@ -808,6 +808,11 @@ def test_llms_facts_describe_the_analytics_actually_in_use():
             text = handle.read()
         assert "Google Analytics" in text, name
         assert "first-party pageview telemetry" not in text, name
+        # Since 2026-09-24: arrival attribution, failure categories, automation skip.
+        assert "referring site's origin" in text, name
+        assert "utm_ campaign tags, sent with the first page view only" in text, name
+        assert "a fixed failure category" in text, name
+        assert "automated or headless are not measured" in text, name
 
 
 def _body_for(path: str) -> str:
@@ -831,6 +836,26 @@ def test_server_rendered_privacy_page_describes_default_on_analytics():
     assert "on by default" in body
     assert "requires opt-in" not in body
     assert "Do Not Track" not in body
+
+
+def test_server_rendered_privacy_page_describes_arrival_failures_and_automation():
+    # Since 2026-09-24 the first page view carries the linking site's origin and
+    # the five utm_ campaign tags, failed tool runs carry a fixed category, and
+    # automated or headless browsers never load the tag.
+    body = _body_for("/privacy")
+    for tag in ("utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"):
+        assert tag in body
+    assert "except the first page view after you arrive" in body
+    assert "by its origin only, for example https://www.google.com/" in body
+    assert "never the page you came from or your search terms" in body
+    assert "Every other query parameter is removed" in body
+    for kind in ("too_large", "rate_limited", "bad_input", "timeout", "server", "network", "provider", "browser"):
+        assert kind in body
+    assert "never the error message" in body
+    assert "navigator.webdriver" in body
+    assert "HeadlessChrome" in body
+    assert "Optional Google Analytics" not in body
+    assert "Last updated:</strong> September 24, 2026" in body
 
 
 def test_server_rendered_terms_page_does_not_deny_limits():

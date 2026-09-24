@@ -13,7 +13,7 @@ import {
   type AnalyticsPrivacyPreference,
 } from "@/lib/analyticsPrivacy";
 
-const LAST_UPDATED = "September 17, 2026";
+const LAST_UPDATED = "September 24, 2026";
 const GIT_HISTORY_URL = "https://github.com/ethereaglehq/privatools/commits/main/frontend/src/pages/PrivacyPage.tsx";
 
 interface Section { id: string; title: string; flag?: boolean }
@@ -109,7 +109,7 @@ export default function PrivacyPage() {
       <aside className="rounded-2xl border border-accent/30 bg-accent/[0.05] p-5 sm:p-6">
         <div className="flex items-center gap-2 mb-3"><Shield size={15} className="text-accent"/><span className="text-[11px] text-accent font-semibold">The short version</span></div>
         <p><strong>Choose where your task runs.</strong> Browser tools process on your device. Server tools upload your file for temporary processing. AI provider tools send the content needed for your request to the provider you choose.</p>
-        <p><strong>Accounts and analytics are separate choices.</strong> Interactive file tools do not require an account. Optional accounts use Clerk for identity and sign-in. Analytics is on by default and measures public-site usage, including which tools run, scrolling, outbound links and supported video engagement; you can turn it off below. It uses identifiers and cookies, so it is not anonymous.</p>
+        <p><strong>Accounts and analytics are separate choices.</strong> Interactive file tools do not require an account. Optional accounts use Clerk for identity and sign-in. Analytics is on by default and measures public-site usage, including which site or campaign brought a visit here, which tools run and why a run failed, scrolling, outbound links and supported video engagement; you can turn it off below. It uses identifiers and cookies, so it is not anonymous.</p>
       </aside>
     </section>
     <div className="blog-prose prose-headings:scroll-mt-20">
@@ -134,8 +134,11 @@ export default function PrivacyPage() {
       <p><strong>These exclusions describe analytics.</strong> Specifically, they cover the page, tool-run and tool-success events constructed by PrivaTools. They do not mean the service receives no personal data: an account requires identity information, a server task receives the selected file, and a support message contains what you send.</p>
       <ul>
         <li>PrivaTools’ manual analytics events do not include account identity, email addresses, passwords or API keys.</li>
-        <li>Those manual events do not include uploaded file contents, filenames, document text, prompts or tool output.</li>
-        <li>Public page events use canonical route URLs and route-derived titles, without URL queries or fragments. Account, settings and personal-workspace routes are excluded from tracking.</li>
+        <li>Those manual events do not include uploaded file contents, filenames, document text, prompts, tool output or error messages.</li>
+        <li>Public page events use canonical route URLs and route-derived titles, without URL fragments. They leave out URL queries too, with one exception: the first page view after you arrive keeps the campaign tags in the address you arrived at (<code>utm_source</code>, <code>utm_medium</code>, <code>utm_campaign</code>, <code>utm_term</code> and <code>utm_content</code>) when each value is at most 100 letters, digits, spaces or <code>. _ ~ -</code> characters. Every other query parameter is removed. Account, settings and personal-workspace routes are excluded from tracking.</li>
+        <li>That first page view also names the site or app that linked you here, cut to its origin, for example <code>https://www.google.com/</code>: never the page you came from or your search terms. Later page views name at most the previous PrivaTools page.</li>
+        <li>A tool run that fails carries one fixed failure category (<code>too_large</code>, <code>rate_limited</code>, <code>bad_input</code>, <code>timeout</code>, <code>server</code>, <code>network</code>, <code>provider</code> or <code>browser</code>), never the error message. Files and runs you cancel are not counted as failures.</li>
+        <li>Browsers that identify themselves as automated (<code>navigator.webdriver</code>) or headless (a <code>HeadlessChrome</code> or <code>PhantomJS</code> user agent) do not load Google Analytics at all.</li>
       </ul>
       <p>Enabled outbound-link and video events have their own metadata, described in Section 6. An outbound-link event can include query parameters from its destination URL; the clean page URL does not remove those destination parameters.</p>
 
@@ -154,14 +157,14 @@ export default function PrivacyPage() {
 
       <h2 id="third-party">6. Third-Party Services</h2>
       <h3>Google Analytics and your choice</h3>
-      <p>When available and not turned off, Google Analytics measures public page visits, sessions, engagement time and each tool you run: which tool, whether it ran on its own page, in a batch or in a pipeline, how many files it handled and whether it succeeded. It never receives file names, file contents, text you enter or account identity. Google receives browser and cookie identifiers, device/browser information and network connection information, including your IP address.</p>
+      <p>When available and not turned off, Google Analytics measures public page visits, sessions, engagement time, where a visit came from (the linking site’s origin and any campaign tags, on the first page view) and each tool you run: which tool, whether it ran on its own page, in a batch or in a pipeline, how many files it handled, whether it succeeded and, if it failed, a fixed failure category. It never receives file names, file contents, text you enter, error messages or account identity. Google receives browser and cookie identifiers, device/browser information and network connection information, including your IP address.</p>
       <ul>
         <li><strong>Enabled automatic events:</strong> Scroll depth, outbound-link clicks and supported embedded-video engagement. Outbound events can include the destination URL and domain, including destination query parameters, link identifiers and CSS classes. Video events can include the provider, video title and URL, duration, current position and playback progress. See <a href="https://support.google.com/analytics/answer/9216061?hl=en" target="_blank" rel="noopener noreferrer">Google’s event and parameter documentation</a>.</li>
-        <li><strong>Disabled automatic events:</strong> Form interactions, file downloads, site search and browser-history page views. PrivaTools sends its own canonical public-page events without URL queries or fragments, one tool-run event per tool use and the existing tool-success events, all without file or input details.</li>
+        <li><strong>Disabled automatic events:</strong> Form interactions, file downloads, site search and browser-history page views. PrivaTools sends its own canonical public-page events without URL fragments, and without URL queries apart from the arrival campaign tags described in Section 3, one tool-run event per tool use and the existing tool-success events, all without file or input details.</li>
         <li><strong>User-provided data:</strong> The Google tag configuration permits this capability, but automatic detection and snippet-based collection are disabled. PrivaTools does not supply identity data through a <code>user_data</code> parameter.</li>
         <li><strong>Advertising settings:</strong> Advertising storage, advertising user data, personalized advertising and Google Signals are disabled in the site’s tag configuration.</li>
       </ul>
-      <p>Analytics is on by default for every visitor. The control below turns it off in this browser and stops further collection through this site; turning it back on resumes it. Clearing site data resets the saved choice. Development previews do not send analytics. See <a href="https://business.safety.google/privacy/" target="_blank" rel="noopener noreferrer">Google’s information about data use</a>.</p>
+      <p>Analytics is on by default for every visitor; only browsers that identify themselves as automated or headless skip it. The control below turns it off in this browser and stops further collection through this site; turning it back on resumes it. Clearing site data resets the saved choice. Development previews do not send analytics. See <a href="https://business.safety.google/privacy/" target="_blank" rel="noopener noreferrer">Google’s information about data use</a>.</p>
       <AnalyticsOptOutPanel/>
       <h3>Identity, AI and delivery services</h3>
       <ul>

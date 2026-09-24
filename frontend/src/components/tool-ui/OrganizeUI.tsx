@@ -104,7 +104,7 @@ export function OrganizeUI() {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't apply this page order."));
             setState("editing");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, pageOrder]);
 

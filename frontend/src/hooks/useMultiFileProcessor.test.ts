@@ -33,11 +33,21 @@ describe("useMultiFileProcessor usage events", () => {
     act(() => result.current.addFiles([file("secret-a.txt"), file("secret-b.txt")]));
     await act(() => result.current.run(options(async f => { if (f.name === "secret-b.txt") throw new Error("boom secret"); return { blob: new Blob(["ok"]) }; })));
     await act(() => result.current.run(options(async () => { throw new Error("boom secret"); }), true));
+    // A local processor that throws failed in the browser.
     expect(seen).toEqual([
-      { mode: "single", outcome: "partial", files: 2 },
-      { mode: "single", outcome: "error", files: 1 },
+      { mode: "single", outcome: "partial", files: 2, errorKind: "browser" },
+      { mode: "single", outcome: "error", files: 1, errorKind: "browser" },
     ]);
     expect(JSON.stringify(seen)).not.toContain("secret");
+  });
+
+  it("reports the category of a server refusal", async () => {
+    const seen = listen();
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("slow down", { status: 429 }));
+    const { result } = renderHook(() => useMultiFileProcessor());
+    act(() => result.current.addFiles([file("secret.txt")]));
+    await act(() => result.current.run({ endpoint: "/compress", outputExt: "txt", outputSuffix: null, uploadOptions: { retry: { attempts: 0, backoffMs: 1 } } }));
+    expect(seen).toEqual([{ mode: "single", outcome: "error", files: 1, errorKind: "rate_limited" }]);
   });
 
   it("emits nothing when a run has no files to process", async () => {

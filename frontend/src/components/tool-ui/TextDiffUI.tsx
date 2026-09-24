@@ -43,7 +43,7 @@ export function TextDiffUI() {
     const [diff, setDiff] = useState<DiffLine[] | null>(null);
 
     const [error,setError] = useState<string | null>(null);
-    const compare = () => { setError(null); try { setDiff(computeDiff(textA,textB)); emitToolRun({ outcome: "success" }); } catch(e) { setDiff(null); setError(e instanceof Error ? e.message : "Could not compare these texts."); emitToolRun({ outcome: "error" }); } };
+    const compare = () => { setError(null); try { setDiff(computeDiff(textA,textB)); emitToolRun({ outcome: "success" }); } catch(e) { setDiff(null); setError(e instanceof Error ? e.message : "Could not compare these texts."); emitToolRun({ outcome: "error", errorKind: "too_large" }, e); } };
     const clear = () => { setTextA(""); setTextB(""); setDiff(null); };
     const swap = () => { setTextA(textB); setTextB(textA); setDiff(null); };
     const loadSample = () => { setTextA(SAMPLE_A); setTextB(SAMPLE_B); setDiff(null); };

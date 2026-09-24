@@ -15,7 +15,7 @@ import { AiTaskWorkspace } from "./AiTaskWorkspace";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AlertCircle, Ban, CheckCircle2, Copy, Download, FileAudio, Loader2, Mic, RotateCcw, Check } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { downloadBlob, formatFileSize, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL } from "@/lib/api";
+import { downloadBlob, formatFileSize, MAX_FILE_SIZE, MAX_FILE_SIZE_LABEL, withErrorKind } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { consumeFileHandoff } from "@/lib/file-handoff";
@@ -98,7 +98,7 @@ export function TranscribeAudioUI() {
         setError(null); setText(""); setSegments([]);
         try {
             if (engine === "byok") {
-                if (!byokProviderOk) throw new Error("Pick a provider with a transcription API (OpenAI, Groq, or self-hosted) and save a key first.");
+                if (!byokProviderOk) throw withErrorKind(new Error("Pick a provider with a transcription API (OpenAI, Groq, or self-hosted) and save a key first."), "provider");
                 const apiKey = await getKey(byok.provider);
                 if (!apiKey) throw new Error("That saved key could not be read. Enter it again.");
                 const controller = new AbortController();
@@ -113,7 +113,7 @@ export function TranscribeAudioUI() {
                     signal: controller.signal,
                 });
                 if (cancelRef.current || current !== runId.current) return;
-                if (!out.trim()) throw new Error("The provider returned no transcript. Try a clearer recording or another model.");
+                if (!out.trim()) throw withErrorKind(new Error("The provider returned no transcript. Try a clearer recording or another model."), "provider");
                 setText(out);
                 setPhase("done");
                 emitToolRun({ outcome: "success", files: 1 });
@@ -141,7 +141,7 @@ export function TranscribeAudioUI() {
                 .filter(c => c.text.trim())
                 .map(c => ({ start: c.timestamp[0] ?? 0, end: c.timestamp[1] ?? (c.timestamp[0] ?? 0) + 5, text: c.text }));
             const transcript = (result.text ?? segs.map(s => s.text).join(" ")).trim();
-            if (!transcript) throw new Error("No speech was detected. Try a clearer recording or a different model.");
+            if (!transcript) throw withErrorKind(new Error("No speech was detected. Try a clearer recording or a different model."), "bad_input");
             setSegments(segs);
             setText(transcript);
             setPhase("done");
@@ -153,7 +153,7 @@ export function TranscribeAudioUI() {
                 : e instanceof Error ? e.message : "Transcription failed";
             setError(friendlyError(msg, "Couldn't transcribe that recording."));
             setPhase("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, engine, whisper, byokModel, byok.provider, byokProviderOk]);
 

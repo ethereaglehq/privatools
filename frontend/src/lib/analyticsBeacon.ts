@@ -3,13 +3,19 @@
  * sessions, first visits and measured engagement; we send canonical page
  * views, the existing successful-tool signal and one `tool_run` per tool use.
  * The saved opt-out on the Privacy page is the only visitor switch.
+ * Automated browsers (WebDriver, headless user agents) never load the tag.
+ *
+ * Page views carry canonical URLs without queries or fragments. The one
+ * exception is the first page view of a page load, which says where the visit
+ * came from: the external referrer's origin and the five standard campaign
+ * tags from the landing URL, sanitized. Global defaults never carry them.
  *
  * Enable the server switch only after checking the approved automatic-event
  * settings and disabling automatic user-provided data. Scroll, outbound clicks
  * and video measurement are retained. See deploy/analytics.md.
  */
 import { ANALYTICS_OPT_OUT_KEY, GOOGLE_ANALYTICS_ID, googleAnalyticsAvailable, readAnalyticsPrivacyPreference } from "./analyticsPrivacy";
-import { TOOL_RUN_EVENT, type ToolRunDetail } from "./toolRun";
+import { TOOL_ERROR_KINDS, TOOL_RUN_EVENT, type ToolRunDetail } from "./toolRun";
 import { toolBySlug } from "@/data/tools";
 import { nonPdfToolBySlug } from "@/data/non-pdf-tools";
 
@@ -21,12 +27,25 @@ const PUBLIC_BASE = "https://privatools.me";
 const PUBLIC_PAGES = new Set(["/", "/tools", "/pipeline", "/batch", "/ai", "/api", "/trust", "/security", "/status", "/support", "/about", "/privacy", "/terms", "/blog", "/compare"]);
 const RUN_MODES = new Set(["single", "batch", "pipeline"]);
 const RUN_OUTCOMES = new Set(["success", "partial", "error"]);
+const ERROR_KINDS: ReadonlySet<unknown> = new Set(TOOL_ERROR_KINDS);
 const MAX_FILE_COUNT = 10_000;
+/** The only query parameters a page view ever carries, in this order. */
+const CAMPAIGN_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] as const;
+/** Letters and digits in any script, spaces and . _ ~ -. Anything else drops the tag. */
+const CAMPAIGN_VALUE = /^[\p{L}\p{M}\p{N} ._~-]{1,100}$/u;
+/**
+ * Automation that says so. navigator.webdriver is the standard signal
+ * (WebDriver, Playwright, Puppeteer); HeadlessChrome is Chromium's headless
+ * user agent and PhantomJS names itself. No screen-size or location guesses.
+ */
+const HEADLESS_AGENT = /HeadlessChrome|PhantomJS/;
 let active = false;
 let configured = false;
 let lastPath = "";
 let enabled = false;
 let navHandler: (() => void) | undefined;
+/** Where this page load came from, spent by its first page view. */
+let landing: { query: string; referrer: string } | null = captureLanding();
 
 function pathNow(): string {
     const hash = location.hash.replace(/^#/, "");
@@ -36,8 +55,11 @@ function pathNow(): string {
 export function isPublicAnalyticsPath(path: string): boolean {
     return PUBLIC_PAGES.has(path) || /^\/(?:tools?|blog|compare)\/[a-z0-9-]+$/.test(path);
 }
+function automated(): boolean {
+    try { return navigator.webdriver === true || HEADLESS_AGENT.test(navigator.userAgent); } catch { return false; }
+}
 function allowed(): boolean {
-    return import.meta.env.PROD && googleAnalyticsAvailable() && !readAnalyticsPrivacyPreference().effectiveDisabled && isPublicAnalyticsPath(pathNow());
+    return import.meta.env.PROD && googleAnalyticsAvailable() && !automated() && !readAnalyticsPrivacyPreference().effectiveDisabled && isPublicAnalyticsPath(pathNow());
 }
 function disable(): void {
     enabled = false;
@@ -48,11 +70,40 @@ function safeTitle(): string {
     const path = pathNow();
     return path === "/" ? "PrivaTools" : `${path.split("/").filter(Boolean).join(" / ").replace(/-/g, " ")} — PrivaTools`;
 }
+function isOwnOrigin(origin: string): boolean {
+    return origin === PUBLIC_BASE || origin === location.origin;
+}
+/** A referrer on this site, as its canonical public route; anything else is dropped. */
 function safeReferrer(): string {
     try {
         const ref = new URL(document.referrer);
-        return ref.origin === PUBLIC_BASE && isPublicAnalyticsPath(ref.pathname) ? `${PUBLIC_BASE}${ref.pathname}` : "";
+        return isOwnOrigin(ref.origin) && isPublicAnalyticsPath(ref.pathname) ? `${PUBLIC_BASE}${ref.pathname}` : "";
     } catch { return ""; }
+}
+/** Another site's or app's referrer, cut to its origin: never a path or query. */
+function externalReferrer(): string {
+    try {
+        const ref = new URL(document.referrer);
+        if (ref.protocol === "http:" || ref.protocol === "https:") return isOwnOrigin(ref.origin) ? "" : `${ref.origin}/`;
+        // Android apps, the Google app among them, refer as android-app://<package>/.
+        if (ref.protocol === "android-app:" && /^[a-z0-9._-]+$/i.test(ref.hostname)) return `android-app://${ref.hostname}/`;
+    } catch { /* no referrer, or not a URL */ }
+    return "";
+}
+/** The landing URL's campaign tags as a query string; every other parameter is dropped. */
+function campaignQuery(search: string): string {
+    const params = new URLSearchParams(search);
+    const tags: string[] = [];
+    for (const key of CAMPAIGN_KEYS) {
+        const value = params.get(key)?.trim();
+        if (value && CAMPAIGN_VALUE.test(value)) tags.push(`${key}=${encodeURIComponent(value)}`);
+    }
+    return tags.join("&");
+}
+/** Read at module load, before the router can rewrite the landing URL. */
+function captureLanding(): { query: string; referrer: string } | null {
+    if (typeof window === "undefined") return null;
+    try { return { query: campaignQuery(location.search), referrer: externalReferrer() }; } catch { return null; }
 }
 function pageParameters(): Record<string, unknown> {
     return { page_location: `${PUBLIC_BASE}${pathNow()}`, page_title: safeTitle(), page_referrer: lastPath ? `${PUBLIC_BASE}${lastPath}` : safeReferrer() };
@@ -101,7 +152,15 @@ export function sendPageview(): void {
     const params = pageParameters();
     // Update defaults as well so the tag's own lifecycle uses the same clean URL.
     tag("set", params);
-    tag("event", "page_view", { ...params, send_to: GOOGLE_ANALYTICS_ID });
+    // Attribution rides on the page load's first page view alone, as event
+    // parameters: the global defaults above stay clean for every later hit.
+    const arrival: Record<string, unknown> = {};
+    if (landing) {
+        if (landing.query) arrival.page_location = `${params.page_location}?${landing.query}`;
+        if (landing.referrer) arrival.page_referrer = landing.referrer;
+        landing = null;
+    }
+    tag("event", "page_view", { ...params, ...arrival, send_to: GOOGLE_ANALYTICS_ID });
     lastPath = path;
 }
 /** React Router navigates with pushState, which fires no popstate; the app calls this on each location change. */
@@ -155,6 +214,8 @@ export function startPageviewTracking(): () => void {
         if (!tag) return;
         const params: Record<string, unknown> = { tool_slug: slug, tool_category: category, run_mode: mode, outcome };
         if (detail.files !== undefined) params.file_count = Math.min(detail.files as number, MAX_FILE_COUNT);
+        // A fixed category only; any other value is dropped and the run still counts.
+        if (outcome !== "success" && ERROR_KINDS.has(detail.errorKind)) params.error_kind = detail.errorKind;
         tag("event", "tool_run", { ...params, page_location: `${PUBLIC_BASE}${path}`, page_title: safeTitle(), send_to: GOOGLE_ANALYTICS_ID });
     };
     win.ptSetAnalyticsDisabled = sync;

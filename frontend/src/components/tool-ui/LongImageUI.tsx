@@ -25,7 +25,7 @@ export function LongImageUI() {
             const blob = await response.blob();
             const name = file.name.replace(/\.pdf$/i, "") + `_long.${format}`;
             setResult({ blob, name }); downloadBlob(blob, name); emitToolRun({ outcome: "success", files: 1 });
-        } catch (cause) { setError(friendlyError(cause instanceof Error ? cause.message : "Conversion failed", "The long image could not be created.")); emitToolRun({ outcome: "error", files: 1 }); }
+        } catch (cause) { setError(friendlyError(cause instanceof Error ? cause.message : "Conversion failed", "The long image could not be created.")); emitToolRun({ outcome: "error", files: 1 }, cause); }
         finally { setBusy(false); }
     }
     if (result) return <StudioResult title="One continuous image." detail="Every page appears from top to bottom in its original order." onReset={() => { setResult(null); setFile(null); }}>

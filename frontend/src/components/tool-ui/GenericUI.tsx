@@ -223,7 +223,7 @@ export function GenericUI({
         setProgressLabel("Processing...");
         setCurrentName("");
         const outcome = runOutcome(done, failed);
-        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed });
+        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed }, firstFailure);
         if (stopRef.current) {
             setState("idle");
             return;

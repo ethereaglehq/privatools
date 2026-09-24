@@ -1,6 +1,19 @@
 # Google Analytics integration
 
-The frontend uses the Google browser tag for sessions, first visits and foreground engagement. It sends one manually controlled page view for each canonical public route, including every React Router navigation, one `tool_run` event per tool use, and the older `tool_success` signal from Merge PDF, Compress PDF, Image to PDF and JSON/XML Formatter. Manual pageviews exclude query strings and fragments; account, settings and personal-workspace routes are excluded. The owner explicitly retained automatic scroll, outbound-click and video-engagement measurement. Those automatic events may include external link destinations and video metadata, so this is not a manual-events-only integration. The app does not deliberately send file/form contents or account identity. Ads storage, ads personalization, ad user data and Google Signals are disabled.
+The frontend uses the Google browser tag for sessions, first visits and foreground engagement. It sends one manually controlled page view for each canonical public route, including every React Router navigation, one `tool_run` event per tool use, and the older `tool_success` signal from Merge PDF, Compress PDF, Image to PDF and JSON/XML Formatter. Manual pageviews exclude fragments and query strings, with one exception: the first page view of each page load says where the visit came from (next section). Account, settings and personal-workspace routes are excluded. Automated browsers are not measured at all. The owner explicitly retained automatic scroll, outbound-click and video-engagement measurement. Those automatic events may include external link destinations and video metadata, so this is not a manual-events-only integration. The app does not deliberately send file/form contents, error messages or account identity. Ads storage, ads personalization, ad user data and Google Signals are disabled.
+
+## Where visits come from
+
+Google Analytics attributes a session to the traffic source on its first hit. Before this change the beacon stripped every external referrer and every query parameter, so almost all sessions reported as Direct (186 of 190 for 18 to 24 September 2026) even though Search Console showed Google search clicks; compare acquisition reports only from the deploy date onward. The first page view of a page load, and only that one, now carries:
+
+- **The external referrer's origin** as `page_referrer` (`dr`): scheme, host and port, such as `https://www.google.com/`, never its path or query. Only `http` and `https` referrers are used, plus Android app referrers (`android-app://<package>/`, which the Google app sends). A referrer on this site keeps today's behaviour: its canonical public route, or nothing.
+- **Campaign tags** from the landing URL, appended to `page_location` (`dl`): `utm_source`, `utm_medium`, `utm_campaign`, `utm_term` and `utm_content`, lowercase keys only, the first value of each. A value is kept only if it is 1 to 100 characters of letters and digits (any script), spaces, `.`, `_`, `~` and `-`; otherwise that tag is dropped. Every other parameter (`gclid`, `utm_id`, `ref`, `email`, ...) and the fragment are still stripped.
+
+The beacon reads the landing URL when its module loads, before the router can rewrite it, and spends it on the first page view it sends. When the landing route is private and sends nothing, the first public page view of that page load carries it instead. The global `gtag("set")` defaults never contain either value: automatic events (scroll, outbound click, engagement), `tool_run`, `tool_success` and every later page view use the canonical URL, and in-app navigations report the previous public route as their referrer. A browser check on 24 September 2026, with every collection request intercepted, confirmed that a scroll on the landing page is sent with the clean URL and an empty `dr` (the tag does not fall back to `document.referrer`).
+
+## Automated browsers
+
+The tag is not loaded and nothing is sent when `navigator.webdriver` is `true` (WebDriver, Playwright, Puppeteer and similar tools set it) or when the user agent contains `HeadlessChrome` or `PhantomJS`. The check sits in the beacon's `allowed()`, beside the opt-out, so an automated session never boots the tag or queues an event. There are deliberately no screen-size, language or location heuristics, so a crawler that hides both signals is still counted; Google's own known-bot filtering applies on top. Lighthouse and PageSpeed Insights report their own user agent and are not in the list.
 
 ## Usage events
 
@@ -13,8 +26,26 @@ The frontend uses the Google browser tag for sessions, first visits and foregrou
 | `run_mode` | `single`, `batch` or `pipeline`. |
 | `outcome` | `success`, `partial` (some files failed) or `error`. |
 | `file_count` | Files the run handled, when the caller knows it. Never names, sizes or contents. |
+| `error_kind` | On `error` and `partial` runs only: why the run (or its first failed file) failed, as one value from the fixed list below. Never a message. |
 
-Register `tool_slug`, `tool_category`, `run_mode` and `outcome` as event-scoped custom dimensions and `file_count` as an event-scoped custom metric in the GA4 property; standard reports only show registered parameters.
+Register `tool_slug`, `tool_category`, `run_mode`, `outcome` and `error_kind` as event-scoped custom dimensions and `file_count` as an event-scoped custom metric in the GA4 property; standard reports only show registered parameters. The first five were registered on 18 September 2026. `error_kind` needs registering once: Admin > Data display > Custom definitions > Create custom dimension, dimension name `Error kind`, scope **Event**, event parameter `error_kind`. GA4 shows it only for events received after registration.
+
+### Failure categories
+
+| `error_kind` | Meaning |
+| --- | --- |
+| `too_large` | The server answered 413, or the browser refused a file or input over a size limit (the 500 MB upload cap, Text Diff's comparison limit). |
+| `rate_limited` | The server answered 429. |
+| `bad_input` | The server answered 400, 415 or 422, or the browser rejected the input itself (for example invalid JSON, an unreadable subtitle file, a PDF with no text to translate). |
+| `timeout` | The server answered 408 or 504, or the request passed the browser's deadline. |
+| `server` | Any other HTTP error from PrivaTools: other 5xx, and 4xx outside the groups above (a 404 or 405 means the deployment is out of step), or a response the tool could not use. |
+| `network` | The request never completed: offline, DNS, a dropped or blocked connection. |
+| `provider` | The visitor's own AI provider (BYOK) refused or failed the request, or its setup is incomplete. |
+| `browser` | Anything else raised in the browser: on-device processing, an on-device model or browser storage. |
+
+The category is derived centrally. `frontend/src/lib/api.ts` already tags HTTP errors with `__status`; it now also tags the failures that have no status with `__kind` (client deadline, request that never completed, file over the upload cap, empty or oversized file list), and exports `withErrorKind` for tools that throw their own classified errors. `toolErrorKind()` in `frontend/src/lib/toolRun.ts` maps a caught error to the list above from those tags, error names, BYOK error kinds and the browser's standard fetch-failure wording. Callers pass what they caught as `emitToolRun`'s second argument: the shared engines (`GenericUI`, `SimpleConvertUI`, `useMultiFileProcessor`, `useMediaJob`) and the Batch page pass their run's first failure, the Pipeline page passes the failing step's error, and direct call sites pass their caught error or name the category when they know it (`errorKind`). Only the category leaves `toolRun.ts`; the beacon sends `error_kind` only on `error` and `partial` runs and drops any value outside the list while still counting the run. `src/test/tool-run-coverage.test.ts` fails when a failure report under `components/tool-ui`, the engines or the workflow pages has neither a cause nor an `errorKind`. Image to PDF and Verify Signature are exempt there until in-flight work on them lands; their failures arrive without `error_kind` meanwhile.
+
+A cancel is not a failure. The engines leave cancelled files out of the count, so a run cancelled before any file finished sends nothing and one cancelled midway reports only the files that finished; direct call sites return before reporting; and `emitToolRun` drops an `error` whose cause is a cancel (an `AbortError`, or a BYOK request the visitor stopped). There is therefore no `cancelled` category, and `outcome=error` counts real failures only.
 
 The previous first-party Measurement Protocol browser sender is removed. Its backend endpoint remains for cached older clients; reserved `user_engagement` is translated to `foreground_time`, unknown events are dropped, and no time/session values are invented. Do not run a second browser pageview sender alongside the tag.
 

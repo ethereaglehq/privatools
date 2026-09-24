@@ -55,7 +55,7 @@ export function PdfPageCounterUI() {
             const msg = e instanceof Error ? e.message : "Failed to read PDFs";
             setError(friendlyError(msg, "Couldn't count pages in those PDFs."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: items.length });
+            emitToolRun({ outcome: "error", files: items.length }, e);
         }
     }, [items]);
 

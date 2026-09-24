@@ -13,6 +13,8 @@ function listen(): Detail[] {
     return seen;
 }
 function ok() { return { blob: async () => new Blob(["output"], { type: "application/pdf" }), headers: new Headers() } as Response; }
+/** The shape api.ts gives an HTTP error: a message the UI shows, plus the status. */
+function httpError(status: number) { return Object.assign(new Error("boom secret"), { __status: status }); }
 const original = new File(["%PDF-1.4\noriginal"], "Secret.pdf", { type: "application/pdf" });
 
 beforeEach(() => {
@@ -32,11 +34,11 @@ describe("batch usage events", () => {
     }
     it("emits one batch run with the tool slug and counts when the run finishes", async () => {
         const seen = listen();
-        api.postFormData.mockResolvedValueOnce(ok()).mockRejectedValueOnce(new Error("boom secret"));
+        api.postFormData.mockResolvedValueOnce(ok()).mockRejectedValueOnce(httpError(422));
         setup("PNG to WebP", [new File(["png"], "secret-a.png", { type: "image/png" }), new File(["png"], "secret-b.png", { type: "image/png" })]);
         fireEvent.click(screen.getByRole("button", { name: "Process 2" }));
         await waitFor(() => expect(seen).toHaveLength(1));
-        expect(seen).toEqual([{ slug: "png-to-webp", mode: "batch", outcome: "partial", files: 2 }]);
+        expect(seen).toEqual([{ slug: "png-to-webp", mode: "batch", outcome: "partial", files: 2, errorKind: "bad_input" }]);
         expect(JSON.stringify(seen)).not.toContain("secret");
     });
 });
@@ -62,14 +64,14 @@ describe("pipeline usage events", () => {
     it("reports the failing step as an error when the per-step fallback breaks", async () => {
         const seen = listen();
         // The whole-chain call fails, the first per-step call succeeds, the second fails.
-        api.postFormData.mockRejectedValueOnce(new Error("chain unavailable")).mockResolvedValueOnce(ok()).mockRejectedValueOnce(new Error("boom secret"));
+        api.postFormData.mockRejectedValueOnce(new Error("chain unavailable")).mockResolvedValueOnce(ok()).mockRejectedValueOnce(httpError(504));
         const { container } = render(<PipelinePage />);
         run(container);
         await waitFor(() => expect(seen.length).toBeGreaterThanOrEqual(2));
         const steps = JSON.parse(localStorage.getItem("privatools_pipeline_draft") || "[]") as string[];
         expect(seen).toEqual([
             { slug: steps[0], mode: "pipeline", outcome: "success", files: 1 },
-            { slug: steps[1], mode: "pipeline", outcome: "error", files: 1 },
+            { slug: steps[1], mode: "pipeline", outcome: "error", files: 1, errorKind: "timeout" },
         ]);
         expect(JSON.stringify(seen)).not.toContain("secret");
     });

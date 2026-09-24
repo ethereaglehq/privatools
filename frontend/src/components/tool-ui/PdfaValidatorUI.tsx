@@ -54,7 +54,7 @@ export function PdfaValidatorUI() {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't validate that PDF."));
             setStatus("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file]);
 

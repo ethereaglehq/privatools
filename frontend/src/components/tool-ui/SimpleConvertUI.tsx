@@ -143,7 +143,7 @@ export function SimpleConvertUI({ slug, label, outputExt, outputFilename, accept
         }
         setProgress(undefined);
         const outcome = runOutcome(done, failed);
-        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed });
+        if (outcome) emitToolRun({ mode: "single", outcome, files: done + failed }, firstFailure);
         if (stopRef.current) { setStatus("idle"); return; }
         if (firstFailure && single) {
             const msg = firstFailure instanceof Error ? firstFailure.message : "Failed";

@@ -18,7 +18,7 @@ import { AiTaskWorkspace } from "./AiTaskWorkspace";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Upload, Loader2, AlertCircle, FileText, X, Sparkles, CheckCircle2, Download, Copy } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { formatFileSize, downloadBlob } from "@/lib/api";
+import { formatFileSize, downloadBlob, withErrorKind } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { configureTransformers } from "@/lib/transformersEnv";
@@ -180,7 +180,7 @@ export function SummarizePdfUI() {
             );
             if (cancelledRef.current || current !== runId.current) return;
             if (!text.trim()) {
-                throw new Error("No extractable text found in this PDF. If it's a scan, run OCR first, then try again.");
+                throw withErrorKind(new Error("No extractable text found in this PDF. If it's a scan, run OCR first, then try again."), "bad_input");
             }
 
             // 2a. BYOK: the user's own key and model, straight from this
@@ -188,7 +188,7 @@ export function SummarizePdfUI() {
             // so we never download 250MB the user did not ask for.
             if (engine === "byok") {
                 if (!byok.ready) {
-                    throw new Error("Add an API key first, or switch back to the on-device model.");
+                    throw withErrorKind(new Error("Add an API key first, or switch back to the on-device model."), "provider");
                 }
                 const apiKey = await getKey(byok.provider);
                 if (!apiKey) {
@@ -265,7 +265,7 @@ export function SummarizePdfUI() {
             if (!(err instanceof ByokError)) console.error(err);
             setError(msg);
             setStage("error");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, err);
         }
     }, [file, length, engine, model, byok.ready, byok.provider]);
 

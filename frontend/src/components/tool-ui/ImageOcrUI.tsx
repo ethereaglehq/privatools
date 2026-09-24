@@ -11,7 +11,7 @@ import { AiTaskWorkspace } from "./AiTaskWorkspace";
 import { useEffect, useRef, useState, useCallback } from "react";
 import { ScanText, Trash2, Copy, Download, Loader2, AlertCircle, Check, Languages, Ban } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { uploadFileGetJson, uploadFile, downloadBlob, buildOutputFilename } from "@/lib/api";
+import { uploadFileGetJson, uploadFile, downloadBlob, buildOutputFilename, withErrorKind } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { useByok } from "@/hooks/useByok";
@@ -159,7 +159,7 @@ export function ImageOcrUI() {
             const normalized = await normalizeImage(imgFile.file);
             let text: string;
             if (engine === "byok") {
-                if (!byok.ready) throw new Error("Add an API key first, or pick another engine.");
+                if (!byok.ready) throw withErrorKind(new Error("Add an API key first, or pick another engine."), "provider");
                 const apiKey = await getKey(byok.provider);
                 if (!apiKey) throw new Error("That saved key could not be read. Enter it again.");
                 const controller = new AbortController();
@@ -216,7 +216,7 @@ export function ImageOcrUI() {
             const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "OCR failed";
             setError(friendlyError(msg, "OCR failed"));
             setStatus("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         } finally {
             setStage(null);
             abortRef.current = null;

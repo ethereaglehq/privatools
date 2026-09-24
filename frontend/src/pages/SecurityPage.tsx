@@ -26,7 +26,7 @@ import {
 
 
 
-const LAST_UPDATED = "June 18, 2026";
+const LAST_UPDATED = "September 24, 2026";
 const GIT_HISTORY_URL = "https://github.com/ethereaglehq/privatools/commits/main/frontend/src/pages/SecurityPage.tsx";
 
 interface Section { id: string; title: string; flag?: boolean }
@@ -46,7 +46,7 @@ const SECTIONS: Section[] = [
 const SUBPROCESSORS = [
   { name: "Oracle Cloud Infrastructure", purpose: "Hosting the PrivaTools processing server and static deployment environment." },
   { name: "Cloudflare", purpose: "Optional edge CDN, TLS acceleration, and static asset delivery. File-processing API responses are marked no-store." },
-  { name: "Google Analytics 4", purpose: "Aggregate pageview telemetry via a first-party server proxy. Browser pages do not load Google analytics scripts, and uploaded file contents are never forwarded." },
+  { name: "Google Analytics 4", purpose: "Usage analytics through the Google tag on public pages, on by default with a switch on the Privacy page: page visits, where visits come from, and tool runs with their outcome and failure category. File contents, filenames and error messages are never sent." },
   { name: "Hugging Face CDN", purpose: "Browser-side AI model downloads for local WebAssembly tools. Model requests do not include user file contents." },
   { name: "GitHub", purpose: "Source hosting, issue reports, and public change history." },
 ];
@@ -142,7 +142,7 @@ export default function SecurityPage() {
                 <a href="mailto:hello@privatools.me">hello@privatools.me</a>.
               </p>
               <p>
-                The <Link to="/privacy">Privacy Policy</Link> explains anonymous telemetry, subprocessors,
+                The <Link to="/privacy">Privacy Policy</Link> explains analytics, subprocessors,
                 and browser-side processing in more detail.
               </p>
 

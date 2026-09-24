@@ -67,7 +67,7 @@ export function CompareUI() {
             const msg = e instanceof Error ? e.message : "Failed";
             setError(friendlyError(msg, "Couldn't compare those PDFs."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: 2 });
+            emitToolRun({ outcome: "error", files: 2 }, e);
         }
     }, [file1, file2, mode, highlight]);
 

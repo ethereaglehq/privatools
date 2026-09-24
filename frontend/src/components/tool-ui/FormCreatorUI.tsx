@@ -125,7 +125,7 @@ export function FormCreatorUI() {
             const msg = e instanceof Error ? e.message : "Could not build the form";
             setError(friendlyError(msg, "Couldn't build that form."));
             setStatus("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [file, fields]);

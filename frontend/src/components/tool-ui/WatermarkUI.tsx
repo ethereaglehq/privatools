@@ -153,6 +153,7 @@ export function WatermarkUI() {
         let cursor = 0;
         const targetIds = [...ids];
         let done = 0, failed = 0;
+        let firstFailure: unknown = null;
 
         // Latest snapshot lookup — state is async so we use a local map.
         const fileMap = new Map(files.map(f => [f.id, f.file]));
@@ -173,6 +174,7 @@ export function WatermarkUI() {
                     setFiles(prev => prev.map(x => x.id === id ? { ...x, status: "failed", error: friendlyError(raw, "Watermark failed") } : x));
                     setErrorObj(e);
                     failed++;
+                    firstFailure ??= e;
                 }
             }
         };
@@ -181,7 +183,7 @@ export function WatermarkUI() {
         for (let i = 0; i < Math.min(concurrency, targetIds.length); i++) workers.push(worker());
         await Promise.all(workers);
         const outcome = runOutcome(done, failed);
-        if (outcome) emitToolRun({ outcome, files: done + failed });
+        if (outcome) emitToolRun({ outcome, files: done + failed }, firstFailure);
         setState("done");
     }, [files, runOne]);
 

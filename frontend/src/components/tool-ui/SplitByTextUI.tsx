@@ -52,7 +52,7 @@ export function SplitByTextUI() {
             const msg = e instanceof Error ? e.message : "Split failed";
             setError(friendlyError(msg, "Couldn't split this PDF."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, search, caseSensitive]);
 

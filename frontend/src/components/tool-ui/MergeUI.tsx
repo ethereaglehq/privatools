@@ -9,7 +9,7 @@ import {
 import { cn, friendlyError } from "@/lib/utils";
 import {
     uploadFiles, downloadBlob, formatFileSize, buildOutputFilename,
-    MAX_FILE_SIZE, MAX_FILES_PER_REQUEST,
+    MAX_FILE_SIZE, MAX_FILES_PER_REQUEST, withErrorKind,
 } from "@/lib/api";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
@@ -238,7 +238,7 @@ export function MergeUI() {
             setProcessingMessage("Receiving your merged PDF…");
             const blob = await response.blob();
             if (controller.signal.aborted || activeRequest.current !== controller || !alive.current) return;
-            if (!blob.size) throw new Error("The server returned an empty PDF. Try merging again.");
+            if (!blob.size) throw withErrorKind(new Error("The server returned an empty PDF. Try merging again."), "server");
             setResult({ blob, ...snapshot });
             setPhase("done");
             setNotice("Your merged PDF is ready to download.");
@@ -247,7 +247,7 @@ export function MergeUI() {
             if (controller.signal.aborted || activeRequest.current !== controller || !alive.current) return;
             setError(friendlyError(cause instanceof Error ? cause.message : "", "Could not merge these PDFs. Try again."));
             setPhase("idle");
-            emitToolRun({ outcome: "error", files: files.length });
+            emitToolRun({ outcome: "error", files: files.length }, cause);
         } finally {
             if (activeRequest.current === controller) activeRequest.current = null;
         }

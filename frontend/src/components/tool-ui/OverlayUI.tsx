@@ -56,7 +56,7 @@ export function OverlayUI() {
             const msg = e instanceof Error ? e.message : "Overlay failed";
             setError(friendlyError(msg, "Couldn't overlay those PDFs."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: 2 });
+            emitToolRun({ outcome: "error", files: 2 }, e);
         }
     }, [file1, file2, mode, outputName]);
 

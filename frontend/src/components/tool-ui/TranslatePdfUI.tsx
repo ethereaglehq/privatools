@@ -22,7 +22,7 @@ import {
     FileText, Copy, Check, Ban,
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile, downloadBlob } from "@/lib/api";
+import { uploadFile, downloadBlob, withErrorKind } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { chunkForTranslation } from "@/lib/translate/chunk";
@@ -167,12 +167,12 @@ export function TranslatePdfUI() {
             if (withText.length === 0) {
                 setError("No selectable text found — run the PDF through OCR first.");
                 setPhase("idle");
-                emitToolRun({ outcome: "error", files: 1 });
+                emitToolRun({ outcome: "error", files: 1, errorKind: "bad_input" });
                 return;
             }
 
             if (engine === "byok") {
-                if (!byok.ready) throw new Error("Add an API key first, or switch to the on-device model.");
+                if (!byok.ready) throw withErrorKind(new Error("Add an API key first, or switch to the on-device model."), "provider");
                 const apiKey = await getKey(byok.provider);
                 if (!apiKey) throw new Error("That saved key could not be read. Enter it again.");
                 const controller = new AbortController();
@@ -236,7 +236,7 @@ export function TranslatePdfUI() {
             const msg = e instanceof ByokError ? e.userMessage : e instanceof Error ? e.message : "Translation failed";
             setError(friendlyError(msg, "Couldn't translate that PDF."));
             setPhase("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, source, target, engine, byok.ready, byok.provider, byokModel, byokTarget]);
 

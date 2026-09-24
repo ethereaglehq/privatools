@@ -66,7 +66,7 @@ export function UnlockUI() {
             const msg = e instanceof Error ? e.message : "Unlock failed";
             setError(friendlyError(msg, "Couldn't unlock that PDF. The password may be wrong."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: files.length });
+            emitToolRun({ outcome: "error", files: files.length }, e);
         }
     }, [files, password]);
 

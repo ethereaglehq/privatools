@@ -447,7 +447,7 @@ export function EditPdfUI() {
             const msg = e instanceof Error ? e.message : "Could not apply edits";
             setError(friendlyError(msg, "Couldn't edit that PDF."));
             setState("editing");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, edits]);
 

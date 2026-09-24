@@ -53,7 +53,7 @@ export function QrReaderUI() {
             const msg = e instanceof Error ? e.message : "Failed to read QR code";
             setError(friendlyError(msg, "Couldn't decode any codes from this image."));
             setState("idle");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, e);
         }
     }, [file, state]);
 

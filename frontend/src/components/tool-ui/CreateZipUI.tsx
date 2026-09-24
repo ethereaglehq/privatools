@@ -33,7 +33,7 @@ export function CreateZipUI() {
             const blob = await response.blob();
             if (generation.current === current) setResult({blob, count: files.length, originalBytes: totalBytes});
             emitToolRun({outcome: "success", files: files.length});
-        } catch (e) { if (generation.current === current) setError(friendlyError(e instanceof Error ? e.message : "", "Couldn't create that archive.")); emitToolRun({outcome: "error", files: files.length}); }
+        } catch (e) { if (generation.current === current) setError(friendlyError(e instanceof Error ? e.message : "", "Couldn't create that archive.")); emitToolRun({outcome: "error", files: files.length}, e); }
         finally { if (generation.current === current) { active.current = false; setBusy(false); } }
     }, [files, config.compression, totalBytes]);
     useEffect(() => { const listener = (event: KeyboardEvent) => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") { event.preventDefault(); void process(); } }; window.addEventListener("keydown", listener); return () => window.removeEventListener("keydown", listener); }, [process]);

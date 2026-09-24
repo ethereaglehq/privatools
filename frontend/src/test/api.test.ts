@@ -7,9 +7,13 @@ import {
     postFormData,
     processAndDownload,
     resolveApiOrigin,
+    uploadFile,
+    uploadFiles,
     uploadFilesWithProgress,
     uploadFileWithProgress,
+    withErrorKind,
 } from "@/lib/api";
+import { toolErrorKind } from "@/lib/toolRun";
 
 describe("resolveApiOrigin (api-subdomain split)", () => {
     afterEach(() => {
@@ -174,6 +178,97 @@ describe("api form-data helpers", () => {
         expect(chooseDownloadFilename("output.pdf", "server_named_report.pdf")).toBe("server_named_report.pdf");
     });
 });
+
+describe("failure categories on api errors", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+    });
+    async function failure(run: () => Promise<unknown>): Promise<unknown> {
+        try { await run(); } catch (err) { return err; }
+        throw new Error("expected the request to fail");
+    }
+    const pdf = () => new File(["%PDF"], "secret.pdf", { type: "application/pdf" });
+
+    it.each([
+        [413, "too_large"],
+        [429, "rate_limited"],
+        [415, "bad_input"],
+        [504, "timeout"],
+        [500, "server"],
+    ])("classifies an HTTP %i answer as %s", async (status, kind) => {
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("nope", { status }));
+        expect(toolErrorKind(await failure(() => uploadFile("/compress", pdf(), undefined, { retry: noRetry })))).toBe(kind);
+    });
+
+    it("classifies a fetch that never completed as a network failure", async () => {
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("Failed to fetch"));
+        const err = await failure(() => postFormData("/compress", () => new FormData(), { retry: noRetry }));
+        expect(toolErrorKind(err)).toBe("network");
+    });
+
+    it("classifies the client deadline as a timeout and a user abort as a cancel", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
+        }));
+        const late = await failure(() => postFormData("/compress", () => new FormData(), { retry: noRetry, timeoutMs: 5 }));
+        expect(toolErrorKind(late)).toBe("timeout");
+        const controller = new AbortController();
+        const pending = failure(() => postFormData("/compress", () => new FormData(), { retry: noRetry, timeoutMs: 0, signal: controller.signal }));
+        controller.abort();
+        expect(toolErrorKind(await pending)).toBe("cancelled");
+    });
+
+    it("classifies XHR network errors, deadlines and HTTP answers", async () => {
+        stubFailingXhr("error");
+        expect(toolErrorKind(await failure(() => uploadFileWithProgress("/compress", pdf())))).toBe("network");
+        stubFailingXhr("timeout");
+        expect(toolErrorKind(await failure(() => uploadFilesWithProgress("/merge", [pdf()])))).toBe("timeout");
+        stubFailingXhr(413);
+        expect(toolErrorKind(await failure(() => uploadFileWithProgress("/compress", pdf())))).toBe("too_large");
+    });
+
+    it("classifies files the browser refuses before sending", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch");
+        const huge = pdf();
+        Object.defineProperty(huge, "size", { value: 600 * 1024 * 1024 });
+        expect(toolErrorKind(await failure(() => uploadFile("/compress", huge)))).toBe("too_large");
+        expect(toolErrorKind(await failure(() => uploadFiles("/merge", [])))).toBe("bad_input");
+        expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("lets a caller tag its own failure", () => {
+        const err = withErrorKind(new Error("The server returned an empty PDF."), "server");
+        expect(toolErrorKind(err)).toBe("server");
+        expect((err as Error).message).toBe("The server returned an empty PDF.");
+    });
+});
+
+function stubFailingXhr(failure: "error" | "timeout" | number) {
+    class MockXHR {
+        upload: { onprogress?: (event: ProgressEvent) => void } = {};
+        response = new Blob(["nope"], { type: "text/plain" });
+        responseType = "";
+        status = typeof failure === "number" ? failure : 0;
+        timeout = -1;
+        onabort: (() => void) | null = null;
+        onerror: (() => void) | null = null;
+        onload: (() => void) | null = null;
+        onloadend: (() => void) | null = null;
+        ontimeout: (() => void) | null = null;
+        open = vi.fn();
+        abort = vi.fn();
+        send = vi.fn(() => {
+            if (failure === "error") this.onerror?.();
+            else if (failure === "timeout") this.ontimeout?.();
+            else this.onload?.();
+            this.onloadend?.();
+        });
+        getAllResponseHeaders = vi.fn(() => "content-type: text/plain\r\n");
+    }
+    vi.stubGlobal("XMLHttpRequest", MockXHR);
+}
 
 function stubSuccessfulXhr() {
     class MockXHR {

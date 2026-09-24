@@ -352,7 +352,7 @@ export function SmartRedactUI() {
             if (current !== runId.current) return;
             setError(err instanceof Error ? err.message : "Redaction failed");
             setStage("review");
-            emitToolRun({ outcome: "error", files: 1 });
+            emitToolRun({ outcome: "error", files: 1 }, err);
         }
     }, [file, selected, detections, color]);
 
