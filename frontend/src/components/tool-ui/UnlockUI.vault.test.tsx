@@ -94,6 +94,8 @@ describe("UnlockUI vault integration", () => {
 
   it("never sends a wrong candidate anywhere — no network during the trial", async () => {
     const fetchSpy = vi.spyOn(globalThis, "fetch");
+    // Uploads go by XMLHttpRequest, so watching fetch alone would miss one.
+    const xhrSpy = vi.spyOn(XMLHttpRequest.prototype, "open");
     await vault.addPassword("a", "aaa");
     await vault.addPassword("b", "bbb");
     openMock.mockImplementation(async (_d: Uint8Array, password?: string) => {
@@ -106,6 +108,8 @@ describe("UnlockUI vault integration", () => {
     await screen.findByText(/unlocked with a saved password/i);
 
     expect(fetchSpy).not.toHaveBeenCalled();
+    expect(xhrSpy).not.toHaveBeenCalled();
     fetchSpy.mockRestore();
+    xhrSpy.mockRestore();
   });
 });
