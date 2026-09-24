@@ -118,3 +118,29 @@ def test_tiff_to_pdf_says_only_the_first_page_of_a_multi_page_tiff_is_used(tmp_p
     # The page used to promise that multi-page TIFFs are unpacked.
     label = _formats_label("TiffToPdfUI")
     assert "only the first page of a multi-page TIFF is used" in label and "unpacked" not in label
+
+
+def test_an_svg_drawn_at_the_height_cap_still_draws_a_full_canvas_gradient(tmp_path):
+    # cairo draws nothing for a gradient filling the whole canvas when the
+    # canvas is exactly 32,767 pixels tall, and the transparent page then
+    # comes out black. A tall, narrow SVG is capped at _SVG_MAX_SIDE, so the
+    # cap has to stay below that height. 1:1000 keeps it near one megapixel.
+    svg = tmp_path / "tall.svg"
+    svg.write_text(
+        '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1000" viewBox="0 0 1 1000">'
+        '<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1">'
+        '<stop offset="0" stop-color="#ff0000"/><stop offset="1" stop-color="#0000ff"/>'
+        "</linearGradient></defs>"
+        '<rect width="1" height="1000" fill="url(#g)"/></svg>'
+    )
+    width, height = image_to_pdf_service._svg_size(str(svg), "tall.svg")
+    assert height == image_to_pdf_service._SVG_MAX_SIDE
+    out = tmp_path / "tall.png"
+    image_to_pdf_service._svg_to_png(str(svg), str(out), width, height)
+    with Image.open(out) as img:
+        rgba = img.convert("RGBA")
+        assert rgba.getchannel("A").getextrema()[1] == 255, "the gradient was not drawn"
+        top = rgba.getpixel((width // 2, 10))
+        bottom = rgba.getpixel((width // 2, height - 10))
+    assert top[0] > 200 and top[2] < 60, top
+    assert bottom[2] > 200 and bottom[0] < 60, bottom
