@@ -32,7 +32,7 @@
     },
     {
       "q": "Will it format the YAML correctly?",
-      "a": "It writes valid YAML with 2-space indentation and block-style lists, and a YAML 1.2 parser reads the output back as the same data. One exception: a key spelled true, false or null (or yes, no, on or off for YAML 1.1 parsers such as PyYAML) is written without quotes, so a parser can read it as a boolean or null rather than text."
+      "a": "It writes valid YAML with 2-space indentation and block-style lists, and a YAML 1.2 parser reads the output back as the same data. One exception: a key that YAML reads as a boolean or null, such as true, False, NULL or, for YAML 1.1 parsers such as PyYAML, yes, No or ON, is written without quotes in any capitalisation, so a parser can read it as a boolean or null rather than text."
     },
     {
       "q": "Are numbers and duplicate keys kept exactly?",

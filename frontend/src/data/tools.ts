@@ -501,7 +501,7 @@ const _toolsRaw: Tool[] = [
     description: "Convert OpenDocument (ODT) into PDF",
     longDescription: "Convert ODT to PDF online for free — turn OpenDocument Text files (LibreOffice / OpenOffice / Google Docs exports) into a PDF with LibreOffice, which turns headings into bookmarks; fonts the server does not have are replaced with substitutes, which can move line and page breaks.",
     seoTitle: "Convert ODT to PDF Online – Powered by LibreOffice",
-    metaDescription: "ODT to PDF turns OpenDocument Text files into a polished document with LibreOffice, keeping styles and layout. Free tool; missing fonts get substitutes.",
+    metaDescription: "Convert ODT files to PDF online with LibreOffice. Headings become bookmarks; fonts the server lacks get substitutes, which can move line and page breaks.",
     synonyms: "openoffice libreoffice convert",
     popularity: 119,
     category: "to-pdf", accepts: ".odt", outputLabel: "document.pdf",

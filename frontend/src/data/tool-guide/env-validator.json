@@ -6,15 +6,15 @@
     },
     {
       "name": "Read the validation report",
-      "text": "The Validation report updates as you type and lists each finding with its line number, counting every line, including blank and comment lines. Errors are highlighted in red. When nothing is flagged, the report reads No obvious .env issues found."
+      "text": "The Validation report updates as you type and lists each finding by line number, counting every line, including blank and comment lines. It never repeats a name or a value from your text, so use the line number to find each one. Errors are highlighted in red. When nothing is flagged, the report reads No obvious .env issues found."
     },
     {
       "name": "Fix the errors",
-      "text": "An error means a line is not a usable KEY=value pair. A line with no equals sign gets missing =, and a name that is not ASCII letters, digits and underscores starting with a letter or underscore gets invalid variable name, as in the sample's Line 4: invalid variable name BAD NAME."
+      "text": "An error means a line is not a usable KEY=value pair, and nothing else on that line is checked. A line with no equals sign gets not a KEY=value line (no = sign). A name that is not ASCII letters, digits and underscores starting with a letter or underscore gets not a KEY=value line (invalid variable name), as the sample's BAD NAME=value does on line 4."
     },
     {
       "name": "Review the warnings",
-      "text": "Warnings flag a key that is set again, an empty value, a value containing spaces or tabs that is not wrapped in matching quotes, and a short secret: a name containing SECRET, TOKEN, KEY or PASSWORD whose value is under 12 characters."
+      "text": "Warnings flag a repeated key (duplicate key, first set on line N), an empty value, a value containing spaces or tabs that is not wrapped in matching quotes, and a short secret: value looks short for a secret appears when a name containing SECRET, TOKEN, KEY or PASSWORD has a value under 12 characters."
     },
     {
       "name": "Copy the report",
@@ -24,7 +24,7 @@
   "faq": [
     {
       "q": "What does the report say for the sample?",
-      "a": "The sample has four lines: API_URL=https://privatools.me, SECRET_KEY=change-me, FEATURE_FLAG=true and BAD NAME=value. The copied report is two lines: [WARN] Line 2: SECRET_KEY looks short for a secret, because change-me has 9 characters, and [ERROR] Line 4: invalid variable name BAD NAME, because names cannot contain spaces."
+      "a": "The sample has four lines: API_URL=https://privatools.me, SECRET_KEY=change-me, FEATURE_FLAG=true and BAD NAME=value. The copied report is two lines: [WARN] Line 2: value looks short for a secret, because change-me has 9 characters, and [ERROR] Line 4: not a KEY=value line (invalid variable name), because names cannot contain spaces."
     },
     {
       "q": "Why is a line with spaces around = flagged?",
@@ -36,11 +36,11 @@
     },
     {
       "q": "How are duplicate keys reported?",
-      "a": "Each repeat gets a warning such as Line 2: duplicate key A, first seen on line 1. If a key appears three or more times, each warning names the previous line that set it rather than the first one."
+      "a": "Each repeat gets a warning such as Line 2: duplicate key, first set on line 1. However often a key repeats, every warning points back to the line that set it first. The key itself is not named; the two line numbers lead you to it."
     },
     {
       "q": "Are export lines and multi-line values supported?",
-      "a": "No. export API_TOKEN=... is read as a variable named export API_TOKEN and reported as an invalid variable name. Each line is checked on its own, so a quoted value that continues over several lines, such as a PEM key, gets a missing = error for each continuation line."
+      "a": "No. export API_TOKEN=... is read as a variable named export API_TOKEN and reported as not a KEY=value line (invalid variable name). Each line is checked on its own, so every continuation line of a multi-line value, such as a PEM key, is judged as a separate entry: most get not a KEY=value line (no = sign), and a base64 line ending in = can look like a name with an empty value."
     },
     {
       "q": "Does this replace secret scanning?",
@@ -48,7 +48,7 @@
     },
     {
       "q": "Will it reveal my secrets to PrivaTools?",
-      "a": "No. Validation is plain JavaScript in the page; the tool makes no network request with the text and does not save it in browser storage. The report quotes only line numbers and the text before each =, so a copied report does not contain your values."
+      "a": "No. Validation is plain JavaScript in the page; the tool makes no network request with the text and does not save it in browser storage. The report never repeats text from your file, not even names: each finding is a fixed message with line numbers, so a copied report holds none of your keys or values."
     }
   ]
 }

@@ -14,7 +14,7 @@
     },
     {
       "name": "Estimate the reading time",
-      "text": "Reading time is the word count divided by 220 words per minute, rounded up to a whole minute, with at least 1 minute for any text: 220 words reads as 1 min and 221 words as 2 min."
+      "text": "Reading time is the word count divided by 220 words per minute, rounded up to a whole minute, with at least 1 minute once there is a word: 220 words reads as 1 min and 221 words as 2 min, while spaces or line breaks alone read as 0 min."
     },
     {
       "name": "Review the writing-quality figures",

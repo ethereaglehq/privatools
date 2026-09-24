@@ -20,7 +20,7 @@
   "faq": [
     {
       "q": "Which keywords start a new line?",
-      "a": "These 23: SELECT, FROM, WHERE, GROUP BY, ORDER BY, HAVING, LIMIT, OFFSET, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, JOIN, ON, UNION, VALUES, INSERT INTO, UPDATE, SET, DELETE FROM, CREATE TABLE and ALTER TABLE. They match as whole words in any case and are uppercased. Other words, such as DISTINCT, AS, CASE, WITH, DESC or ALL, stay as you typed them."
+      "a": "Twenty-three clause keywords: SELECT, FROM, WHERE, GROUP BY, ORDER BY, HAVING, LIMIT, OFFSET, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, JOIN, ON, UNION, VALUES, INSERT INTO, UPDATE, SET, DELETE FROM, CREATE TABLE and ALTER TABLE. They match as whole words in any case and are uppercased. AND and OR also start a new line, indented two spaces, but keep the case you typed. Other words, such as DISTINCT, AS, CASE, WITH, DESC or ALL, stay as you typed them."
     },
     {
       "q": "What does a formatted query look like?",

@@ -14,7 +14,7 @@
     },
     {
       "name": "Download the result",
-      "text": "One video downloads as your file name with _resized.mp4, so clip.mov becomes clip_resized.mp4; several arrive together in media-results.zip. The index sits at the front of the MP4 (+faststart), so it can start playing online before it has fully downloaded."
+      "text": "On privatools.me one video downloads as your file name with _resized.mp4, so clip.mov becomes clip_resized.mp4; a self-hosted copy that serves its API from the page's own address uses the server's name, such as video_720p.mp4. Several arrive together in media-results.zip. The index sits at the front of the MP4 (+faststart), so it can start playing online before it has fully downloaded."
     }
   ],
   "faq": [

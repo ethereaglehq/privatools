@@ -10,7 +10,7 @@
     },
     {
       "name": "Pick Format, Minify or Validate",
-      "text": "Format adds line breaks and indentation: 2 spaces (the default), 4 spaces or Tabs. Minify removes the whitespace between tokens or tags. Validate checks the syntax and shows your text unchanged. The Indent menu only works with Format."
+      "text": "Format adds line breaks and indentation: 2 spaces (the default), 4 spaces or Tabs. Minify removes the whitespace between JSON tokens, and between XML tags inside elements that hold only other elements, so an element with nothing but spaces inside, such as <a> </a>, keeps them. Validate checks the syntax and shows your text unchanged. The Indent menu only works with Format."
     },
     {
       "name": "Run the action",
@@ -48,7 +48,7 @@
     },
     {
       "q": "Is my data uploaded or stored?",
-      "a": "No. Parsing and formatting run in JavaScript in your browser, and the text you paste is not uploaded or saved. The tool's requests are limited to fetching the JSON example from this site when you click Use example and, if analytics is on, an event recording whether a run succeeded, without any content. Analytics can be switched off on the Privacy page."
+      "a": "No. Parsing and formatting run in JavaScript in your browser, and the text you paste is not uploaded or saved. The tool's requests are limited to fetching the JSON example from this site when you click Use example and, if analytics is on, events that record how a run ended, without any content: two for a successful run and one for a failed one. Analytics can be switched off on the Privacy page."
     }
   ]
 }

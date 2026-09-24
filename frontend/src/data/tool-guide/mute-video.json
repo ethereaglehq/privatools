@@ -20,7 +20,7 @@
   "faq": [
     {
       "q": "Is the picture changed at all?",
-      "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were. Only the container is rewritten, without the audio."
+      "a": "No. The video stream is copied without re-encoding, so the resolution, frame rate, codec and quality stay as they were. The container is rewritten without the audio, and one other change can happen: a text subtitle track kept in an MKV file is re-encoded to ASS, so SRT subtitles come back as ASS."
     },
     {
       "q": "What format is the muted file?",
@@ -44,7 +44,7 @@
     },
     {
       "q": "What limits apply?",
-      "a": "Files over 200 MB are refused with \"File is too big for the server. Try compressing it first.\" FFmpeg has 180 seconds per file, after which the page says the server took too long, and the route is rate-limited at 5 requests a minute per IP address. Copying a stream needs no encoding, so it is much quicker than a conversion."
+      "a": "Keep each file under 200 MB. From 200 MB to about 250 MB the server refuses it with \"File is too big for the server. Try compressing it first.\" Above about 250 MB the request is turned away before it reaches the app, because this page currently includes each file in the upload twice and uploads are capped at 500 MB, so the page reports \"Couldn't reach the server. Check your connection and try again.\" A file over 500 MB is not added to the queue. FFmpeg has 180 seconds per file, after which the page says the server took too long, and the route is rate-limited at 5 requests a minute per IP address. Copying a stream needs no encoding, so it is much quicker than a conversion."
     },
     {
       "q": "What happens to my video on the server?",

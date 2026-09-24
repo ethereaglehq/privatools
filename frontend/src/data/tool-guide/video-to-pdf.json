@@ -6,7 +6,7 @@
     },
     {
       "name": "Choose the number of frames",
-      "text": "Set the slider anywhere from 1 to 60; the default is 12. Each frame becomes one page, so this number is also the page count."
+      "text": "Set the slider anywhere from 1 to 60; the default is 12. Each frame becomes one page, so this number is the most pages the PDF can have."
     },
     {
       "name": "Create the PDF",
@@ -14,7 +14,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "One video gives a PDF named after it with _frames.pdf, so lecture.mp4 becomes lecture_frames.pdf; several arrive together in media-results.zip."
+      "text": "On privatools.me one video gives a PDF named after it with _frames.pdf, so lecture.mp4 becomes lecture_frames.pdf; a self-hosted copy that serves its API from the page's own address uses the server's name, frames.pdf. Several arrive together in media-results.zip."
     }
   ],
   "faq": [

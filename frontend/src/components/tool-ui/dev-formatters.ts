@@ -144,3 +144,44 @@ export function bumpSemver(version: string, kind: "major" | "minor" | "patch" | 
   if (![major, minor, patch].every(Number.isSafeInteger)) throw new Error("Version number is too large.");
   return `${major}.${minor}.${patch}${pre ? `-${pre}` : ""}`;
 }
+
+export type EnvIssue = { level: "ok" | "warn" | "error"; text: string };
+
+const ENV_NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
+const SECRET_NAME = /(SECRET|TOKEN|KEY|PASSWORD)/;
+
+/**
+ * Checks .env text line by line. Every finding is a fixed message with line
+ * numbers: it never repeats a name, a value or any other text from the input.
+ * A pasted .env file holds secrets and the report is made to be copied, and
+ * the text before an "=" is not always a name: a PEM key pasted without
+ * quotes puts base64 lines that can end in "=" on lines of their own.
+ */
+export function validateEnv(input: string): EnvIssue[] {
+  const issues: EnvIssue[] = [];
+  const firstLine = new Map<string, number>();
+  input.split(/\r?\n/).forEach((raw, index) => {
+    const lineNo = index + 1;
+    const line = raw.trim();
+    if (!line || line.startsWith("#")) return;
+    const eq = line.indexOf("=");
+    if (eq < 0) {
+      issues.push({ level: "error", text: `Line ${lineNo}: not a KEY=value line (no = sign)` });
+      return;
+    }
+    const key = line.slice(0, eq).trim();
+    if (!ENV_NAME.test(key)) {
+      issues.push({ level: "error", text: `Line ${lineNo}: not a KEY=value line (invalid variable name)` });
+      return;
+    }
+    const value = line.slice(eq + 1);
+    const first = firstLine.get(key);
+    if (first === undefined) firstLine.set(key, lineNo);
+    else issues.push({ level: "warn", text: `Line ${lineNo}: duplicate key, first set on line ${first}` });
+    if (value === "") issues.push({ level: "warn", text: `Line ${lineNo}: empty value` });
+    if (/\s/.test(value) && !/^(['"]).*\1$/.test(value)) issues.push({ level: "warn", text: `Line ${lineNo}: quote values that contain spaces` });
+    if (SECRET_NAME.test(key) && value.replace(/^['"]|['"]$/g, "").length < 12) issues.push({ level: "warn", text: `Line ${lineNo}: value looks short for a secret` });
+  });
+  if (!issues.length) issues.push({ level: "ok", text: "No obvious .env issues found." });
+  return issues;
+}

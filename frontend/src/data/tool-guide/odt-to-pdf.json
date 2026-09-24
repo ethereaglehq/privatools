@@ -10,7 +10,7 @@
     },
     {
       "name": "Know the default PDF settings",
-      "text": "LibreOffice's standard PDF export settings apply. Headings become bookmarks, the PDF is tagged, which helps screen readers, and comments in the document are left out. Photos may be recompressed as JPEG at quality 90, and images sharper than 300 DPI are scaled down to 300 DPI. The result is not PDF/A."
+      "text": "PrivaTools passes no export options, so LibreOffice's standard PDF export settings apply. Headings become bookmarks and comments in the document are left out. Photos may be recompressed as JPEG at quality 90, and images sharper than 300 DPI are scaled down to 300 DPI. The result is not PDF/A."
     },
     {
       "name": "Download the PDF",
@@ -35,8 +35,8 @@
       "a": "No. LibreOffice opens a file for conversion without permission to run macros, and PrivaTools passes no setting that changes this, so nothing a macro would add or change on opening appears in the PDF."
     },
     {
-      "q": "Are comments and form controls kept?",
-      "a": "Comments are left out, and form controls such as check boxes and text fields are drawn as they would print rather than exported as fillable PDF fields; both follow LibreOffice's default export settings. Add fillable fields to the PDF afterwards with Form Creator if you need them."
+      "q": "Are comments kept?",
+      "a": "No. Comments in the document are left out of the PDF. PrivaTools passes no export options, so LibreOffice's default export settings decide, and those leave comments out; the page has no setting to include them."
     },
     {
       "q": "Can I convert a password-protected ODT?",

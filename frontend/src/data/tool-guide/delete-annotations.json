@@ -14,7 +14,7 @@
     },
     {
       "name": "Download the result",
-      "text": "A single file downloads automatically, as no_annotations.pdf or under its own name: contract.pdf comes back as no_annotations.pdf, but board_minutes.pdf keeps its name. Several files can be saved one by one or as delete-annotations-results.zip, where repeated names are numbered, as in no_annotations (2).pdf."
+      "text": "On privatools.me a single file downloads automatically under its own name, so contract.pdf comes back as contract.pdf; a self-hosted copy that serves its API from the page's own address can use the server's name, no_annotations.pdf, instead. Several files can be saved one by one or as delete-annotations-results.zip, where a repeated name is numbered, as in contract (2).pdf."
     }
   ],
   "faq": [
