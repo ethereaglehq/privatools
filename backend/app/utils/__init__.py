@@ -43,3 +43,25 @@ try:
     _register_heif_opener()
 except ImportError:  # pragma: no cover — pillow-heif is a declared dependency
     pass
+
+# ---------------------------------------------------------------------------
+# ReportLab: binary streams, not ASCII85
+# ---------------------------------------------------------------------------
+# ReportLab ASCII85-encodes every image and page stream unless
+# `rl_config.useA85` is off, and without its optional C accelerator (not
+# installed) it does that in pure Python. In Image to PDF it was 95% of the
+# CPU: 100 phone photos took 124 s instead of 6.3 s on the 2-core ARM VM, and
+# the PDF came out a quarter bigger than its JPEGs (PR #270). ASCII85 only
+# keeps a file 7-bit clean, which no PDF reader needs.
+#
+# ReportLab has no per-canvas switch. It reads this global when an image is
+# drawn and again when pages are saved, so it is set once here instead of
+# being toggled around one canvas while other threads build theirs. Every
+# module that imports ReportLab imports this package
+# (backend/tests/test_reportlab_binary_streams.py checks).
+try:
+    from reportlab import rl_config as _rl_config
+
+    _rl_config.useA85 = 0
+except ImportError:  # pragma: no cover — reportlab is a declared dependency
+    pass

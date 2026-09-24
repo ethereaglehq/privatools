@@ -422,7 +422,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "png-to-pdf", icon: FileImage, name: "PNG to PDF",
     description: "Convert PNG images into a single PDF document",
-    longDescription: "Convert PNG to PDF online for free — turn one or more PNG images into a single PDF, one image per page (transparent areas are not kept). Bulk convert screenshots, design exports, or charts. No quality loss, no watermark, no sign-up.",
+    longDescription: "Convert PNG to PDF online for free — turn one or more PNG images into a single PDF, one image per page (transparent areas are not kept). Bulk convert screenshots, design exports, or charts. Pixels are stored losslessly at 8 bits per channel; no watermark, no sign-up.",
     seoTitle: "Convert PNG to PDF Online – Lossless, One Image per Page",
     metaDescription: "PNG to PDF turns one or more images into a single document, one per page, with the pixels copied losslessly. Free tool, no watermark, no sign-up.",
     synonyms: "image graphic transparent to pdf",
@@ -466,7 +466,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "bmp-to-pdf", icon: FileImage, name: "BMP to PDF",
     description: "Convert Windows BMP bitmaps into a PDF",
-    longDescription: "Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 100 images and 200 MB per PDF.",
+    longDescription: "Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 100 images, 200 MB and 750 megapixels per PDF.",
     seoTitle: "Convert BMP to PDF Online – For Legacy Windows Files",
     metaDescription: "BMP to PDF turns legacy Windows bitmap images into a standard document you can share easily. Free tool, combine multiple files at once.",
     synonyms: "bitmap windows to pdf",

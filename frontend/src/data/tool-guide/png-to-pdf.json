@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload PNG images",
-      "text": "Drop one or many .png files, up to 100 images and 200 MB in total."
+      "text": "Drop one or many .png files, up to 100 images, 200 MB and 750 megapixels in total. 100 phone screenshots come to about 300."
     },
     {
       "name": "Choose page size",
@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the PDF",
-      "text": "All images become a single PDF, one per page. Lossless — PNG pixels map directly to PDF image objects."
+      "text": "All images become a single PDF, one per page. The pixels are stored with lossless compression at 8 bits per channel, so a 16-bit PNG is reduced to 8 bits."
     }
   ],
   "faq": [
@@ -24,7 +24,7 @@
     },
     {
       "q": "Is there a max number of images?",
-      "a": "Yes. One conversion takes up to 100 images with a combined size of up to 200 MB. For more, convert them in batches and join the PDFs with Merge PDF."
+      "a": "Yes. One conversion takes up to 100 images, with a combined size of up to 200 MB and 750 megapixels. For more, convert them in batches and join the PDFs with Merge PDF."
     }
   ]
 }

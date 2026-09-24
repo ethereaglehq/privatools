@@ -48,8 +48,9 @@ export function apiUrl(endpoint: string): string {
  *  HTTP status families so the UI can show meaningful guidance instead of
  *  a generic "Request failed (500)".
  *
- *  Tags `__status` and `__requestId` (when the X-Request-ID header is
- *  present) onto the Error so retry / copy-error UIs can read them. */
+ *  Tags `__status`, `__requestId` (when the X-Request-ID header is present)
+ *  and `__detail` (when the server gave a JSON detail) onto the Error so
+ *  retry / copy-error UIs can read them. */
 async function describeError(res: Response): Promise<Error> {
     const status = res.status;
     const requestId = res.headers.get("x-request-id") || res.headers.get("X-Request-ID") || undefined;
@@ -74,9 +75,10 @@ async function describeError(res: Response): Promise<Error> {
     else if (status >= 400 && status < 500) message = `Request rejected (HTTP ${status}). Try a different file or adjust the settings.`;
     else message = `Server error (HTTP ${status}). Try again.`;
 
-    const err = new Error(message) as Error & { __status?: number; __requestId?: string };
+    const err = new Error(message) as Error & { __status?: number; __requestId?: string; __detail?: string };
     err.__status = status;
     if (requestId) err.__requestId = requestId;
+    if (detail) err.__detail = detail;
     return err;
 }
 
@@ -86,6 +88,16 @@ export function getRequestId(err: unknown): string | undefined {
     if (err && typeof err === "object" && "__requestId" in err) {
         const id = (err as { __requestId?: unknown }).__requestId;
         return typeof id === "string" ? id : undefined;
+    }
+    return undefined;
+}
+
+/** The server's own words for a failed request (its JSON `detail`), if it gave
+ *  any: unlike the message, never one written here for a bare status code. */
+export function getErrorDetail(err: unknown): string | undefined {
+    if (err && typeof err === "object" && "__detail" in err) {
+        const detail = (err as { __detail?: unknown }).__detail;
+        return typeof detail === "string" ? detail : undefined;
     }
     return undefined;
 }

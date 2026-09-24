@@ -1,3 +1,4 @@
+import os
 import uuid
 from typing import List
 import logging
@@ -12,11 +13,10 @@ ALLOWED_IMAGE_TYPES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif",
 # Nine tools share this route (Image, JPG, PNG, HEIC, WebP, TIFF, BMP, GIF and
 # SVG to PDF); the page copy and ImageToPdfUI state both limits.
 MAX_FILES = 100
-# The combined cap stayed at 200 MB when the count went from 50 to 100.
-# ReportLab keeps every page in memory and formats the whole file on save, so
-# a request peaks at about four times its JPEG bytes: 358 MB of phone photos
-# took +1.4 GB RSS and 124 s of CPU on the 2-core ARM VM, against a 4 GB
-# container and a 300 s timeout.
+# The combined cap stayed at 200 MB when the count went from 50 to 100. It
+# no longer has to carry the memory bound: the service writes each page as it
+# makes it, so memory follows one page. What a batch costs in CPU is bounded
+# by the service's MAX_DECODED_MEGAPIXELS, which answers 413 as well.
 MAX_TOTAL_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
 
 router = APIRouter()
@@ -49,6 +49,7 @@ async def image_to_pdf(
 
     ensure_temp_dir()
     input_paths: list[str] = []
+    names: list[str] = []
     output_path: str | None = None
     total_bytes = 0
 
@@ -75,11 +76,15 @@ async def image_to_pdf(
             temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}{suffix}")
             temp_path.write_bytes(content)
             input_paths.append(str(temp_path))
+            # A refusal names the file as the person uploaded it.
+            names.append(os.path.basename(filename.replace("\\", "/")))
 
-        # Heavy pool: a full batch can hold a core for minutes and need
-        # gigabytes (100 web-size WebPs: 216 s CPU, +2.2 GB RSS), so it shares
+        # Heavy pool: a full batch can hold a core for well over a minute
+        # (100 iPhone HEICs: about 90 s of CPU), so it shares
         # MAX_CONCURRENT_HEAVY with the other heavy tools.
-        output_path = await run_bounded(image_to_pdf_service.images_to_pdf, input_paths, page_size=normalized_page_size)
+        output_path = await run_bounded(
+            image_to_pdf_service.images_to_pdf, input_paths, page_size=normalized_page_size, names=names,
+        )
         cleanup = BackgroundTask(remove_files, *input_paths, output_path)
         return FileResponse(
             path=output_path,
@@ -91,12 +96,15 @@ async def image_to_pdf(
         to_remove = input_paths + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise
-    except ValueError as e:
-        # Image-too-large from the service. Friendly 400 with "too large"
-        # substring for frontend friendlyError().
+    except image_to_pdf_service.ImageRefused as e:
+        # The service's refusals name the upload, and the page shows them as
+        # they are: too many pixels in one image or in the batch (413), or a
+        # file that is not an image these tools take or cannot be read (400).
+        # Any other error is the server's (500), whatever its type.
         to_remove = input_paths + ([output_path] if output_path else [])
         remove_files(*to_remove)
-        raise HTTPException(status_code=413, detail=str(e))
+        too_large = isinstance(e, (image_to_pdf_service.ImageTooLarge, image_to_pdf_service.DecodeBudgetExceeded))
+        raise HTTPException(status_code=413 if too_large else 400, detail=str(e))
     except Exception as e:
         to_remove = input_paths + ([output_path] if output_path else [])
         remove_files(*to_remove)
