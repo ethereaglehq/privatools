@@ -10,6 +10,37 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.1] — 2026-09-24 — Sanitize and Verify Signature that work, faster Image to PDF, truthful analytics
+
+### Tools
+
+- Sanitize PDF removes document JavaScript, every automatic action (`/AA`), embedded files, sound, video and 3D content, XFA, XMP and the document information fields. Wherever an action can fire, only in-document navigation, form reset and http, https or mailto links survive. Form fields keep their values and stay fillable; content in hidden layers is deleted and visible layers become page content; an owner password that only restricts printing or copying is kept. It runs in a separate, memory-capped process: layered content over 6 MiB decoded is refused with a 413, layered content that can't be decoded with a 400, and a password-protected upload gets a 400 instead of a 500. (#269)
+- Verify Signature finds every signature field, including empty ones, and checks each signature offline: whether the signed bytes are unchanged, whether the signature matches its certificate, whether it covers the whole file and what was saved afterwards. SHA-1, MD5 and MD2 signatures are reported as `weak`, never `valid`. It never checks trust or revocation. (#269)
+- Image to PDF takes up to 100 images in one PDF instead of 50, still within 200 MB in total, and is far faster: 100 phone photos take about 5 s of CPU instead of about two minutes, and memory follows one page instead of the whole document. New limits keep the worst case bounded: 750 megapixels of images that have to be decoded per PDF (HEIC counts half), and per image 50 MP for WebP, 100 MP for HEIC, 120 MP for colour TIFF and 178 MP overall. Refusals name the uploaded file and say why. (#270, #274)
+- Image to PDF turns sideways phone photos upright from their EXIF orientation, and removes EXIF (including GPS location), XMP, IPTC, comments and thumbnails from JPEGs before embedding them, without re-encoding. 16-bit grayscale images no longer come out almost white, lossless and arithmetic-coded JPEGs no longer render black, and files that aren't one of the accepted formats, whatever they are named, get a 400. (#274, #276)
+- PNG to PDF and TIFF to PDF say that transparency isn't kept and that only a TIFF's first page is used. (#275)
+- The .env Validator's report never contains values or fragments of them, including lines of a pasted private key. (#273)
+
+### Pages
+
+- The 14 comparison pages are rewritten with facts checked against each vendor's own pages on 2026-09-24, each with a sourced side-by-side table, including remove.bg's announced closure on 1 December 2026. (#272)
+- The 21 thinnest tool guides are deepened with claims checked against the code, and registry copy is corrected on six tools. (#273)
+- Privacy, Terms and Security fit phone screens instead of running off the right edge, and Trust, Status, API and Compare no longer scroll sideways at tablet widths. (#277)
+
+### Analytics
+
+- The first page view of a page load records the referring site's origin and the five `utm_` tags, with values filtered to keep out phone numbers, identifiers and tokens; every other part of the address is still dropped. Browsers that identify themselves as automated send nothing. Failed and partial tool runs carry an `error_kind` category (too_large, rate_limited, bad_input, timeout, server, network, browser, provider) and never the error text. The Privacy page, llms.txt and the runbook describe all of this. (#271)
+
+### For API users
+
+- `/verify-signature` keeps `has_signatures` and `signatures`; each signature's `status` is now `valid`, `weak`, `modified`, `invalid`, `unsigned` or `unchecked` instead of `detected`, with `digest_algorithm` and a reason. (#269)
+- `/sanitize-pdf` can return 413 for layered content over 6 MiB decoded and 400 for undecodable layered content. `/image-to-pdf` takes 1–100 files and returns 413 only for pixel limits and 400 for unreadable or unsupported files. (#269, #270, #274)
+
+### Other
+
+- ReportLab no longer ASCII85-encodes streams, so PDFs from the ReportLab-based tools are typically 10–20% smaller and faster to make, with identical text and rendering. (#274)
+- New dependencies: pyhanko 0.37.0 and pyhanko-certvalidator 0.32.1, with their locked transitive packages. (#269)
+
 ## [2.7.0] — 2026-09-24 — Tools that match their pages, current dependencies, deploy tooling
 
 ### Tool fixes
