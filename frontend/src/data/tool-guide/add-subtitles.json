@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload a video",
-      "text": "Drop an MP4/MOV/MKV file up to 500 MB."
+      "text": "Drop an MP4/MOV/MKV file. It shares one 500 MB upload with the subtitle file."
     },
     {
       "name": "Upload an SRT subtitle file",

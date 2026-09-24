@@ -72,7 +72,7 @@ const FAQ = [
   {
     slug: "upload-limit",
     q: "What's the upload limit?",
-    a: "500 MB per file by default. If you self-host, you can raise that with a single env variable. The limit exists to keep shared instances responsive, not to upsell you.",
+    a: "500 MB per upload request on the public site, and the web app checks each file against 500 MB. Self-hosters can raise the server's request cap with MAX_UPLOAD_MB; the web app's per-file check stays at 500 MB. The limit exists to keep shared instances responsive, not to upsell you.",
   },
   {
     slug: "browser-only-tools",

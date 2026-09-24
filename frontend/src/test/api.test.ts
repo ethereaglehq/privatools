@@ -199,6 +199,79 @@ describe("api form-data helpers", () => {
     });
 });
 
+/** A request body's file parts, as [field, file] pairs in the order sent. */
+function uploads(body: unknown): [string, File][] {
+    expect(body).toBeInstanceOf(FormData);
+    return [...(body as FormData).entries()].filter((entry): entry is [string, File] => entry[1] instanceof File);
+}
+
+describe("each single-file upload carries its file once", () => {
+    afterEach(() => {
+        vi.useRealTimers();
+        vi.restoreAllMocks();
+        vi.unstubAllGlobals();
+        restoreBlobUrlMethod("createObjectURL", originalCreateObjectURL);
+        restoreBlobUrlMethod("revokeObjectURL", originalRevokeObjectURL);
+    });
+    const pdf = () => new File(["%PDF-1.7 synthetic"], "report.pdf", { type: "application/pdf" });
+    // `/grayscale` reads `file: UploadFile`; `/compress` and `/strip-metadata` read `files: list[UploadFile]`.
+    const routes = [["/grayscale", "file"], ["/compress", "files"], ["/api/strip-metadata", "files"]] as const;
+
+    it.each(routes)("uploadFile sends one part to %s, named %s", async (endpoint, field) => {
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response("ok"));
+        const file = pdf();
+
+        await uploadFile(endpoint, file, { level: "light" }, { retry: noRetry });
+
+        const body = fetchMock.mock.calls[0]?.[1]?.body;
+        expect(uploads(body)).toEqual([[field, file]]);
+        expect((body as FormData).get("level")).toBe("light");
+    });
+
+    it.each(routes)("uploadFileWithProgress sends one part to %s, named %s", async (endpoint, field) => {
+        const xhr = stubSuccessfulXhr();
+        const file = pdf();
+
+        await uploadFileWithProgress(endpoint, file, { level: "light" });
+
+        const body = xhr.instances[0]?.send.mock.calls[0]?.[0];
+        expect(uploads(body)).toEqual([[field, file]]);
+        expect((body as FormData).get("level")).toBe("light");
+    });
+
+    it("keeps to one part when the helpers are reached through uploadFileGetJson and processAndDownload", async () => {
+        vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+        const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response('{"fields": []}', {
+            headers: { "content-type": "application/json" },
+        }));
+        const xhr = stubSuccessfulXhr();
+        Object.defineProperty(URL, "createObjectURL", { configurable: true, value: vi.fn(() => "blob:test") });
+        Object.defineProperty(URL, "revokeObjectURL", { configurable: true, value: vi.fn() });
+        vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
+        const file = pdf();
+
+        await uploadFileGetJson("/fill-form/fields", file, undefined, { retry: noRetry });
+        await processAndDownload("/redact", file, "report_redacted.pdf", undefined, undefined, undefined, { retry: noRetry });
+        await processAndDownload("/compress", file, "report_compressed.pdf", undefined, vi.fn());
+
+        expect(fetchMock.mock.calls.map(([, init]) => uploads(init?.body))).toEqual([[["file", file]], [["file", file]]]);
+        expect(uploads(xhr.instances[0]?.send.mock.calls[0]?.[0])).toEqual([["files", file]]);
+        await vi.advanceTimersByTimeAsync(100);
+    });
+
+    it("rebuilds the same single part for a retry", async () => {
+        const fetchMock = vi.spyOn(globalThis, "fetch")
+            .mockResolvedValueOnce(new Response("temporary", { status: 503 }))
+            .mockResolvedValueOnce(new Response("ok"));
+        const file = pdf();
+
+        await uploadFile("/compress", file, undefined, { retry: { attempts: 1, backoffMs: 1 } });
+
+        expect(fetchMock).toHaveBeenCalledTimes(2);
+        for (const [, init] of fetchMock.mock.calls) expect(uploads(init?.body)).toEqual([["files", file]]);
+    });
+});
+
 describe("failure categories on api errors", () => {
     afterEach(() => {
         vi.useRealTimers();
@@ -334,7 +407,7 @@ function stubSuccessfulXhr() {
             this.onabort?.();
             this.onloadend?.();
         });
-        send = vi.fn(() => {
+        send = vi.fn((_body?: unknown) => {
             this.onload?.();
             this.onloadend?.();
         });

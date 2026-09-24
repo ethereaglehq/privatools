@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Choose your AVI files",
-      "text": "Drop or pick one or more .avi files; the queue holds up to 25. Keep each file under about 250 MB."
+      "text": "Drop or pick one or more .avi files; the queue holds up to 25. Keep each file under 500 MB."
     },
     {
       "name": "Start the conversion",
@@ -40,7 +40,7 @@
     },
     {
       "q": "What limits apply?",
-      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg has 180 seconds per file, and the request has five minutes overall, upload included. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so a large batch may need a retry after \"Slow down — we're rate-limiting requests.\""
+      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg has 180 seconds per file, and the request has five minutes overall, upload included. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so a large batch may need a retry after \"Slow down — we're rate-limiting requests.\""
     },
     {
       "q": "What happens to my AVI on the server?",

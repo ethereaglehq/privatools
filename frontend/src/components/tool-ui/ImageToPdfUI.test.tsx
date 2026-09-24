@@ -161,7 +161,7 @@ describe("Image to PDF decode budget", { timeout: 20_000 }, () => {
 
     it("keeps the friendly wording when the server gave no reason of its own", async () => {
         // What lib/api writes for a proxy's bare 413 page; it is not this tool's limit.
-        const refusal = Object.assign(new Error("That file is too large. The maximum is 500 MB per file."), { __status: 413 });
+        const refusal = Object.assign(new Error("That upload is too large. The maximum is 500 MB per upload."), { __status: 413 });
         vi.mocked(processFilesAndDownload).mockRejectedValueOnce(refusal);
         render(<ImageToPdfUI />);
         choose(photos(3, { ext: "png" }));

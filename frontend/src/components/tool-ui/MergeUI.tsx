@@ -303,7 +303,7 @@ export function MergeUI() {
                     <button type="button" className="merge-button merge-button--primary" onClick={() => inputRef.current?.click()}>
                         <Upload size={20} /> Choose PDFs
                     </button>
-                    <p className="merge-empty-hint">Or drop PDFs here · Up to {MAX_FILES_PER_REQUEST} files, 500 MB each</p>
+                    <p className="merge-empty-hint">Or drop PDFs here · Up to {MAX_FILES_PER_REQUEST} files, 500 MB in total</p>
                     <button className="merge-text-button" type="button" disabled={loadingSample} onClick={() => void trySample()}>
                         {loadingSample ? <Loader2 size={17} className="merge-spinner" /> : <Sparkles size={17} />}
                         {loadingSample ? "Loading sample PDFs…" : "Try with sample PDFs"}

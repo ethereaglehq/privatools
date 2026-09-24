@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload a PDF",
-      "text": "Drop a PDF up to about 250 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."
+      "text": "Drop a PDF up to 500 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."
     },
     {
       "name": "PrivaTools removes active and hidden content",

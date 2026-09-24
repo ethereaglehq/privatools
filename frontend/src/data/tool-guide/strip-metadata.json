@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Upload PDF(s)",
-      "text": "Drop one or many PDFs up to about 250 MB each. Multi-file batches are supported."
+      "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."
     },
     {
       "name": "PrivaTools removes all metadata",

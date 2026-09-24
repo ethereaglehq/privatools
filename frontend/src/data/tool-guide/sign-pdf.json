@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select the document you need to sign, up to 500 MB."
+      "text": "Drop or select the document you need to sign. It shares one 500 MB upload with your signature image."
     },
     {
       "name": "Create your signature",
