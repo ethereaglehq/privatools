@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Paste SQL",
-      "text": "Drop a compact SELECT, INSERT, UPDATE, DELETE, or JOIN-heavy query into the editor."
+      "name": "Paste your SQL",
+      "text": "Paste one or more statements into the SQL input box, replacing the sample SELECT query that loads with the page. There is no file upload: to format a .sql file, open it in an editor and paste its text."
     },
     {
-      "name": "Review formatted SQL",
-      "text": "Keywords, clauses, commas, and boolean operators are line-broken into a readable layout."
+      "name": "Read the formatted query",
+      "text": "The Formatted SQL panel updates as you type. Line breaks and repeated spaces outside quotes and comments collapse to single spaces, then each recognized clause keyword, such as SELECT, FROM or LEFT JOIN, starts a new line in upper case."
+    },
+    {
+      "name": "Check commas and conditions",
+      "text": "Every comma outside quotes and comments ends its line and the next item is indented two spaces, including commas inside parentheses such as IN (1, 2). AND and OR also start a line indented two spaces but keep the case you typed. Subqueries get no extra indentation."
     },
     {
       "name": "Copy the result",
-      "text": "Use the formatted SQL in reviews, docs, migrations, dashboards, or database consoles."
+      "text": "Click Copy to put the formatted SQL on your clipboard; the button shows Copied once the browser confirms it. If clipboard access is blocked, select the result and copy it manually. There is no download button."
     }
   ],
   "faq": [
     {
-      "q": "Is this a full SQL parser?",
-      "a": "No. It is a lightweight formatter for readable query cleanup. It does not execute, optimize, or validate SQL against a database schema."
+      "q": "Which keywords start a new line?",
+      "a": "Twenty-three clause keywords: SELECT, FROM, WHERE, GROUP BY, ORDER BY, HAVING, LIMIT, OFFSET, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL JOIN, CROSS JOIN, JOIN, ON, UNION, VALUES, INSERT INTO, UPDATE, SET, DELETE FROM, CREATE TABLE and ALTER TABLE. They match as whole words in any case and are uppercased. AND and OR also start a new line, indented two spaces, but keep the case you typed. Other words, such as DISTINCT, AS, CASE, WITH, DESC or ALL, stay as you typed them."
     },
     {
-      "q": "Will my query be uploaded?",
-      "a": "No. Formatting happens in browser JavaScript, which is useful for production query snippets and private table names."
+      "q": "What does a formatted query look like?",
+      "a": "The sample, select id, email, created_at from users where active = true and created_at > now() - interval '30 days' order by created_at desc limit 25;, becomes SELECT id, / email, / created_at / FROM users / WHERE active = true / and created_at > now() - interval '30 days' / ORDER BY created_at desc / LIMIT 25; where / marks a line break and lines 2, 3 and 6 are indented two spaces."
+    },
+    {
+      "q": "How are JOINs and OR conditions laid out?",
+      "a": "Each join and its ON condition get their own lines: select u.id, o.total from users u left join orders o on o.user_id = u.id where o.total > 100 or u.vip = 1 becomes SELECT u.id, / o.total / FROM users u / LEFT JOIN orders o / ON o.user_id = u.id / WHERE o.total > 100 / or u.vip = 1, where / marks a line break and lines 2 and 7 are indented two spaces."
+    },
+    {
+      "q": "Are strings and comments left alone?",
+      "a": "Yes. Single-quoted strings, double-quoted, backtick and [bracketed] identifiers, -- line comments and /* block comments */ are set aside first, so keywords and commas inside them are untouched: select 'from, where' as txt from t becomes SELECT 'from, where' as txt, then FROM t on the next line."
+    },
+    {
+      "q": "Is this a full SQL parser?",
+      "a": "No. It is a keyword-based layout formatter. It does not parse, validate, execute or optimize SQL, and any text produces output without syntax errors. There are no dialect, indent-size or keyword-case options, and an inner SELECT starts at the left margin on the line after its opening parenthesis."
+    },
+    {
+      "q": "What layout quirks should I expect?",
+      "a": "Commas inside function calls, IN lists and VALUES tuples also break lines, so insert into users (id, email) values (1, 'a@example.com') becomes INSERT INTO users (id, / email) / VALUES (1, / 'a@example.com'), where / marks a line break. The AND of BETWEEN 1 AND 5 starts a new line, and a line that ends just before a clause keyword keeps one trailing space."
     },
     {
       "q": "Which SQL dialects work?",
-      "a": "Common SELECT, JOIN, WHERE, GROUP BY, ORDER BY, INSERT, UPDATE, and DELETE syntax formats well across Postgres, MySQL, SQLite, and similar dialects."
+      "a": "It does not detect dialects; it relies on keywords and quoting. The quoting it protects covers standard single-quoted strings, PostgreSQL-style double-quoted identifiers, MySQL backticks and SQL Server brackets. Dialect clauses outside its list, such as RETURNING, stay on the current line as typed."
+    },
+    {
+      "q": "Will my query be uploaded?",
+      "a": "No. Formatting is plain JavaScript in the page: the tool makes no network request with your SQL and does not save it in browser storage."
     }
   ]
 }

@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Upload a WebM file",
-      "text": "Drop a .webm file up to 500 MB."
+      "name": "Choose your WebM files",
+      "text": "Drop or pick one or more .webm files; the queue holds up to 25. Keep each file under about 250 MB."
     },
     {
-      "name": "PrivaTools re-encodes via FFmpeg",
-      "text": "VP9 is re-encoded into a stream QuickTime and Final Cut will actually open."
+      "name": "Start the conversion",
+      "text": "Press WebM to MOV. The files are uploaded over HTTPS and converted one at a time on the PrivaTools server, and the progress bar shows the upload before encoding starts."
     },
     {
-      "name": "Convert and download",
-      "text": "Run the conversion. The clip is re-encoded into a MOV that QuickTime and Final Cut will open, which they will not do for VP9 WebM."
+      "name": "FFmpeg re-encodes to H.264",
+      "text": "Whatever the WebM holds, usually VP8 or VP9 video with Vorbis or Opus audio, FFmpeg re-encodes the video with x264 at CRF 23 (veryfast preset) and the audio as AAC. The frame size and frame rate stay as they are."
+    },
+    {
+      "name": "Download the MOV",
+      "text": "A single file downloads when it is ready, keeping your file name with a .mov extension, so screen-capture.webm becomes screen-capture.mov. The MOV is written with its index at the front (+faststart). Several files can be saved one by one or together as webm-to-mov-results.zip."
     }
   ],
   "faq": [
     {
       "q": "Why convert WebM to MOV?",
-      "a": "To bring web video into Apple editors (Final Cut, iMovie) that prefer QuickTime/MOV. The codecs differ, so this re-encodes to a MOV-friendly codec like H.264."
+      "a": "WebM is a web format: it allows only VP8, VP9 or AV1 video with Vorbis or Opus audio, and it is what many browser-based recorders save. H.264 video with AAC audio in Apple's QuickTime container is a combination that QuickTime Player, iMovie and Final Cut Pro open."
     },
     {
-      "q": "Any quality loss?",
-      "a": "Re-encoding causes minor loss; the defaults target visual parity with the source."
+      "q": "How much quality is lost?",
+      "a": "Some, because the video is compressed again rather than copied. x264 runs at CRF 23, its own default quality level, with the veryfast preset, which favours speed over the smallest file. Detail the WebM already lost cannot come back, and the MOV can be larger or smaller than the original depending on the footage."
     },
     {
-      "q": "Are files retained?",
-      "a": "No — temporary files, deleted after the download."
+      "q": "What happens to the audio and subtitles?",
+      "a": "The audio is re-encoded as AAC at FFmpeg's default bitrate. If the WebM has several audio tracks, FFmpeg keeps one: the track flagged as default, or else the one with the most channels. WebVTT subtitle tracks are not carried into the MOV, and nothing is burned into the picture."
+    },
+    {
+      "q": "Will a transparent WebM stay transparent?",
+      "a": "No. The H.264 video this tool writes has no alpha channel, so a VP8 or VP9 WebM with transparency loses it in the MOV."
+    },
+    {
+      "q": "Why won't the MOV play on some devices?",
+      "a": "The command does not change the pixel format, so a 10-bit VP9 WebM (profile 2, used for HDR) becomes 10-bit H.264 (High 10), which many hardware players cannot decode. An 8-bit WebM, the usual kind, gives ordinary 8-bit H.264."
+    },
+    {
+      "q": "Why did my conversion fail?",
+      "a": "The page shows \"Processing failed. Please try again.\" when FFmpeg stops with an error. Common causes are a damaged or incomplete file, a frame with an odd width or height, which x264 cannot encode here (a recording of a single window can have one), and encoding that runs past the 180-second limit. Video Resizer always outputs an even width and height, and QuickTime opens its MP4 files."
+    },
+    {
+      "q": "How large and how long can the WebM be?",
+      "a": "Keep each file under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg gets 180 seconds per file and the whole request, upload included, five minutes, so long or high-resolution recordings may not finish; cut them with Trim Media first. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a large batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them."
+    },
+    {
+      "q": "What happens to my WebM on the server?",
+      "a": "It is uploaded over HTTPS and converted by FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes the WebM and the MOV after your download is sent, and a background sweep every five minutes clears anything older than ten minutes that an interrupted request left behind."
     }
   ]
 }

@@ -1,30 +1,46 @@
 {
   "howto": [
     {
-      "name": "Pick stack templates",
-      "text": "Choose templates such as Node, Python, Vite, Docker, Terraform, Go, Rust, macOS, or Windows."
+      "name": "Tick your templates",
+      "text": "Choose from ten bundled templates: Node, Python, Vite, Next, Docker, macOS, Windows, Terraform, Go and Rust. Node, Vite and macOS are ticked when the page opens, so untick any that do not apply."
     },
     {
-      "name": "Review the generated file",
-      "text": "The selected templates are combined into one readable .gitignore with section comments."
+      "name": "Check the section order",
+      "text": "Each ticked template becomes a section headed by a comment such as # Node, with its patterns one per line and a blank line between sections. Sections follow the order in which you ticked them; untick and tick a template again to move it to the end."
     },
     {
-      "name": "Copy or download",
-      "text": "Copy the text or download it directly as .gitignore for your repository root."
+      "name": "Review the patterns",
+      "text": "The .gitignore panel updates with every change. Patterns that templates share, such as dist/ in Node, Python and Vite, are repeated in each section, which git treats like a single entry. The output is read-only and has no field for custom entries, so add project paths after copying."
+    },
+    {
+      "name": "Copy or download the file",
+      "text": "Copy puts the text on your clipboard. Download offers it as a file named .gitignore; Chrome stores it as gitignore.txt, dropping the leading dot and adding .txt, so rename it to .gitignore in your repository root. With nothing ticked, both buttons are disabled."
     }
   ],
   "faq": [
     {
-      "q": "Does it call the toptal/gitignore API?",
-      "a": "No. The templates are bundled in the app so the generator works offline and does not leak your selected stack."
+      "q": "What does each template ignore?",
+      "a": "Node: node_modules/, dist/, build/, .env, .env.*, npm-debug.log*, pnpm-debug.log*, yarn-debug.log*. Python: __pycache__/, *.py[cod], .pytest_cache/, .mypy_cache/, .venv/, venv/, dist/, *.egg-info/. Vite: dist/, dist-ssr/, *.local. Next: .next/, out/, next-env.d.ts. Docker: .docker/, docker-compose.override.yml, *.pid. macOS: .DS_Store, .AppleDouble, .LSOverride. Windows: Thumbs.db, Desktop.ini, $RECYCLE.BIN/. Terraform: .terraform/, *.tfstate, *.tfstate.*, .terraform.lock.hcl. Go: bin/, *.test, coverage.out. Rust: target/, Cargo.lock."
+    },
+    {
+      "q": "What does the default selection produce?",
+      "a": "Three sections with 14 patterns: # Node with its eight lines, # Vite with dist/, dist-ssr/ and *.local, and # macOS with .DS_Store, .AppleDouble and .LSOverride. The last line has no trailing newline, so add one before appending entries with a shell command such as echo."
     },
     {
       "q": "Can I combine multiple templates?",
-      "a": "Yes. Select any combination and the generated .gitignore groups each template under a comment header."
+      "a": "Yes, in any combination. Ticking Python and then Docker gives a # Python section with eight patterns followed by # Docker with .docker/, docker-compose.override.yml and *.pid. Ticking all ten gives 40 pattern lines, with dist/ appearing three times."
     },
     {
-      "q": "Can I download the file directly?",
-      "a": "Yes. You can copy the text or download a .gitignore file from the browser."
+      "q": "Which lines might I want to remove?",
+      "a": "Node's .env.* also matches a committed sample such as .env.example; add a !.env.example line after it to keep that file tracked. The Rust template ignores Cargo.lock and the Terraform template ignores .terraform.lock.hcl, so delete those lines if your project commits its lock file."
+    },
+    {
+      "q": "Why did the download arrive as gitignore.txt?",
+      "a": "The download is named .gitignore, but Chrome saves it as gitignore.txt: it drops the leading dot and adds .txt to this plain-text file. Rename the file to .gitignore, or create the file in your editor and paste the text from Copy."
+    },
+    {
+      "q": "Does it call an external template API?",
+      "a": "No. The ten templates are part of the page's code, so building the file makes no network request and does not reveal which stack you picked."
     }
   ]
 }

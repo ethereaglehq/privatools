@@ -2,29 +2,57 @@
   "howto": [
     {
       "name": "Enter a HEX color",
-      "text": "Type a HEX code (#FF5733, or the short #F53 form), or click the swatch to pick a color."
+      "text": "Type a 6-digit code such as #FF5733, or a 3-digit short form such as #369, into the Hex box; capitals and lower case both work. The page opens on #0E8A56. Spaces, alpha digits and color names such as red are not accepted and show Invalid hex color."
     },
     {
-      "name": "PrivaTools shows the same color in every format",
-      "text": "Live conversion: HEX, RGB, RGBA, HSL, a Tailwind class and a CSS variable, plus a contrast rating against white or black text."
+      "name": "Or pick from the swatch",
+      "text": "Click the large swatch marked Click to edit to open your browser's color picker; the color you choose replaces the Hex value."
+    },
+    {
+      "name": "Read every format",
+      "text": "The R, G and B values appear under the Hex box. Below, the All formats list has six rows: HEX (your code in capitals), RGB, RGBA with an alpha of 1, HSL rounded to whole numbers, a Tailwind arbitrary-value class and a CSS custom property named --brand."
+    },
+    {
+      "name": "Check the contrast badge",
+      "text": "The badge on the swatch rates your color against white and black text with the WCAG 2.x contrast formula and shows the higher ratio to one decimal place. A black badge means black text reads better on the color; a white badge means white text does."
     },
     {
       "name": "Copy the value you need",
-      "text": "Use the Copy button on any row. Runs entirely in your browser — no network roundtrip."
+      "text": "Each row has its own Copy button, which copies exactly the text shown, such as rgb(14, 138, 86) or --brand: #0e8a56;. If the browser blocks clipboard access, a message asks you to select the value and copy it manually."
     }
   ],
   "faq": [
     {
+      "q": "What does the starting color #0E8A56 convert to?",
+      "a": "R 14, G 138, B 86, shown as rgb(14, 138, 86) and rgba(14, 138, 86, 1). HSL is hsl(155, 82%, 30%), the Tailwind row is bg-[#0e8a56] and the CSS variable row is --brand: #0e8a56;. The badge is black and reads AA · 4.8:1, because the contrast is 4.79:1 against black and 4.39:1 against white."
+    },
+    {
+      "q": "What happens with a 3-digit code like #369?",
+      "a": "Each digit is doubled, so #369 is read as #336699: rgb(51, 102, 153) and hsl(210, 50%, 40%), with a white AA · 6.0:1 badge. The HEX, Tailwind and CSS variable rows keep the short code as typed (#369, bg-[#369] and --brand: #369;), which is still valid CSS."
+    },
+    {
       "q": "Does it work with alpha (transparency)?",
-      "a": "No. Input is a 3- or 6-digit HEX code without alpha, and the RGBA row always shows an alpha of 1."
+      "a": "No. Input is a 3- or 6-digit HEX code without alpha, so a 4- or 8-digit code such as #FF5733CC shows Invalid hex color, and the RGBA row always ends with an alpha of 1."
     },
     {
       "q": "What does the contrast badge mean?",
-      "a": "It rates the color against white or black text, whichever contrasts more, with the WCAG formula: AAA at 7:1 or more, AA at 4.5:1, AA Large at 3:1, and Fail below that."
+      "a": "It applies the WCAG 2.x relative-luminance formula to compare your color with pure white and pure black, keeps the higher ratio and rates it AAA at 7:1 or more, AA at 4.5:1 or more, AA Large at 3:1 or more and Fail below 3:1. Since black or white always reaches at least 4.58:1 against any color, a valid code always rates AA or AAA: the badge tells you which text color to use, not whether two of your own colors contrast."
+    },
+    {
+      "q": "Why does the badge show Fail · 1.0:1?",
+      "a": "Only while the Hex box holds an invalid code, such as one with a missing digit or a stray space; the All formats list is then replaced by Invalid hex color. Correct the code and both update."
+    },
+    {
+      "q": "Why does a 7.0:1 ratio show AA, not AAA?",
+      "a": "The ratio is rounded to one decimal place for display, but the rating uses the exact value. #0038FF, for example, has a contrast of 6.98:1 against white, so its badge reads AA · 7.0:1."
+    },
+    {
+      "q": "Can I type RGB, HSL or a color name?",
+      "a": "No. The only inputs are the Hex box and the color picker; the other formats are outputs. Type the # too: without it the RGB and HSL rows still work, but the HEX, Tailwind and CSS variable rows repeat the code without a # (for example bg-[0e8a56]), which CSS does not accept, and the swatch keeps its previous color."
     },
     {
       "q": "Is the calculation done locally?",
-      "a": "Yes — pure browser JavaScript. No network requests."
+      "a": "Yes. The conversions and contrast math run in JavaScript on this page, and the tool makes no network request, so the colors you try are not sent to PrivaTools."
     }
   ]
 }

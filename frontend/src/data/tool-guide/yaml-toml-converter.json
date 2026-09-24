@@ -2,29 +2,57 @@
   "howto": [
     {
       "name": "Choose a direction",
-      "text": "Switch between YAML to TOML and TOML to YAML depending on the config format you need."
+      "text": "Pick YAML to TOML, the default, or TOML to YAML with the switch above the editor. The text stays when you switch, so paste input in the new source format; the YAML sample read as TOML shows an error."
     },
     {
-      "name": "Paste config",
-      "text": "Common nested maps, strings, numbers, booleans, and arrays are parsed directly in your browser."
+      "name": "Paste your config",
+      "text": "Paste the config text into the input box; there is no file upload. Nested mappings and tables, strings, numbers, true and false, and arrays of plain values are converted, and comments are dropped."
     },
     {
-      "name": "Copy converted output",
-      "text": "Use the converted config in pyproject.toml, Cargo.toml, app config, or deployment files."
+      "name": "Read the converted config",
+      "text": "The Converted config panel updates as you type. YAML to TOML writes tables with dotted headers such as [server.tls] and inline arrays; TOML to YAML writes nested mappings indented two spaces, - lists and double-quoted strings."
+    },
+    {
+      "name": "Fix any error shown",
+      "text": "If the input cannot be converted, a red message starting with Error: replaces the output and Copy is disabled. Indentation and key errors in YAML name the line, for example Error: Use spaces for indentation on line 2."
+    },
+    {
+      "name": "Copy the converted config",
+      "text": "Click Copy to put the result on your clipboard, then paste it into your file. There is no download button."
     }
   ],
   "faq": [
     {
-      "q": "Are YAML anchors and custom tags supported?",
-      "a": "No. The converter is designed for common app config: nested maps, strings, numbers, booleans, and simple arrays."
+      "q": "What does a YAML to TOML conversion look like?",
+      "a": "The sample YAML has app with name: privatools and port: 8000, and features with localOnly: true and retries: 3. With / marking a line break it becomes [app] / name = \"privatools\" / port = 8000, a blank line, then [features] / localOnly = true / retries = 3."
+    },
+    {
+      "q": "What does TOML to YAML produce?",
+      "a": "[server] followed by port = 8080 and tags = [\"a\", \"b\"] becomes server: / port: 8080 / tags: / - \"a\" / - \"b\" (/ marks a line break), with port and tags indented two spaces and the list items four. Empty TOML input converts to {}."
+    },
+    {
+      "q": "Does the key order change?",
+      "a": "Sometimes. Within each TOML table, plain keys come first and sub-tables after, so a YAML server block that lists tls: before host and port produces [server] with host and port, then [server.tls]. Keys that are whole numbers, such as 404, move ahead of the other keys in ascending order, in both directions."
+    },
+    {
+      "q": "Which YAML features are not supported?",
+      "a": "Anchors, aliases, tags and | or > multiline strings (Error: Anchors, tags and multiline scalar syntax are not supported in this editor.), more than one document, tab indentation, << merge keys and duplicate keys. Inline {...} objects must be JSON with quoted keys. A list of mappings, such as jobs with - name: build, stops with Error: Arrays of objects require TOML array tables, which this editor does not support. Empty input, a bare list or a single value shows Error: TOML needs a mapping at the document root."
+    },
+    {
+      "q": "Which TOML features are not supported?",
+      "a": "Array tables such as [[bin]] and quoted table names (Error: Use simple table names. Array tables and quoted table paths are not supported.), dotted keys like a.b = 1, arrays or strings spread over several lines, and inline tables such as { x = 1 } unless written as JSON. Unquoted text values, including numbers written as 1_000, 0xFF or inf, stop with an error such as Error: Quote the string value for n."
+    },
+    {
+      "q": "Can values change on the way through?",
+      "a": "Unquoted numbers are read as numbers, so 01234 becomes 1234 and 1.0 becomes 1; quote them to keep the text. In YAML only lowercase true and false are booleans, so yes, on and True become strings. Dates such as 2024-05-01 become quoted strings. Whole numbers beyond JavaScript's safe range must be quoted, and YAML null, ~ or an empty value stops with Error: TOML has no null value. Remove or replace null values before converting."
     },
     {
       "q": "Will comments be preserved?",
-      "a": "No. Comments are omitted during conversion because TOML and YAML comments do not map cleanly through a simple object representation."
+      "a": "No. Comments are removed in both directions. A # only starts a comment at the start of a line or after whitespace, outside quotes, so http://example.com/#top keeps its fragment."
     },
     {
       "q": "Does it upload config files?",
-      "a": "No. Conversion runs locally in your browser."
+      "a": "No. Parsing and writing run in your browser; the tool makes no network request with your config and does not save it in browser storage."
     }
   ]
 }

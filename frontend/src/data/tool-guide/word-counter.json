@@ -1,30 +1,54 @@
 {
   "howto": [
     {
-      "name": "Paste your text",
-      "text": "Or type directly. Counter updates as you type."
+      "name": "Paste or type your text",
+      "text": "Paste or type into the Input box; every figure updates as you type. Try sample fills an empty box with a two-paragraph example, and Clear empties it again. There is no file upload, so copy text out of a document first."
     },
     {
-      "name": "Read live stats",
-      "text": "Word count, character count (with/without spaces), sentence count, paragraph count, line count, reading time at 220 wpm."
+      "name": "Read the seven counts",
+      "text": "The Stats row shows Words, Characters, No spaces, Sentences, Paragraphs, Lines and Reading, in minutes. A word is any run of characters between spaces, tabs or line breaks. Characters counts everything, including spaces and line breaks; No spaces leaves out all whitespace."
     },
     {
-      "name": "Optional metrics",
-      "text": "Average word length, longest sentence and an approximate passive-voice count."
+      "name": "Check sentences, paragraphs and lines",
+      "text": "A sentence is text that ends in one or more of . ! or ?, plus any unpunctuated text at the very end. Paragraphs are blocks separated by at least one blank line. Lines counts every line break plus one, so blank lines count too."
+    },
+    {
+      "name": "Estimate the reading time",
+      "text": "Reading time is the word count divided by 220 words per minute, rounded up to a whole minute, with at least 1 minute once there is a word: 220 words reads as 1 min and 221 words as 2 min, while spaces or line breaks alone read as 0 min."
+    },
+    {
+      "name": "Review the writing-quality figures",
+      "text": "Once the box holds text, three more figures appear: average word length (non-space characters divided by words, to one decimal place), the longest sentence in words, flagged with consider splitting above 30 words, and an approximate passive-voice count."
     }
   ],
   "faq": [
     {
       "q": "What counts as a word?",
-      "a": "Whitespace-separated tokens. Hyphenated words ('self-host') count as one. Apostrophes ('don't') keep the word as one."
+      "a": "Any run of characters with no whitespace in it. 'self-host' and 'don't' each count as one word, as do numbers such as 3.50 and URLs. A dash typed with spaces on both sides also counts as a word. Languages written without spaces, such as Chinese or Japanese, count each unbroken run as one word."
+    },
+    {
+      "q": "How are characters counted?",
+      "a": "Characters is the length of the text as JavaScript measures it, so every space, tab and line break counts as one. Emoji usually count as two or more because JavaScript counts UTF-16 code units: 'Hi 😀' shows 5 characters. No spaces removes all whitespace, including line breaks and non-breaking spaces, before counting."
+    },
+    {
+      "q": "Why does the sentence count look wrong?",
+      "a": "Sentences are split at every ., ! and ?, so abbreviations and decimals split too: 'Dr. Smith paid $3.50 for e.g. tea.' counts as 5 sentences. A line without closing punctuation is counted only when it is the last line, so headings and list items are usually skipped. A space typed after the final full stop adds one extra sentence."
     },
     {
       "q": "How is reading time calculated?",
-      "a": "Word count ÷ 220 words per minute, rounded up to a whole minute. Adjust for technical content (slower) or casual reading (faster)."
+      "a": "Word count divided by 220 words per minute, rounded up to a whole minute, with a minimum of 1 minute whenever there is at least one word. It is a single average rate, so dense technical text will take longer."
     },
     {
-      "q": "Is my text saved?",
-      "a": "No — everything runs in your browser and persists only in this session."
+      "q": "How does the passive-voice count work?",
+      "a": "It counts each am, is, are, was, were, be, been or being that is followed within the next three words by a word ending in -ed, -en, -ought, -aught, -own or -orn. That is a pattern match rather than grammar analysis: 'was reviewed' counts, but so does 'is open', and irregular forms such as 'was made' or 'is done' are missed. Treat it as a prompt to reread, not a verdict."
+    },
+    {
+      "q": "What figures does a short example give?",
+      "a": "'Hello world. This is a test.' gives 6 words, 28 characters (23 without spaces), 2 sentences, 1 paragraph, 1 line, 1 min of reading, a 3.8 average word length, a 4-word longest sentence and 0 passive matches. The built-in sample gives 52 words, 306 characters (254 without spaces), 5 sentences, 2 paragraphs, 3 lines, a 4.9 average word length, a 19-word longest sentence and 2 passive matches."
+    },
+    {
+      "q": "Is my text uploaded or saved?",
+      "a": "No. The counting runs in JavaScript in your browser and the tool sends nothing to a server as you type. The text is held only in the page's memory and is not written to browser storage, so reloading or leaving the page clears it."
     }
   ]
 }

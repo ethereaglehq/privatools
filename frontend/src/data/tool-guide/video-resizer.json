@@ -1,30 +1,50 @@
 {
   "howto": [
     {
-      "name": "Upload a video",
-      "text": "MP4 / MOV / MKV / WebM up to 500 MB."
+      "name": "Add one or more videos",
+      "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under about 250 MB."
     },
     {
-      "name": "Choose preset",
-      "text": "240p, 360p, 480p (SD), 720p (HD, the default), 1080p (Full HD) or 1440p (QHD)."
+      "name": "Pick an output height",
+      "text": "Choose 240p, 360p, 480p, 720p (the default), 1080p or 1440p. The number is the new height in pixels; the width follows from the video's proportions and is rounded to an even number."
     },
     {
-      "name": "Download the resized video",
-      "text": "FFmpeg scales the video to the target height while preserving aspect ratio."
+      "name": "Run the resize",
+      "text": "Press the run button. Up to three files upload at once over HTTPS, and FFmpeg on the PrivaTools server scales each video and re-encodes it as H.264 (CRF 23, veryfast preset) with AAC audio in an MP4."
+    },
+    {
+      "name": "Download the result",
+      "text": "On privatools.me one video downloads as your file name with _resized.mp4, so clip.mov becomes clip_resized.mp4; a self-hosted copy that serves its API from the page's own address uses the server's name, such as video_720p.mp4. Several arrive together in media-results.zip. The index sits at the front of the MP4 (+faststart), so it can start playing online before it has fully downloaded."
     }
   ],
   "faq": [
     {
-      "q": "Will upscaling improve quality?",
-      "a": "No — upscaling can't add detail. Use it to match a target resolution, not to improve quality."
+      "q": "What size will my video be?",
+      "a": "The height is exactly the preset and the width keeps the proportions, rounded to an even number. A 1920×1080 clip becomes 1280×720 at 720p, 854×480 at 480p and 426×240 at 240p; a 640×480 clip becomes 960×720 at 720p."
     },
     {
-      "q": "Does this re-encode the audio?",
-      "a": "Yes. The audio is always re-encoded as AAC, alongside the H.264 video."
+      "q": "What happens to vertical phone videos?",
+      "a": "The preset still sets the height, so a portrait 1080×1920 clip becomes 406×720 at 720p and 608×1080 at 1080p, a much smaller picture than a landscape video at the same setting. Clips a phone stores sideways with a rotation flag are turned upright first and give the same result."
     },
     {
-      "q": "Can I crop to a different aspect ratio?",
-      "a": "Not directly — the resizer preserves aspect ratio. For aspect-ratio crops, use a video editor."
+      "q": "Can it make a video larger?",
+      "a": "Yes. Nothing stops a preset above the source height, so a 640×360 clip at 1080p becomes 1920×1080. Enlarging cannot add detail that was never recorded; it only makes the file bigger. To save space, pick a preset below the original height."
+    },
+    {
+      "q": "Does resizing change anything else?",
+      "a": "The frame rate stays the same. The video is always re-encoded, even at its current height, and the audio is re-encoded as AAC. One audio track is kept, the default one or else the one with the most channels, and subtitle tracks are dropped, because FFmpeg adds none to an MP4 automatically."
+    },
+    {
+      "q": "Can I crop or change the aspect ratio?",
+      "a": "No. The resizer always keeps the video's proportions and has no crop or padding option. To make a file smaller without changing its resolution, use Compress Video instead."
+    },
+    {
+      "q": "What limits apply?",
+      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg gets 180 seconds per video and the request five minutes, upload included, so long clips at 1080p or 1440p may not finish. The resize route is rate-limited at 5 requests a minute per IP address. A file that fails shows \"Processing failed. Please try again.\" and can be retried from the list."
+    },
+    {
+      "q": "What happens to my videos on the server?",
+      "a": "They are uploaded over HTTPS and resized by FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes each original and its resized copy after the download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."
     }
   ]
 }

@@ -1,30 +1,50 @@
 {
   "howto": [
     {
-      "name": "Upload an MKV file",
-      "text": "Drop an .mkv file up to 500 MB."
+      "name": "Choose your MKV files",
+      "text": "Drop or pick one or more .mkv files; the queue holds up to 25. Keep each file under about 250 MB."
     },
     {
-      "name": "PrivaTools re-encodes via FFmpeg",
-      "text": "The video is re-encoded as VP9, which browsers play natively and MKV never could."
+      "name": "Start the conversion",
+      "text": "Press MKV to WebM. Each file is uploaded over HTTPS and converted in turn on the PrivaTools server."
     },
     {
-      "name": "Convert and download",
-      "text": "Run the conversion. The result is VP9 WebM — open, royalty-free and suited to HTML5 video where MKV has no browser support at all."
+      "name": "FFmpeg encodes VP9 and Opus",
+      "text": "The video is re-encoded with libvpx-vp9 at an average target of 1 Mbit/s using its realtime speed settings, and the audio as Opus. This happens even when the MKV already holds VP9 or Opus. The frame size and frame rate are not changed."
+    },
+    {
+      "name": "Download the WebM",
+      "text": "A single file downloads when it is ready, named after your MKV with a .webm extension, so holiday.mkv becomes holiday.webm. Several files can be saved one by one or together as mkv-to-webm-results.zip."
     }
   ],
   "faq": [
     {
-      "q": "Does MKV to WebM re-encode?",
-      "a": "Yes, fully. The video is always re-encoded as VP9 at about 1 Mbit/s and the audio as Opus, even when the MKV already holds VP8, VP9, Vorbis or Opus."
+      "q": "Why convert MKV to WebM?",
+      "a": "WebM is a restricted form of Matroska designed for the web: it allows only VP8, VP9 or AV1 video and Vorbis or Opus audio, and browsers play it in the HTML video element. An MKV can hold almost any codec, so browser playback of an MKV is not something to rely on."
     },
     {
-      "q": "Why convert to WebM?",
-      "a": "To embed open-format video on the web without proprietary codecs."
+      "q": "Is 1 Mbit/s enough?",
+      "a": "It depends on the footage. The target is the same at every resolution, so a small or simple clip keeps its detail while a 1080p or larger video loses more, especially in fast motion. The realtime encoder settings keep encoding quick at the cost of slightly lower quality for the same bitrate. There is no quality setting on this page."
     },
     {
-      "q": "Are uploads retained?",
-      "a": "No — temporary files, deleted after the response."
+      "q": "Which audio and subtitle tracks are kept?",
+      "a": "At most one of each. FFmpeg picks the audio track flagged as default, or else the one with the most channels, and re-encodes it as Opus at FFmpeg's default bitrate. One text subtitle track, such as SRT or ASS, is converted to WebVTT; image-based subtitles are left out. The title and language tags carry over, while the other audio tracks and any attached fonts are dropped."
+    },
+    {
+      "q": "Why does an MKV with 5.1 surround sound fail?",
+      "a": "FFmpeg's Opus encoder accepts six-channel audio only in the layout FFmpeg calls \"5.1\", with rear surrounds. Most 5.1 AC-3, E-AC-3 and DTS tracks decode as \"5.1(side)\", which it rejects, and the page then shows \"Processing failed. Please try again.\" Stereo, mono and AAC 5.1 tracks convert normally."
+    },
+    {
+      "q": "How long a video can I convert?",
+      "a": "Clips rather than feature films. FFmpeg is stopped after 180 seconds per file and the whole request, upload included, has five minutes, while every frame has to be re-encoded. If a long file fails, cut it into parts with Trim Media and convert those."
+    },
+    {
+      "q": "Are there other limits?",
+      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a big batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them from the list."
+    },
+    {
+      "q": "What happens to my MKV on the server?",
+      "a": "It is uploaded over HTTPS and converted with FFmpeg on the PrivaTools server in isolated temporary per-request storage, not sent to a third-party service. Response cleanup removes the MKV and the WebM after your download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."
     }
   ]
 }

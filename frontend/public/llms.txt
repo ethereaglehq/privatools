@@ -147,14 +147,14 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 - [Compress Video](https://privatools.me/tools/compress-video): Reduce video file size for email or messaging
 - [Video to PDF](https://privatools.me/tools/video-to-pdf): Extract frames from a video into a PDF document
 - [Video Converter](https://privatools.me/tools/video-converter): Convert between MP4, MOV, WebM, MKV, and AVI
-- [Video Resizer](https://privatools.me/tools/video-resizer): Downscale a video to 240p, 360p, 480p, 720p, 1080p, or 1440p
+- [Video Resizer](https://privatools.me/tools/video-resizer): Resize a video to 240p, 360p, 480p, 720p, 1080p, or 1440p
 - [Video Thumbnail](https://privatools.me/tools/video-thumbnail): Extract a single frame from a video as a JPG image
 - [GIF to MP4](https://privatools.me/tools/gif-to-mp4): Convert animated GIF to MP4 for smaller file size
 - [Add Subtitles to Video](https://privatools.me/tools/add-subtitles): Burn .srt subtitles permanently into a video
 - [Merge Videos](https://privatools.me/tools/video-merge): Concatenate multiple videos into one
 - [Merge Audio](https://privatools.me/tools/audio-merge): Concatenate multiple audio tracks into one file
 - [Subtitle Converter](https://privatools.me/tools/subtitle-converter): Convert SRT, VTT, and ASS subtitles to SRT or VTT
-- [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify and validate JSON or XML offline
+- [JSON / XML Formatter](https://privatools.me/tools/json-xml-formatter): Prettify, minify or validate JSON and XML in your browser
 - [Text Diff / Comparator](https://privatools.me/tools/text-diff): Highlight exact differences between two text blocks
 - [Base64 Encoder / Decoder](https://privatools.me/tools/base64): Encode or decode text as Base64
 - [Hash Generator](https://privatools.me/tools/hash-generator): Generate SHA-1, SHA-256, and SHA-512 hashes of text or files

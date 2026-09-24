@@ -1,26 +1,54 @@
 {
   "howto": [
     {
-      "name": "Paste JSON",
-      "text": "Drop valid JSON into the left textarea."
+      "name": "Paste your JSON",
+      "text": "Paste valid JSON into the JSON input box, replacing the small example the page starts with. An object, an array or a single value all work. The input must be strict JSON: comments, trailing commas, single quotes and unquoted keys are errors."
     },
     {
-      "name": "Read YAML instantly",
-      "text": "Clean YAML with proper indentation appears on the right, ready to paste into a Kubernetes, GitHub Actions, or Compose file. Click Copy to grab it. Pure-browser conversion."
+      "name": "Read the YAML output",
+      "text": "The YAML output box updates as you type. Each nesting level is indented 2 spaces, list items start with a dash, empty objects and arrays stay as {} and [], and numbers, true, false and null are written bare. There are no settings to change."
+    },
+    {
+      "name": "Check quoting and key order",
+      "text": "Every string value is double-quoted with JSON escapes. A key stays bare when it starts with an ASCII letter or _ and contains only letters, digits, _ and -; any other key is quoted. Keys keep their JSON order, except that integer-like keys such as \"1\" and \"2\" move to the front."
+    },
+    {
+      "name": "Fix any JSON errors",
+      "text": "If the JSON cannot be parsed, the output box shows your browser's error message instead, and the YAML returns once the input is valid again. Positions in the message count from the first character that is not whitespace."
+    },
+    {
+      "name": "Copy the YAML",
+      "text": "The Copy button above the output copies the YAML exactly as shown, without a --- document marker or a final line break. It is hidden while the output is empty or shows an error, and there is no download button."
     }
   ],
   "faq": [
     {
-      "q": "Is it 100% in my browser?",
-      "a": "Yes. The JSON never leaves your device — pure-browser conversion, no upload."
+      "q": "What does a conversion look like?",
+      "a": "The starting example becomes name: \"privatools\" and version: \"1.4.0\" on separate lines, then tools: followed by - \"pdf\", - \"image\" and - \"video\", each on its own line indented 2 spaces. An object inside an array puts a lone dash on one line and the object's keys on the lines below, indented 2 more spaces."
+    },
+    {
+      "q": "Why are all the string values in quotes?",
+      "a": "Every string is written as a JSON-style double-quoted string. That is valid YAML, and it keeps values such as \"yes\", \"null\" or \"1.0\" as text; unquoted, a YAML parser could read them as a boolean, null or a number. Line breaks and quotes inside strings become escape sequences, as in JSON."
     },
     {
       "q": "Will it format the YAML correctly?",
-      "a": "Yes — proper indentation (2 spaces), keys with special characters get quoted, lists get the bullet-point style by default. Output is ready to paste into a Kubernetes or GitHub Actions file."
+      "a": "It writes valid YAML with 2-space indentation and block-style lists, and a YAML 1.2 parser reads the output back as the same data. One exception: a key that YAML reads as a boolean or null, such as true, False, NULL or, for YAML 1.1 parsers such as PyYAML, yes, No or ON, is written without quotes in any capitalisation, so a parser can read it as a boolean or null rather than text."
+    },
+    {
+      "q": "Are numbers and duplicate keys kept exactly?",
+      "a": "The JSON is read with the browser's JSON.parse, so numbers appear as JavaScript stores them: 1.50 becomes 1.5, 1e+20 becomes 100000000000000000000, and integers above 9007199254740991 can lose precision (9007199254740993 becomes 9007199254740992). If a key appears twice in one object, only the last value is kept. Quote such values in the JSON if they must survive unchanged."
     },
     {
       "q": "What if the JSON is invalid?",
-      "a": "An error appears in the output area. Fix the JSON and the conversion updates live."
+      "a": "The output box is replaced by the parser's own message and the Copy button disappears until the JSON parses again. Chrome, for example, reports a trailing comma in {\"a\": 1,} as 'Expected double-quoted property name in JSON at position 8 (line 1 column 9)'. Wording differs between browsers, and some messages give no position."
+    },
+    {
+      "q": "Can it convert YAML back to JSON?",
+      "a": "Not on this page, which converts JSON to YAML only. The separate YAML to JSON tool goes the other way; it reads common mappings, lists and scalars and shows an error for anchors, tags, block strings and multi-document files."
+    },
+    {
+      "q": "Does the conversion happen in my browser?",
+      "a": "Yes. JSON.parse and the YAML writer run in JavaScript on this page, and the converter makes no network request, so the JSON you paste is not uploaded to PrivaTools. The input is not saved either: reloading the page brings back the starting example."
     }
   ]
 }

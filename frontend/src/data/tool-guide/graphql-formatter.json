@@ -1,30 +1,50 @@
 {
   "howto": [
     {
-      "name": "Paste GraphQL",
-      "text": "Enter a query, mutation, fragment, or selection set in compact form."
+      "name": "Paste your GraphQL",
+      "text": "Paste a query, mutation, subscription, fragment or bare selection set into the GraphQL input box, replacing the sample query that loads with the page. There is no file upload: open a .graphql or .gql file in an editor and paste its text."
     },
     {
-      "name": "Format the operation",
-      "text": "Braces, arguments, arrays, and comma-separated fields are indented in a readable shape."
+      "name": "Read the indented result",
+      "text": "The Formatted GraphQL panel updates as you type. Each {, ( and [ ends its line and indents what follows by two spaces, and the matching closing bracket starts a new line. A space is added before each opening bracket, so user(id: 1) becomes user ( with id: 1 on the next line."
+    },
+    {
+      "name": "Separate fields with commas",
+      "text": "A comma ends the line, so id, name puts each field on its own line. Fields separated only by spaces or line breaks are joined on one line with single spaces: a block listing id and name on separate lines comes back as id name."
     },
     {
       "name": "Copy the formatted query",
-      "text": "Paste the result into your app, GraphiQL, Apollo Studio, or pull request."
+      "text": "Click Copy to put the result on your clipboard; the button shows Copied once the browser confirms it. If clipboard access is blocked, a note asks you to select the output and copy it manually. There is no download button."
     }
   ],
   "faq": [
     {
-      "q": "Does it need my GraphQL schema?",
-      "a": "No. The formatter only structures the query text and does not introspect or validate against a schema."
+      "q": "What does formatted output look like?",
+      "a": "With / marking a line break, {user(id:1){id,name}} becomes { / user ( / id:1 / ) { / id, / name / } / }. Each level adds two spaces, so lines 2, 4 and 7 are indented two spaces and lines 3, 5 and 6 four."
     },
     {
-      "q": "Can it format mutations and fragments?",
-      "a": "Yes. Queries, mutations, fragments, arguments, arrays, and nested selection sets are handled."
+      "q": "Why do some fields stay on one line?",
+      "a": "Only commas split fields. In the sample, query User($id: ID!){user(id:$id){id name posts(first:5){nodes{id title}}}}, id name posts ( and id title each share a line. GraphQL treats commas as insignificant, so adding them between fields changes the layout, not the meaning of the query."
+    },
+    {
+      "q": "Are arguments and variables expanded too?",
+      "a": "Yes. Parentheses are treated like braces, so arguments, variable definitions and directive arguments each get an indented block: { user @include(if: $x) { id } } puts if: $x on its own line between user @include ( and ) {. Square brackets split the same way, so the list type [ID!]! spans three lines. Other spacing is kept as typed, apart from runs of whitespace collapsing to one space, so id:$id stays id:$id."
+    },
+    {
+      "q": "What happens to strings and comments?",
+      "a": "Double-quoted strings are copied exactly, including any commas, brackets or # characters inside them, and so are triple-quoted block strings unless they contain double quotes of their own; text between those inner quotes is formatted like the rest. A # comment stays on its own line, but the line after it starts with a single space instead of its normal indentation."
+    },
+    {
+      "q": "Does it report syntax errors?",
+      "a": "No. Any text produces output. Unbalanced brackets are not flagged: after an extra closing brace, later lines are indented one level too little. Several definitions in one document are not separated either; the next one starts on the line of the previous closing brace, as in } query {."
+    },
+    {
+      "q": "Does it need my GraphQL schema?",
+      "a": "No. It only rearranges the text. It does not introspect an endpoint, check fields or types against a schema, or validate the document, and it has no indent-width or sorting options."
     },
     {
       "q": "Is it private?",
-      "a": "Yes. The GraphQL text is formatted locally in your browser."
+      "a": "Yes. Formatting is plain JavaScript in the page: the tool makes no network request with your query and does not save it in browser storage."
     }
   ]
 }

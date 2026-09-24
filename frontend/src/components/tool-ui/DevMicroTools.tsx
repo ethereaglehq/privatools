@@ -1,4 +1,4 @@
-import { formatSql, formatGraphql, describeCronField, nextCronRuns, bumpSemver } from "./dev-formatters";
+import { formatSql, formatGraphql, describeCronField, nextCronRuns, bumpSemver, validateEnv } from "./dev-formatters";
 import { parseYaml, writeYaml, parseTomlConfig, writeToml } from "./config-codecs";
 import { useMemo, useState, type ReactNode } from "react";
 import { Check, Copy, Download, RefreshCw } from "lucide-react";
@@ -232,39 +232,13 @@ export function SemverBumperUI() {
   return <LabWorkspace kind="versions" note="Choose the size of your next release. This changes the preview only."><div className="pt-lab-input-pane"><Field label="Current version"><input value={version} onChange={e => setVersion(e.target.value)} aria-invalid={!!result.error} className="pt-lab-version-input" /></Field>{result.error && <p role="alert" className="pt-lab-issue is-error">{result.error}</p>}</div><div className="pt-lab-release-grid">{result.rows.map(({kind,value}) => <section className="pt-lab-release" key={kind}><div><strong>{kind}</strong><CopyButton value={value}/></div><p>{value}</p></section>)}</div><p className="pt-lab-caption">Prerelease starts at beta.1 for the next patch. Build metadata is removed when a version changes.</p></LabWorkspace>;
 }
 
-function parseEnv(input: string) {
-  const issues: Array<{ level: IssueLevel; text: string }> = [];
-  const seen = new Map<string, number>();
-  const validName = /^[A-Za-z_][A-Za-z0-9_]*$/;
-  input.split(/\r?\n/).forEach((raw, index) => {
-    const lineNo = index + 1;
-    const line = raw.trim();
-    if (!line || line.startsWith("#")) return;
-    const eq = line.indexOf("=");
-    if (eq < 0) {
-      issues.push({ level: "error", text: `Line ${lineNo}: missing =` });
-      return;
-    }
-    const key = line.slice(0, eq).trim();
-    const value = line.slice(eq + 1);
-    if (!validName.test(key)) issues.push({ level: "error", text: `Line ${lineNo}: invalid variable name ${key}` });
-    if (seen.has(key)) issues.push({ level: "warn", text: `Line ${lineNo}: duplicate key ${key}, first seen on line ${seen.get(key)}` });
-    seen.set(key, lineNo);
-    if (value === "") issues.push({ level: "warn", text: `Line ${lineNo}: ${key} has an empty value` });
-    if (/\s/.test(value) && !/^(['"]).*\1$/.test(value)) issues.push({ level: "warn", text: `Line ${lineNo}: quote values that contain spaces` });
-    if (/(SECRET|TOKEN|KEY|PASSWORD)/.test(key) && value.replace(/^['"]|['"]$/g, "").length < 12) issues.push({ level: "warn", text: `Line ${lineNo}: ${key} looks short for a secret` });
-  });
-  if (!issues.length) issues.push({ level: "ok", text: "No obvious .env issues found." });
-  return issues;
-}
-
 export function EnvValidatorUI() {
   const [input, setInput] = useState("API_URL=https://privatools.me\nSECRET_KEY=change-me\nFEATURE_FLAG=true\nBAD NAME=value");
-  const issues = useMemo(() => parseEnv(input), [input]);
+  const issues = useMemo(() => validateEnv(input), [input]);
   const report = issues.map(item => `[${item.level.toUpperCase()}] ${item.text}`).join("\n");
   return (
     <SplitTool
-      note="Checks .env syntax, duplicate keys, empty values, unquoted spaces, and suspiciously short secrets locally."
+      note="Checks .env syntax, duplicate keys, empty values, unquoted spaces, and suspiciously short secrets locally. The report gives line numbers, never your names or values."
       left={<Field label=".env input"><TextArea value={input} onChange={setInput} /></Field>}
       right={<><div className="pt-lab-toolbar"><span className="pt-lab-result-label">Validation report</span><CopyButton value={report} /></div><div className="space-y-2">{issues.map(item => <div key={item.text} className={cn("rounded-lg border px-3 py-2 text-[13px]", statusClass(item.level))}>{item.text}</div>)}</div></>}
     />
