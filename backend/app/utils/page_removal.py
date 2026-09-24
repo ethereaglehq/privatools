@@ -57,6 +57,13 @@ saves again. If a page is still stray, or the page tree is not the one
 expected, it deletes the output and raises :class:`PageLeakError` (HTTP 422)
 rather than return a file that holds removed pages or lost kept ones.
 
+Every pass is meant to take time in proportion to what it reads, and every
+review of this module found another way to share objects that made a pass
+read or copy one of them once per owner. So the work is counted too, and a
+job that takes far more than its input warrants is refused the same way
+(:class:`PageWorkError`), as is an output with far more objects than its
+input: a shape nobody has found yet costs linear work, then a clear 422.
+
 Not handled, because none of it points at a page: document-level objects that
 only a removed page used, such as an optional-content layer, a named
 JavaScript, an attachment or an XMP thumbnail, stay in the file.
@@ -74,9 +81,13 @@ owners nest.
 from __future__ import annotations
 
 import logging
+import os
 from collections.abc import Callable, Iterable
+from contextlib import contextmanager
+from contextvars import ContextVar
 from decimal import Decimal
 from pathlib import Path
+from typing import NoReturn
 
 import pikepdf
 from pikepdf import Array, Name, ObjectType
@@ -168,42 +179,165 @@ class PageLeakError(ToolError):
     )
 
 
+class PageWorkError(PageLeakError):
+    """Removing the pages would take far longer than the file warrants (HTTP 422)."""
+
+    default_detail = (
+        "This PDF is built in a way that would take far too long to process "
+        "safely, so no file was made."
+    )
+
+
 # Set on a Pdf whose structure tree prune_structure_tree_to_pages pruned.
 _PRUNED_TO = "_page_removal_tags_pruned_to"
 
+# ── the work budget ─────────────────────────────────────────────────────────
+#
+# A step is an entry of a dictionary or an item of an array read, an item of
+# an array made, or a link of a chain followed. A job may take _STEPS_FLOOR
+# steps, and _STEPS_PER_OBJECT more for each object of its input; past that
+# it is refused. Measured on 376 jobs over real and generated files, every
+# tool included, a job took at most 21 steps per object (19 on the real
+# ones), and at most 103,000 steps in all: the limit is far from them.
+# Stopped there, the crafted jobs tried had run for one to two seconds.
+_STEPS_PER_OBJECT = 100
+_STEPS_FLOOR = 1_000_000
+# A save may write _GROWTH times the objects of its input, plus _GROWTH_FLOOR.
+# Pruning removes objects; the few it makes replace others.
+_GROWTH = 2
+_GROWTH_FLOOR = 10_000
 
-def remove_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> PageRemoval:
+
+class _OutOfSteps(BaseException):
+    """A job went past its budget.
+
+    Not an Exception: the passes contain their own errors with ``except
+    Exception``, one bad object at a time, and this must stop the whole job.
+    """
+
+
+class _Budget:
+    """The steps one job may take (see _STEPS_PER_OBJECT).
+
+    ``count`` counts the objects of the job's input. It is called only when
+    they matter: when the job passes _STEPS_FLOOR, or its output
+    _GROWTH_FLOOR objects.
+    """
+
+    __slots__ = ("tool", "used", "limit", "_count", "_objects")
+
+    def __init__(self, tool: str, count: Callable[[], int]):
+        self.tool = tool
+        self.used = 0
+        self.limit = _STEPS_FLOOR
+        self._count = count
+        self._objects: int | None = None
+
+    def objects(self) -> int:
+        if self._objects is None:
+            self._objects = self._count()
+        return self._objects
+
+    def overrun(self) -> None:
+        """``used`` passed ``limit``: allow what the input's size allows, or stop."""
+        self.limit = _STEPS_PER_OBJECT * self.objects() + _STEPS_FLOOR
+        if self.used > self.limit:
+            raise _OutOfSteps
+
+    @contextmanager
+    def charging(self):
+        """Count the steps taken inside; past the budget, refuse the job."""
+        token = _BUDGET.set(self)
+        try:
+            yield self
+        except _OutOfSteps:
+            _refuse(
+                self.tool,
+                f"its work passed {self.limit} steps, for {self.objects()} objects in its input",
+                PageWorkError,
+            )
+        finally:
+            _BUDGET.reset(token)
+
+
+_BUDGET: ContextVar[_Budget | None] = ContextVar("page_removal_budget", default=None)
+
+
+def _charge(steps: int) -> None:
+    """Count ``steps`` against the running job's budget."""
+    budget = _BUDGET.get()
+    if budget is not None:
+        budget.used += steps
+        if budget.used > budget.limit:
+            budget.overrun()
+
+
+def _refuse(tool: str, problem: str, error: type[PageLeakError] = PageLeakError) -> NoReturn:
+    # Counts and structure only: no text of the document is logged.
+    logger.error(
+        "page removal refused the output of %s: %s", tool, problem,
+        extra={"error_class": "PageLeakError"},
+    )
+    raise error() from None
+
+
+def _objects_read(pdf: pikepdf.Pdf) -> int:
+    """The objects of a document read from a file, counted without reading them.
+
+    Its cross-reference table's entries in use, but no more than a quarter of
+    the file's bytes: a crafted table lists objects that are not there almost
+    for free, while the densest file made to test this holds a real object in
+    7 bytes. A document read from memory has no file size to go by.
+    """
+    try:
+        cap = os.path.getsize(pdf.filename) // 4
+    except (OSError, TypeError, ValueError):
+        cap = None
+    declared = pdf.trailer.get("/Size")
+    if cap is not None and type(declared) is int and declared > cap:
+        return cap  # more objects declared than the file has room for
+    in_use = sum(1 for entry in pdf.get_xref_table().values() if entry.type)
+    return in_use if cap is None else min(in_use, cap)
+
+
+def remove_pages(pdf: pikepdf.Pdf, indices: Iterable[int], *, tool: str) -> PageRemoval:
     """Delete the pages at the 0-based ``indices`` and everything pointing at them.
 
-    Save the result with :meth:`PageRemoval.save`.
+    ``tool`` is the route's name, for the log of a refusal. Save the result
+    with :meth:`PageRemoval.save`.
     """
-    pages = _page_objs(pdf)
-    doomed = sorted(set(indices), reverse=True)
-    removed = [pages[i] for i in doomed]
-    if doomed:
-        _repair_page_count(pdf, len(pages))
-    for i in doomed:
-        del pdf.pages[i]
-    pruner = _Pruner(pdf, removed=removed)
-    pruner.run()
-    return PageRemoval(pdf, pruner)
+    budget = _Budget(tool, lambda: _objects_read(pdf))
+    with budget.charging():
+        pages = _page_objs(pdf)
+        doomed = sorted(set(indices), reverse=True)
+        removed = [pages[i] for i in doomed]
+        if doomed:
+            _repair_page_count(pdf, len(pages))
+        for i in doomed:
+            del pdf.pages[i]
+        pruner = _Pruner(pdf, removed=removed)
+        pruner.run()
+    return PageRemoval(pdf, pruner, budget)
 
 
-def prune_to_page_tree(pdf: pikepdf.Pdf) -> PageRemoval:
+def prune_to_page_tree(pdf: pikepdf.Pdf, *, tool: str) -> PageRemoval:
     """Drop every reference to a page that is not in ``pdf``'s page tree.
 
     For a document built by copying pages in (:class:`PageCopier`), right
     before it is saved. Anything that belongs to no page of ``pdf``, such as an
     annotation in no page's /Annots or a bead in no page's /B, came from a page
-    that was left behind and is dropped with it. Save the result with
-    :meth:`PageRemoval.save`.
+    that was left behind and is dropped with it. ``tool`` is the route's name,
+    for the log of a refusal. Save the result with :meth:`PageRemoval.save`.
     """
-    pruner = _Pruner(pdf, removed=None)
-    pruner.run()
-    return PageRemoval(pdf, pruner)
+    objects = len(pdf.objects)  # before pruning: built in memory, cheap to count
+    budget = _Budget(tool, lambda: objects)
+    with budget.charging():
+        pruner = _Pruner(pdf, removed=None)
+        pruner.run()
+    return PageRemoval(pdf, pruner, budget)
 
 
-def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> None:
+def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int], *, tool: str) -> None:
     """Prune ``pdf``'s structure tree, in memory, to the pages at ``indices``.
 
     For tools that copy a structure tree into a new document. qpdf turns the
@@ -217,19 +351,21 @@ def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> N
     A second call for the same pages does nothing: Extract and Merge prune
     before copying pages, so no copied page can carry the unpruned tree, and
     the tree is then carried over by functions that prune it themselves.
+    ``tool`` is the route's name, for the log of a refusal.
     """
     keep = frozenset(indices)
     if getattr(pdf, _PRUNED_TO, None) == keep:
         return
-    pages = _page_objs(pdf)
-    if keep >= set(range(len(pages))):
-        return
-    pruner = _Pruner(
-        pdf,
-        removed=[page for i, page in enumerate(pages) if i not in keep],
-        live_pages={pages[i].objgen for i in keep},
-    )
-    pruner.prune_structure_tree(pdf.Root)
+    with _Budget(tool, lambda: _objects_read(pdf)).charging():
+        pages = _page_objs(pdf)
+        if keep >= set(range(len(pages))):
+            return
+        pruner = _Pruner(
+            pdf,
+            removed=[page for i, page in enumerate(pages) if i not in keep],
+            live_pages={pages[i].objgen for i in keep},
+        )
+        pruner.prune_structure_tree(pdf.Root)
     try:
         setattr(pdf, _PRUNED_TO, keep)
     except AttributeError:  # a pikepdf without instance attributes: prune again
@@ -239,13 +375,14 @@ def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int]) -> N
 class PageRemoval:
     """A document whose removed pages have been pruned, ready to save."""
 
-    def __init__(self, pdf: pikepdf.Pdf, pruner: _Pruner):
+    def __init__(self, pdf: pikepdf.Pdf, pruner: _Pruner, budget: _Budget):
         self.pdf = pdf
         self._pruner = pruner
+        self._budget = budget
         # The pages the output's page tree must list, in order.
         self.expected = [page.objgen for page in pruner.pages]
 
-    def save(self, path, *, tool: str) -> None:
+    def save(self, path) -> None:
         """Save to ``path``, and refuse an output that holds removed pages.
 
         After saving, what the save wrote is checked. Its page tree, read from
@@ -254,44 +391,42 @@ class PageRemoval:
         And every object the save wrote, that is everything reachable from the
         trailer, is walked, and no page object may be outside that tree. A
         stray page means a reference the sweep skipped: the document is swept
-        again with no shortcuts and saved again. If the tree is wrong or a page
-        still stray, the output is deleted, the refusal logged with ``tool``
-        (the route's name) and the reason, and :class:`PageLeakError` raised.
-        An output that could not be saved or checked is deleted too, and the
-        error raised.
+        again with no shortcuts and saved again. If the tree is wrong, a page
+        still stray, or the output holds far more objects than the input (see
+        _GROWTH), the output is deleted, the refusal logged with the tool's
+        name and the reason, and :class:`PageLeakError` raised. The second
+        sweep counts against the job's budget. An output that could not be
+        saved or checked is deleted too, and the error raised.
 
         The check walks the document in memory rather than reading the file
         back: on a 500-page file that costs a quarter of the time, and it does
         not hold a second parsed copy of every object.
         """
         path = str(path)
+        tool = self._budget.tool
         try:
-            self.pdf.save(path)
-            problem, stray = self._check()
-            if problem is None and stray:
-                logger.warning(
-                    "page removal in %s: %d page object(s) outside the page tree "
-                    "reached the output; sweeping again without shortcuts", tool, stray,
-                )
-                self._pruner.sweep(exhaustive=True)
+            with self._budget.charging():
                 self.pdf.save(path)
                 problem, stray = self._check()
                 if problem is None and stray:
-                    problem = f"{stray} page object(s) outside the page tree after a second sweep"
-            if problem is not None:
-                # Counts and structure only: no text of the document is logged.
-                logger.error(
-                    "page removal refused the output of %s: %s", tool, problem,
-                    extra={"error_class": "PageLeakError"},
-                )
-                raise PageLeakError()
+                    logger.warning(
+                        "page removal in %s: %d page object(s) outside the page tree "
+                        "reached the output; sweeping again without shortcuts", tool, stray,
+                    )
+                    self._pruner.sweep(exhaustive=True)
+                    self.pdf.save(path)
+                    problem, stray = self._check()
+                    if problem is None and stray:
+                        problem = f"{stray} page object(s) outside the page tree after a second sweep"
+                if problem is not None:
+                    _refuse(tool, problem)
         except BaseException:
             # Whatever stopped the check, an output it did not pass is not left behind.
             Path(path).unlink(missing_ok=True)
             raise
 
     def _check(self) -> tuple[str | None, int]:
-        """(what is wrong with the page tree or None, stray page objects)."""
+        """(what is wrong with the output or None, stray page objects)."""
         written, problem = _written_pages(self.pdf)
         if problem is not None:
             return problem, 0
@@ -299,7 +434,12 @@ class PageRemoval:
             if len(written) != len(self.expected):
                 return f"the page tree lists {len(written)} pages, {len(self.expected)} expected", 0
             return f"the page tree lists other pages than the {len(written)} expected", 0
-        return None, _pages_outside_tree(self.pdf, written, self._pruner.inert)
+        stray, objects = _pages_outside_tree(self.pdf, written, self._pruner.inert)
+        if objects > _GROWTH_FLOOR:
+            allowed = _GROWTH * self._budget.objects() + _GROWTH_FLOOR
+            if objects > allowed:
+                return f"it holds {objects} objects, {allowed} allowed for {self._budget.objects()} in its input", 0
+        return None, stray
 
 
 class PageCopier:
@@ -317,10 +457,14 @@ class PageCopier:
     element, and through its /P chain the whole unpruned structure tree would
     be copied with the page, tags of the pages left behind included. The /D
     each such action must also have keeps the link working.
+
+    ``tool`` is the route's name, for the log of a refusal. The copies made
+    by one copier share one budget, sized by the source.
     """
 
-    def __init__(self, src: pikepdf.Pdf):
+    def __init__(self, src: pikepdf.Pdf, *, tool: str):
         self.src = src
+        self._budget = _Budget(tool, lambda: _objects_read(src))
         self._pages: list | None = None
         self._string_dests: dict[bytes, object] | None = None
         self._name_dests: dict[str, object] | None = None
@@ -330,7 +474,10 @@ class PageCopier:
 
     def copy(self, dst: pikepdf.Pdf, indices: Iterable[int]) -> None:
         """Append ``src.pages[i]`` for each index to ``dst``, in order."""
-        indices = list(indices)
+        with self._budget.charging():
+            self._copy(dst, list(indices))
+
+    def _copy(self, dst: pikepdf.Pdf, indices: list) -> None:
         if self._pages is None:
             # One pass: `pages[i]` costs a copy of the whole page list.
             self._pages = [page for page in self.src.pages]
@@ -368,6 +515,7 @@ class PageCopier:
             owners.append(annot)
             parent, steps = annot.get("/Parent"), 0
             while _type(parent) in _DICTLIKE and steps < _MAX_DEPTH:
+                _charge(1)
                 if parent.is_indirect:
                     if parent.objgen in self._strip_seen:
                         break
@@ -394,7 +542,7 @@ class PageCopier:
             found = resolved[name] = self._explicit_view(value, page_map)
         if found is not None:
             page, view = found
-            owner[key] = Array([page, *view])
+            owner[key] = _new_array([page, *view])
 
     def _explicit_view(self, value, page_map: dict):
         """(the copied page or None, the view) a name stands for, or None."""
@@ -428,13 +576,13 @@ class PageCopier:
             self._name_dests = {}
             dests = self.src.Root.get("/Dests")
             if _type(dests) in _DICTLIKE:
-                self._name_dests.update(dests.items())
+                self._name_dests.update(_entries(dests))
         return _explicit(self._name_dests.get(name))
 
 
-def copy_pages(dst: pikepdf.Pdf, src: pikepdf.Pdf, indices: Iterable[int]) -> None:
+def copy_pages(dst: pikepdf.Pdf, src: pikepdf.Pdf, indices: Iterable[int], *, tool: str) -> None:
     """Append ``src``'s pages at ``indices`` to ``dst``; see :class:`PageCopier`."""
-    PageCopier(src).copy(dst, indices)
+    PageCopier(src, tool=tool).copy(dst, indices)
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────
@@ -449,7 +597,22 @@ def _is_indirect_dictlike(obj) -> bool:
 
 
 def _items(array) -> list:
-    return [item for item in array]
+    items = [item for item in array]
+    _charge(len(items))
+    return items
+
+
+def _entries(obj):
+    """A dictionary's or stream's entries, read at once."""
+    entries = obj.items().mapping
+    _charge(len(entries))
+    return entries
+
+
+def _new_array(items) -> Array:
+    items = list(items)
+    _charge(len(items))
+    return Array(items)
 
 
 def _same(a, b) -> bool:
@@ -471,6 +634,7 @@ def _unread(obj, seen: set):
         if obj.objgen in seen:
             return ()
         seen.add(obj.objgen)
+    _charge(len(obj))
     return obj
 
 
@@ -577,8 +741,9 @@ def _written_pages(pdf: pikepdf.Pdf) -> tuple[list, str | None]:
     return pages, None
 
 
-def _pages_outside_tree(pdf: pikepdf.Pdf, listed, inert: set = frozenset()) -> int:
-    """Page objects reachable from the trailer that the page tree does not list.
+def _pages_outside_tree(pdf: pikepdf.Pdf, listed, inert: set = frozenset()) -> tuple[int, int]:
+    """(page objects reachable from the trailer that the page tree does not
+    list, objects reachable from the trailer).
 
     That is what a save writes: qpdf writes every object reachable from the
     trailer, and nothing else. ``listed`` names the pages the written tree
@@ -620,7 +785,7 @@ def _pages_outside_tree(pdf: pikepdf.Pdf, listed, inert: set = frozenset()) -> i
                     continue
                 seen.add(og)
             stack.append(value)
-    return stray
+    return stray, len(seen)
 
 
 def _explicit(dest):
@@ -685,8 +850,7 @@ def _owner_actions(owner, seen: set):
             if aa.objgen in seen:
                 return
             seen.add(aa.objgen)
-        for _, action in aa.items():
-            yield action
+        yield from _entries(aa).values()
 
 
 def _action_chain(action, seen: set, depth: int = 0):
@@ -697,6 +861,7 @@ def _action_chain(action, seen: set, depth: int = 0):
         if action.objgen in seen:
             return
         seen.add(action.objgen)
+    _charge(1)
     yield action
     nxt = action.get("/Next")
     # A /Next array shared by many actions is read once, like its actions.
@@ -724,7 +889,7 @@ def _destination_slots(page, seen: set):
             yield from _goto_slots(action, seen)
     aa = page.get("/AA")
     if _type(aa) in _DICTLIKE:
-        for _, action in aa.items():
+        for action in _entries(aa).values():
             yield from _goto_slots(action, seen)
 
 
@@ -746,6 +911,7 @@ def _tree_entries(node, leaf_key: str, depth: int = 0, seen: set | None = None):
         seen.add(node.objgen)
     entries = node.get(leaf_key)
     if _type(entries) == _ARRAY:
+        _charge(len(entries))
         it = iter(entries)
         for key in it:
             value = next(it, _MISSING)
@@ -783,6 +949,7 @@ def _prune_tree(node, leaf_key: str, keep: Callable, depth: int = 0, seen: set |
     changed = False
     entries = node.get(leaf_key)
     if _type(entries) == _ARRAY:
+        _charge(len(entries))
         flags = bytearray()
         it = iter(entries)
         for key in it:
@@ -800,7 +967,7 @@ def _prune_tree(node, leaf_key: str, keep: Callable, depth: int = 0, seen: set |
                     first = key
                 last = key
         if not all(flags) or len(entries) != 2 * len(flags):
-            node[leaf_key] = Array(_kept_pairs(entries, flags))
+            node[leaf_key] = _new_array(_kept_pairs(entries, flags))
             changed = True
     foreign = False
     kids = node.get("/Kids")
@@ -819,7 +986,7 @@ def _prune_tree(node, leaf_key: str, keep: Callable, depth: int = 0, seen: set |
                 first = limits[0]
             last = limits[1]
         if len(kept_kids) != len(items):
-            node["/Kids"] = Array(kept_kids)
+            node["/Kids"] = _new_array(kept_kids)
             changed = True
     if first is None:
         return _FOREIGN if foreign else None
@@ -949,7 +1116,7 @@ class _Pruner:
         # listed among a removed page's annotations is no annotation of that
         # page unless it looks like one; cut, it would take every bookmark or
         # field along.
-        for _, value in pdf.Root.items():
+        for value in _entries(pdf.Root).values():
             if _is_indirect_dictlike(value) and value.objgen in self.dead_annots and not _is_annotation(value):
                 self.dead_annots.discard(value.objgen)
         self.dead_beads = _indirect(removed_beads) - self.live_beads - self.protected
@@ -1104,13 +1271,13 @@ class _Pruner:
         elif not kept:
             result = _MISSING
         else:
-            result = Array(kept) if key is None else self.pdf.make_indirect(Array(kept))
+            result = _new_array(kept) if key is None else self.pdf.make_indirect(_new_array(kept))
         if key is not None:
             self._arrays[key] = result
         return result
 
     def _prune_action(self, action, depth: int):
-        fields = dict(action.items())
+        fields = _entries(action)
         nxt = fields.get("/Next")
         if nxt is not None:
             if _type(nxt) == _ARRAY:
@@ -1149,7 +1316,7 @@ class _Pruner:
         if tail and _type(head) in _DICTLIKE:
             own = head.get("/Next")
             own_list = [] if own is None else (_items(own) if _type(own) == _ARRAY else [own])
-            head["/Next"] = Array(own_list + tail)
+            head["/Next"] = _new_array(own_list + tail)
         if key is not None:
             self._heads[key] = head
         return head
@@ -1200,7 +1367,7 @@ class _Pruner:
         key = aa.objgen if aa.is_indirect else None
         emptied = self._aa_done.get(key) if key is not None else None
         if emptied is None:
-            for trigger, action in list(aa.items()):
+            for trigger, action in list(_entries(aa).items()):
                 pruned = self.prune_action(action)
                 if pruned is None:
                     # A null entry is absent to pikepdf: there is nothing to delete.
@@ -1218,7 +1385,7 @@ class _Pruner:
 
     def run(self) -> None:
         root = self.pdf.Root
-        catalog = dict(root.items())
+        catalog = _entries(root)
         self._contained(self._collect_templates, catalog)
         self._contained(self.prune_named_destinations, catalog,
                         fallback=lambda: self._drop(root, "/Dests", ("/Names", "/Dests")))
@@ -1309,7 +1476,7 @@ class _Pruner:
                 del names["/Dests"]
         dests = catalog.get("/Dests")
         if _type(dests) in _DICTLIKE:
-            for key, value in list(dests.items()):
+            for key, value in list(_entries(dests).items()):
                 try:
                     dead = self.dest_state(value) == _DEAD
                 except Exception:  # noqa: BLE001 - an unreadable entry goes
@@ -1340,7 +1507,7 @@ class _Pruner:
                     return field.objgen not in self.dead
                 seen.add(field.objgen)
             try:
-                fields = field.items().mapping
+                fields = _entries(field)
                 kids = fields.get("/Kids")
                 if _type(kids) == _ARRAY and len(kids):
                     key = kids.objgen if kids.is_indirect else None
@@ -1354,9 +1521,9 @@ class _Pruner:
                         elif not kept:
                             replacement = _MISSING
                         elif key is None:
-                            replacement = Array(kept)
+                            replacement = _new_array(kept)
                         else:  # the fields that share it share its replacement
-                            replacement = self.pdf.make_indirect(Array(kept))
+                            replacement = self.pdf.make_indirect(_new_array(kept))
                         if key is not None:
                             shared_kids[key] = replacement
                     if replacement is None:
@@ -1384,7 +1551,7 @@ class _Pruner:
                 items = _items(fields)
                 kept = [field for field in items if alive(field, 0)]
                 if len(kept) != len(items):
-                    acroform["/Fields"] = Array(kept)
+                    acroform["/Fields"] = _new_array(kept)
         # A copied document has no /AcroForm, but a widget's field still
         # reaches its sibling widgets on the pages left behind.
         climbed: set = set()  # widgets and fields already climbed from
@@ -1401,6 +1568,7 @@ class _Pruner:
                     continue
                 top, steps = parent, 0
                 while top is not None and steps < _MAX_DEPTH:
+                    _charge(1)
                     if top.is_indirect:
                         if top.objgen in climbed:
                             top = None  # its field tree was reached from another widget
@@ -1419,7 +1587,7 @@ class _Pruner:
             items = _items(order)
             kept = [f for f in items if not self._field_dead(f)]
             if len(kept) != len(items):
-                acroform["/CO"] = Array(kept)
+                acroform["/CO"] = _new_array(kept)
         if removed_any and "/XFA" in acroform:
             # XFA keeps every field's value in its own XML, so the values of
             # the fields that went would stay in the file. Without it the
@@ -1474,7 +1642,7 @@ class _Pruner:
             if og is not None and og in decided:
                 (removed if decided[og] else kept).append(annot)
                 continue
-            fields = dict(annot.items()) if _type(annot) in _DICTLIKE else {}
+            fields = _entries(annot) if _type(annot) in _DICTLIKE else {}
             try:
                 goes = self._annotation_goes(annot, fields)
             except Exception:  # noqa: BLE001 - a kept page's own annotation: the sweep checks it
@@ -1499,7 +1667,7 @@ class _Pruner:
             return annots, None
         if not kept:
             return kept, _MISSING
-        return kept, (self.pdf.make_indirect(Array(kept)) if shared else Array(kept))
+        return kept, (self.pdf.make_indirect(_new_array(kept)) if shared else _new_array(kept))
 
     def _annotation_goes(self, annot, fields: dict) -> bool:
         """Decide one annotation on a live page; edits what stays in place."""
@@ -1564,7 +1732,7 @@ class _Pruner:
         if dead_threads and _type(threads) == _ARRAY:
             kept = [t for t in _items(threads) if not (_is_indirect_dictlike(t) and t.objgen in dead_threads)]
             if kept:
-                root["/Threads"] = Array(kept)
+                root["/Threads"] = _new_array(kept)
             else:
                 del root["/Threads"]
 
@@ -1583,6 +1751,7 @@ class _Pruner:
             and budget[0] > 0
         ):
             budget[0] -= 1
+            _charge(1)
             ring.append(bead)
             ring_of[bead.objgen] = None  # placeholder while walking
             bead = bead.get("/N")
@@ -1624,6 +1793,7 @@ class _Pruner:
                 if og is not None and og in seen_values:
                     return seen_values[og]
                 left = False
+                _charge(len(value))
                 for i, item in enumerate(value):
                     if _is_indirect_dictlike(item) and item.objgen not in self.alive_elements:
                         value[i] = None
@@ -1669,7 +1839,7 @@ class _Pruner:
                         kept = [r for r in items if not _is_indirect_dictlike(r) or r.objgen in self.alive_elements]
                         if len(kept) != len(items):
                             if kept:
-                                record.obj["/Ref"] = Array(kept)
+                                record.obj["/Ref"] = _new_array(kept)
                             else:
                                 del record.obj["/Ref"]
                     self.pending.append(record.obj.get("/Ref"))
@@ -1763,7 +1933,7 @@ class _Pruner:
                         record.recheck = True
                         record.kids.append((item, None))
                         continue
-                    fields = item.items().mapping
+                    fields = _entries(item)
                     typ = fields.get("/Type")
                     if (
                         "/MCID" in fields
@@ -1830,7 +2000,7 @@ class _Pruner:
             record.kept = kept
             if record is top:
                 if len(kept) != len(record.kids) and kept:
-                    tree["/K"] = Array(kept)
+                    tree["/K"] = _new_array(kept)
                 continue
             elem = record.obj
             try:
@@ -1843,7 +2013,7 @@ class _Pruner:
                         self.dead_elements.add(elem.objgen)
                     continue
                 if len(kept) != len(record.kids):
-                    elem["/K"] = kept[0] if record.single and len(kept) == 1 else Array(kept)
+                    elem["/K"] = kept[0] if record.single and len(kept) == 1 else _new_array(kept)
                 if len(kept) != len(record.kids) or record.shared:
                     # Its text spoke for the content that went too. An element
                     # whose kids were read with another element cannot show
@@ -1953,7 +2123,7 @@ class _Pruner:
                 continue
             nxt = None
             try:
-                fields = dict(item.items())
+                fields = _entries(item)
                 nxt = fields.get("/Next")
                 count = fields.get("/Count")
                 is_open = type(count) is int and count > 0
@@ -2062,6 +2232,7 @@ class _Pruner:
             rests[item.objgen] = _PENDING
             on_chain.add(item.objgen)
             chain.append(item)
+            _charge(1)
             item = item.get("/Next")
         for item in reversed(chain):
             og = item.objgen
@@ -2069,7 +2240,7 @@ class _Pruner:
                 if og in self.outline_items:
                     rest = False  # kept by the outline pass
                 else:
-                    rest = self._stray_bookmark_dead(item, item.items().mapping, depth)
+                    rest = self._stray_bookmark_dead(item, _entries(item), depth)
             rests[og] = rest
         return rest
 
@@ -2176,7 +2347,7 @@ class _Pruner:
             else:
                 verdict = og in dead
             if not verdict and og not in protected and value._type_code in _DICTLIKE:
-                fields = value.items().mapping
+                fields = _entries(value)
                 typ = fields.get("/Type")
                 kind = _SWEPT_TYPES.get(typ) if _type(typ) == _NAME else None
                 if kind == _SWEPT_PAGE:
@@ -2218,7 +2389,7 @@ class _Pruner:
             if value._type_code == _ARRAY:
                 stack.append((value, None))
                 return False
-            entries = value.items().mapping
+            entries = _entries(value)
             if entries.get("/Type") == _PAGE:
                 return True  # no page tree can list a page that is not an object
             stack.append((value, entries if len(stack) < _HELD else None))
@@ -2241,6 +2412,7 @@ class _Pruner:
                         self.inert.add(obj.objgen)
                     continue
                 doomed = []
+                _charge(len(obj))
                 for i, value in enumerate(obj):
                     if value.__class__ in _SCALARS or getattr(value, "_type_code", None) not in _CONTAINERS:
                         continue
@@ -2254,7 +2426,7 @@ class _Pruner:
                 cut += len(doomed)
                 continue
             if fields is None:
-                fields = obj.items().mapping
+                fields = _entries(obj)
             doomed = []
             for key, value in fields.items():
                 if value.__class__ in _SCALARS or getattr(value, "_type_code", None) not in _CONTAINERS:

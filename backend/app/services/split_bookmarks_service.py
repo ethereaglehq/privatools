@@ -61,7 +61,7 @@ def split_by_bookmarks(input_path: str) -> str:
                 end = bookmarks[i + 1][1] if i + 1 < len(bookmarks) else total_pages
                 ranges.append((title, start, end))
 
-            copier = PageCopier(pdf)
+            copier = PageCopier(pdf, tool="split-by-bookmarks")
             with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
                 for idx, (title, start, end) in enumerate(ranges, start=1):
                     if start >= end:
@@ -73,7 +73,7 @@ def split_by_bookmarks(input_path: str) -> str:
                         copier.copy(out, range(start, end))
                         # The other sections' pages must not ride along with
                         # this section's links, form fields and threads.
-                        prune_to_page_tree(out).save(str(chunk_path), tool="split-by-bookmarks")
+                        prune_to_page_tree(out, tool="split-by-bookmarks").save(str(chunk_path))
                     zf.write(str(chunk_path), f"{idx:02d}_{safe_title}.pdf")
 
             return str(zip_path)

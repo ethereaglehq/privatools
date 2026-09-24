@@ -23,7 +23,12 @@ from ..utils.pdf_accessibility import (
 from ..utils.cleanup import ensure_temp_dir, safe_open_pdf
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
-from ..utils.page_removal import copy_pages, prune_structure_tree_to_pages, prune_to_page_tree
+from ..utils.page_removal import (
+    PageLeakError,
+    copy_pages,
+    prune_structure_tree_to_pages,
+    prune_to_page_tree,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -84,10 +89,12 @@ def merge_pdfs(
                     # (a crafted file's can) would copy it whole, tags of the
                     # pages left out included, and add_source uses that copy.
                     try:
-                        prune_structure_tree_to_pages(src, indices)
+                        prune_structure_tree_to_pages(src, indices, tool="merge")
+                    except PageLeakError:
+                        raise
                     except Exception:  # add_source tries again, or drops the tags
                         logger.debug("merge: structure tree not pruned before the copy", exc_info=True)
-                copy_pages(dst, src, indices)
+                copy_pages(dst, src, indices, tool="merge")
                 total_pages_out += len(indices)
                 # Must happen here, while `src` is still open and immediately
                 # after its pages were appended — that append is what lets each
@@ -104,7 +111,7 @@ def merge_pdfs(
         if pages_left_out:
             # Pages a range left out must not ride along with the links, form
             # fields and threads of the pages merged.
-            prune_to_page_tree(dst).save(str(output), tool="merge")
+            prune_to_page_tree(dst, tool="merge").save(str(output))
         else:
             dst.save(str(output))
     finally:

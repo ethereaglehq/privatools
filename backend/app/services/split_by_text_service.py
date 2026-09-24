@@ -60,14 +60,14 @@ def split_by_text(input_path: str, search: str, case_sensitive: bool = False) ->
     pdf = pikepdf.open(input_path)
     chunk_paths: list = []
     try:
-        copier = PageCopier(pdf)
+        copier = PageCopier(pdf, tool="split-by-text")
         for idx, (start, end) in enumerate(boundaries, start=1):
             with pikepdf.Pdf.new() as chunk:
                 copier.copy(chunk, range(start, end))
                 # The other parts' pages must not ride along with this part's
                 # links, form fields and threads.
                 chunk_out = temp_output(f"split_text_part{idx}", "pdf")
-                prune_to_page_tree(chunk).save(str(chunk_out), tool="split-by-text")
+                prune_to_page_tree(chunk, tool="split-by-text").save(str(chunk_out))
             chunk_paths.append(chunk_out)
     finally:
         pdf.close()

@@ -35,11 +35,11 @@ def reorder_pages(input_path: str, page_order: list) -> str:
                 )
             indices.append(idx)
         with pikepdf.Pdf.new() as out:
-            copy_pages(out, pdf, indices)
+            copy_pages(out, pdf, indices, tool="organize-pages")
             if len(set(indices)) < total:
                 # Pages left out must not ride along with the links, form
                 # fields and threads of the pages that stay.
-                prune_to_page_tree(out).save(str(output_path), tool="organize-pages")
+                prune_to_page_tree(out, tool="organize-pages").save(str(output_path))
             else:
                 out.save(str(output_path))
     return str(output_path)

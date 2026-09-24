@@ -33,7 +33,7 @@ from collections.abc import Sequence
 
 import pikepdf
 
-from .page_removal import prune_structure_tree_to_pages
+from .page_removal import PageLeakError, prune_structure_tree_to_pages
 
 logger = logging.getLogger(__name__)
 
@@ -184,7 +184,9 @@ def preserve_structure_tree(
     claims the document is tagged when it is not.
     """
     try:
-        prune_structure_tree_to_pages(src, pages)
+        prune_structure_tree_to_pages(src, pages, tool="structure-tree")
+    except PageLeakError:
+        raise  # refused: no file at all, rather than one without its tags
     except Exception:
         # Copying an unpruned tree would carry the other pages' tags along.
         logger.debug("preserve: structure tree could not be pruned", exc_info=True)
@@ -266,7 +268,9 @@ class StructureTreeMerger:
         self._sources += 1
         if pages is not None:
             try:
-                prune_structure_tree_to_pages(src, pages)
+                prune_structure_tree_to_pages(src, pages, tool="structure-tree")
+            except PageLeakError:
+                raise  # refused: no file at all, rather than one without its tags
             except Exception:
                 logger.debug("merge-struct: source could not be pruned", exc_info=True)
                 return

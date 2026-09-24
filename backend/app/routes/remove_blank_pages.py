@@ -100,7 +100,7 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
         if len(blank) == len(pages):
             blank = []  # every page looks blank: keep them all
         if blank:
-            remove_pages(pdf, blank).save(out_path, tool="remove-blank-pages")
+            remove_pages(pdf, blank, tool="remove-blank-pages").save(out_path)
         else:
             pdf.save(out_path)  # nothing removed: nothing to prune or check
     return out_path

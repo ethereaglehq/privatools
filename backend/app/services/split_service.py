@@ -80,7 +80,7 @@ def _write_part(copier: PageCopier, indices, out_path) -> None:
         copier.copy(out, indices)
         # The other parts' pages must not ride along with this part's links,
         # form fields and threads.
-        prune_to_page_tree(out).save(str(out_path), tool="split")
+        prune_to_page_tree(out, tool="split").save(str(out_path))
 
 
 def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2) -> str:
@@ -101,7 +101,7 @@ def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2)
             if total_pages <= 0:
                 raise ValueError("Cannot split an empty PDF with no pages.")
 
-            copier = PageCopier(pdf)
+            copier = PageCopier(pdf, tool="split")
             if mode == "individual":
                 for i in range(total_pages):
                     out_path = get_temp_path(f"page_{i+1}_{uuid.uuid4().hex}.pdf")
