@@ -67,11 +67,12 @@ async function describeError(res: Response): Promise<Error> {
 
     let message: string;
     if (detail) message = detail;
-    else if (status === 0 || status >= 502) message = "The server isn't responding right now. Check your connection and try again in a moment.";
+    else if (status === 504 || status === 524) message = "Processing timed out. Try a smaller file or a lighter compression setting.";
+    else if (status === 0) message = "The server isn't responding right now. Check your connection and try again in a moment.";
+    else if (status >= 502) message = "The server isn't responding right now. Try again in a moment.";
     else if (status === 413) message = "That upload is too large. The maximum is 500 MB per upload.";
     else if (status === 415) message = "That file type isn't supported by this tool.";
     else if (status === 429) message = "Slow down — we're rate-limiting requests. Wait a moment and try again.";
-    else if (status === 504) message = "Processing timed out. Try a smaller file or a lighter compression setting.";
     else if (status === 422) message = "Some required field is missing or has an invalid value.";
     else if (status >= 400 && status < 500) message = `Request rejected (HTTP ${status}). Try a different file or adjust the settings.`;
     else message = `Server error (HTTP ${status}). Try again.`;
@@ -163,6 +164,40 @@ export const MAX_FILE_SIZE_LABEL = "500 MB";
  *  the backend has its own per-tool limit. */
 export const MAX_FILES_PER_REQUEST = 100;
 
+/** The most one request can carry. Production nginx (client_max_body_size
+ *  500M) and the backend (MAX_UPLOAD_MB) both count the whole multipart body,
+ *  every file and field in it, so files that add up to 500 MB do not fit. */
+export const MAX_REQUEST_SIZE = 500 * 1024 * 1024;
+export const MAX_REQUEST_SIZE_LABEL = "500 MB";
+
+/** What a multipart body adds for each part besides its content: the boundary
+ *  line and the part's headers. Generous on purpose: a boundary can run to 70
+ *  characters, and a file's name goes in its headers, percent-escaped where
+ *  it needs to be. */
+const PART_OVERHEAD = 1024;
+const utf8 = new TextEncoder();
+
+/** At most how large a request carrying these form values comes to. */
+export function requestSize(values: Iterable<FormDataEntryValue>): number {
+    let size = PART_OVERHEAD; // the closing boundary
+    for (const value of values) {
+        size += PART_OVERHEAD + (typeof value === "string" ? utf8.encode(value).length : value.size);
+    }
+    return size;
+}
+
+/** An upload that fails is sent again only up to this size. Another attempt
+ *  sends the whole body again, and past this it costs the visitor minutes on a
+ *  slow connection. A failure is rarely a blip the retry's second or two of
+ *  backoff would outlast: a proxy that refuses large bodies refuses every
+ *  attempt; over HTTP/2 Chrome has already sent a stalled upload again itself
+ *  before reporting a network error; and while the app is down, nginx refuses
+ *  the upload's CORS preflight (a network error) or, when the browser still
+ *  holds a preflight, buffers the whole upload before answering 502. So a
+ *  larger failure is shown at once, and the visitor decides whether to send it
+ *  again. */
+export const MAX_RETRY_SIZE = 10 * 1024 * 1024;
+
 function validateFileSize(file: File) {
     if (file.size > MAX_FILE_SIZE) {
         const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
@@ -200,13 +235,14 @@ export interface RetryPolicy {
     /** Initial backoff in ms; subsequent retries are linearly multiplied (600, 1200, 1800…). */
     backoffMs: number;
     /** Predicate: should this error be retried? Default: network errors + 5xx HTTP
-     *  other than a timeout. NEVER returns `true` for AbortError, 4xx or a
-     *  timeout — see `defaultShouldRetry`. */
+     *  other than a timeout. NEVER returns `true` for AbortError, 4xx, a
+     *  timeout or an upload over MAX_RETRY_SIZE — see `defaultShouldRetry`. */
     on?: (err: unknown) => boolean;
 }
 
 /** Default retry policy — moderate. 2 retries, 600ms + 1200ms backoff,
- *  retry network errors + 5xx HTTP but never 4xx, timeouts or aborts. */
+ *  retry network errors + 5xx HTTP but never 4xx, timeouts, aborts or an
+ *  upload over MAX_RETRY_SIZE. */
 export const DEFAULT_RETRY: RetryPolicy = {
     attempts: 2,
     backoffMs: 600,
@@ -248,7 +284,8 @@ export const DEFAULT_TIMEOUT_MS = SERVER_TIME_LIMIT_MS + 60_000;
  * Don't:  AbortError (user cancelled), 4xx (caller's fault — bad input), and a
  *         timeout: 504 or 524 from the server, or the page's own deadline.
  *         Each of those came after a full wait, which another attempt would
- *         repeat, sending the whole upload again.
+ *         repeat, sending the whole upload again. Nor any failure of an upload
+ *         over MAX_RETRY_SIZE, which another attempt would send all over again.
  *
  * The "retry" classifier is matched against either the Error message OR a
  * special `__status` property we tag onto thrown errors below.
@@ -257,6 +294,7 @@ export function defaultShouldRetry(err: unknown): boolean {
     if (isAbortError(err)) return false;
     if (err instanceof Error) {
         if ((err as Error & { __kind?: ToolErrorKind }).__kind === "timeout") return false;
+        if (((err as Error & { __requestSize?: number }).__requestSize ?? 0) > MAX_RETRY_SIZE) return false;
         // Tag we set on describeError() — see below.
         const status = (err as Error & { __status?: number }).__status;
         if (typeof status === "number") {
@@ -393,6 +431,25 @@ function decorateTransportError(err: unknown): unknown {
     return err;
 }
 
+/** The error for a form that would pass MAX_REQUEST_SIZE. It is refused before
+ *  anything is sent: nginx would refuse it only once the upload had begun. The
+ *  limit counts the form the files go in, so the message says so: shown only
+ *  the files' size, a visitor refused at "500.0 MB" would see no reason. */
+function tooLargeToSend(body: FormData): Error {
+    const files = [...body.values()].filter((value): value is File => typeof value !== "string");
+    const size = formatFileSize(files.reduce((sum, file) => sum + file.size, 0));
+    const message = files.length > 1
+        ? `These files are ${size} in all, and one upload can carry ${MAX_REQUEST_SIZE_LABEL}, counting the form they are sent in. Nothing was sent. Choose fewer or smaller files.`
+        : `This file is ${size}, and one upload can carry ${MAX_REQUEST_SIZE_LABEL}, counting the form it is sent in. Nothing was sent. Choose a smaller file.`;
+    return withErrorKind(new Error(message), "too_large");
+}
+
+/** Note on a failed upload how large it was, for defaultShouldRetry. */
+function withRequestSize<T>(err: T, size: number): T {
+    if (err && typeof err === "object") (err as { __requestSize?: number }).__requestSize = size;
+    return err;
+}
+
 /** True when a form carries a file, whose upload can take minutes. */
 function carriesFile(body: FormData): boolean {
     for (const value of body.values()) if (typeof value !== "string") return true;
@@ -425,7 +482,9 @@ function xhrHeaders(xhr: XMLHttpRequest): Headers {
  *  gives up on an upload only once it has not moved for that long (the
  *  browser can still end one itself; see DEFAULT_TIMEOUT_MS). The request
  *  then fails as a timeout; `timeoutMs` 0 turns the deadline off. A cancel
- *  through `signal` rejects with an AbortError. */
+ *  through `signal` rejects with an AbortError.
+ *
+ *  A form over MAX_REQUEST_SIZE is refused before anything is sent. */
 function sendForm(
     endpoint: string,
     body: FormData,
@@ -436,6 +495,12 @@ function sendForm(
             reject(new DOMException("Aborted", "AbortError"));
             return;
         }
+        const size = requestSize(body.values());
+        if (size > MAX_REQUEST_SIZE) {
+            reject(tooLargeToSend(body));
+            return;
+        }
+        const failed = (err: unknown) => reject(withRequestSize(err, size));
         const xhr = new XMLHttpRequest();
         xhr.open("POST", `${API_BASE}${normalizeEndpoint(endpoint)}`);
         xhr.responseType = "blob";
@@ -490,9 +555,9 @@ function sendForm(
                 return;
             }
             if (res.ok) resolve(res);
-            else describeError(res).then(reject, reject);
+            else describeError(res).then(failed, failed);
         };
-        xhr.onerror = () => reject(withErrorKind(new Error("Network error"), "network"));
+        xhr.onerror = () => failed(withErrorKind(new Error("Network error"), "network"));
         xhr.onabort = () => reject(expired ? gaveUp(expired) : new DOMException("Aborted", "AbortError"));
         // xhr.timeout, a limit on the whole request upload included, stays 0
         // (none); settle anyway should a browser ever fire it.

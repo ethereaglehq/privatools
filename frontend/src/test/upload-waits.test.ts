@@ -151,7 +151,8 @@ describe("uploadFile: Split, Split by Text, Organize, and every page on useMulti
 });
 
 describe("uploadFiles: Merge sends up to 100 files, 500 MB in all, in one request", () => {
-    const pdfs = Array.from({ length: 100 }, (_, i) => sizedFile(`part-${i + 1}.pdf`, 5 * MB));
+    // Just under 5 MB each: the 500 MB limit counts the form around the files too.
+    const pdfs = Array.from({ length: 100 }, (_, i) => sizedFile(`part-${i + 1}.pdf`, 5 * MB - 4 * 1024));
 
     it("keeps waiting while 500 MB takes seven minutes to send, then returns the merged PDF", async () => {
         const net = installNetwork({ uploadMs: 7 * MINUTE, answerAfterMs: MINUTE, body: "%PDF merged" });

@@ -8,8 +8,8 @@ import {
 } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
 import {
-    uploadFiles, downloadBlob, formatFileSize, buildOutputFilename,
-    MAX_FILE_SIZE, MAX_FILES_PER_REQUEST, withErrorKind,
+    uploadFiles, downloadBlob, formatFileSize, buildOutputFilename, requestSize,
+    MAX_FILE_SIZE, MAX_FILES_PER_REQUEST, MAX_REQUEST_SIZE, MAX_REQUEST_SIZE_LABEL, withErrorKind,
 } from "@/lib/api";
 import { loadSamplePdf } from "@/lib/sample-files";
 import { emitToolSuccess } from "@/hooks/useFirstSuccess";
@@ -104,6 +104,14 @@ export function MergeUI() {
         if (oversized) { setError(`“${oversized.name}” exceeds 500 MB. Choose a smaller PDF; this selection was not added.`); return; }
         if (filesRef.current.length + incoming.length > MAX_FILES_PER_REQUEST) {
             setError(`You can merge up to ${MAX_FILES_PER_REQUEST} PDFs at a time. Remove some files before adding this selection.`);
+            return;
+        }
+        // Every PDF goes in one request, and a request over 500 MB is refused.
+        const combined = [...filesRef.current.map(entry => entry.file), ...incoming];
+        if (requestSize(combined) > MAX_REQUEST_SIZE) {
+            const total = formatFileSize(combined.reduce((sum, file) => sum + file.size, 0));
+            const which = incoming.length === 1 ? `“${incoming[0].name}”` : `these ${incoming.length} PDFs`;
+            setError(`You can merge up to ${MAX_REQUEST_SIZE_LABEL} at a time, counting the form the PDFs are sent in. Adding ${which} would make ${total}, so ${incoming.length === 1 ? "it was" : "they were"} not added.`);
             return;
         }
         invalidateResult();

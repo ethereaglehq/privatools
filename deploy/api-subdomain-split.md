@@ -86,16 +86,17 @@ talking to the grey api host, so there's never a moment where a proxied apex
    propagated or an HTTP-01 timeout — re-check `dig +short api.privatools.me`,
    wait, and re-run certbot.
 
-3. **Deploy the nginx config** (now contains the api vhost) and reload. The
-   `&&` chain only reloads if `nginx -t` passes, so a config error leaves the
-   *running* nginx untouched; the backup lets you restore the sites file:
-   ```bash
-   scp deploy/oracle-vm/nginx-privatools.conf ubuntu@140.245.15.140:/tmp/
-   ssh ubuntu@140.245.15.140 'sudo cp /etc/nginx/sites-enabled/privatools \
-       /home/ubuntu/nginx-backups/privatools.$(date +%s).bak && \
-     sudo cp /tmp/nginx-privatools.conf /etc/nginx/sites-enabled/privatools && \
-     sudo nginx -t && sudo systemctl reload nginx'
-   ```
+3. **Deploy the nginx config** (now contains the api vhost) and reload.
+   *Historical: do not repeat this step as it was written.* It copied the
+   site file over the installed one, then ran `nginx -t` and reloaded; a file
+   that failed the test stayed in place. Today's file also includes the
+   upstream file of the zero-downtime deploys, which a host without it does
+   not have. Install today's file with a runbook instead. The zero-downtime
+   cut-over is in [README](README.md#production-rollout-runbook), step 6. The
+   API host's error pages are in
+   [nginx's own error answers on the API host](#nginxs-own-error-answers-on-the-api-host-added-24-september-2026)
+   below. Each backs up the site, tests it, and puts the backup back if the
+   test fails.
    Verify: `curl -s https://api.privatools.me/api/health` → JSON health;
    `curl -so /dev/null -w '%{http_code}\n' https://api.privatools.me/` → `404`.
 
@@ -121,6 +122,321 @@ talking to the grey api host, so there's never a moment where a proxied apex
    > URLs stay on the apex). The bypass rule keeps any apex `/api` response off
    > the edge cache; it isn't load-bearing for the SPA but is correct hygiene
    > (and harmless to og-image, which already sets its own cache headers).
+
+## nginx's own error answers on the API host (added 24 September 2026)
+
+The page reads every API answer cross-origin, and a browser gives a
+cross-origin page nothing of an answer without `Access-Control-Allow-Origin`:
+not its status, not its text. The app puts CORS headers on everything it
+answers, its errors included. But nginx answers some requests itself: 413 when
+an upload is over `client_max_body_size`, 502 while the app is down, 504 when
+the app says nothing for `proxy_read_timeout`, and 503 from `limit_req` and
+`limit_conn`. Those answers carried no CORS headers, so the page saw each one
+as a network failure: it said "Couldn't reach the server", reported
+`error_kind` `network`, and sent the upload again.
+
+The API host's `location /api/` now sends those four statuses to named
+locations (`@api_too_large`, `@api_unavailable`, `@api_busy`, `@api_timeout`).
+Each adds `Access-Control-Allow-Origin` and `Vary: Origin` for the origins in
+`ALLOWED_ORIGINS` (the `$pt_cors_origin` map) and nothing for any other
+origin. It re-declares HSTS, since a location with its own `add_header`
+inherits none of the server's, and answers with a JSON `detail` the page
+shows. An empty `types {}` keeps a URI's extension from choosing another
+Content-Type. Answers from the app pass through as before:
+`proxy_intercept_errors` stays off, so the app's own 413 or 504 keeps its JSON
+and its single `Access-Control-Allow-Origin`.
+`backend/tests/test_nginx_api_error_cors.py` checks the file's structure, and
+the origin map against docker-compose.yml.
+
+**What the page can read.** Every upload is preflighted: the page watches its
+progress, so the browser first sends an `OPTIONS` request, and a preflight must
+be answered with a 2xx, which the app gives.
+
+- nginx's **413** (an upload over 500 MB) and its **504** (the app silent for
+  300 s) answer the upload itself, after the app has answered the preflight.
+  The page reads both, and counts them as `too_large` and `timeout`.
+- While the app is down, nginx answers the preflight too, with the **502**. The
+  browser then refuses to send the upload at all, and the page sees a network
+  error as before. It reads the 502 only when the browser still holds a
+  preflight for that endpoint, cached for up to 600 s after one succeeded; the
+  upload is then sent, and its 502 comes once nginx has received all of it.
+- A **503** from `limit_req` or `limit_conn` is read when it refuses the upload
+  and seen as a network error when it refuses the preflight, which counts
+  against the same limits.
+- A request that is not preflighted reads all four: a form without a file, or
+  a `GET`.
+
+### Apply it
+
+The deploy never edits nginx; apply this by hand with the block in step 2.
+What it does, and what it never does:
+
+- It checks its three inputs against the SHA-256 of the files step 1 copies,
+  and never modifies them: the site it installs is written to a temporary
+  copy. Running it again later, even without step 1, uses the same files.
+- It reads from the installed site whether the zero-downtime cut-over
+  ([README](README.md#production-rollout-runbook)) has run. If the site
+  includes `/etc/nginx/privatools-upstream.conf`, it installs this
+  repository's file unchanged, which proxies only through the
+  `privatools_app` upstream the rollout manages, and it checks that first. If
+  not, it installs the same file with `proxy_pass http://127.0.0.1:8000` and
+  no upstream include, as that site has.
+- It never writes the upstream file, so it never moves traffic between 8000
+  and 8001. It runs only as `ubuntu`, the deploy timer's user, because
+  another user would create a deploy lock the timer cannot open. It refuses
+  while a deploy holds that lock, and while a deploy has left a switch of the
+  upstream unfinished (`/home/ubuntu/privatools/.privatools-deploy.switching`).
+- It leaves the installed site as it is if it already has the error pages:
+  this change, which it then only tests and reloads, or a later release. It
+  changes nothing if the site is not the file this change was written
+  against: main's before this change (`c39b151`, which v2.7.1 also ships), or
+  v2.6.1's before the cut-over. It also changes nothing while `nginx -t`
+  already fails, before any change, for instance because of another site.
+- It prints the backup's name as soon as it has saved the previous site. It
+  reloads nginx only after `nginx -t` passes, and puts the previous site back
+  if the test fails.
+- If a run stops between installing the site and reloading nginx (Ctrl-C, a
+  dropped SSH session), nginx still serves the old site. Running the block
+  again finds the site installed, tests it and reloads nginx, so one more run
+  always finishes the job.
+- Every refusal says what to do next.
+
+**1. On your Mac,** in the repository at a `main` that contains this change
+(run `git fetch --tags` first):
+
+```bash
+git show c39b151:deploy/oracle-vm/nginx-privatools.conf > /tmp/nginx-privatools.main.conf
+git show v2.6.1:deploy/oracle-vm/nginx-privatools.conf > /tmp/nginx-privatools.v2.6.1.conf
+scp deploy/oracle-vm/nginx-privatools.conf /tmp/nginx-privatools.main.conf \
+    /tmp/nginx-privatools.v2.6.1.conf priva:/tmp/
+ssh priva
+```
+
+**2. On the VM,** as `ubuntu`, paste this whole block:
+
+```bash
+bash -eu <<'RUNBOOK'
+# As ubuntu, the deploy timer's user: the deploy lock below must stay its file.
+[ "$(id -un)" = ubuntu ] || { echo "Run this as ubuntu, not as $(id -un): log in as ubuntu, or run sudo -iu ubuntu, and paste it again. Nothing was changed." >&2; exit 1; }
+# Exactly the three files step 1 copies. This block never modifies them.
+cd /tmp
+sha256sum --check --quiet <<'SUMS' || { echo "These are not the files step 1 copies. Repeat step 1. Nothing was changed." >&2; exit 1; }
+c04a89a48a54c166205d280dab19d169384b0ac216b2fc782d05abc2f7be74f6  nginx-privatools.conf
+7a1c808192f5b468e8991f7c13527a2ea18e4fded99f541bd749513e9e8d38fd  nginx-privatools.main.conf
+e0ad18f21170441d2f2867a104a4f539fc0fd9bc722986133caea0082918a379  nginx-privatools.v2.6.1.conf
+SUMS
+# No deploy may run meanwhile, and none may have left a switch of the upstream half done.
+exec 9>>/tmp/privatools-auto-deploy.lock || { echo "ubuntu cannot open the deploy lock (ls -l /tmp/privatools-auto-deploy.lock), so no deploy can either. Once no deploy runs, remove it (sudo rm /tmp/privatools-auto-deploy.lock) and run this again. Nothing was changed." >&2; exit 1; }
+flock -n 9 || { echo "A deploy is running. Run this again once it has finished. Nothing was changed." >&2; exit 1; }
+if [ -e /home/ubuntu/privatools/.privatools-deploy.switching ]; then
+  echo "A deploy left a switch of the upstream unfinished; the next deploy completes it. Run this again after that. Nothing was changed." >&2
+  exit 1
+fi
+site=/etc/nginx/sites-enabled/privatools
+src=/tmp/nginx-privatools.conf
+new=$(mktemp /tmp/nginx-privatools.install.XXXXXX)
+trap 'rm -f "$new"' EXIT
+if sudo grep -q '^include /etc/nginx/privatools-upstream.conf;$' "$site"; then
+  echo "The site routes through the privatools_app upstream: the zero-downtime cut-over has run."
+  before=/tmp/nginx-privatools.main.conf
+  cp "$src" "$new"
+  # What the rollout requires of the site: every proxy_pass through the upstream it manages.
+  grep -q 'proxy_pass http://privatools_app;' "$new" && ! grep -q 'proxy_pass http://127\.0\.0\.1:' "$new" \
+    || { echo "The new site would not proxy through the upstream. Nothing was changed." >&2; exit 1; }
+else
+  echo "The site proxies to 127.0.0.1:8000: the zero-downtime cut-over has not run, so it keeps doing that."
+  before=/tmp/nginx-privatools.v2.6.1.conf
+  sed -e '\#^include /etc/nginx/privatools-upstream.conf;$#d' \
+      -e 's#proxy_pass http://privatools_app;#proxy_pass http://127.0.0.1:8000;#' "$src" > "$new"
+fi
+if sudo cmp -s "$new" "$site"; then
+  # Installed already, perhaps by a run that stopped before nginx reloaded: finish it.
+  sudo nginx -t || { echo "nginx -t fails with this site installed, so nothing was reloaded. If the lines above name $site, put back the backup an earlier run named, as in step 4. If they name another file, fix that file, then run this again." >&2; exit 1; }
+  sudo systemctl reload nginx
+  echo "Already installed; nginx reloaded, so it serves it. Check it with step 3."
+  exit 0
+fi
+if sudo grep -q pt_cors_origin "$site"; then
+  echo "The installed site already has the API host's error pages (from a later release, or added by hand). Nothing to add; check them with step 3. Nothing was changed."
+  exit 0
+fi
+if ! sudo cmp -s "$before" "$site"; then
+  echo "The installed site differs from $before, so it has changes of its own. Nothing was changed." >&2
+  echo "Add this change to it by hand from $src: the two map blocks, and in the api.privatools.me server the four error_page lines and the four location @api_ blocks. Then sudo nginx -t, and sudo systemctl reload nginx." >&2
+  exit 1
+fi
+# nginx must accept its configuration as it is, before anything is changed.
+sudo nginx -t >/dev/null 2>&1 || { sudo nginx -t || true; echo "nginx -t fails already, before any change. Fix the file it names above, then run this again. Nothing was changed." >&2; exit 1; }
+stamp=$(date +%s)
+mkdir -p /home/ubuntu/nginx-backups
+sudo cp "$site" "/home/ubuntu/nginx-backups/privatools.$stamp.bak"
+echo "The previous site is saved as /home/ubuntu/nginx-backups/privatools.$stamp.bak"
+sudo diff -u "$site" "$new" || true
+sudo cp "$new" "$site"
+if sudo nginx -t; then
+  sudo systemctl reload nginx
+  echo "Reloaded: nginx serves the new site. The previous one is /home/ubuntu/nginx-backups/privatools.$stamp.bak"
+else
+  sudo cp "/home/ubuntu/nginx-backups/privatools.$stamp.bak" "$site"
+  sudo nginx -t || true
+  echo "nginx -t refused the new site, for the reason above. The previous one is back, and nothing was reloaded. Keep this output for whoever maintains this runbook." >&2
+  exit 1
+fi
+RUNBOOK
+```
+
+After the cut-over, the diff it prints adds 79 lines and removes 11; before
+it, 90 and 10. The added lines are the two maps, the four `error_page` lines
+and the four named locations with their comments; every removed line is one
+of the file's old apply and rollback comments, which now point here. Before
+the cut-over, 13 of the added lines and one reworded line are the comments
+#207 wrote about the upstream, which change nothing.
+
+**Run it again after a cut-over with an older release.** The cut-over's step 6
+copies the release's own site file over this one. A release older than this
+change (v2.7.1 and earlier) has no error pages, so they go. Run step 2 again
+then. If it says the files are not the ones step 1 copies (a reboot clears
+`/tmp`), repeat step 1 first.
+
+**3. Check it** from any machine. Nothing is uploaded: nginx refuses a request
+that announces more than 500 MB from its headers alone, before reading any of
+it, and the app never sees it.
+
+```bash
+for origin in https://privatools.me https://evil.example; do
+  echo "== Origin: $origin"
+  curl -s -i --http1.1 -X POST https://api.privatools.me/api/merge -H "Origin: $origin" \
+    -H 'Content-Type: application/octet-stream' -H 'Content-Length: 600000000' -H 'Expect:' \
+    --data-binary '' | grep -iE '^(HTTP|content-type|access-control|vary)|detail'
+done
+```
+
+For `https://privatools.me`: `HTTP/1.1 413`, `Content-Type: application/json`,
+`Access-Control-Allow-Origin: https://privatools.me`, `Vary: Origin`, and
+`{"detail": "This upload is too large: one request to the server can carry up
+to 500 MB."}`. For `https://evil.example`: the same status, type and detail,
+and no `Access-Control-*` or `Vary` line. Before this change both printed
+`Content-Type: text/html` and no `Access-Control-Allow-Origin`.
+
+Optionally, nginx's 503: a burst from one address runs into `limit_req` (10
+requests a second, burst 20). It holds back only your own address, for a
+second or two. `%header{}` needs curl 7.84 or later, as on current macOS.
+
+```bash
+seq 40 | xargs -P 40 -I{} curl -s -o /dev/null -H 'Origin: https://privatools.me' \
+  -w '%{http_code} %header{access-control-allow-origin} %header{content-type}\n' \
+  'https://api.privatools.me/api/health?n={}' | sort | uniq -c
+```
+
+Expect lines `200 https://privatools.me application/json` from the app and
+`503 https://privatools.me application/json` from nginx. Before this change
+the 503s read `503  text/html`. These `GET`s are not preflighted, so they show
+the header an upload's own 503 carries; an upload whose preflight is refused
+still fails as a network error (see above).
+
+nginx answers 502 only while the app is down, and 504 only after the app has
+said nothing for 300 s, so the live site cannot show either on demand. On the
+VM this prints 8, the four `error_page` lines and the four named locations
+nginx loaded:
+
+```bash
+sudo nginx -T 2>/dev/null | grep -cE 'error_page (413|502|503|504) @api_|location @api_'
+```
+
+The old stop-and-start deploy leaves a gap while it restarts the container
+(the zero-downtime rollout never does); during it, this loop prints
+`502 https://privatools.me`. It shows the answer's headers; a browser upload
+reads that 502 only with a cached preflight (see above).
+
+```bash
+while sleep 1; do curl -s -o /dev/null -H 'Origin: https://privatools.me' \
+  -w '%{http_code} %header{access-control-allow-origin}\n' https://api.privatools.me/api/health; done
+```
+
+**4. To undo it,** until the site file next changes, put back the backup the
+block named:
+
+```bash
+sudo cp /home/ubuntu/nginx-backups/privatools.STAMP.bak /etc/nginx/sites-enabled/privatools \
+  && sudo nginx -t && sudo systemctl reload nginx
+```
+
+Once the site has changed again, for example at the cut-over's step 6, that
+backup would undo the later change too. Remove the two maps, the four
+`error_page` lines and the four named locations by hand instead, then run
+`sudo nginx -t` and reload.
+
+### Rehearsed in nginx 1.18.0
+
+On 24 September 2026, in Ubuntu 22.04's own nginx package, 1.18.0, the build
+the VM reports as `nginx/1.18.0 (Ubuntu)`, with Ubuntu's `nginx.conf` and its
+default site beside this one:
+
+- `nginx -t` passed on the file as shipped, with the TLS files and the
+  upstream file standing in for the VM's.
+- A copy that differed only in listen ports, `proxy_read_timeout 3s` and a
+  stub upstream answered, for `Origin: https://privatools.me`, nginx's 413 (to
+  a request announcing 600 MB over HTTP/1.1, and to a real 510 MB upload over
+  HTTP/2), 502 (upstream down), 503 (15 of a burst of 40) and 504 (after 3 s).
+  Each came with that origin, `Vary: Origin`, HSTS and the JSON detail, also
+  for `/api/og/card.png` and `/api/report.html`. For
+  `Origin: https://evil.example` the same answers carried no
+  `Access-Control-*` header and no `Vary`. The stub's own 200 and 413 came
+  through with exactly one `Access-Control-Allow-Origin`, the stub's: 18 of 18
+  checks. The same copy made from the previous file answered all of them as
+  `text/html`, without `Access-Control-Allow-Origin`.
+- The block in step 2 ran exactly as written, in its final form, as
+  `ubuntu` through a real `sudo`, with `systemctl reload nginx` standing for
+  nginx's own reload signal. Two stub apps inside nginx answered `canonical` on 127.0.0.1:8000
+  and `interim` on 8001, so a request through the API host showed where nginx
+  routed. Each of these ran in a fresh container:
+  - **Before the cut-over** (v2.6.1's site): it installed the 8000 form, and
+    nginx's 413 became JSON with the allowed origin. Run again: "Already
+    installed", and nginx reloaded.
+  - **Then a cut-over with v2.7.1** (the upstream file on 8000, then v2.7.1's
+    site file, without the error pages), and the block again **without step
+    1**: it installed this file unchanged, which passes the rollout's own site
+    check. Run again: "Already installed".
+  - **Then a deploy switched to the interim** (upstream on 8001), and
+    v2.7.1's file came back: it installed this file, requests still reached
+    the interim, and the upstream file was untouched. Run again: "Already
+    installed", and requests still reached the interim.
+  - **A cut-over with a release that contains this change:** "Already
+    installed", twice. **The cut-over first, then the block:** installed,
+    then "Already installed".
+  - **The block before this fix, in the same sequence:** after the v2.7.1
+    cut-over with the interim serving, it installed its own edited copy of the
+    file, with `proxy_pass http://127.0.0.1:8000` and no include. Requests
+    moved from the interim to 8000, and the site failed the rollout's check.
+    The block above refuses that edited copy by its checksum and changes
+    nothing.
+  - **Refused, with nothing changed:** a hand-edited site, before and after
+    the cut-over; a run as root, which created no deploy lock either; a
+    deploy holding the lock; and a recorded unfinished switch. When
+    `nginx -t` failed on the new site (a stand-in `nginx -t` that refused
+    it), the previous site was put back and nginx was not reloaded.
+- **Interrupted, then run once more** (fix round 2, with the kill-point harness
+  of the PR's review). The install path makes 10 `sudo` calls. The block's
+  shell was killed just before and just after each one, starting before the
+  cut-over, after it, and with the interim serving: 60 runs. No killed run
+  left a configuration that fails `nginx -t`, moved traffic, or touched the
+  upstream file. After each, one more run of the block exited 0, and nginx
+  served the new site. Requests went where they had gone before, the other
+  site on the same nginx still answered, and the rollout's site check passed
+  after the cut-over. Before this fix, after a kill between installing the
+  site and reloading nginx, the next run said "Already applied" while nginx
+  served the old site. A Ctrl-C (SIGINT to the process group) and a dropped
+  session (SIGHUP), each right after the new site was copied in, both before
+  and after the cut-over, also ended with nginx serving the new site after one
+  more run.
+- **What the refusals say** (fix round 2). The block refused, changed nothing
+  and said what to do next in each of these cases: run as root or as another
+  admin user (neither created the deploy lock); a lock file `ubuntu` cannot
+  open; a deploy holding the lock; a recorded switch; step 1's files missing;
+  a hand-edited site. With a broken site elsewhere on the same nginx, it
+  refused before any change and named that site's file. With a site that
+  already has the error pages, it said so, exited 0 and changed nothing. When
+  `nginx -t` refused the new site, it put the previous site back and said so.
 
 ## Rollback
 
