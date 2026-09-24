@@ -136,7 +136,7 @@ export function UnlockUI() {
                     <LockOpen size={20} className="text-accent" strokeWidth={1.75} />
                 </div>
                 <p className="font-display text-[18px] font-semibold text-foreground tracking-[-0.02em]">{files.length ? "Add more PDFs" : "Select protected PDFs"}</p>
-                <p className="font-medium text-[11.5px] text-muted-foreground">Multiple files · single password · max {MAX_FILE_SIZE_LABEL}</p>
+                <p className="font-medium text-[11.5px] text-muted-foreground">Multiple files · single password · max {MAX_FILE_SIZE_LABEL} in total</p>
             </div>
 
             {files.length > 0 && (

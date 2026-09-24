@@ -26,11 +26,18 @@ describe("batch endpoint contracts", () => {
         const input = new File(["synthetic"], "example.file");
         const body = buildBatchForm(slug, input);
         expect(body.get(field)).toBe(value);
-        expect(body.get("file")).toBe(input);
-        expect(body.get("files")).toBe(input);
+        expect(body.getAll("file")).toEqual([input]);
+        expect(body.has("files")).toBe(false);
     });
-    it.each(["pdf-to-image", "image-converter", "rotate-pdf", "compress-pdf"])("%s keeps the endpoint's native defaults", slug => {
-        expect([...buildBatchForm(slug, new File(["x"], "input.pdf")).keys()]).toEqual(["file", "files"]);
+    it.each(["pdf-to-image", "image-converter", "rotate-pdf", "grayscale-pdf"])("%s keeps the endpoint's native defaults", slug => {
+        expect([...buildBatchForm(slug, new File(["x"], "input.pdf")).keys()]).toEqual(["file"]);
+    });
+    // Their routes read `files: list[UploadFile]`, so the one file goes as that list.
+    it.each(["compress-pdf", "strip-metadata", "remove-exif", "pdf-page-counter"])("%s sends its file once, under `files`", slug => {
+        const input = new File(["x"], "input.pdf");
+        const body = buildBatchForm(slug, input);
+        expect([...body.keys()]).toEqual(["files"]);
+        expect(body.get("files")).toBe(input);
     });
     it("supplies the explicitly entered highlight query", () => {
         expect(buildBatchForm("highlight-pdf", new File(["x"], "input.pdf"), "  weekend  ").get("query")).toBe("weekend");

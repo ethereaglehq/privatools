@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Choose your MOV files",
-      "text": "Drop or pick one or more .mov files from an iPhone, a camera or QuickTime; the queue holds up to 25. Keep each file under about 250 MB."
+      "text": "Drop or pick one or more .mov files from an iPhone, a camera or QuickTime; the queue holds up to 25. Keep each file under 500 MB."
     },
     {
       "name": "Start the conversion",
@@ -40,7 +40,7 @@
     },
     {
       "q": "What limits apply?",
-      "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg gets 180 seconds per file and the request five minutes in total, upload included, so long high-resolution clips may not finish; when that happens the page shows \"Processing failed. Please try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."
+      "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the request five minutes in total, upload included, so long high-resolution clips may not finish; when that happens the page shows \"Processing failed. Please try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."
     },
     {
       "q": "What happens to my MOV on the server?",

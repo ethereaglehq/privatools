@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select the PDF you want to mark, up to 500 MB."
+      "text": "Drop or select the PDF you want to mark, up to 500 MB. An image watermark shares that 500 MB upload with it."
     },
     {
       "name": "Choose text or an image",

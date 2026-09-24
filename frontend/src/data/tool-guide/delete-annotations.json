@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add your PDFs",
-      "text": "Drop or select one or more PDFs, up to 25 at a time and up to about 250 MB each. Each file is uploaded and cleaned separately, one after another, within a five-minute limit that includes the upload."
+      "text": "Drop or select one or more PDFs, up to 25 at a time and up to 500 MB each. Each file is uploaded and cleaned separately, one after another, within a five-minute limit that includes the upload."
     },
     {
       "name": "Delete the annotations",

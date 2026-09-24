@@ -19,7 +19,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Merge and download", "text": "Click merge. The server joins the files in the order shown and returns a single PDF."},
     ],
     "split-pdf": [
-        {"name": "Add the PDF", "text": "Drop or select the PDF you want to divide, up to about 250 MB."},
+        {"name": "Add the PDF", "text": "Drop or select the PDF you want to divide, up to 500 MB."},
         {"name": "Choose how to split", "text": "By page ranges (the default) pulls the pages you list into one new PDF. Every page gives each page its own file. Every N pages cuts the document into equal chunks of the size you set."},
         {"name": "Enter pages or a chunk size", "text": "For page ranges, type something like 1-3, 5, 7-end. For every N pages, enter the number of pages per part; the last part holds whatever remains."},
         {"name": "Split and download", "text": "Run the split. Page ranges return a single PDF; the other two modes return a ZIP with one PDF per part."},
@@ -42,7 +42,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Save the edited PDF", "text": "Click Apply changes, then download. Your additions are drawn into the page content rather than added as comments, so PDF readers show them as part of the page."},
     ],
     "sign-pdf": [
-        {"name": "Add the PDF", "text": "Drop or select the document you need to sign, up to 500 MB."},
+        {"name": "Add the PDF", "text": "Drop or select the document you need to sign. It shares one 500 MB upload with your signature image."},
         {"name": "Create your signature", "text": "Draw it with a mouse, trackpad or finger, or upload an image of your handwritten signature."},
         {"name": "Place it on the page", "text": "Choose the page and set the position and size. The fields give exact values, so a signature can line up precisely with a signature line."},
         {"name": "Apply and download", "text": "Apply the signature and save the signed PDF. The signature image becomes part of the page."},
@@ -65,7 +65,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Apply and download", "text": "Click Rotate. The server applies the rotation permanently (not just a viewer toggle) and returns the updated PDF — orientation sticks in every reader."},
     ],
     "watermark": [
-        {"name": "Add the PDF", "text": "Drop or select the PDF you want to mark, up to 500 MB."},
+        {"name": "Add the PDF", "text": "Drop or select the PDF you want to mark, up to 500 MB. An image watermark shares that 500 MB upload with it."},
         {"name": "Choose text or an image", "text": "Type a word such as CONFIDENTIAL or DRAFT, or upload an image such as a logo."},
         {"name": "Set the look", "text": "Adjust the opacity and the font size for text, or the scale for an image. A lighter watermark keeps the document readable."},
         {"name": "Pick a position", "text": "Place it in the centre, at the top or bottom, in any corner, diagonally across the page, or tiled across the whole page."},
@@ -157,7 +157,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert and download", "text": "Click Convert. The JSON is rendered into a paginated, readable PDF with proper indentation."},
     ],
     "pdf-to-word": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB. Documents created digitally, with real text rather than scanned images, convert best."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB. Documents created digitally, with real text rather than scanned images, convert best."},
         {"name": "Convert to Word", "text": "Run the conversion. The text is read page by page and each line becomes a Word paragraph, keeping font names, sizes, text colours, bold and italics where the PDF provides them."},
         {"name": "Download and review the .docx", "text": "Open the result in Word or another editor and check the layout, especially tables, columns and headers, before relying on it."},
     ],
@@ -279,7 +279,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Apply and download", "text": "Click the Redact button. The PDF and your approved strings are uploaded to the PrivaTools server, which removes the matching text with PyMuPDF redactions and returns the redacted PDF."},
     ],
     "split-in-half": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB, typically a scan where two book or magazine pages were captured on each sheet."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB, typically a scan where two book or magazine pages were captured on each sheet."},
         {"name": "Choose the cut direction", "text": "Vertical cut (the default) turns each page into its left half followed by its right half. Horizontal cut turns each page into its bottom half followed by its top half."},
         {"name": "Split and download", "text": "Run it and save the new PDF, which has twice as many pages as the original."},
     ],
@@ -300,7 +300,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Linearize and download", "text": "Click Optimize. qpdf reorganizes the file structure so the first page renders before the whole document downloads — perfect for inline embeds and CDN-hosted PDFs."},
     ],
     "split-by-text": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB that has a text layer, such as a batch of invoices or statements exported from software."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB that has a text layer, such as a batch of invoices or statements exported from software."},
         {"name": "Enter the text that starts each part", "text": "Type a word or phrase that appears on the first page of every section, for example Invoice Number or Statement Date."},
         {"name": "Choose case matching", "text": "Matching ignores capitalisation by default. Turn on case-sensitive matching when the phrase also appears in lower case elsewhere and you want only the exact form."},
         {"name": "Split and download", "text": "Run it. A new part begins at each page where the text is found, and the parts arrive in a ZIP."},
@@ -415,7 +415,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Convert and download", "text": "Run the conversion. FFmpeg re-encodes the video as H.264 and the audio as AAC in an MP4 — widely playable."},
     ],
     "avi-to-mp4": [
-        {"name": "Choose your AVI files", "text": "Drop or pick one or more .avi files; the queue holds up to 25. Keep each file under about 250 MB."},
+        {"name": "Choose your AVI files", "text": "Drop or pick one or more .avi files; the queue holds up to 25. Keep each file under 500 MB."},
         {"name": "Start the conversion", "text": "Press AVI to MP4. The files are uploaded over HTTPS and converted one at a time on the PrivaTools server."},
         {"name": "FFmpeg re-encodes to H.264", "text": "FFmpeg decodes the AVI's video, commonly DivX, Xvid, Motion JPEG or DV, and re-encodes it with x264 at CRF 23 (veryfast preset); the audio becomes AAC. The frame size and frame rate stay the same."},
         {"name": "Download the MP4", "text": "A single file downloads when it is ready as the same name with .mp4, so tape-01.avi becomes tape-01.mp4. The index is written at the front of the file (+faststart), so it can start playing online before it has fully downloaded. Several files can be saved as avi-to-mp4-results.zip."},
@@ -535,7 +535,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
 
     # ── Auto-generated content for v1.3.1 SEO coverage push ──────────────
     "add-attachment": [
-        {"name": "Upload the host PDF", "text": "Drop the PDF you want to embed a file inside (up to 500 MB)."},
+        {"name": "Upload the host PDF", "text": "Drop the PDF you want to embed a file inside. It shares one 500 MB upload with the attachment."},
         {"name": "Add the file to attach", "text": "Drop any file up to 50 MB — image, spreadsheet, .zip, even another PDF. PrivaTools embeds it without altering the visible content."},
         {"name": "Download the result", "text": "Click Attach. The output PDF has your file embedded as an attachment; readers like Acrobat show it in the Attachments panel."},
     ],
@@ -590,13 +590,13 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the cropped PDF", "text": "Click Crop. Each page's CropBox, the area a reader shows, is set inside those margins; the MediaBox is left unchanged."},
     ],
     "delete-annotations": [
-        {"name": "Add your PDFs", "text": "Drop or select one or more PDFs, up to 25 at a time and up to about 250 MB each. Each file is uploaded and cleaned separately, one after another, within a five-minute limit that includes the upload."},
+        {"name": "Add your PDFs", "text": "Drop or select one or more PDFs, up to 25 at a time and up to 500 MB each. Each file is uploaded and cleaned separately, one after another, within a five-minute limit that includes the upload."},
         {"name": "Delete the annotations", "text": "Click Delete Annotations. There are no settings: on every page, every annotation that is not a form field is removed. That covers sticky notes and their pop-ups, highlights, underlines and strike-throughs, text boxes, drawings, shapes, stamps, file-attachment icons, unapplied redaction marks and links."},
         {"name": "Know what stays", "text": "Form fields, signature fields included, stay on their pages and remain fillable. Page content, bookmarks, document properties, files attached to the document as a whole and any document JavaScript are left as they were; Fast Web View (linearization) is not kept. Run Strip Metadata afterwards to clear the author and other properties."},
         {"name": "Download the result", "text": "On privatools.me a single file downloads automatically under its own name, so contract.pdf comes back as contract.pdf; a self-hosted copy that serves its API from the page's own address can use the server's name, no_annotations.pdf, instead. Several files can be saved one by one or as delete-annotations-results.zip, where a repeated name is numbered, as in contract (2).pdf."},
     ],
     "delete-pages": [
-        {"name": "Add the PDF", "text": "Drop or select the PDF you want to trim, up to about 250 MB."},
+        {"name": "Add the PDF", "text": "Drop or select the PDF you want to trim, up to 500 MB."},
         {"name": "List the pages to remove", "text": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page."},
         {"name": "Delete and download", "text": "Run it and save the new PDF, which contains every page you did not list, in the original order."},
     ],
@@ -622,7 +622,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download as ZIP", "text": "All extracted images are bundled into a ZIP archive, named by page and order."},
     ],
     "extract-pages": [
-        {"name": "Add the PDF", "text": "Drop or select the PDF that contains the pages you need, up to about 250 MB."},
+        {"name": "Add the PDF", "text": "Drop or select the PDF that contains the pages you need, up to 500 MB."},
         {"name": "List the pages to keep", "text": "Pages are written as numbers and ranges separated by commas, such as 1-3, 5, 8-end; an open range like 4- runs to the last page."},
         {"name": "Extract and download", "text": "Run it. The pages you listed are copied into one new PDF; the original is left untouched."},
     ],
@@ -678,13 +678,13 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the n-up PDF", "text": "Use this to save paper when printing or to create thumbnail-style overviews."},
     ],
     "odt-to-pdf": [
-        {"name": "Add your ODT files", "text": "Drop or select one or more OpenDocument Text (.odt) files, up to 25 at a time and up to about 250 MB each. Templates (.ott) and flat .fodt files are turned away as an unsupported file type, so save them as .odt first; for Word files, use Office to PDF."},
+        {"name": "Add your ODT files", "text": "Drop or select one or more OpenDocument Text (.odt) files, up to 25 at a time and up to 500 MB each. Templates (.ott) and flat .fodt files are turned away as an unsupported file type, so save them as .odt first; for Word files, use Office to PDF."},
         {"name": "Convert with LibreOffice", "text": "Click ODT to PDF. There are no settings: each file is uploaded and converted on the server by LibreOffice in headless mode, one file at a time, with a fresh LibreOffice profile for every conversion."},
         {"name": "Know the default PDF settings", "text": "PrivaTools passes no export options, so LibreOffice's standard PDF export settings apply. Headings become bookmarks and comments in the document are left out. Photos may be recompressed as JPEG at quality 90, and images sharper than 300 DPI are scaled down to 300 DPI. The result is not PDF/A."},
         {"name": "Download the PDF", "text": "Each file becomes its own PDF named after it, so minutes.odt downloads as minutes.pdf. A single file downloads automatically; several can be saved one by one or together as odt-to-pdf-results.zip."},
     ],
     "organize-pages": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB. A thumbnail of every page is generated so you can see what you are rearranging."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB. A thumbnail of every page is generated so you can see what you are rearranging."},
         {"name": "Reorder the pages", "text": "Drag thumbnails into a new position, or use the move left and move right buttons for precise single steps."},
         {"name": "Remove pages you do not need", "text": "Use the remove button on any thumbnail to leave that page out of the result."},
         {"name": "Save the new PDF", "text": "Apply the changes and download the PDF with the pages in the order you arranged."},
@@ -762,7 +762,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the QR", "text": "Click Generate QR code and download the result; PNG codes also show a preview. Codes use error correction level M, which tolerates about 15% damage, or level H, about 30%, when you add a centre logo."},
     ],
     "remove-blank-pages": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB. Scanned documents from a duplex scanner, which often contain empty reverse sides, are the typical case."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB. Scanned documents from a duplex scanner, which often contain empty reverse sides, are the typical case."},
         {"name": "Set the sensitivity", "text": "The slider runs from 50 to 100 and starts at 85. It sets how much of a page has to look near-white for the page to count as blank, so higher values remove fewer pages; lower values also catch blank pages with specks, show-through or scanner noise."},
         {"name": "Remove and download", "text": "Run it and check the result. Every page judged blank is dropped and the rest keep their order; if every page looks blank, the file comes back with all its pages."},
     ],
@@ -777,7 +777,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the resized PDF", "text": "PrivaTools sets each page's size (its MediaBox) to the target and removes any crop box. The content is not scaled or moved: it stays anchored to the bottom-left corner."},
     ],
     "reverse-pdf": [
-        {"name": "Add the PDF", "text": "Drop or select a PDF up to about 250 MB."},
+        {"name": "Add the PDF", "text": "Drop or select a PDF up to 500 MB."},
         {"name": "Reverse the order", "text": "Run it. There are no options: the last page becomes the first and the first becomes the last."},
         {"name": "Download the result", "text": "Save the reversed PDF. The pages themselves are copied unchanged."},
     ],
@@ -787,7 +787,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the PDF", "text": "Click Convert. Open in any PDF viewer."},
     ],
     "sanitize-pdf": [
-        {"name": "Upload a PDF", "text": "Drop a PDF up to about 250 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."},
+        {"name": "Upload a PDF", "text": "Drop a PDF up to 500 MB. A file that needs a password to open must be unlocked first; a PDF that only restricts printing or copying keeps those restrictions."},
         {"name": "PrivaTools removes active and hidden content", "text": "It deletes document JavaScript and every action that runs by itself, apart from a move to a page when the file opens; links and buttons that launch programs, open other files, submit or import form data, or use any address other than http:, https: or mailto:, such as javascript: or file:; embedded file attachments; sound, video, rich media and 3D content; XFA form data; and anything in a layer that is switched off when the file opens. It also clears the document information fields and XMP metadata."},
         {"name": "Download the sanitized PDF", "text": "Visible layers become ordinary page content, form fields keep their values and stay fillable, and web, email and in-document links keep working. The file is rewritten without unused objects."},
     ],
@@ -797,7 +797,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the protected PDF", "text": "Anyone without the owner password is limited to the allowed operations. The PDF itself still opens without a password (use Protect PDF if you want a user password too)."},
     ],
     "split-by-bookmarks": [
-        {"name": "Add a PDF with bookmarks", "text": "Drop or select a PDF up to about 250 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."},
+        {"name": "Add a PDF with bookmarks", "text": "Drop or select a PDF up to 500 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."},
         {"name": "Split at each chapter", "text": "Run it. A new part starts at every top-level bookmark, so each chapter or section becomes its own PDF."},
         {"name": "Download the ZIP", "text": "The parts arrive together in a ZIP. Check it against the bookmark panel in your PDF reader to confirm the sections are what you expected. If the whole document comes back as one part, its bookmarks are stored in a form this tool reads as page 1; add them again with the Bookmarks tool and split that file."},
     ],
@@ -807,7 +807,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Set opacity and position", "text": "Opacity runs from 5 to 100 % (30 % by default) and fades the stamp's colour; the letters stay solid. Position: centre, top or bottom (Diagonal currently places it level across the centre as well). Pages: all, or page numbers separated by commas. Click Apply."},
     ],
     "strip-metadata": [
-        {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to about 250 MB each. Multi-file batches are supported."},
+        {"name": "Upload PDF(s)", "text": "Drop one or many PDFs up to 500 MB each. Multi-file batches are supported."},
         {"name": "PrivaTools removes all metadata", "text": "Title, Author, Subject, Keywords, Producer, Creator, Creation Date, Modified Date, all XMP fields, and any custom-defined metadata. The cleaned XMP keeps just two entries that the PDF library writes itself: a pikepdf producer tag and the time of processing."},
         {"name": "Download the clean PDF (or ZIP)", "text": "Single file → single PDF; multiple files → ZIP. Visible content is unchanged."},
     ],
@@ -842,7 +842,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the cleaned PDF", "text": "Apply the boxes and download the PDF. The regions are covered with white wherever the file is opened."},
     ],
     "add-subtitles": [
-        {"name": "Upload a video", "text": "Drop an MP4/MOV/MKV file up to 500 MB."},
+        {"name": "Upload a video", "text": "Drop an MP4/MOV/MKV file. It shares one 500 MB upload with the subtitle file."},
         {"name": "Upload an SRT subtitle file", "text": "Standard SubRip Text format with timestamps and dialogue."},
         {"name": "Add the subtitles and download", "text": "The subtitles are burned into the video pixels, so they show in every player and cannot be switched off. The result is an MP4 with H.264 video."},
     ],
@@ -1000,7 +1000,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the merged video", "text": "FFmpeg joins the clips in that order and re-encodes the result as one MP4 with H.264 video and AAC audio."},
     ],
     "video-resizer": [
-        {"name": "Add one or more videos", "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under about 250 MB."},
+        {"name": "Add one or more videos", "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under 500 MB."},
         {"name": "Pick an output height", "text": "Choose 240p, 360p, 480p, 720p (the default), 1080p or 1440p. The number is the new height in pixels; the width follows from the video's proportions and is rounded to an even number."},
         {"name": "Run the resize", "text": "Press the run button. Up to three files upload at once over HTTPS, and FFmpeg on the PrivaTools server scales each video and re-encodes it as H.264 (CRF 23, veryfast preset) with AAC audio in an MP4."},
         {"name": "Download the result", "text": "On privatools.me one video downloads as your file name with _resized.mp4, so clip.mov becomes clip_resized.mp4; a self-hosted copy that serves its API from the page's own address uses the server's name, such as video_720p.mp4. Several arrive together in media-results.zip. The index sits at the front of the MP4 (+faststart), so it can start playing online before it has fully downloaded."},
@@ -1011,7 +1011,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": "Download the frame as JPG", "text": "FFmpeg extracts the frame at that timestamp and saves it as a JPG."},
     ],
     "video-to-pdf": [
-        {"name": "Add the videos to sample", "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under about 250 MB. The preview shows how long the clip is when your browser can play it."},
+        {"name": "Add the videos to sample", "text": "Drop or pick MP4, MOV, WebM, AVI or MKV files. Keep each file under 500 MB. The preview shows how long the clip is when your browser can play it."},
         {"name": "Choose the number of frames", "text": "Set the slider anywhere from 1 to 60; the default is 12. Each frame becomes one page, so this number is the most pages the PDF can have."},
         {"name": "Create the PDF", "text": "Press the run button. Up to three files upload at once over HTTPS, and for each one FFmpeg splits the video into that many equal slices, takes a frame from about the middle of each slice and scales it to 1280 pixels wide."},
         {"name": "Download the PDF", "text": "On privatools.me one video gives a PDF named after it with _frames.pdf, so lecture.mp4 becomes lecture_frames.pdf; a self-hosted copy that serves its API from the page's own address uses the server's name, frames.pdf. Several arrive together in media-results.zip."},
@@ -1087,7 +1087,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Run the conversion. MP4 is the container Safari, iOS, Windows and most TVs expect. Because the video is re-encoded, expect a small quality loss and a different file size.'},
     ],
     "mkv-to-webm": [
-        {"name": "Choose your MKV files", "text": "Drop or pick one or more .mkv files; the queue holds up to 25. Keep each file under about 250 MB."},
+        {"name": "Choose your MKV files", "text": "Drop or pick one or more .mkv files; the queue holds up to 25. Keep each file under 500 MB."},
         {"name": "Start the conversion", "text": "Press MKV to WebM. Each file is uploaded over HTTPS and converted in turn on the PrivaTools server."},
         {"name": "FFmpeg encodes VP9 and Opus", "text": "The video is re-encoded with libvpx-vp9 at an average target of 1 Mbit/s using its realtime speed settings, and the audio as Opus. This happens even when the MKV already holds VP9 or Opus. The frame size and frame rate are not changed."},
         {"name": "Download the WebM", "text": "A single file downloads when it is ready, named after your MKV with a .webm extension, so holiday.mkv becomes holiday.webm. Several files can be saved one by one or together as mkv-to-webm-results.zip."},
@@ -1098,7 +1098,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Run the conversion. Frames are sampled and mapped to a 256-colour palette. Expect the GIF to be considerably larger than the video — use MP4 or WebM if you can, and GIF only where autoplay everywhere matters more than size.'},
     ],
     "mov-to-mkv": [
-        {"name": "Choose your MOV files", "text": "Drop or pick one or more .mov files from an iPhone, a camera or QuickTime; the queue holds up to 25. Keep each file under about 250 MB."},
+        {"name": "Choose your MOV files", "text": "Drop or pick one or more .mov files from an iPhone, a camera or QuickTime; the queue holds up to 25. Keep each file under 500 MB."},
         {"name": "Start the conversion", "text": "Press MOV to MKV. The files are uploaded over HTTPS and converted one after another on the PrivaTools server."},
         {"name": "FFmpeg re-encodes into Matroska", "text": "The video is re-encoded with x264 at CRF 23 (veryfast preset) and the audio as AAC, then written to an MKV. A MOV that already holds H.264 is re-encoded too, not remuxed. Portrait phone clips come out upright, with the rotation applied to the frames."},
         {"name": "Download the MKV", "text": "A single file downloads when it is ready, keeping its name with an .mkv extension, so IMG_0421.mov becomes IMG_0421.mkv. Several files can be saved one by one or together as mov-to-mkv-results.zip."},
@@ -1124,7 +1124,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
         {"name": 'Convert and download', "text": 'Run the conversion. Frames are reduced to a 256-colour palette. GIF trades size and colour depth for the ability to autoplay in email and old chat clients.'},
     ],
     "webm-to-mov": [
-        {"name": "Choose your WebM files", "text": "Drop or pick one or more .webm files; the queue holds up to 25. Keep each file under about 250 MB."},
+        {"name": "Choose your WebM files", "text": "Drop or pick one or more .webm files; the queue holds up to 25. Keep each file under 500 MB."},
         {"name": "Start the conversion", "text": "Press WebM to MOV. The files are uploaded over HTTPS and converted one at a time on the PrivaTools server, and the progress bar shows the upload before encoding starts."},
         {"name": "FFmpeg re-encodes to H.264", "text": "Whatever the WebM holds, usually VP8 or VP9 video with Vorbis or Opus audio, FFmpeg re-encodes the video with x264 at CRF 23 (veryfast preset) and the audio as AAC. The frame size and frame rate stay as they are."},
         {"name": "Download the MOV", "text": "A single file downloads when it is ready, keeping your file name with a .mov extension, so screen-capture.webm becomes screen-capture.mov. The MOV is written with its index at the front (+faststart). Several files can be saved one by one or together as webm-to-mov-results.zip."},
@@ -1726,7 +1726,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Does it fix old-video problems like interlacing?", "a": "No. No deinterlacing, cropping or clean-up filter is applied, so the combing lines of an interlaced capture, such as many DV camcorder transfers, can remain. The picture is re-encoded as it is, at its original size and frame rate."},
         {"q": "What happens to the audio?", "a": "FFmpeg keeps one audio track, the one flagged as default or else the one with the most channels, and re-encodes it as AAC at FFmpeg's default bitrate; other audio tracks are dropped. An AVI without sound converts to a silent MP4."},
         {"q": "Why did my AVI fail to convert?", "a": "The page shows \"Processing failed. Please try again.\" when FFmpeg stops with an error. Typical causes are a truncated or damaged file, a codec FFmpeg cannot decode, a frame with an odd width or height (x264 needs even dimensions here), and encoding that runs past the 180-second limit."},
-        {"q": "What limits apply?", "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg has 180 seconds per file, and the request has five minutes overall, upload included. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so a large batch may need a retry after \"Slow down — we're rate-limiting requests.\""},
+        {"q": "What limits apply?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg has 180 seconds per file, and the request has five minutes overall, upload included. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so a large batch may need a retry after \"Slow down — we're rate-limiting requests.\""},
         {"q": "What happens to my AVI on the server?", "a": "It is uploaded over HTTPS and converted with FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes the AVI and the MP4 after your download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."},
     ],
     "webm-to-mp4": [
@@ -1832,7 +1832,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "How much smaller will the file be?", "a": "Smaller by roughly the size of the audio, which depends on its bitrate and length; the video portion is unchanged. A clip with a short or low-bitrate soundtrack barely shrinks."},
         {"q": "Can I replace the sound with a silent track?", "a": "No. The audio is removed entirely rather than replaced with silence. A video without an audio track simply plays without sound."},
         {"q": "What if my file has no audio, or no video?", "a": "A file without sound is still processed and comes back as a copy of the video. A file without a video stream, such as an audio-only recording saved with a video extension, fails with \"Processing failed. Please try again.\""},
-        {"q": "What limits apply?", "a": "Keep each file under 200 MB. From 200 MB to about 250 MB the server refuses it with \"File is too big for the server. Try compressing it first.\" Above about 250 MB the request is turned away before it reaches the app, because this page currently includes each file in the upload twice and uploads are capped at 500 MB, so the page reports \"Couldn't reach the server. Check your connection and try again.\" A file over 500 MB is not added to the queue. FFmpeg has 180 seconds per file, after which the page says the server took too long, and the route is rate-limited at 5 requests a minute per IP address. Copying a stream needs no encoding, so it is much quicker than a conversion."},
+        {"q": "What limits apply?", "a": "Keep each file under 200 MB. From 200 MB to 500 MB the server refuses it with \"File is too big for the server. Try compressing it first.\" A file over 500 MB is not added to the queue. FFmpeg has 180 seconds per file, after which the page says the server took too long, and the route is rate-limited at 5 requests a minute per IP address. Copying a stream needs no encoding, so it is much quicker than a conversion."},
         {"q": "What happens to my video on the server?", "a": "It is uploaded over HTTPS and processed by FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes the original and the muted copy after your download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."},
     ],
     "reverse-video": [
@@ -2042,7 +2042,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Do macros run during the conversion?", "a": "No. LibreOffice opens a file for conversion without permission to run macros, and PrivaTools passes no setting that changes this, so nothing a macro would add or change on opening appears in the PDF."},
         {"q": "Are comments kept?", "a": "No. Comments in the document are left out of the PDF. PrivaTools passes no export options, so LibreOffice's default export settings decide, and those leave comments out; the page has no setting to include them."},
         {"q": "Can I convert a password-protected ODT?", "a": "No. No password is passed to LibreOffice, so it cannot open the file, no PDF is produced and the page reports \"Processing failed. Please try again.\" Save a copy without the password in LibreOffice and convert that."},
-        {"q": "How large a document can I convert, and how long can it take?", "a": "Up to about 250 MB per file. Each conversion has two minutes; one that runs longer is stopped and the page reports \"The server took too long. Try a smaller file or try again.\" The converter also accepts up to five files a minute from one IP address, so in a longer queue some files can fail with a rate-limit message; wait a minute and click Retry."},
+        {"q": "How large a document can I convert, and how long can it take?", "a": "Up to 500 MB per file. Each conversion has two minutes; one that runs longer is stopped and the page reports \"The server took too long. Try a smaller file or try again.\" The converter also accepts up to five files a minute from one IP address, so in a longer queue some files can fail with a rate-limit message; wait a minute and click Retry."},
         {"q": "What happens to my document after I upload it?", "a": "It is uploaded over HTTPS and converted on the PrivaTools server in isolated temporary per-request storage, by LibreOffice running there rather than a third-party service. LibreOffice works on a temporary copy with its own temporary profile, both cleared when the conversion ends. Response cleanup removes the upload and the PDF after your download is sent, and a background sweep clears anything an interrupted request leaves behind. Nothing is added to an account or file library."},
     ],
     "organize-pages": [
@@ -2409,7 +2409,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "Can it make a video larger?", "a": "Yes. Nothing stops a preset above the source height, so a 640×360 clip at 1080p becomes 1920×1080. Enlarging cannot add detail that was never recorded; it only makes the file bigger. To save space, pick a preset below the original height."},
         {"q": "Does resizing change anything else?", "a": "The frame rate stays the same. The video is always re-encoded, even at its current height, and the audio is re-encoded as AAC. One audio track is kept, the default one or else the one with the most channels, and subtitle tracks are dropped, because FFmpeg adds none to an MP4 automatically."},
         {"q": "Can I crop or change the aspect ratio?", "a": "No. The resizer always keeps the video's proportions and has no crop or padding option. To make a file smaller without changing its resolution, use Compress Video instead."},
-        {"q": "What limits apply?", "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg gets 180 seconds per video and the request five minutes, upload included, so long clips at 1080p or 1440p may not finish. The resize route is rate-limited at 5 requests a minute per IP address. A file that fails shows \"Processing failed. Please try again.\" and can be retried from the list."},
+        {"q": "What limits apply?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per video and the request five minutes, upload included, so long clips at 1080p or 1440p may not finish. The resize route is rate-limited at 5 requests a minute per IP address. A file that fails shows \"Processing failed. Please try again.\" and can be retried from the list."},
         {"q": "What happens to my videos on the server?", "a": "They are uploaded over HTTPS and resized by FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes each original and its resized copy after the download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."},
     ],
     "video-thumbnail": [
@@ -2423,7 +2423,7 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": "What if I ask for more frames than the clip has?", "a": "Frames repeat rather than the job failing: a one-second clip with 10 frames turned into 60 pages shows each frame six times. Choose fewer frames for very short clips."},
         {"q": "Why do all my pages show the first second?", "a": "The spacing is worked out from the duration recorded in the file. When a file records none, as some WebM recordings made in a browser do, the tool assumes one second, so every page comes from the opening second. Converting the file first, for example with WebM to MP4, writes a proper duration."},
         {"q": "Why did a long video fail?", "a": "FFmpeg decodes the whole video to pick the frames and gets 180 seconds per file, and the request, upload included, has five minutes. A long or high-resolution file can run out of time and show \"Processing failed. Please try again.\" Cut the part you need with Trim Media, or shrink it with Video Resizer, and try again."},
-        {"q": "What other limits apply?", "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. The route is rate-limited at 5 requests a minute per IP address. A file without a video stream, such as an audio-only recording saved as .mp4, cannot be turned into pages and fails with \"Processing failed. Please try again.\""},
+        {"q": "What other limits apply?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. The route is rate-limited at 5 requests a minute per IP address. A file without a video stream, such as an audio-only recording saved as .mp4, cannot be turned into pages and fails with \"Processing failed. Please try again.\""},
         {"q": "What is a frames PDF useful for?", "a": "Storyboards, reviewing footage without playing it, notes from a recorded lecture, or sending a preview to someone who only opens PDFs. For a single still, Video Thumbnail saves one frame as a JPG instead."},
         {"q": "What happens to my video on the server?", "a": "It is uploaded over HTTPS and processed with FFmpeg and a PDF library on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. The extracted frames are deleted once the PDF is built; response cleanup removes the video and the PDF after your download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."},
     ],
@@ -2628,7 +2628,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
         {"q": "Which audio and subtitle tracks are kept?", "a": "At most one of each. FFmpeg picks the audio track flagged as default, or else the one with the most channels, and re-encodes it as Opus at FFmpeg's default bitrate. One text subtitle track, such as SRT or ASS, is converted to WebVTT; image-based subtitles are left out. The title and language tags carry over, while the other audio tracks and any attached fonts are dropped."},
         {"q": "Why does an MKV with 5.1 surround sound fail?", "a": "FFmpeg's Opus encoder accepts six-channel audio only in the layout FFmpeg calls \"5.1\", with rear surrounds. Most 5.1 AC-3, E-AC-3 and DTS tracks decode as \"5.1(side)\", which it rejects, and the page then shows \"Processing failed. Please try again.\" Stereo, mono and AAC 5.1 tracks convert normally."},
         {"q": "How long a video can I convert?", "a": "Clips rather than feature films. FFmpeg is stopped after 180 seconds per file and the whole request, upload included, has five minutes, while every frame has to be re-encoded. If a long file fails, cut it into parts with Trim Media and convert those."},
-        {"q": "Are there other limits?", "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a big batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them from the list."},
+        {"q": "Are there other limits?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a big batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them from the list."},
         {"q": "What happens to my MKV on the server?", "a": "It is uploaded over HTTPS and converted with FFmpeg on the PrivaTools server in isolated temporary per-request storage, not sent to a third-party service. Response cleanup removes the MKV and the WebM after your download is sent, and a background sweep every five minutes clears leftovers older than ten minutes."},
     ],
     "mp4-to-avi": [
@@ -2648,7 +2648,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
         {"q": "Will a transparent WebM stay transparent?", "a": "No. The H.264 video this tool writes has no alpha channel, so a VP8 or VP9 WebM with transparency loses it in the MOV."},
         {"q": "Why won't the MOV play on some devices?", "a": "The command does not change the pixel format, so a 10-bit VP9 WebM (profile 2, used for HDR) becomes 10-bit H.264 (High 10), which many hardware players cannot decode. An 8-bit WebM, the usual kind, gives ordinary 8-bit H.264."},
         {"q": "Why did my conversion fail?", "a": "The page shows \"Processing failed. Please try again.\" when FFmpeg stops with an error. Common causes are a damaged or incomplete file, a frame with an odd width or height, which x264 cannot encode here (a recording of a single window can have one), and encoding that runs past the 180-second limit. Video Resizer always outputs an even width and height, and QuickTime opens its MP4 files."},
-        {"q": "How large and how long can the WebM be?", "a": "Keep each file under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg gets 180 seconds per file and the whole request, upload included, five minutes, so long or high-resolution recordings may not finish; cut them with Trim Media first. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a large batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them."},
+        {"q": "How large and how long can the WebM be?", "a": "Keep each file under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the whole request, upload included, five minutes, so long or high-resolution recordings may not finish; cut them with Trim Media first. The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters, so in a large batch some files may fail with \"Slow down — we're rate-limiting requests.\" Wait a minute and retry them."},
         {"q": "What happens to my WebM on the server?", "a": "It is uploaded over HTTPS and converted by FFmpeg on the PrivaTools server in isolated temporary per-request storage, not by a third-party service. Response cleanup removes the WebM and the MOV after your download is sent, and a background sweep every five minutes clears anything older than ten minutes that an interrupted request left behind."},
     ],
     "mov-to-mkv": [
@@ -2657,7 +2657,7 @@ _ALIAS_FAQ_OVERRIDES: dict[str, list[dict[str, str]]] = {
         {"q": "Which tracks end up in the MKV?", "a": "One video track, at most one audio track and at most one subtitle track. With several audio tracks, FFmpeg keeps the one flagged as default, or else the one with the most channels. A text subtitle track is converted to ASS. Timecode and other data tracks are not copied."},
         {"q": "Is my iPhone's location copied into the MKV?", "a": "It can be. The command does not strip metadata, so container tags such as the title and, on iPhone clips, the camera make, model and location are copied into the MKV as Matroska tags. Check the tags before you share the file if that matters."},
         {"q": "Why won't the MKV play on my TV or phone?", "a": "Often it is the pixel format, which the command leaves as it is. A 10-bit source, such as HDR video from a recent iPhone, becomes 10-bit H.264 (High 10), and an RGB screen recording becomes 4:4:4 H.264; many hardware players decode only 8-bit 4:2:0 H.264. Some devices do not open MKV files at all."},
-        {"q": "What limits apply?", "a": "Each file must be under about 250 MB, because the upload request is capped at 500 MB, and this page currently includes each file in it twice. FFmpeg gets 180 seconds per file and the request five minutes in total, upload included, so long high-resolution clips may not finish; when that happens the page shows \"Processing failed. Please try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."},
+        {"q": "What limits apply?", "a": "Each file must be under 500 MB, since each one travels in its own upload request and requests are capped at 500 MB. FFmpeg gets 180 seconds per file and the request five minutes in total, upload included, so long high-resolution clips may not finish; when that happens the page shows \"Processing failed. Please try again.\" The conversion route is rate-limited at 5 requests a minute per IP address, a budget shared with the site's other video format converters."},
         {"q": "What happens to my MOV on the server?", "a": "It is uploaded over HTTPS and converted by FFmpeg on the PrivaTools server in isolated temporary per-request storage, rather than by a third-party service. Response cleanup removes the MOV and the MKV after your download is sent, and a background sweep every five minutes clears anything older than ten minutes left by an interrupted request."},
     ],
     # ── Video → GIF ────────────────────────────────────────────────────

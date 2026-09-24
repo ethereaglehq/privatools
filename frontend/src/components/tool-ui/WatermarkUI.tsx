@@ -126,7 +126,6 @@ export function WatermarkUI() {
         const res = await postFormData("/watermark", () => {
             const fd = new FormData();
             fd.append("file", file);
-            fd.append("files", file);
             fd.append("opacity", String(opacity));
             fd.append("position", position);
             if (watermarkImage) {

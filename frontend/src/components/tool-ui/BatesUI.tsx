@@ -277,7 +277,7 @@ export function BatesUI() {
                     {proc.entries.length ? "Add more PDFs" : "Select PDFs to Bates-stamp"}
                 </p>
                 <p className="font-medium text-[11.5px] text-muted-foreground">
-                    Multi-file OK · each starts at {sample} · max {MAX_FILE_SIZE_LABEL} each
+                    Multi-file OK · each starts at {sample} · max {MAX_FILE_SIZE_LABEL} in total
                 </p>
             </div>
 

@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add the PDF",
-      "text": "Drop or select a PDF up to about 250 MB. Documents created digitally, with real text rather than scanned images, convert best."
+      "text": "Drop or select a PDF up to 500 MB. Documents created digitally, with real text rather than scanned images, convert best."
     },
     {
       "name": "Convert to Word",

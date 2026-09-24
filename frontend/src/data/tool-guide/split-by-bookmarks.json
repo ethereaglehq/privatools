@@ -2,7 +2,7 @@
   "howto": [
     {
       "name": "Add a PDF with bookmarks",
-      "text": "Drop or select a PDF up to about 250 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."
+      "text": "Drop or select a PDF up to 500 MB that has a bookmark outline, such as a report or book exported with chapter bookmarks."
     },
     {
       "name": "Split at each chapter",
