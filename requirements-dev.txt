@@ -1582,9 +1582,9 @@ referencing==0.37.0 \
     # via
     #   jsonschema
     #   jsonschema-specifications
-rembg==2.0.84 \
-    --hash=sha256:3f27854a35b2e65aa74cc144040423f701a1a7bf8031359e2fb7a5e00ec355fe \
-    --hash=sha256:f180a7443c8552d1d45b15464a8266f6b585ec39fbeb6883899da8037bbeef0b
+rembg==2.0.85 \
+    --hash=sha256:3fedbf2a3efa949c33b5c8be172fd03d98347d96cb3fda8e719041c8690d13cd \
+    --hash=sha256:9642672c3e879d576d0270ccfeada3d1c75585b9c78a7970d53a5c6874c0c1f2
     # via -r requirements.in
 reportlab==5.0.1 \
     --hash=sha256:1c36e6bb0e71780c72331eba60da7f602e8d4389a8723825af71342e49d791e8 \
