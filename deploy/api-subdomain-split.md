@@ -86,16 +86,17 @@ talking to the grey api host, so there's never a moment where a proxied apex
    propagated or an HTTP-01 timeout — re-check `dig +short api.privatools.me`,
    wait, and re-run certbot.
 
-3. **Deploy the nginx config** (now contains the api vhost) and reload. The
-   `&&` chain only reloads if `nginx -t` passes, so a config error leaves the
-   *running* nginx untouched; the backup lets you restore the sites file:
-   ```bash
-   scp deploy/oracle-vm/nginx-privatools.conf ubuntu@140.245.15.140:/tmp/
-   ssh ubuntu@140.245.15.140 'sudo cp /etc/nginx/sites-enabled/privatools \
-       /home/ubuntu/nginx-backups/privatools.$(date +%s).bak && \
-     sudo cp /tmp/nginx-privatools.conf /etc/nginx/sites-enabled/privatools && \
-     sudo nginx -t && sudo systemctl reload nginx'
-   ```
+3. **Deploy the nginx config** (now contains the api vhost) and reload.
+   *Historical: do not repeat this step as it was written.* It copied the
+   site file over the installed one, then ran `nginx -t` and reloaded; a file
+   that failed the test stayed in place. Today's file also includes the
+   upstream file of the zero-downtime deploys, which a host without it does
+   not have. Install today's file with a runbook instead. The zero-downtime
+   cut-over is in [README](README.md#production-rollout-runbook), step 6. The
+   API host's error pages are in
+   [nginx's own error answers on the API host](#nginxs-own-error-answers-on-the-api-host-added-24-september-2026)
+   below. Each backs up the site, tests it, and puts the backup back if the
+   test fails.
    Verify: `curl -s https://api.privatools.me/api/health` → JSON health;
    `curl -so /dev/null -w '%{http_code}\n' https://api.privatools.me/` → `404`.
 
@@ -181,15 +182,24 @@ What it does, and what it never does:
   not, it installs the same file with `proxy_pass http://127.0.0.1:8000` and
   no upstream include, as that site has.
 - It never writes the upstream file, so it never moves traffic between 8000
-  and 8001. It refuses to run as root, which would create the deploy lock the
-  timer then cannot open; while a deploy holds that lock; and while a deploy
-  has left a switch of the upstream unfinished
-  (`/home/ubuntu/privatools/.privatools-deploy.switching`).
-- It changes nothing if the installed site already has this change, or is not
-  the file this change was written against: main's before this change
-  (`c39b151`, which v2.7.1 also ships), or v2.6.1's before the cut-over.
-- It reloads nginx only after `nginx -t` passes, and puts the previous site
-  back if the test fails.
+  and 8001. It runs only as `ubuntu`, the deploy timer's user, because
+  another user would create a deploy lock the timer cannot open. It refuses
+  while a deploy holds that lock, and while a deploy has left a switch of the
+  upstream unfinished (`/home/ubuntu/privatools/.privatools-deploy.switching`).
+- It leaves the installed site as it is if it already has the error pages:
+  this change, which it then only tests and reloads, or a later release. It
+  changes nothing if the site is not the file this change was written
+  against: main's before this change (`c39b151`, which v2.7.1 also ships), or
+  v2.6.1's before the cut-over. It also changes nothing while `nginx -t`
+  already fails, before any change, for instance because of another site.
+- It prints the backup's name as soon as it has saved the previous site. It
+  reloads nginx only after `nginx -t` passes, and puts the previous site back
+  if the test fails.
+- If a run stops between installing the site and reloading nginx (Ctrl-C, a
+  dropped SSH session), nginx still serves the old site. Running the block
+  again finds the site installed, tests it and reloads nginx, so one more run
+  always finishes the job.
+- Every refusal says what to do next.
 
 **1. On your Mac,** in the repository at a `main` that contains this change
 (run `git fetch --tags` first):
@@ -206,8 +216,8 @@ ssh priva
 
 ```bash
 bash -eu <<'RUNBOOK'
-# As ubuntu: root would create the deploy lock below, which the timer then cannot open.
-[ "$(id -u)" != 0 ] || { echo "Run this as ubuntu, not as root. Nothing was changed." >&2; exit 1; }
+# As ubuntu, the deploy timer's user: the deploy lock below must stay its file.
+[ "$(id -un)" = ubuntu ] || { echo "Run this as ubuntu, not as $(id -un): log in as ubuntu, or run sudo -iu ubuntu, and paste it again. Nothing was changed." >&2; exit 1; }
 # Exactly the three files step 1 copies. This block never modifies them.
 cd /tmp
 sha256sum --check --quiet <<'SUMS' || { echo "These are not the files step 1 copies. Repeat step 1. Nothing was changed." >&2; exit 1; }
@@ -216,7 +226,7 @@ c04a89a48a54c166205d280dab19d169384b0ac216b2fc782d05abc2f7be74f6  nginx-privatoo
 e0ad18f21170441d2f2867a104a4f539fc0fd9bc722986133caea0082918a379  nginx-privatools.v2.6.1.conf
 SUMS
 # No deploy may run meanwhile, and none may have left a switch of the upstream half done.
-exec 9>>/tmp/privatools-auto-deploy.lock
+exec 9>>/tmp/privatools-auto-deploy.lock || { echo "ubuntu cannot open the deploy lock (ls -l /tmp/privatools-auto-deploy.lock), so no deploy can either. Once no deploy runs, remove it (sudo rm /tmp/privatools-auto-deploy.lock) and run this again. Nothing was changed." >&2; exit 1; }
 flock -n 9 || { echo "A deploy is running. Run this again once it has finished. Nothing was changed." >&2; exit 1; }
 if [ -e /home/ubuntu/privatools/.privatools-deploy.switching ]; then
   echo "A deploy left a switch of the upstream unfinished; the next deploy completes it. Run this again after that. Nothing was changed." >&2
@@ -240,26 +250,36 @@ else
       -e 's#proxy_pass http://privatools_app;#proxy_pass http://127.0.0.1:8000;#' "$src" > "$new"
 fi
 if sudo cmp -s "$new" "$site"; then
-  echo "Already applied. Nothing to do."
+  # Installed already, perhaps by a run that stopped before nginx reloaded: finish it.
+  sudo nginx -t || { echo "nginx -t fails with this site installed, so nothing was reloaded. If the lines above name $site, put back the backup an earlier run named, as in step 4. If they name another file, fix that file, then run this again." >&2; exit 1; }
+  sudo systemctl reload nginx
+  echo "Already installed; nginx reloaded, so it serves it. Check it with step 3."
+  exit 0
+fi
+if sudo grep -q pt_cors_origin "$site"; then
+  echo "The installed site already has the API host's error pages (from a later release, or added by hand). Nothing to add; check them with step 3. Nothing was changed."
   exit 0
 fi
 if ! sudo cmp -s "$before" "$site"; then
   echo "The installed site differs from $before, so it has changes of its own. Nothing was changed." >&2
-  echo "Add the two maps and the API host's error pages from $src to it by hand." >&2
+  echo "Add this change to it by hand from $src: the two map blocks, and in the api.privatools.me server the four error_page lines and the four location @api_ blocks. Then sudo nginx -t, and sudo systemctl reload nginx." >&2
   exit 1
 fi
+# nginx must accept its configuration as it is, before anything is changed.
+sudo nginx -t >/dev/null 2>&1 || { sudo nginx -t || true; echo "nginx -t fails already, before any change. Fix the file it names above, then run this again. Nothing was changed." >&2; exit 1; }
 stamp=$(date +%s)
 mkdir -p /home/ubuntu/nginx-backups
 sudo cp "$site" "/home/ubuntu/nginx-backups/privatools.$stamp.bak"
+echo "The previous site is saved as /home/ubuntu/nginx-backups/privatools.$stamp.bak"
 sudo diff -u "$site" "$new" || true
 sudo cp "$new" "$site"
 if sudo nginx -t; then
   sudo systemctl reload nginx
-  echo "Reloaded. The previous site is /home/ubuntu/nginx-backups/privatools.$stamp.bak"
+  echo "Reloaded: nginx serves the new site. The previous one is /home/ubuntu/nginx-backups/privatools.$stamp.bak"
 else
   sudo cp "/home/ubuntu/nginx-backups/privatools.$stamp.bak" "$site"
-  sudo nginx -t
-  echo "nginx -t refused the new site. The previous one is back; nothing was reloaded." >&2
+  sudo nginx -t || true
+  echo "nginx -t refused the new site, for the reason above. The previous one is back, and nothing was reloaded. Keep this output for whoever maintains this runbook." >&2
   exit 1
 fi
 RUNBOOK
@@ -365,25 +385,25 @@ default site beside this one:
   through with exactly one `Access-Control-Allow-Origin`, the stub's: 18 of 18
   checks. The same copy made from the previous file answered all of them as
   `text/html`, without `Access-Control-Allow-Origin`.
-- The block in step 2 ran exactly as written, as `ubuntu` through a real
-  `sudo`, with `systemctl reload nginx` standing for nginx's own reload
-  signal. Two stub apps inside nginx answered `canonical` on 127.0.0.1:8000
+- The block in step 2 ran exactly as written, in its final form, as
+  `ubuntu` through a real `sudo`, with `systemctl reload nginx` standing for
+  nginx's own reload signal. Two stub apps inside nginx answered `canonical` on 127.0.0.1:8000
   and `interim` on 8001, so a request through the API host showed where nginx
   routed. Each of these ran in a fresh container:
   - **Before the cut-over** (v2.6.1's site): it installed the 8000 form, and
     nginx's 413 became JSON with the allowed origin. Run again: "Already
-    applied".
+    installed", and nginx reloaded.
   - **Then a cut-over with v2.7.1** (the upstream file on 8000, then v2.7.1's
     site file, without the error pages), and the block again **without step
     1**: it installed this file unchanged, which passes the rollout's own site
-    check. Run again: "Already applied".
+    check. Run again: "Already installed".
   - **Then a deploy switched to the interim** (upstream on 8001), and
     v2.7.1's file came back: it installed this file, requests still reached
     the interim, and the upstream file was untouched. Run again: "Already
-    applied".
+    installed", and requests still reached the interim.
   - **A cut-over with a release that contains this change:** "Already
-    applied", twice. **The cut-over first, then the block:** installed, then
-    "Already applied".
+    installed", twice. **The cut-over first, then the block:** installed,
+    then "Already installed".
   - **The block before this fix, in the same sequence:** after the v2.7.1
     cut-over with the interim serving, it installed its own edited copy of the
     file, with `proxy_pass http://127.0.0.1:8000` and no include. Requests
@@ -395,6 +415,28 @@ default site beside this one:
     deploy holding the lock; and a recorded unfinished switch. When
     `nginx -t` failed on the new site (a stand-in `nginx -t` that refused
     it), the previous site was put back and nginx was not reloaded.
+- **Interrupted, then run once more** (fix round 2, with the kill-point harness
+  of the PR's review). The install path makes 10 `sudo` calls. The block's
+  shell was killed just before and just after each one, starting before the
+  cut-over, after it, and with the interim serving: 60 runs. No killed run
+  left a configuration that fails `nginx -t`, moved traffic, or touched the
+  upstream file. After each, one more run of the block exited 0, and nginx
+  served the new site. Requests went where they had gone before, the other
+  site on the same nginx still answered, and the rollout's site check passed
+  after the cut-over. Before this fix, after a kill between installing the
+  site and reloading nginx, the next run said "Already applied" while nginx
+  served the old site. A Ctrl-C (SIGINT to the process group) and a dropped
+  session (SIGHUP), each right after the new site was copied in, both before
+  and after the cut-over, also ended with nginx serving the new site after one
+  more run.
+- **What the refusals say** (fix round 2). The block refused, changed nothing
+  and said what to do next in each of these cases: run as root or as another
+  admin user (neither created the deploy lock); a lock file `ubuntu` cannot
+  open; a deploy holding the lock; a recorded switch; step 1's files missing;
+  a hand-edited site. With a broken site elsewhere on the same nginx, it
+  refused before any change and named that site's file. With a site that
+  already has the error pages, it said so, exited 0 and changed nothing. When
+  `nginx -t` refused the new site, it put the previous site back and said so.
 
 ## Rollback
 

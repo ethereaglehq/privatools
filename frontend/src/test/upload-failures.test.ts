@@ -10,9 +10,10 @@
  *
  * The fake network has no CORS preflight: an answer it scripts is one the
  * browser let the page read. A real upload is preflighted, and nginx answers
- * the preflight too, so while the app is down its 502 (or a limit's 503)
- * reaches an upload only when the browser still holds a preflight for that
- * endpoint; otherwise the upload fails as the network error tested below.
+ * the preflight too, so while the app is down its 502 reaches an upload only
+ * when the browser still holds a preflight for that endpoint; otherwise the
+ * upload fails as the network error tested below. A limit's 503 reaches it
+ * whenever the limit refuses the upload itself rather than its preflight.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {

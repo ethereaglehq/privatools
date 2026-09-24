@@ -150,3 +150,18 @@ def test_the_runbook_never_edits_its_input():
     block = _runbook_block()
     assert "sed -i" not in block and "> \"$src\"" not in block
     assert "sed -e" in block and "\"$src\" > \"$new\"" in block
+
+
+def test_a_run_that_finds_the_site_installed_finishes_the_job():
+    # A run stopped between installing the site and reloading nginx (Ctrl-C, a
+    # dropped SSH session) leaves the new site on disk while nginx serves the
+    # old one. The next run must test and reload, not report "already applied"
+    # (PR #282's re-review, proved with a kill at every sudo call).
+    block = _runbook_block()
+    installed = block.split('if sudo cmp -s "$new" "$site"; then\n', 1)[1].split("\nfi\n", 1)[0]
+    steps = [installed.index(step) for step in ("sudo nginx -t", "sudo systemctl reload nginx", "exit 0")]
+    assert steps == sorted(steps), "test, then reload, then exit"
+    # The backup's name is printed as soon as it exists, so an interrupted run
+    # still names what step 4 puts back.
+    backup = 'sudo cp "$site" "/home/ubuntu/nginx-backups/privatools.$stamp.bak"\n'
+    assert block.split(backup, 1)[1].startswith('echo "The previous site is saved as /home/ubuntu/nginx-backups/privatools.$stamp.bak"')
