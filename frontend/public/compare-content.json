@@ -484,11 +484,11 @@
     "slug": "adobe-acrobat",
     "name": "Adobe Acrobat",
     "title": "PrivaTools vs Adobe Acrobat: plans, free tools and editing",
-    "description": "Most of Adobe Acrobat's free online tools allow one task without signing in, and editing existing text needs a paid plan; PrivaTools is free with no account.",
+    "description": "Most Adobe Acrobat online tools allow one free transaction without signing in, and editing existing text needs a paid plan; PrivaTools is free with no account.",
     "summary": "Adobe Acrobat spans free Acrobat Reader, free online tools with limits on free use, and paid Acrobat Express, Standard, Pro and Studio plans that add, depending on the plan, AI Assistant, editing of existing text, signature requests, redaction and comparison. PrivaTools is free without an account for any tool and covers media and developer tasks too, but it cannot edit existing PDF text or run signature workflows, and it has no desktop app.",
     "category": "Desktop & teams",
     "highlights": [
-      "Most free online tools allow one task without signing in; PrivaTools has no task count.",
+      "Most free online tools allow one free transaction without signing in; PrivaTools has no transaction count, only a five-a-minute limit on heavy tools.",
       "Existing-text editing on paid plans, which PrivaTools does not offer.",
       "Certificate signatures and signature requests; PrivaTools places signature images only."
     ],
@@ -1934,7 +1934,7 @@
     "summary": "TinyWow is a broad free toolbox, now part of Jenni AI, covering PDF, image, video, file conversion and AI writing tasks without registration. Its pricing page also sells optional plans whose features include no ads, faster processing and no captcha. PrivaTools covers PDFs, images, audio, video and developer data with no paid tier, no advertising and open code, but it has no AI writing tools or video downloader.",
     "category": "Mixed file tools",
     "highlights": [
-      "AI writing tools and a TikTok video downloader, which PrivaTools does not offer.",
+      "An AI Humanizer and a TikTok video downloader, which PrivaTools does not offer.",
       "Paid plans that list no ads or captchas, against no ads and no paid tier.",
       "Uploads deleted within an hour on US servers, against cleanup after each response."
     ],
