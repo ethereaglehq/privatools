@@ -298,17 +298,17 @@ PrivaTools offers 221 tools for PDFs, images, video, audio, documents, archives,
 
 - [Compare file tools](https://privatools.me/compare): Choose by workflow, processing location, and trade-offs.
 
-- [PrivaTools and remove.bg](https://privatools.me/compare/remove-bg): Compare background-removal workflows, transparent PNG output and processing choices, with the official remove.bg migration notice and practical checks.
-- [PrivaTools and iLovePDF](https://privatools.me/compare/ilovepdf): Compare PrivaTools and iLovePDF for everyday file tasks, mobile PDF work and desktop processing, with official sources and clear tradeoffs.
-- [PrivaTools and Smallpdf](https://privatools.me/compare/smallpdf): A sourced comparison of PrivaTools and Smallpdf covering document workflows, desktop use, cloud storage and practical reasons to choose either.
-- [PrivaTools and Adobe Acrobat](https://privatools.me/compare/adobe-acrobat): Compare PrivaTools with Adobe Acrobat for PDF editing, desktop work and signature workflows using Adobe's current product documentation.
-- [PrivaTools and Sejda PDF](https://privatools.me/compare/sejda): Compare PrivaTools with Sejda Web and Desktop, including local processing, PDF editing and the tradeoffs between a browser toolbox and desktop software.
-- [PrivaTools and PDF24](https://privatools.me/compare/pdf24): A sourced look at PrivaTools, PDF24 Online Tools and PDF24 Creator, with clear distinctions between browser access and local Windows processing.
-- [PrivaTools and Foxit PDF Editor](https://privatools.me/compare/foxit): Compare PrivaTools and Foxit PDF Editor for everyday tasks, existing-text editing, cloud integrations and team document workflows.
-- [PrivaTools and LightPDF](https://privatools.me/compare/lightpdf): Compare PrivaTools and LightPDF for direct file tasks, PDF editing and AI-assisted document workflows with linked official documentation.
-- [PrivaTools and Stirling PDF](https://privatools.me/compare/stirling-pdf): Compare two self-hostable options: PrivaTools for mixed file tasks and Stirling PDF for a dedicated PDF environment with desktop and managed deployment options.
-- [PrivaTools and DocHub](https://privatools.me/compare/dochub): Compare PrivaTools and DocHub for individual file tasks, reusable forms, signature requests and Google Drive document workflows.
-- [PrivaTools and PDFescape](https://privatools.me/compare/pdfescape): Compare PrivaTools with PDFescape Online and Desktop for annotations, form fields and broader file tasks using official feature documentation.
-- [PrivaTools and Nitro PDF Pro](https://privatools.me/compare/nitro-pdf): Compare PrivaTools and Nitro PDF Pro for everyday file work, existing PDF text editing, OCR and desktop document workflows.
-- [PrivaTools and TinyWow](https://privatools.me/compare/tinywow): Compare PrivaTools and TinyWow for mixed file tasks, AI writing, processing visibility and source access without unsupported tool-count rankings.
-- [PrivaTools and ihatepdf.cv](https://privatools.me/compare/ihatepdf): Compare PrivaTools and ihatepdf.cv for local browser PDF tasks and AI document chat, distinguishing local files from text sent to a model provider.
+- [PrivaTools and remove.bg](https://privatools.me/compare/remove-bg): remove.bg's website closes on 1 December 2026 as background removal moves to Canva. Its credits, limits and API compared with PrivaTools' free remover.
+- [PrivaTools and iLovePDF](https://privatools.me/compare/ilovepdf): iLovePDF's free Basic plan limits files per task and file size, and Premium adds desktop tools and mobile access; PrivaTools is free with open code.
+- [PrivaTools and Smallpdf](https://privatools.me/compare/smallpdf): Smallpdf's free plan limits daily downloads and AI use, and Pro bundles Sign.com and a Windows app. PrivaTools is free with open code. Plans and data compared.
+- [PrivaTools and Adobe Acrobat](https://privatools.me/compare/adobe-acrobat): Most Adobe Acrobat online tools allow one free transaction without signing in, and editing existing text needs a paid plan; PrivaTools is free with no account.
+- [PrivaTools and Sejda PDF](https://privatools.me/compare/sejda): Sejda PDF limits free use to three tasks an hour and sells Web and Desktop passes; PrivaTools has no task quota. Limits, data paths and tools compared.
+- [PrivaTools and PDF24](https://privatools.me/compare/pdf24): PDF24 is free and funded by advertising, with online tools on EU servers and an offline Windows app; PrivaTools is open source. Costs and data paths compared.
+- [PrivaTools and Foxit PDF Editor](https://privatools.me/compare/foxit): Foxit PDF Editor costs from $129.99 a year, with a perpetual option and free online converters; PrivaTools is free and open source. Editing and AI compared.
+- [PrivaTools and LightPDF](https://privatools.me/compare/lightpdf): LightPDF pairs PDF tools with AI paid for in credits, and its free plan starts with sign-up; PrivaTools' document AI uses your own key or on-device models.
+- [PrivaTools and Stirling PDF](https://privatools.me/compare/stirling-pdf): Stirling PDF is an open-core PDF editor with desktop apps and paid Team plans; PrivaTools is a web toolbox whose own code is MIT-licensed. Plans compared.
+- [PrivaTools and DocHub](https://privatools.me/compare/dochub): DocHub is an online editor for signing and forms, with three free uses a month of core features; PrivaTools needs no account but has no sign requests.
+- [PrivaTools and PDFescape](https://privatools.me/compare/pdfescape): PDFescape's free online editor takes 10 MB, 100-page PDFs and stores them on US servers; PrivaTools is free and open source. Limits and storage compared.
+- [PrivaTools and Nitro PDF](https://privatools.me/compare/nitro-pdf): Nitro PDF is a paid desktop editor for Windows and Mac with a 14-day trial and free online converters; PrivaTools is free in the browser. Editing compared.
+- [PrivaTools and TinyWow](https://privatools.me/compare/tinywow): TinyWow offers free PDF, image, video and AI writing tools, with paid plans that list no ads; PrivaTools has no ads and is open source. Plans and data compared.
+- [PrivaTools and ihatepdf.cv](https://privatools.me/compare/ihatepdf): ihatepdf.cv runs most PDF tools in the browser but sends text to AI services for chat and summaries; PrivaTools mixes browser and server tools.

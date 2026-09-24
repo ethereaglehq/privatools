@@ -58,8 +58,8 @@ describe('published journal content', () => {
   });
   it('dates the remove.bg migration notice and connects a real alternative workflow', () => {
     const guide = blogPosts.find(post => post.slug === 'remove-bg-canva-alternative')!;
-    expect(guide.reviewedAt).toBe('2026-09-14');
-    expect(guide.body).toContain('gives no shutdown date');
+    expect(guide.reviewedAt).toBe('2026-09-24');
+    expect(guide.body).toContain('no longer be available from 1 December 2026');
     expect(guide.sources).toContainEqual({ label: 'remove.bg migration notice', url: 'https://www.remove.bg/faq' });
     expect(guide.body).toContain('href="/compare/remove-bg"');
     expect(guide.body).toContain('href="/tools/remove-background"');

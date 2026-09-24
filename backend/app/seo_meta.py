@@ -124,10 +124,12 @@ _STATIC_META: dict[str, tuple[str, str]] = {
         "Chain multiple PDF tools together into a processing pipeline. "
         "Compress, rotate, watermark, and more — all in one pass. Privacy-first and free.",
     ),
+    # The title matches COMPARE_DIRECTORY_TITLE in frontend/src/data/comparisons.ts,
+    # which the React page sets after hydration (test_compare_page_parity.py).
     "/compare": (
         "PrivaTools vs iLovePDF, Smallpdf & Adobe — Compared",
-        "Compare PrivaTools with iLovePDF, Smallpdf, Adobe Acrobat, Sejda, PDF24, Foxit, and LightPDF. "
-        "Review practical workflows, processing choices, tradeoffs, and source documentation.",
+        "Compare PrivaTools with iLovePDF, Smallpdf, Adobe Acrobat, Stirling PDF and other file tools: "
+        "plans, limits and where files go, from official pages.",
     ),
     "/blog": (
         "PrivaTools Blog — PDF Tool Tips, Guides & Reviews",
@@ -1767,6 +1769,88 @@ def _tool_page_body(slug: str, name: str, desc: str, registry: dict, prefix: str
     return "\n".join(parts)
 
 
+def _strings(entry: dict, field: str) -> list[str]:
+    values = entry.get(field) or []
+    return [value for value in values if isinstance(value, str) and value.strip()] if isinstance(values, list) else []
+
+
+def _comparison_body(entry: dict) -> str:
+    """The detail comparison in the order ComparePage.tsx renders it.
+
+    Every string is editorial data from frontend/src/data/comparisons.ts via
+    compare-content.json, so all of it is escaped. Competitor facts carry
+    their own official source link beside the row they support.
+    """
+    name = entry["name"]
+    parts: list[str] = []
+    if reviewed := _reviewed_date(entry):
+        parts.append(f'<p>By PrivaTools · Facts about {escape(name)} checked on <time datetime="{reviewed}">{reviewed}</time> '
+                     'against its official pages, which are listed under Sources and linked beside each row of the '
+                     'side-by-side table.</p>')
+    if summary := entry.get("summary"):
+        parts.append(f"<h2>Where each one fits</h2><p>{escape(summary)}</p>")
+    if overview := _strings(entry, "overview"):
+        parts.append(f"<h2>About {escape(name)}</h2>" + "".join(f"<p>{escape(text)}</p>" for text in overview))
+    features = [feature for feature in entry.get("features") or [] if isinstance(feature, dict)]
+    if features:
+        parts.append(f'<h2>{escape(name)} and PrivaTools side by side</h2><table><thead><tr><th scope="col">Topic</th>'
+                     f'<th scope="col">PrivaTools</th><th scope="col">{escape(name)}</th></tr></thead><tbody>')
+        for feature in features:
+            source = feature.get("sourceUrl") or ""
+            citation = f' <a href="{escape(source, quote=True)}">Source</a>' if source.startswith(("https://", "http://")) else ""
+            parts.append(f'<tr><th scope="row">{escape(feature.get("label", ""))}</th><td>{escape(feature.get("privatools", ""))}</td>'
+                         f'<td>{escape(feature.get("competitor", ""))}{citation}</td></tr>')
+        parts.append("</tbody></table>")
+    for section in entry.get("sections") or []:
+        if isinstance(section, dict) and isinstance(section.get("heading"), str):
+            parts.append(f'<h2>{escape(section["heading"])}</h2>' + "".join(f"<p>{escape(text)}</p>" for text in _strings(section, "body")))
+    for field, heading in (("chooseCompetitor", f"Choose {name} when…"),
+                           ("choosePrivaTools", "Choose PrivaTools when…"),
+                           ("tradeoffs", "Before you decide")):
+        if values := _strings(entry, field):
+            parts.append(f"<h2>{escape(heading)}</h2><ul>" + "".join(f"<li>{escape(value)}</li>" for value in values) + "</ul>")
+    links = [link for link in entry.get("relatedLinks") or []
+             if isinstance(link, dict) and isinstance(link.get("url"), str) and link["url"].startswith("/") and not link["url"].startswith("//")]
+    if links:
+        parts.append("<h2>Related PrivaTools tools and guides</h2><ul>" + "".join(
+            f'<li><a href="{escape(link["url"], quote=True)}">{escape(link.get("label") or link["url"])}</a></li>' for link in links) + "</ul>")
+    parts.append(_source_html(entry))
+    return "\n".join(part for part in parts if part)
+
+
+def _comparison_directory_body() -> str:
+    """/compare: every comparison with the points that set it apart, grouped by workflow."""
+    entries = _comparisons()
+    groups: dict[str, list[tuple[str, dict]]] = {}
+    for cslug, cdata in entries.items():
+        groups.setdefault(str(cdata.get("category") or "More comparisons"), []).append((cslug, cdata))
+    reviewed = sorted(filter(None, (_reviewed_date(cdata) for cdata in entries.values())))
+    parts = [
+        "<p>Each comparison sets PrivaTools beside one product and answers practical questions such as what it costs, "
+        "which limits apply to free and paid use, where your files are processed, whether you need an account and "
+        "which platforms it runs on. Every fact about another product comes from its own official pages. Each row of "
+        "a comparison's side-by-side table links its source, every comparison lists all the pages it used, and each "
+        "one says when to choose that product and when to choose PrivaTools.</p>",
+    ]
+    if reviewed:
+        parts.append(f'<p>Most recent check: <time datetime="{reviewed[-1]}">{reviewed[-1]}</time>.</p>')
+    for category, rows in groups.items():
+        parts.append(f"<h2>{escape(category)}</h2><ul>")
+        for cslug, cdata in sorted(rows, key=lambda row: str(row[1].get("name", row[0])).lower()):
+            points = "".join(f"<li>{escape(point)}</li>" for point in _strings(cdata, "highlights"))
+            parts.append(f'<li><a href="/compare/{escape(cslug, quote=True)}">{escape(cdata["title"])}</a>: '
+                         f'{escape(cdata.get("description", ""))}' + (f"<ul>{points}</ul>" if points else "") + "</li>")
+        parts.append("</ul>")
+    parts.append(
+        "<h2>How to read these comparisons</h2><p>We publish PrivaTools, so this is our editorial perspective. Plans, "
+        "limits, processing locations and platforms for other products come only from their official pages, checked on "
+        "the date each comparison shows; a fact we could not confirm there is left out. Prices appear in the currency "
+        "the vendor displayed to us and can differ by country. We did not benchmark speed, output quality or accuracy, "
+        "so try a representative file before moving a regular workflow.</p>"
+    )
+    return "\n".join(parts)
+
+
 def _build_ssr_content(path: str, title: str, description: str) -> str:
     """
     Build server-rendered HTML content that crawlers (including AI crawlers)
@@ -1862,30 +1946,7 @@ def _build_ssr_content(path: str, title: str, description: str) -> str:
         parts.extend([f"<h1>{escape(title)}</h1>", f"<p>{escape(description)}</p>"])
         slug = path[len("/compare/"):] if path.startswith("/compare/") else ""
         entry = _comparisons().get(slug)
-        if entry:
-            if entry.get("summary"):
-                parts.append(f'<p>{escape(entry["summary"])}</p>')
-            if reviewed := _reviewed_date(entry):
-                parts.append(f'<p>By PrivaTools · Last reviewed: <time datetime="{reviewed}">{reviewed}</time></p>')
-            for field, heading in (("choosePrivaTools", "When PrivaTools fits"),
-                                   ("chooseCompetitor", f'When {entry["name"]} fits'),
-                                   ("tradeoffs", "Tradeoffs to consider")):
-                values = entry.get(field) or []
-                if values:
-                    parts.append(f'<h2>{escape(heading)}</h2><ul>' + ''.join(f'<li>{escape(value)}</li>' for value in values) + '</ul>')
-            if entry.get("features"):
-                parts.append(f'<h2>Feature comparison</h2><table><thead><tr><th scope="col">Feature</th><th scope="col">PrivaTools</th><th scope="col">{escape(entry["name"])}</th></tr></thead><tbody>')
-                for feature in entry["features"]:
-                    source = feature.get("sourceUrl") or ""
-                    citation = f' <a href="{escape(source, quote=True)}">Source</a>' if source.startswith(("https://", "http://")) else ""
-                    parts.append(f'<tr><th scope="row">{escape(feature["label"])}</th><td>{escape(feature["privatools"])}</td><td>{escape(feature["competitor"])}{citation}</td></tr>')
-                parts.append('</tbody></table>')
-            parts.append(_source_html(entry))
-        else:
-            parts.append('<h2>All comparisons</h2><ul>')
-            for cslug, cdata in _comparisons().items():
-                parts.append(f'<li><a href="/compare/{cslug}">{escape(cdata["title"])}</a> — {escape(cdata.get("description", ""))}</li>')
-            parts.append('</ul>')
+        parts.append(_comparison_body(entry) if entry else _comparison_directory_body())
         parts.append('<p><a href="/compare">Compare file tools</a> · <a href="/tools">Browse all PrivaTools tools</a></p>')
         return "\n".join(parts)
 

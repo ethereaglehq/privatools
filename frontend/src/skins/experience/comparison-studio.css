@@ -38,6 +38,8 @@
 .cmp-product-fit { padding-left: 23px; border-left: 1px solid var(--pt-line); }
 .cmp-product-fit > span { font-size: 10px; color: var(--pt-muted); }
 .cmp-product-fit p { font-size: 12px; line-height: 1.8; margin-top: 7px; color: var(--pt-ink); }
+.cmp-product-fit ul { display: grid; gap: 6px; margin: 7px 0 0; padding: 0 0 0 15px; }
+.cmp-product-fit li { font-size: 12px; line-height: 1.7; color: var(--pt-ink); }
 .cmp-product-open { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--pt-action); }
 .cmp-product-open svg { transition: transform .2s; }
 .cmp-product-link:hover .cmp-product-open svg { transform: translate(3px,-3px); }
@@ -64,6 +66,11 @@
 .cmp-reading-rail nav a:hover { color: var(--pt-action); }
 .cmp-answer { padding-bottom: 30px; }
 .cmp-answer > p { font-size: 16px; line-height: 1.95; color: var(--pt-ink); max-width: 770px; }
+.cmp-overview, .cmp-deep { max-width: 770px; margin-top: 43px; }
+.cmp-overview h2, .cmp-deep h2 { font: 550 29px/1.3 var(--pt-display); letter-spacing: -.8px; margin: 9px 0 17px; text-wrap: balance; }
+.cmp-deep h2 { font-size: 24px; letter-spacing: -.6px; }
+.cmp-overview > p, .cmp-deep > p { font-size: 14px; line-height: 1.9; color: var(--pt-muted); margin: 0 0 14px; }
+.cmp-checked { max-width: 700px; font-size: 12px; line-height: 1.8; color: var(--pt-muted); }
 .cmp-inline-sources { display: inline; white-space: nowrap; }
 .cmp-inline-sources a { display: inline-block; font-size: 10px; color: var(--pt-action); margin-left: 4px; text-decoration: none; vertical-align: baseline; }
 .cmp-inline-sources a:hover { text-decoration: underline; }
@@ -181,6 +188,10 @@ html[data-experience=play] .cmp-sources { border-top-style: dashed; }
   .cmp-breadcrumb > span { max-width: 135px; text-align: right; }
   .cmp-answer > p { font-size: 14px; line-height: 1.85; }
   .cmp-answer { padding-bottom: 22px; }
+  .cmp-overview, .cmp-deep { margin-top: 32px; }
+  .cmp-overview h2 { font-size: 25px; }
+  .cmp-deep h2 { font-size: 22px; }
+  .cmp-overview > p, .cmp-deep > p { font-size: 13px; line-height: 1.85; }
   .cmp-choices { grid-template-columns: 1fr; gap: 17px; scroll-margin-top: 145px; }
   .cmp-choice { padding-top: 24px; }
   .cmp-choice h2 { font-size: 28px; }
