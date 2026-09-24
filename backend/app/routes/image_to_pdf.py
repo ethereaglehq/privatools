@@ -12,11 +12,10 @@ ALLOWED_IMAGE_TYPES = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".tiff", ".tif",
 # Nine tools share this route (Image, JPG, PNG, HEIC, WebP, TIFF, BMP, GIF and
 # SVG to PDF); the page copy and ImageToPdfUI state both limits.
 MAX_FILES = 100
-# The combined cap stayed at 200 MB when the count went from 50 to 100.
-# ReportLab keeps every page in memory and formats the whole file on save, so
-# a request peaks at about four times its JPEG bytes: 358 MB of phone photos
-# took +1.4 GB RSS and 124 s of CPU on the 2-core ARM VM, against a 4 GB
-# container and a 300 s timeout.
+# The combined cap stayed at 200 MB when the count went from 50 to 100. It
+# no longer has to carry the memory bound: the service writes each page as it
+# makes it, so memory follows one page. What a batch costs in CPU is bounded
+# by the service's MAX_DECODED_MEGAPIXELS, which answers 413 as well.
 MAX_TOTAL_UPLOAD_BYTES = 200 * 1024 * 1024  # 200 MB
 
 router = APIRouter()
@@ -76,8 +75,8 @@ async def image_to_pdf(
             temp_path.write_bytes(content)
             input_paths.append(str(temp_path))
 
-        # Heavy pool: a full batch can hold a core for minutes and need
-        # gigabytes (100 web-size WebPs: 216 s CPU, +2.2 GB RSS), so it shares
+        # Heavy pool: a full batch can hold a core for well over a minute
+        # (100 iPhone HEICs: about 90 s of CPU), so it shares
         # MAX_CONCURRENT_HEAVY with the other heavy tools.
         output_path = await run_bounded(image_to_pdf_service.images_to_pdf, input_paths, page_size=normalized_page_size)
         cleanup = BackgroundTask(remove_files, *input_paths, output_path)
@@ -92,8 +91,9 @@ async def image_to_pdf(
         remove_files(*to_remove)
         raise
     except ValueError as e:
-        # Image-too-large from the service. Friendly 400 with "too large"
-        # substring for frontend friendlyError().
+        # From the service: one image over its pixel cap, or a batch over the
+        # decode budget (DecodeBudgetExceeded), whose message the page shows
+        # as it is.
         to_remove = input_paths + ([output_path] if output_path else [])
         remove_files(*to_remove)
         raise HTTPException(status_code=413, detail=str(e))

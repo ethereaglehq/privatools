@@ -331,7 +331,7 @@ URL: https://privatools.me/tool/bmp-to-pdf
 
 Convert Windows BMP bitmaps into a PDF
 
-Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 100 images and 200 MB per PDF.
+Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 100 images, 200 MB and 750 megapixels per PDF.
 
 ### GIF to PDF
 

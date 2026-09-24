@@ -466,7 +466,7 @@ const _toolsRaw: Tool[] = [
   {
     slug: "bmp-to-pdf", icon: FileImage, name: "BMP to PDF",
     description: "Convert Windows BMP bitmaps into a PDF",
-    longDescription: "Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 100 images and 200 MB per PDF.",
+    longDescription: "Convert BMP to PDF online for free — turn legacy Windows bitmap images into a standard PDF document for sharing. Combine multiple BMPs into one PDF or convert each individually. Up to 100 images, 200 MB and 750 megapixels per PDF.",
     seoTitle: "Convert BMP to PDF Online – For Legacy Windows Files",
     metaDescription: "BMP to PDF turns legacy Windows bitmap images into a standard document you can share easily. Free tool, combine multiple files at once.",
     synonyms: "bitmap windows to pdf",

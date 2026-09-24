@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { ImageToPdfUI } from "./ImageToPdfUI";
-import { HeicToPdfUI } from "./NamedImageToPdfVariants";
+import { HeicToPdfUI, JpgToPdfUI, PngToPdfUI } from "./NamedImageToPdfVariants";
 import { processFilesAndDownload } from "@/lib/api";
 
 vi.mock("@/lib/file-handoff", () => ({ consumeFileHandoffs: vi.fn(async () => []) }));
@@ -112,5 +112,35 @@ describe("Image to PDF limits", { timeout: 20_000 }, () => {
         render(<HeicToPdfUI />);
         choose(photos(2, { ext: "heic" }));
         expect(screen.getByText("2 of 100 HEIC photos selected")).toBeVisible();
+    });
+});
+
+describe("Image to PDF decode budget", { timeout: 20_000 }, () => {
+    it("states it for images other than JPEG, with HEIC counting half", () => {
+        render(<ImageToPdfUI />);
+        expect(screen.getByText(/One PDF takes up to 100 images, 200 MB in total\. Images other than JPEG can add up to 750 megapixels, with HEIC photos counting half\./)).toBeVisible();
+    });
+
+    it("states each tool's own figure, and none for JPEGs, which are not decoded", () => {
+        const { unmount } = render(<PngToPdfUI />);
+        expect(screen.getByText(/One PDF takes up to 100 images, 200 MB and 750 megapixels in total\./)).toBeVisible();
+        unmount();
+        render(<HeicToPdfUI />);
+        expect(screen.getByText(/One PDF takes up to 100 images, 200 MB and 1,500 megapixels in total\./)).toBeVisible();
+        cleanup();
+        render(<JpgToPdfUI />);
+        expect(screen.getByText(/One PDF takes up to 100 images, 200 MB in total\./)).toBeVisible();
+        expect(screen.queryByText(/megapixels/)).toBeNull();
+    });
+
+    it("shows the server's refusal as it is, where the user acted", async () => {
+        const refusal = "One PDF can take up to 750 megapixels of PNG, WebP, TIFF, BMP, GIF and SVG images; these add up to 1,220.";
+        vi.mocked(processFilesAndDownload).mockRejectedValueOnce(new Error(refusal));
+        render(<ImageToPdfUI />);
+        choose(photos(3, { ext: "png" }));
+        fireEvent.click(screen.getByRole("button", { name: "Convert 3 images → PDF" }));
+
+        expect(await screen.findByRole("alert")).toHaveTextContent(refusal);
+        expect(screen.getByText("3 of 100 images selected")).toBeVisible();
     });
 });

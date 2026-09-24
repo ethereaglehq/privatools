@@ -13,10 +13,9 @@ import { consumeFileHandoffs } from "@/lib/file-handoff";
 import { emitToolRun } from "@/lib/toolRun";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 import { FileIntake, StudioLayout, StudioProgress, StudioResult, StudioFile } from "@/skins/experience/ToolStudio";
-import { IMAGE_TO_PDF_MAX_FILES as MAX_FILES, IMAGE_TO_PDF_MAX_TOTAL_MB as MAX_TOTAL_MB } from "./image-to-pdf-limits";
+import { IMAGE_TO_PDF_MAX_FILES as MAX_FILES, IMAGE_TO_PDF_MAX_TOTAL_MB as MAX_TOTAL_MB, imageToPdfLimits } from "./image-to-pdf-limits";
 
 const MAX_TOTAL_BYTES = MAX_TOTAL_MB * 1024 * 1024;
-const LIMITS = `One PDF takes up to ${MAX_FILES} images, ${MAX_TOTAL_MB} MB in total.`;
 
 /** Why a selection was refused, or null when it fits beside the images already chosen. */
 function selectionProblem(current: File[], incoming: File[]): string | null {
@@ -165,7 +164,7 @@ export function ImageToPdfUI({
         <div><p>Every image gets a page. Drag images into order, or use the arrow controls.</p><p className="ts-caption">{files.length} of {MAX_FILES} {nounLabel}s selected</p>{files.length > 0 && <p className="ts-caption">{formatFileSize(totalBytes)} of {MAX_TOTAL_MB} MB</p>}</div>
         <div className="ts-actions"><button className="ts-primary-button" onClick={process} disabled={!files.length || state === "processing"}><Download size={16} /> Convert {files.length} {nounLabel}{files.length !== 1 ? "s" : ""} → PDF</button>{files.length > 0 && <button className="ts-text-button" disabled={state === "processing"} onClick={clearFiles} aria-label="Clear all images">Clear</button>}</div>
     </>}>
-        <FileIntake accepts={accept} multiple onFiles={add} label="Upload images" title="Turn pictures into pages." detail={`${formatsLabel}. ${LIMITS}`} disabled={state === "processing"} compact={files.length > 0} />
+        <FileIntake accepts={accept} multiple onFiles={add} label="Upload images" title="Turn pictures into pages." detail={`${formatsLabel}. ${imageToPdfLimits(handoffSlug)}`} disabled={state === "processing"} compact={files.length > 0} />
         {/* Status sits under the intake, not after up to 100 thumbnails, so it is seen where the user acted. */}
         {error && <div role="alert" className="ts-error">{error}</div>}
         {state === "processing" && <StudioProgress label="Making a home for your images" detail={`${files.length} images, arranged in one PDF.${files.length > 10 ? " Large batches can take a few minutes." : ""}`} />}
