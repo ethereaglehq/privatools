@@ -15,12 +15,18 @@ import { processAndDownload, buildOutputFilename } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
+import { itemOffThePdf } from "./pdf/page-numbers";
 import { useToolDefaults } from "@/hooks/useToolDefaults";
 
 interface Box {
     id: string;
     /** The page number as this page shows it: 1 is the first page. */
     page: number;
+    /**
+     * Points from the top-left corner of the page's visible area, before any
+     * /Rotate the page has: the route's own numbers. PdfPageStage converts
+     * what the visitor draws on the turned page it shows.
+     */
     x: number; y: number;
     width: number; height: number;
     /** Statutory exemption citation, drawn inside the box. */
@@ -99,12 +105,8 @@ export function RedactUI() {
         if (!file || boxes.length === 0) return;
         // Say which box is on a page the PDF does not have, in the page
         // numbers shown here, before the route answers in its own.
-        const stray = boxes.findIndex(b => !Number.isInteger(b.page) || b.page < 1 || (pageCount !== null && b.page > pageCount));
-        if (stray >= 0) {
-            const pages = pageCount === null ? "a page number from 1" : pageCount === 1 ? "page 1" : `a page from 1 to ${pageCount}`;
-            setError(`Box ${stray + 1} is on page ${boxes[stray].page}, which this PDF does not have. Choose ${pages}.`);
-            return;
-        }
+        const stray = itemOffThePdf(boxes, pageCount, "Box");
+        if (stray) { setError(stray); return; }
         setState("processing"); setError(null);
         try {
             const headers = await processAndDownload("/redact", file, buildOutputFilename(file.name, "redacted", "pdf"),

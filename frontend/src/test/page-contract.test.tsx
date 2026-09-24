@@ -7,8 +7,15 @@
  * visitor chose. backend/tests/test_page_contract.py sends the values in
  * page-contract.json through the real routes and checks where the change
  * lands; these tests check that the pages send those values. The pages run as
- * they are, with the real PdfPageStage and upload helpers: only pdf.js, the
- * canvas and the network are replaced.
+ * they are, with the real PdfPageStage and upload helpers, and pdf.js opens
+ * real PDFs: only its drawing, the canvas and the network are replaced.
+ *
+ * The same goes for where a drawn box lands. On a page stored turned
+ * (/Rotate), or whose visible area does not start at 0,0, a box sent as the
+ * preview showed it landed somewhere else, and a redaction hid nothing. The
+ * "turned" section of page-contract.json says what each page must send for a
+ * box drawn on such pages; the backend test checks that the routes put it
+ * back on the drawn box.
  */
 import type { ReactElement } from "react";
 import { cleanup, configure, fireEvent, render, screen, waitFor } from "@testing-library/react";
@@ -17,6 +24,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import contract from "./page-contract.json";
 import { installNetwork, type SentRequest } from "./fake-network";
+import type { PageSpec } from "./pdf-pages";
 import { RedactUI } from "@/components/tool-ui/RedactUI";
 import { WhiteoutUI } from "@/components/tool-ui/WhiteoutUI";
 import { AnnotateUI } from "@/components/tool-ui/AnnotateUI";
@@ -32,18 +40,16 @@ import { MergeUI } from "@/components/tool-ui/MergeUI";
 import { RotateUI } from "@/components/tool-ui/RotateUI";
 import { SplitUI } from "@/components/tool-ui/SplitUI";
 import { StampUI } from "@/components/tool-ui/StampUI";
+import { CropUI } from "@/components/tool-ui/CropUI";
+import { PdfPageStage } from "@/components/tool-ui/pdf/PdfPageStage";
 
-vi.mock("@/components/tool-ui/merge-preview", () => ({
-    // A two-page PDF as pdf.js would open it: US Letter pages, 612 x 792 points.
-    openMergePreview: vi.fn(async () => ({
-        numPages: 2,
-        getPage: async () => ({
-            getViewport: ({ scale }: { scale: number }) => ({ width: 612 * scale, height: 792 * scale }),
-            render: () => ({ promise: Promise.resolve(), cancel: () => {} }),
-        }),
-        destroy: async () => {},
-    })),
-}));
+const LETTER: PageSpec = { mediabox: [0, 0, 612, 792] };
+// The PDF the preview opens: two US Letter pages unless a test says otherwise.
+const preview = vi.hoisted(() => ({ pages: null as PageSpec[] | null, shown: [612, 792] }));
+vi.mock("@/components/tool-ui/merge-preview", async () => {
+    const { openPdf, pdfBytes } = await import("./pdf-pages");
+    return { openMergePreview: vi.fn(async () => openPdf(pdfBytes(preview.pages ?? [LETTER, LETTER]))) };
+});
 vi.mock("@/lib/file-handoff", () => ({ consumeFileHandoffs: vi.fn(async () => []) }));
 vi.mock("@/lib/signatureStore", () => ({ loadSignature: vi.fn(async () => null), saveSignature: vi.fn(), forgetSignature: vi.fn() }));
 vi.mock("@/hooks/use-mobile", () => ({ useIsMobile: () => false }));
@@ -61,12 +67,17 @@ const pdf = (name = "two-pages.pdf") => new File(["%PDF-1.7 two pages"], name, {
 
 beforeEach(() => {
     localStorage.clear();
+    preview.pages = null;
+    preview.shown = [612, 792];
     ({ requests } = installNetwork(() => ({ uploadMs: 0, answerAfterMs: 0, body: "%PDF-1.7 result", headers: { "content-type": "application/pdf" } })));
     vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({ setTransform: vi.fn(), clearRect: vi.fn(), save: vi.fn(), restore: vi.fn(), fillText: vi.fn(), measureText: vi.fn(() => ({ width: 10 })) } as unknown as CanvasRenderingContext2D);
     vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue("data:image/png;base64,aW5r");
-    // The page is drawn 612 x 792 CSS pixels, one per point, so a drag's
-    // client coordinates are its PDF coordinates.
-    vi.spyOn(Element.prototype, "getBoundingClientRect").mockReturnValue({ x: 0, y: 0, left: 0, top: 0, right: 612, bottom: 792, width: 612, height: 792, toJSON: () => ({}) } as DOMRect);
+    // The page is drawn at its size as shown, one CSS pixel per point, so a
+    // drag's client coordinates are points on the page as shown.
+    vi.spyOn(Element.prototype, "getBoundingClientRect").mockImplementation(() => {
+        const [width, height] = preview.shown;
+        return { x: 0, y: 0, left: 0, top: 0, right: width, bottom: height, width, height, toJSON: () => ({}) } as DOMRect;
+    });
     Element.prototype.setPointerCapture = vi.fn();
     Element.prototype.hasPointerCapture = vi.fn(() => false);
     Element.prototype.releasePointerCapture = vi.fn();
@@ -77,16 +88,23 @@ afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
 function choose(input: Element, files: File[]) { fireEvent.change(input, { target: { files } }); }
 function pdfInput(container: HTMLElement) { return container.querySelector<HTMLInputElement>('input[type="file"]')!; }
-/** PdfPageStage has opened the two-page PDF. */
-async function stageReady() { await waitFor(() => expect(screen.getByLabelText("Preview page")).toBeEnabled()); }
+/** PdfPageStage has opened the PDF and its first page. */
+async function stageReady() {
+    await waitFor(() => {
+        expect(screen.getByLabelText("Preview page")).toBeEnabled();
+        expect(screen.queryByText("Opening your page…")).toBeNull();
+    });
+}
 function showPage(page: number) { if (page !== 1) fireEvent.change(screen.getByLabelText("Preview page"), { target: { value: String(page) } }); }
-/** Drag across the shown page, as a visitor places a region. */
-function drawRegion(label: string) {
+const DRAWN = contract.turned.drawn;
+/** Drag across the shown page, as a visitor places a region, once the page has opened. */
+async function drawRegion(label: string, box = DRAWN) {
+    await waitFor(() => expect(screen.getByRole("button", { name: label })).toBeEnabled());
     fireEvent.click(screen.getByRole("button", { name: label }));
     const layer = screen.getByLabelText("Placed regions");
-    fireEvent.pointerDown(layer, { clientX: 60, clientY: 80, pointerId: 1 });
-    fireEvent.pointerMove(layer, { clientX: 380, clientY: 114, pointerId: 1 });
-    fireEvent.pointerUp(layer, { clientX: 380, clientY: 114, pointerId: 1 });
+    fireEvent.pointerDown(layer, { clientX: box.x, clientY: box.y, pointerId: 1 });
+    fireEvent.pointerMove(layer, { clientX: box.x + box.width, clientY: box.y + box.height, pointerId: 1 });
+    fireEvent.pointerUp(layer, { clientX: box.x + box.width, clientY: box.y + box.height, pointerId: 1 });
 }
 /** The form the page sent to `endpoint`. */
 async function sent(endpoint: string): Promise<FormData> {
@@ -115,7 +133,7 @@ describe("the page each tool's page sends", { timeout: 20_000 }, () => {
             choose(pdfInput(container), [pdf()]);
             await stageReady();
             showPage(page);
-            drawRegion(drawLabel);
+            await drawRegion(drawLabel);
             const button = await screen.findByRole("button", { name: action });
             fireEvent.click(button);
             const spec = contract.tools[slug];
@@ -131,7 +149,7 @@ describe("the page each tool's page sends", { timeout: 20_000 }, () => {
         fireEvent.click(screen.getByRole("tab", { name: "Type" }));
         fireEvent.change(screen.getByPlaceholderText("Type your name…"), { target: { value: "Alex Example" } });
         showPage(page);
-        drawRegion("Place signature");
+        await drawRegion("Place signature");
         fireEvent.click(screen.getByRole("button", { name: "Apply e-signature" }));
         expect((await sent("/esign-pdf")).get("page")).toBe(String(expected("esign-pdf", which)));
     });
@@ -143,7 +161,7 @@ describe("the page each tool's page sends", { timeout: 20_000 }, () => {
         const signature = new File([new Uint8Array([137, 80, 78, 71])], "signature.png", { type: "image/png" });
         choose(container.querySelector('input[type="file"][accept=".png,.jpg,.jpeg"]')!, [signature]);
         showPage(page);
-        drawRegion("Place signature");
+        await drawRegion("Place signature");
         fireEvent.click(await screen.findByRole("button", { name: /^Sign PDF/ }));
         expect((await sent("/sign-pdf")).get("page")).toBe(String(expected("sign-pdf", which)));
     });
@@ -244,6 +262,112 @@ describe("Redact PDF's page numbers", { timeout: 20_000 }, () => {
         fireEvent.click(screen.getByRole("button", { name: /^Redact 1 region/ }));
         expect(jsonField(await sent("/redact"), "redactions")).toEqual([{ page: 1, x: 100, y: 700, width: 200, height: 20 }]);
         expect(await screen.findByText("Redacted")).toBeInTheDocument();
+    });
+});
+
+describe("a box drawn on a turned or cropped page reaches the route where the page stores it", { timeout: 20_000 }, () => {
+    type Box = { x: number; y: number; width: number; height: number };
+    const box = (item: Record<string, unknown>): Box => ({ x: Number(item.x), y: Number(item.y), width: Number(item.width), height: Number(item.height) });
+    const formBox = (form: FormData): Box => box(Object.fromEntries(["x", "y", "width", "height"].map(key => [key, form.get(key)])));
+    // Each drawing tool, how it places a box, and where its request carries it.
+    // The item tools start with one region on page 1; the drawn box is the second.
+    const tools: [Slug, () => ReactElement, string, RegExp, (form: FormData) => Box, (() => void)?][] = [
+        ["redact-pdf", () => <RedactUI />, "Draw a region", /^Redact 2 regions/, form => box(jsonField(form, "redactions")[1])],
+        ["whiteout-pdf", () => <WhiteoutUI />, "Draw a region", /^Apply 2 white-outs/, form => box(jsonField(form, "regions")[1])],
+        ["annotate-pdf", () => <AnnotateUI />, "Draw a region", /^Apply 2 annotations/, form => box(jsonField(form, "annotations")[1])],
+        ["add-shapes", () => <ShapesUI />, "Draw a region", /^Add 2 shapes/, form => box(jsonField(form, "shapes")[1])],
+        ["form-creator", () => <FormCreatorUI />, "Draw a field", /^Generate fillable PDF/, form => box(jsonField(form, "form_fields")[1])],
+        ["esign-pdf", () => <ESignUI />, "Place signature", /^Apply e-signature/, formBox, () => {
+            fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+            fireEvent.change(screen.getByPlaceholderText("Type your name…"), { target: { value: "Alex Example" } });
+        }],
+        ["sign-pdf", () => <SignUI />, "Place signature", /^Sign PDF/, formBox, () => {
+            const signature = new File([new Uint8Array([137, 80, 78, 71])], "signature.png", { type: "image/png" });
+            choose(document.querySelector('input[type="file"][accept=".png,.jpg,.jpeg"]')!, [signature]);
+        }],
+    ];
+    const pages = Object.entries(contract.turned.pages);
+    for (const [slug, ui, drawLabel, action, sentBox, prepare] of tools) {
+        it.each(pages)(`${slug}: a box drawn on the %s page`, async (_name, spec) => {
+            preview.pages = [spec];
+            preview.shown = spec.shown;
+            const { container } = render(ui());
+            choose(pdfInput(container), [pdf()]);
+            await stageReady();
+            prepare?.();
+            await drawRegion(drawLabel);
+            fireEvent.click(await screen.findByRole("button", { name: action }));
+            const route: { endpoint: string; frame?: string } = contract.tools[slug];
+            const expected = route.frame === "unrotated"
+                ? spec.unrotated
+                : { ...DRAWN, y: spec.shown[1] - DRAWN.y - DRAWN.height };
+            expect(route.frame).toMatch(/^(unrotated|shown-from-bottom)$/);
+            expect(sentBox(await sent(route.endpoint))).toEqual(expected);
+        });
+    }
+
+    it.each(pages)("the preview shows a box where it lands on the %s page", async (_name, spec) => {
+        // Remove Watermark shows the boxes the route found, in the route's numbers.
+        preview.pages = [spec];
+        preview.shown = spec.shown;
+        render(<PdfPageStage file={pdf()} regions={[{ id: "found", page: 1, ...spec.unrotated, kind: "rectangle", label: "Found box" }]} />);
+        await stageReady();
+        const rect = screen.getByLabelText("Found box").querySelector("rect")!;
+        const shown = Object.fromEntries(["x", "y", "width", "height"].map(key => [key, Number(rect.getAttribute(key))]));
+        expect(shown).toEqual(DRAWN);
+    });
+
+    it.each(pages)("crop-pdf: the area to keep drawn on the %s page", async (_name, spec) => {
+        preview.pages = [spec];
+        preview.shown = spec.shown;
+        const { container } = render(<CropUI />);
+        choose(pdfInput(container), [pdf()]);
+        await stageReady();
+        await drawRegion("Draw the area to keep");
+        fireEvent.click(screen.getByRole("button", { name: /^Crop PDF/ }));
+        const crop = contract.turned["crop-pdf"];
+        const form = await sent(crop.endpoint);
+        const [width, height] = spec.shown;
+        expect(Object.fromEntries(["top", "left", "right", "bottom", "margins_from"].map(key => [key, form.get(key)]))).toEqual({
+            top: String(DRAWN.y), left: String(DRAWN.x),
+            right: String(width - DRAWN.x - DRAWN.width), bottom: String(height - DRAWN.y - DRAWN.height),
+            margins_from: crop.margins_from,
+        });
+    });
+
+    it("add-shapes: a line drawn on a turned page keeps its ends", async () => {
+        const spec = contract.turned.pages["rotate-90"];
+        preview.pages = [spec];
+        preview.shown = spec.shown;
+        const { container } = render(<ShapesUI />);
+        choose(pdfInput(container), [pdf()]);
+        await stageReady();
+        await drawRegion("Draw a region");
+        fireEvent.click(await screen.findByRole("button", { name: /^Add 2 shapes/ }));
+        const shape = jsonField(await sent("/add-shapes"), "shapes")[1];
+        const { x, y, width, height } = spec.unrotated;
+        expect({ x: shape.x, y: shape.y, x2: shape.x2, y2: shape.y2 }).toEqual({ x, y, x2: x + width, y2: y + height });
+    });
+});
+
+describe("a page the PDF does not have", { timeout: 20_000 }, () => {
+    // White-Out, Annotate and Add Shapes sent such a page, and their routes
+    // skipped it: the visitor got the file back unchanged.
+    const tools: [Slug, () => ReactElement, string, RegExp, string][] = [
+        ["whiteout-pdf", () => <WhiteoutUI />, "Page", /^Apply 1 white-out/, "Region 1 is on page 3, which this PDF does not have. Choose a page from 1 to 2."],
+        ["annotate-pdf", () => <AnnotateUI />, "Page", /^Apply 1 annotation/, "Annotation 1 is on page 3, which this PDF does not have. Choose a page from 1 to 2."],
+        ["add-shapes", () => <ShapesUI />, "Page", /^Add 1 shape/, "Shape 1 is on page 3, which this PDF does not have. Choose a page from 1 to 2."],
+    ];
+    it.each(tools)("%s: the page field stops at the last page, and a later page is refused in the page's numbers", async (_slug, ui, label, action, message) => {
+        const { container } = render(ui());
+        choose(pdfInput(container), [pdf()]);
+        await stageReady();
+        const field = screen.getAllByLabelText(label).find(input => input.getAttribute("type") === "number")!;
+        await waitFor(() => expect(field).toHaveAttribute("max", "2"));
+        fireEvent.change(field, { target: { value: "3" } });
+        fireEvent.click(screen.getByRole("button", { name: action }));
+        expect(await screen.findByText(message)).toBeInTheDocument();
+        expect(requests).toEqual([]);
     });
 });
 

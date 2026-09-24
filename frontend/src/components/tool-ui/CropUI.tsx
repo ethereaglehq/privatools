@@ -49,7 +49,11 @@ export function CropUI() {
             endpoint: "/crop",
             outputSuffix: "cropped",
             outputExt: "pdf",
-            params: { top, bottom, left, right },
+            // The margins are drawn and typed on the page as shown, so the route
+            // measures them there, on each page of every file. By default it
+            // measures from the MediaBox before /Rotate, which cropped the wrong
+            // sides of a turned page and showed more of a page already cropped.
+            params: { top, bottom, left, right, margins_from: "shown" },
         }, retry);
         setPhase("done");
     }, [proc, top, bottom, left, right]);
@@ -191,7 +195,7 @@ export function CropUI() {
                                     </div>
                                 ))}
                             </div>
-                            <PdfPageStage file={proc.entries[0].file} page={previewPage} onPageChange={setPreviewPage} onDimensions={info => setPageSize({ width: info.width, height: info.height })} regions={[{ id: "crop", page: previewPage, x: Number(left), y: Number(top), width: Math.max(0, pageSize.width - Number(left) - Number(right)), height: Math.max(0, pageSize.height - Number(top) - Number(bottom)), kind: "rectangle", color: "#397dec", label: "Area to keep" }]} drawLabel="Draw the area to keep" disabled={phase === "processing"} onDraw={region => { setTop(String(Math.round(region.y))); setLeft(String(Math.round(region.x))); setRight(String(Math.max(0, Math.round(pageSize.width - region.x - region.width)))); setBottom(String(Math.max(0, Math.round(pageSize.height - region.y - region.height)))); }} />
+                            <PdfPageStage file={proc.entries[0].file} page={previewPage} onPageChange={setPreviewPage} coordinates="shown" onDimensions={info => setPageSize({ width: info.width, height: info.height })} regions={[{ id: "crop", page: previewPage, x: Number(left), y: Number(top), width: Math.max(0, pageSize.width - Number(left) - Number(right)), height: Math.max(0, pageSize.height - Number(top) - Number(bottom)), kind: "rectangle", color: "#397dec", label: "Area to keep" }]} drawLabel="Draw the area to keep" disabled={phase === "processing"} onDraw={region => { setTop(String(Math.round(region.y))); setLeft(String(Math.round(region.x))); setRight(String(Math.max(0, Math.round(pageSize.width - region.x - region.width)))); setBottom(String(Math.max(0, Math.round(pageSize.height - region.y - region.height)))); }} />
                         </div>
                     </div>
 

@@ -9,10 +9,16 @@ import { uploadFile, downloadBlob } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
+import { itemOffThePdf } from "./pdf/page-numbers";
 
 interface Region {
     id: string;
     page: number;
+    /**
+     * Points from the top-left corner of the page's visible area, before any
+     * /Rotate the page has: the route's own numbers. PdfPageStage converts
+     * what the visitor draws on the turned page it shows.
+     */
     x: number;
     y: number;
     width: number;
@@ -28,6 +34,8 @@ const PAGE_H = 792;
 export function WhiteoutUI() {
     const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
+    /** How many pages the chosen PDF has, once the preview has opened it. */
+    const [pageCount, setPageCount] = useState<number | null>(null);
     const [regions, setRegions] = useState<Region[]>([
         { id: makeId(), page: 1, x: 100, y: 100, width: 200, height: 30 },
     ]);
@@ -57,6 +65,8 @@ export function WhiteoutUI() {
 
     const process = useCallback(async () => {
         if (!file || regions.length === 0) return;
+        const stray = itemOffThePdf(regions, pageCount, "Region");
+        if (stray) { setError(stray); return; }
         setStatus("processing"); setError(null);
         try {
             const regionList = regions.map(({ id, ...rest }) => rest);
@@ -72,7 +82,7 @@ export function WhiteoutUI() {
             setStatus("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
-    }, [file, regions]);
+    }, [file, regions, pageCount]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -121,8 +131,8 @@ export function WhiteoutUI() {
         <div className="space-y-4">
             <FileUploadZone
                 file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                onFileSelect={next => { setFile(next); setPageCount(null); }}
+                onClear={() => { setFile(null); setPageCount(null); }}
                 accept=".pdf"
                 label="Drop PDF to white-out"
                 hint="Cover sensitive regions with white fill"
@@ -171,6 +181,7 @@ export function WhiteoutUI() {
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(r.id, el); else rowRefs.current.delete(r.id); } : undefined}
                                                         type="number" aria-label={c.label} inputMode="numeric" min={c.min}
+                                                        max={c.f === "page" ? pageCount ?? undefined : undefined}
                                                         value={r[c.f]}
                                                         onClick={e => e.stopPropagation()}
                                                         onChange={e => update(r.id, c.f, +e.target.value)}
@@ -185,7 +196,7 @@ export function WhiteoutUI() {
                         </fieldset>
 
                         {/* Page preview with all regions */}
-                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} regions={regions.map((region, index) => ({ ...region, color: "#ffffff", kind: "whiteout", label: `Whiteout ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setRegions(items => [...items, { ...region, id }]); setSelected(id); }} />
+                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} onDimensions={info => setPageCount(info.pages)} regions={regions.map((region, index) => ({ ...region, color: "#ffffff", kind: "whiteout", label: `Whiteout ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setRegions(items => [...items, { ...region, id }]); setSelected(id); }} />
                     </div>
                 </div>
             )}

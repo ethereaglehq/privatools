@@ -9,6 +9,7 @@ import { uploadFile, downloadBlob } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
+import { itemOffThePdf } from "./pdf/page-numbers";
 import { loadSignature, saveSignature, forgetSignature } from "@/lib/signatureStore";
 
 type SigMode = "draw" | "type" | "upload";
@@ -35,6 +36,11 @@ export function ESignUI() {
     const [typedFont, setTypedFont] = useState<string>(TYPE_FONTS[0].value);
     const [sigImage, setSigImage] = useState<string | null>(null);
     const [pageNumber, setPageNumber] = useState(1);
+    /** How many pages the chosen PDF has, once the preview has opened it. */
+    const [pageCount, setPageCount] = useState<number | null>(null);
+    // The signature's box, in points from the top-left corner of the page's
+    // visible area before any /Rotate: the route's own numbers. PdfPageStage
+    // converts what the visitor draws on the turned page it shows.
     const [posX, setPosX] = useState(100);
     const [posY, setPosY] = useState(650);
     const [sigWidth, setSigWidth] = useState(200);
@@ -226,6 +232,10 @@ export function ESignUI() {
         if (!file) return;
         const sigData = getSignatureData();
         if (!sigData) { setError("Create a signature first — draw it, type it, or upload an image"); return; }
+        // The route signs page 1 for a page the PDF does not have; the preview
+        // would have shown the last page.
+        const stray = itemOffThePdf([{ page: pageNumber }], pageCount, "Signature");
+        if (stray) { setError(stray); return; }
         setStatus("processing"); setError(null);
         try {
             const res = await uploadFile("/esign-pdf", file, {
@@ -248,7 +258,7 @@ export function ESignUI() {
             setStatus("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
-    }, [file, getSignatureData, pageNumber, posX, posY, sigWidth, sigHeight]);
+    }, [file, getSignatureData, pageNumber, pageCount, posX, posY, sigWidth, sigHeight]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -295,8 +305,8 @@ export function ESignUI() {
         <div className="space-y-4">
             <FileUploadZone
                 file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                onFileSelect={next => { setFile(next); setPageCount(null); }}
+                onClear={() => { setFile(null); setPageCount(null); }}
                 accept=".pdf"
                 label="Drop PDF to e-sign"
                 hint="Draw, type, or upload your signature"
@@ -456,7 +466,7 @@ export function ESignUI() {
                         <div className="pdf-coordinate-workspace">
                             <div className="pdf-coordinate-controls">
                                 {([
-                                    { label: "Page", val: pageNumber, set: setPageNumber, min: 1, max: 999 },
+                                    { label: "Page", val: pageNumber, set: setPageNumber, min: 1, max: pageCount ?? 999 },
                                     { label: "X",    val: posX,       set: setPosX,       min: 0, max: 1000 },
                                     { label: "Y",    val: posY,       set: setPosY,       min: 0, max: 1000 },
                                     { label: "W",    val: sigWidth,   set: setSigWidth,   min: 50, max: 400 },
@@ -473,7 +483,7 @@ export function ESignUI() {
                                 ))}
                             </div>
                             {/* Mini page preview */}
-                            <PdfPageStage file={file} page={pageNumber} onPageChange={setPageNumber} regions={[{ id: "signature", page: pageNumber, x: posX, y: posY, width: sigWidth, height: sigHeight, image: getSignatureData() || undefined, label: "Your signature" }]} drawLabel="Place signature" disabled={status === "processing"} onDraw={region => { setPosX(Math.round(region.x)); setPosY(Math.round(region.y)); setSigWidth(Math.round(region.width)); setSigHeight(Math.round(region.height)); }} />
+                            <PdfPageStage file={file} page={pageNumber} onPageChange={setPageNumber} onDimensions={info => setPageCount(info.pages)} regions={[{ id: "signature", page: pageNumber, x: posX, y: posY, width: sigWidth, height: sigHeight, image: getSignatureData() || undefined, label: "Your signature" }]} drawLabel="Place signature" disabled={status === "processing"} onDraw={region => { setPosX(Math.round(region.x)); setPosY(Math.round(region.y)); setSigWidth(Math.round(region.width)); setSigHeight(Math.round(region.height)); }} />
                         </div>
                     </div>
 
