@@ -7,7 +7,6 @@ import secrets
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import JSONResponse, HTMLResponse, FileResponse, RedirectResponse, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -27,6 +26,8 @@ from .middleware import (
     max_rss_mb,
     register_error_handlers,
 )
+from .middleware.cors import SITE_EXPOSED_HEADERS, CORSMiddleware, add_cors_headers
+from .middleware.v1_cors import V1CORSMiddleware, public_api_cors
 from .utils.health import run_readiness_checks
 from .utils.logging import route_uvicorn_logging
 
@@ -715,15 +716,6 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Wire global exception handlers — translates ToolError + bare Python
-# exceptions (FileNotFoundError, MemoryError, pikepdf.PasswordError…)
-# into JSON bodies with frontend-friendly `detail` strings. Registered
-# AFTER the rate-limit handler so RateLimitExceeded keeps its dedicated
-# 429 path (slowapi exposes a Retry-After header that our generic
-# handler wouldn't add). The catch-all answers from outside every
-# add_middleware layer, so it applies the security headers itself.
-register_error_handlers(app, security_headers=_apply_security_headers)
-
 # CORS origin allow-list. We keep it small and explicit — no wildcards.
 # Dev defaults cover local Vite + the FastAPI dev server.
 _default_origins = "http://localhost:8000,http://localhost:8080,http://localhost:5173"
@@ -735,6 +727,38 @@ _origins = [
 if "*" in _origins:
     logger.warning("ALLOWED_ORIGINS contains '*' — refusing for safety, falling back to defaults")
     _origins = [o for o in _origins if o != "*"]
+
+# The site's CORS layer (added below): its own origins, and exposed only the
+# headers its pages read. /api/v1 has its own policy (middleware/v1_cors.py).
+_SITE_CORS = dict(
+    allow_origins=_origins,
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=SITE_EXPOSED_HEADERS,
+)
+# The same two layers, used only to put their headers on the catch-all's
+# answers, which Starlette makes outside every add_middleware layer.
+_SITE_CORS_HEADERS = CORSMiddleware(None, **_SITE_CORS)
+_PUBLIC_API_CORS_HEADERS = public_api_cors(None)
+
+
+async def _apply_cors_headers(request: Request, response: Response) -> None:
+    # As in the stack: the site's layer, and for /api/v1 the public API's around it.
+    layers = [_SITE_CORS_HEADERS]
+    if request.url.path.startswith("/api/v1/"):
+        layers.append(_PUBLIC_API_CORS_HEADERS)
+    await add_cors_headers(request, response, layers)
+
+
+# Wire global exception handlers — translates ToolError + bare Python
+# exceptions (FileNotFoundError, MemoryError, pikepdf.PasswordError…)
+# into JSON bodies with frontend-friendly `detail` strings. Registered
+# AFTER the rate-limit handler so RateLimitExceeded keeps its dedicated
+# 429 path (slowapi exposes a Retry-After header that our generic
+# handler wouldn't add). The catch-all answers from outside every
+# add_middleware layer, so it applies the security and CORS headers itself.
+register_error_handlers(app, security_headers=_apply_security_headers, cors_headers=_apply_cors_headers)
 
 # Trusted Host allow-list — rejects requests whose Host header doesn't
 # match. Prevents host-header injection / cache-poisoning attacks behind
@@ -789,19 +813,7 @@ app.add_middleware(RequestTimeoutMiddleware)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AccessLogMiddleware)
 app.add_middleware(InFlightMiddleware)
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_origins,
-    allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
-    expose_headers=[
-        "X-Request-ID",
-        "X-Original-Size",
-        "X-Compressed-Size",
-        "X-Stripped-Items",
-    ],
-)
+app.add_middleware(CORSMiddleware, **_SITE_CORS)
 # TrustedHostMiddleware: rejects requests whose Host header isn't in the
 # allow-list. Added AFTER CORS so it sits OUTSIDE the CORS layer in the
 # request stack — bad Host headers fail fast with a 400 without burning
@@ -809,8 +821,6 @@ app.add_middleware(
 # uvicorn listener binds to so the systemd health probe (curl /healthz
 # against 127.0.0.1) doesn't get rejected.
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=_trusted_hosts)
-from .middleware.v1_cors import V1CORSMiddleware  # noqa: E402
-
 app.add_middleware(V1CORSMiddleware)
 app.add_middleware(RequestIDMiddleware)
 

@@ -13,7 +13,7 @@ Wire via :func:`register_error_handlers(app)` in `main.py`.
 from __future__ import annotations
 
 import logging
-from typing import Any, Callable
+from typing import Any, Awaitable, Callable
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -284,16 +284,18 @@ def register_error_handlers(
     app: FastAPI,
     *,
     security_headers: Callable[[Request, Response], None] | None = None,
+    cors_headers: Callable[[Request, Response], Awaitable[None]] | None = None,
 ) -> None:
     """Attach all handlers to the given FastAPI app.
 
     Call this exactly once during app construction. Order doesn't matter
     — FastAPI matches handlers by exception type.
 
-    ``security_headers`` is applied to the catch-all's responses. Starlette
-    runs that handler in ServerErrorMiddleware, which wraps every
-    ``add_middleware`` layer, so the security-headers middleware never sees
-    them: a decompression-bomb 413 or an unhandled 500 would go out bare.
+    ``security_headers`` and ``cors_headers`` are applied to the catch-all's
+    responses. Starlette runs that handler in ServerErrorMiddleware, which
+    wraps every ``add_middleware`` layer, so neither the security-headers nor
+    the CORS middleware sees them: a decompression-bomb 413 or an unhandled
+    500 would go out bare, and a cross-origin page could not read it at all.
     """
     app.add_exception_handler(ToolError, tool_error_handler)
     app.add_exception_handler(HTTPException, http_exception_handler)
@@ -304,6 +306,8 @@ def register_error_handlers(
         response = await builtin_exception_handler(request, exc)
         if security_headers is not None:
             security_headers(request, response)
+        if cors_headers is not None:
+            await cors_headers(request, response)
         if getattr(request.state, "v1_activity_deferred", False):
             from ..api_v1.activity import finish
             await finish(request.scope, response.status_code)
