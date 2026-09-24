@@ -192,13 +192,42 @@ describe("where visits come from", () => {
     for (const hidden of ["secret", "gclid", "email=", "example.com", "utm_id", "upper", "issue"]) expect(text).not.toContain(hidden);
   });
 
-  it("drops campaign values outside the safe character set or longer than 100 characters", async () => {
-    const max = "b".repeat(100);
-    history.replaceState(null, "", `/?utm_source=${max}&utm_medium=${"c".repeat(101)}&utm_campaign=%3Cscript%3Ealert(1)%3C%2Fscript%3E&utm_term=jane%40example.com&utm_content=caf%C3%A9-%E0%A4%B9%E0%A4%BF`);
+  it("drops campaign values outside the safe character set or longer than 64 characters", async () => {
+    const max = "b".repeat(64);
+    history.replaceState(null, "", `/?utm_source=${max}&utm_medium=${"c".repeat(65)}&utm_campaign=%3Cscript%3Ealert(1)%3C%2Fscript%3E&utm_term=jane%40example.com&utm_content=caf%C3%A9-%E0%A4%B9%E0%A4%BF`);
     await start();
     expect(pageViews()[0].page_location).toBe(`https://privatools.me/?utm_source=${max}&utm_content=${encodeURIComponent("café-हि")}`);
     const text = JSON.stringify(commands());
     for (const hidden of ["ccc", "script", "jane", "example.com"]) expect(text).not.toContain(hidden);
+  });
+
+  /** The campaign query the landing page view carries for a fresh page load at this URL. */
+  async function landingQuery(search: string): Promise<string> {
+    stop?.(); stop = undefined; vi.resetModules(); delete win.dataLayer; delete win.gtag;
+    document.head.innerHTML = '<meta name="privatools:google-analytics" content="enabled">';
+    history.replaceState(null, "", `/${search}`);
+    await start();
+    const url = String(pageViews()[0]?.page_location ?? "");
+    return url.includes("?") ? url.slice(url.indexOf("?") + 1) : "";
+  }
+
+  it.each([
+    // A literal + in a query decodes to a space, so this arrives as digits only.
+    ["a phone number with a plus sign", "utm_term=+15551234567"],
+    ["a dashed phone number", "utm_term=555-123-4567"],
+    ["nine digits in a campaign name", "utm_campaign=launch_202609241"],
+    ["the SHA-256 of an email address", "utm_content=8c87b489ce35cf2e2f39f80e282cb2e804932a56a213983eeeb428407d43b52d"],
+    ["a 43-character random token", "utm_content=kHs7JdGfAcEuTiOaWbXyVnMqKrSzLpQw-BtRyN2mFd9"],
+    ["a JWT", "utm_content=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U"],
+    ["a JWT header on its own", "utm_content=eyJhbGciOiJIUzI1NiJ9"],
+    ["16 letters and digits with no separator", "utm_campaign=abcdefghijklmno1"],
+  ])("drops %s", async (_label, query) => {
+    expect(await landingQuery(`?${query}`)).toBe("");
+  });
+
+  it("keeps ordinary campaign names under the same rules", async () => {
+    expect(await landingQuery("?utm_source=spring-sale&utm_medium=newsletter%202026-09&utm_campaign=launch_20260924&utm_term=internationalization&utm_content=abcdefghijklmn1"))
+      .toBe("utm_source=spring-sale&utm_medium=newsletter%202026-09&utm_campaign=launch_20260924&utm_term=internationalization&utm_content=abcdefghijklmn1");
   });
 
   it("uses the first value of a repeated tag and ignores empty ones", async () => {
@@ -259,6 +288,28 @@ describe("where visits come from", () => {
       expect(pageViews()[0].page_referrer).toBe(expected);
     }
     expect(JSON.stringify(commands())).not.toContain("secret");
+  });
+
+  it.each([
+    "http://192.168.1.20:8080/admin",
+    "http://10.0.0.5/",
+    "http://[fd00::1]/wiki",
+    "http://localhost:5173/",
+    "http://intranet/wiki/page",
+    "http://dev.localhost/",
+    "https://jenkins.internal/job/1",
+    "http://printer.local/",
+    "http://router.home.arpa/",
+  ])("records no referrer that only reveals an internal host: %s", async referrer => {
+    setReferrer(referrer);
+    await start();
+    expect(pageViews()[0].page_referrer).toBe("");
+  });
+
+  it("still records public referrers, short names included", async () => {
+    setReferrer("https://t.co/abc123");
+    await start();
+    expect(pageViews()[0].page_referrer).toBe("https://t.co/");
   });
 });
 

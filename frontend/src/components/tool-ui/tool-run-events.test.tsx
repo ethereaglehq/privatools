@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { GenericUI } from "./GenericUI";
 import { SimpleConvertUI } from "./SimpleConvertUI";
+import { VerifySignatureUI } from "./VerifySignatureUI";
 import { uploadFileWithProgress } from "@/lib/api";
 import { consumeFileHandoffs } from "@/lib/file-handoff";
 
@@ -59,6 +60,29 @@ describe("GenericUI usage events", () => {
         fireEvent.click(await screen.findByRole("button", { name: "Cancel" }));
         await waitFor(() => expect(screen.getByRole("button", { name: /^Rotate now/ })).toBeEnabled());
         expect(seen).toEqual([]);
+    });
+});
+
+describe("direct call site usage events", () => {
+    // VerifySignatureUI calls the real uploadFile, so these go through lib/api.ts.
+    async function verify(response: Response) {
+        const seen = listen();
+        vi.spyOn(globalThis, "fetch").mockResolvedValue(response);
+        const { container } = render(<VerifySignatureUI />);
+        fireEvent.change(container.querySelector('input[type="file"]')!, { target: { files: [pdf("secret-contract.pdf")] } });
+        fireEvent.click(screen.getByRole("button", { name: "Verify signatures" }));
+        await waitFor(() => expect(seen).toHaveLength(1));
+        vi.mocked(globalThis.fetch).mockRestore();
+        return seen;
+    }
+    it("passes the server's refusal to the usage signal", async () => {
+        const seen = await verify(new Response(JSON.stringify({ detail: "secret-contract.pdf is too large" }), { status: 413, headers: { "content-type": "application/json" } }));
+        expect(seen).toEqual([{ outcome: "error", files: 1, errorKind: "too_large" }]);
+        expect(JSON.stringify(seen)).not.toContain("secret");
+    });
+    it("calls a response the tool cannot parse a server failure", async () => {
+        const seen = await verify(new Response("<!doctype html><title>Bad gateway</title>", { status: 200, headers: { "content-type": "text/html" } }));
+        expect(seen).toEqual([{ outcome: "error", files: 1, errorKind: "server" }]);
     });
 });
 

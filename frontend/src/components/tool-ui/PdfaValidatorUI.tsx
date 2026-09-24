@@ -5,7 +5,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { Loader2, AlertCircle, CheckCircle2, XCircle, ShieldCheck, ShieldAlert, RotateCcw, Search, HelpCircle } from "lucide-react";
 import { cn, friendlyError } from "@/lib/utils";
-import { uploadFile } from "@/lib/api";
+import { readJson, uploadFile } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 
@@ -46,7 +46,7 @@ export function PdfaValidatorUI() {
         setStatus("processing"); setError(null);
         try {
             const res = await uploadFile("/pdfa-validator", file);
-            const data = await res.json();
+            const data = await readJson<PdfaResult>(res);
             setResult(data);
             setStatus("done");
             emitToolRun({ outcome: "success", files: 1 });

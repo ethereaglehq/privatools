@@ -26,6 +26,9 @@ describe("toolErrorKind", () => {
         [422, "bad_input"],
         [408, "timeout"],
         [504, "timeout"],
+        // Cloudflare gives up on the origin after 100 s; nginx allows 300 s.
+        [524, "timeout"],
+        [520, "server"],
         [500, "server"],
         [502, "server"],
         [503, "server"],

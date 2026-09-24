@@ -31,8 +31,12 @@ const ERROR_KINDS: ReadonlySet<unknown> = new Set(TOOL_ERROR_KINDS);
 const MAX_FILE_COUNT = 10_000;
 /** The only query parameters a page view ever carries, in this order. */
 const CAMPAIGN_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content"] as const;
-/** Letters and digits in any script, spaces and . _ ~ -. Anything else drops the tag. */
-const CAMPAIGN_VALUE = /^[\p{L}\p{M}\p{N} ._~-]{1,100}$/u;
+/** Up to 64 letters and digits in any script, spaces and . _ ~ -. Anything else drops the tag. */
+const CAMPAIGN_VALUE = /^[\p{L}\p{M}\p{N} ._~-]{1,64}$/u;
+/** Nine or more digits read as a phone or account number; eight still allow a date such as 20260924. */
+const CAMPAIGN_MAX_DIGITS = 8;
+/** 16+ letters and digits with no separator: a hash, token or JWT segment when it mixes both. */
+const CAMPAIGN_UNBROKEN_RUN = /[\p{L}\p{M}\p{N}]{16,}/gu;
 /**
  * Automation that says so. navigator.webdriver is the standard signal
  * (WebDriver, Playwright, Puppeteer); HeadlessChrome is Chromium's headless
@@ -80,15 +84,33 @@ function safeReferrer(): string {
         return isOwnOrigin(ref.origin) && isPublicAnalyticsPath(ref.pathname) ? `${PUBLIC_BASE}${ref.pathname}` : "";
     } catch { return ""; }
 }
+/**
+ * A host that names nothing on the public web: an IP literal, localhost, a
+ * name without a dot, or a special-use private domain. Its name can only
+ * describe someone's own network, so it is never sent.
+ */
+function privateHost(hostname: string): boolean {
+    const host = hostname.toLowerCase().replace(/\.$/, "");
+    if (host.startsWith("[") || /^\d+(?:\.\d+){3}$/.test(host)) return true;
+    if (!host.includes(".")) return true;
+    return /\.(?:localhost|local|internal|home\.arpa)$/.test(host);
+}
 /** Another site's or app's referrer, cut to its origin: never a path or query. */
 function externalReferrer(): string {
     try {
         const ref = new URL(document.referrer);
+        if (privateHost(ref.hostname)) return "";
         if (ref.protocol === "http:" || ref.protocol === "https:") return isOwnOrigin(ref.origin) ? "" : `${ref.origin}/`;
         // Android apps, the Google app among them, refer as android-app://<package>/.
         if (ref.protocol === "android-app:" && /^[a-z0-9._-]+$/i.test(ref.hostname)) return `android-app://${ref.hostname}/`;
     } catch { /* no referrer, or not a URL */ }
     return "";
+}
+/** Whether a campaign value passes the rules meant to keep out phone numbers, identifiers and tokens. */
+function safeCampaignValue(value: string): boolean {
+    if (!CAMPAIGN_VALUE.test(value)) return false;
+    if ((value.match(/\p{N}/gu) ?? []).length > CAMPAIGN_MAX_DIGITS) return false;
+    return !(value.match(CAMPAIGN_UNBROKEN_RUN) ?? []).some(run => /\p{N}/u.test(run) && /\p{L}/u.test(run));
 }
 /** The landing URL's campaign tags as a query string; every other parameter is dropped. */
 function campaignQuery(search: string): string {
@@ -96,7 +118,7 @@ function campaignQuery(search: string): string {
     const tags: string[] = [];
     for (const key of CAMPAIGN_KEYS) {
         const value = params.get(key)?.trim();
-        if (value && CAMPAIGN_VALUE.test(value)) tags.push(`${key}=${encodeURIComponent(value)}`);
+        if (value && safeCampaignValue(value)) tags.push(`${key}=${encodeURIComponent(value)}`);
     }
     return tags.join("&");
 }

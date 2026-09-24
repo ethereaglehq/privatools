@@ -218,7 +218,9 @@ load-bearing.
   an explicit `errorKind` when the tool knows better. `toolErrorKind()`
   classifies from `__status`, the `__kind` tag `lib/api.ts` puts on
   status-less failures (`withErrorKind` for a tool's own throws), error names
-  and BYOK error kinds; only the fixed category reaches the beacon. A user
+  and BYOK error kinds; only the fixed category reaches the beacon. Parse a
+  server's JSON with `readJson` from `lib/api.ts`, not `res.json()`, so a body
+  that does not parse counts as `server` rather than `browser`. A user
   cancel is not a failure: cancelled files are not counted, and an error
   caused by a cancel is dropped. The coverage test also fails on a failure
   report with neither. `toolRun.ts` matches BYOK errors by name and

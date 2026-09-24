@@ -21,8 +21,8 @@ export type ToolRunOutcome = "success" | "partial" | "error";
  * - too_large: HTTP 413, or the browser refused a file or input over a size limit.
  * - rate_limited: HTTP 429.
  * - bad_input: HTTP 400, 415 or 422, or the browser rejected the input itself.
- * - timeout: HTTP 408 or 504, or the request passed the browser's deadline.
- * - server: any other HTTP error from PrivaTools, or a response the tool could not use.
+ * - timeout: HTTP 408, 504 or 524, or the request passed the browser's deadline.
+ * - server: any other HTTP error from PrivaTools, or a response the tool could not read.
  * - network: the request never completed (offline, DNS, dropped or blocked connection).
  * - provider: the visitor's own AI provider (BYOK) refused or failed the request,
  *   or its setup is incomplete.
@@ -55,7 +55,8 @@ function kindForStatus(status: number): ToolErrorKind {
     if (status === 413) return "too_large";
     if (status === 429) return "rate_limited";
     if (status === 400 || status === 415 || status === 422) return "bad_input";
-    if (status === 408 || status === 504) return "timeout";
+    // 524: Cloudflare stopped waiting for the origin (100 s; nginx allows 300 s).
+    if (status === 408 || status === 504 || status === 524) return "timeout";
     // Other 5xx, and 4xx outside the groups above: for a tool route that is a
     // deployment out of step (404, 405), not the visitor's input.
     return "server";

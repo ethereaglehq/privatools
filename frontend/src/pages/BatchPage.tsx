@@ -26,7 +26,7 @@ import { nonPdfTools } from "@/data/non-pdf-tools";
 import { getToolEndpoint, getFilenameFromContentDisposition, guessExtensionFromContentType } from "@/lib/tool-endpoints";
 import { setBatchActive, clearBatchActive } from "@/lib/persistence";
 import { chooseDownloadFilename, formatErrorForClipboard, postFormData, withErrorKind } from "@/lib/api";
-import { buildBatchForm } from "@/lib/batch-request";
+import { batchConfigError, buildBatchForm } from "@/lib/batch-request";
 import { emitToolRun, runOutcome } from "@/lib/toolRun";
 
 const BATCH_TOOL_SLUGS = new Set([
@@ -262,9 +262,8 @@ export default function BatchPage() {
         });
 
         try {
-            if (selectedTool.slug === "highlight-pdf" && !highlightQuery.trim()) {
-                throw new Error("Enter the text to highlight before processing these PDFs.");
-            }
+            const configError = batchConfigError(selectedTool.slug, highlightQuery);
+            if (configError) throw configError;
             let resp: Pick<Response, "blob" | "headers">;
             if (selectedTool.slug === "subtitle-converter") {
                 const { convertSubtitles } = await import("@/components/tool-ui/subtitle-conversion");
@@ -339,7 +338,7 @@ export default function BatchPage() {
         const targets = files.map((f, i) => ({ f, i })).filter(({ f }) =>
             f.status === "pending" || f.status === "error"
         );
-        if (targets.length === 0 || processing || (selectedTool.slug === "highlight-pdf" && !highlightQuery.trim())) return;
+        if (targets.length === 0 || processing || batchConfigError(selectedTool.slug, highlightQuery)) return;
 
         const controller = new AbortController();
         abortRef.current = controller;

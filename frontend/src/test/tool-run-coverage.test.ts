@@ -35,13 +35,12 @@ const BACKEND_CALL = /\b(uploadFile|uploadFiles|uploadFileWithProgress|uploadFil
 /** Workflow pages that report runs themselves. */
 const WORKFLOW_PAGES = ["src/pages/BatchPage.tsx", "src/pages/PipelinePage.tsx"];
 /**
- * Failure reports without a cause. Other work on these tools was in flight
+ * Failure reports without a cause. Other work on this tool was in flight
  * when failure categories arrived (2026-09-24); pass the caught error as
  * emitToolRun's second argument there, then remove the entry.
  */
 const FAILURE_CAUSE_PENDING = [
     "src/components/tool-ui/ImageToPdfUI.tsx",
-    "src/components/tool-ui/VerifySignatureUI.tsx",
 ];
 
 function walk(dir: string): string[] {

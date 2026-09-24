@@ -5,9 +5,13 @@ import {
     getErrorStatus,
     getRequestId,
     postFormData,
+    postForm,
+    postJson,
     processAndDownload,
+    readJson,
     resolveApiOrigin,
     uploadFile,
+    uploadFileGetJson,
     uploadFiles,
     uploadFilesWithProgress,
     uploadFileWithProgress,
@@ -208,6 +212,24 @@ describe("failure categories on api errors", () => {
         expect(toolErrorKind(err)).toBe("network");
     });
 
+    it("tags a fetch failure the browser words differently", async () => {
+        // WebKit's wording matches none of the known fetch-failure messages, so
+        // only the tag api.ts adds can classify it.
+        vi.spyOn(globalThis, "fetch").mockRejectedValue(new TypeError("The network connection was lost."));
+        const err = await failure(() => uploadFile("/compress", pdf(), undefined, { retry: noRetry }));
+        expect(toolErrorKind(err)).toBe("network");
+        expect((err as { __kind?: string }).__kind).toBe("network");
+    });
+
+    it("classifies a response body the tool cannot parse as a server failure", async () => {
+        vi.spyOn(globalThis, "fetch").mockImplementation(async () => new Response("<!doctype html><title>Bad gateway</title>", { status: 200, headers: { "content-type": "text/html" } }));
+        expect(toolErrorKind(await failure(() => uploadFileGetJson("/metadata", pdf(), undefined, { retry: noRetry })))).toBe("server");
+        expect(toolErrorKind(await failure(() => postJson("/metadata", {}, { retry: noRetry })))).toBe("server");
+        expect(toolErrorKind(await failure(() => postForm("/metadata", {}, { retry: noRetry })))).toBe("server");
+        expect(toolErrorKind(await failure(() => readJson(new Response('{"truncated": '))))).toBe("server");
+        await expect(readJson(new Response('{"pages": 3}'))).resolves.toEqual({ pages: 3 });
+    });
+
     it("classifies the client deadline as a timeout and a user abort as a cancel", async () => {
         vi.spyOn(globalThis, "fetch").mockImplementation((_url, init) => new Promise((_resolve, reject) => {
             init?.signal?.addEventListener("abort", () => reject(init.signal!.reason));
@@ -222,7 +244,10 @@ describe("failure categories on api errors", () => {
 
     it("classifies XHR network errors, deadlines and HTTP answers", async () => {
         stubFailingXhr("error");
-        expect(toolErrorKind(await failure(() => uploadFileWithProgress("/compress", pdf())))).toBe("network");
+        const offline = await failure(() => uploadFileWithProgress("/compress", pdf()));
+        expect(toolErrorKind(offline)).toBe("network");
+        // Its message would also match the fetch wording; the tag is what api.ts owes.
+        expect((offline as { __kind?: string }).__kind).toBe("network");
         stubFailingXhr("timeout");
         expect(toolErrorKind(await failure(() => uploadFilesWithProgress("/merge", [pdf()])))).toBe("timeout");
         stubFailingXhr(413);

@@ -6,7 +6,7 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { FileText, Upload, Loader2, AlertCircle, RotateCcw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, friendlyError } from "@/lib/utils";
-import { uploadFiles, formatFileSize } from "@/lib/api";
+import { uploadFiles, formatFileSize, readJson } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 
 interface FileItem { id: string; name: string; size: string; file: File }
@@ -46,7 +46,7 @@ export function PdfPageCounterUI() {
         setError(null);
         try {
             const res = await uploadFiles("/pdf-page-counter", items.map(i => i.file));
-            const data = await res.json();
+            const data = await readJson<{ files?: CountResult[]; total_pages?: number }>(res);
             setResults(data.files || []);
             setTotal(data.total_pages ?? 0);
             setState("done");
