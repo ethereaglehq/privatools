@@ -10,6 +10,19 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.4] — 2026-09-25 — Deleted pages that are really gone
+
+### Tools
+
+- Delete Pages removes the pages you list from the file, not only from its list of pages. Before, a deleted page stayed inside the output, with its text and images, whenever something in the file still pointed at it: a bookmark, a link, a named destination, a form field, a comment, an accessibility tag, an article thread or the document's opening action. Bookmarks, links, form fields and tags that point at pages you keep still work; bookmarks and links that led only to deleted pages are removed. (#280)
+- Extract Pages, Organize Pages, every Split mode and Merge with page ranges no longer carry the form fields, comments, thread beads or accessibility text of the pages they leave out, and links on the pages they copy that use named destinations now work. Remove Blank Pages no longer pulls a removed page back in through a shared form field. (#280)
+- Remove Blank Pages keeps bookmarks, links, form fields and tags, and no longer copies shared fonts and images into every page: a 3 MB file it used to return as 540 MB now comes back at 3.2 MB. (#280)
+- The Delete Pages guide says exactly what is removed and what stays: data kept for the document as a whole, such as its metadata, attachments, layers and scripts, is left as it is. (#280)
+
+### For API users
+
+- `/delete-pages`, `/extract-pages`, `/organize-pages`, `/split`, `/split-by-bookmarks`, `/split-by-size`, `/split-by-text`, `/merge` with page ranges and `/remove-blank-pages` can answer 422 when they can't produce an output that is safe to return: a file whose structure would take more work to clean than its size allows, or an output that would still contain a removed page. Deleting every page, and Split by Text with a term the file doesn't contain, answer 400 instead of 500. (#280)
+
 ## [2.7.3] — 2026-09-25 — Boxes that land where you draw them on turned pages, answers the page can read
 
 ### Tools
