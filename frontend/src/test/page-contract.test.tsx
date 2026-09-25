@@ -369,6 +369,22 @@ describe("a page the PDF does not have", { timeout: 20_000 }, () => {
         expect(await screen.findByText(message)).toBeInTheDocument();
         expect(requests).toEqual([]);
     });
+
+    it("esign-pdf: the page field stops at the last page, and a later page is refused", async () => {
+        // Its route signs page 1 instead of a page the PDF does not have.
+        const { container } = render(<ESignUI />);
+        choose(pdfInput(container), [pdf()]);
+        await stageReady();
+        fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+        fireEvent.change(screen.getByPlaceholderText("Type your name…"), { target: { value: "Alex Example" } });
+        const field = screen.getAllByLabelText("Page").find(input => input.getAttribute("type") === "number")!;
+        await waitFor(() => expect(field).toHaveAttribute("max", "2"));
+        for (const label of ["X", "Y", "W", "H"]) expect(screen.getByLabelText(label)).toHaveAttribute("type", "number");
+        fireEvent.change(field, { target: { value: "3" } });
+        fireEvent.click(screen.getByRole("button", { name: "Apply e-signature" }));
+        expect(await screen.findByText("The signature is on page 3, which this PDF does not have. Choose a page from 1 to 2.")).toBeInTheDocument();
+        expect(requests).toEqual([]);
+    });
 });
 
 describe("the contract covers every page that sends a page number", () => {

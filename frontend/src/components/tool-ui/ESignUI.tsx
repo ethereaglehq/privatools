@@ -9,7 +9,7 @@ import { uploadFile, downloadBlob } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
-import { itemOffThePdf } from "./pdf/page-numbers";
+import { pageOffThePdf } from "./pdf/page-numbers";
 import { loadSignature, saveSignature, forgetSignature } from "@/lib/signatureStore";
 
 type SigMode = "draw" | "type" | "upload";
@@ -234,7 +234,7 @@ export function ESignUI() {
         if (!sigData) { setError("Create a signature first — draw it, type it, or upload an image"); return; }
         // The route signs page 1 for a page the PDF does not have; the preview
         // would have shown the last page.
-        const stray = itemOffThePdf([{ page: pageNumber }], pageCount, "Signature");
+        const stray = pageOffThePdf(pageNumber, pageCount, "The signature");
         if (stray) { setError(stray); return; }
         setStatus("processing"); setError(null);
         try {
@@ -475,7 +475,7 @@ export function ESignUI() {
                                     <div key={c.label}>
                                         <label className="font-medium text-[9.5px] text-muted-foreground">{c.label}</label>
                                         <input
-                                            type="number" inputMode="numeric" min={c.min} max={c.max} value={c.val}
+                                            type="number" aria-label={c.label} inputMode="numeric" min={c.min} max={c.max} value={c.val}
                                             onChange={e => c.set(+e.target.value || c.min)}
                                             className="mt-0.5 w-full rounded-md border border-border bg-paper-2/40 px-2 py-1.5 font-mono text-[13px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 text-center"
                                         />

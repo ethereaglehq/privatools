@@ -9,8 +9,16 @@
  * until the preview has opened the PDF.
  */
 export function itemOffThePdf(items: { page: number }[], pageCount: number | null, noun: string): string | null {
-    const stray = items.findIndex(item => !Number.isInteger(item.page) || item.page < 1 || (pageCount !== null && item.page > pageCount));
-    if (stray < 0) return null;
+    for (const [index, item] of items.entries()) {
+        const message = pageOffThePdf(item.page, pageCount, `${noun} ${index + 1}`);
+        if (message) return message;
+    }
+    return null;
+}
+
+/** The same for one thing on one page, named by `subject` ("The signature"). */
+export function pageOffThePdf(page: number, pageCount: number | null, subject: string): string | null {
+    if (Number.isInteger(page) && page >= 1 && (pageCount === null || page <= pageCount)) return null;
     const pages = pageCount === null ? "a page number from 1" : pageCount === 1 ? "page 1" : `a page from 1 to ${pageCount}`;
-    return `${noun} ${stray + 1} is on page ${items[stray].page}, which this PDF does not have. Choose ${pages}.`;
+    return `${subject} is on page ${page}, which this PDF does not have. Choose ${pages}.`;
 }

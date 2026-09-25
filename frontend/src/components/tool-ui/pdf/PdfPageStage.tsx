@@ -97,10 +97,10 @@ export function PdfPageStage({ file, page, onPageChange, regions = [], selectedI
         if (placed) { onDraw?.({ ...placed, page: activePage }); setDrawing(false); }
     };
     const shownRegions = regions.filter(region => region.page === activePage).map(toShown).filter((region): region is PdfRegion => region !== null);
-    // Typed X and Y are the route's numbers: on a turned page, say which way they run.
+    // Typed X, Y, W and H are the route's numbers: on a turned page, say which way they run.
     const rotation = current ? shownRotation(current) : 0;
     const turnedNote = current && rotation && coordinates === "unrotated"
-        ? ` · Turned ${rotation}°: X and Y measure the page unturned, ${Math.round(current.unrotated.width)} × ${Math.round(current.unrotated.height)} pt`
+        ? ` · Turned ${rotation}°: X, Y, W and H measure the page unturned, ${Math.round(current.unrotated.width)} × ${Math.round(current.unrotated.height)} pt`
         : "";
     const visiblePages = document ? Array.from({ length: Math.min(7, document.numPages) }, (_, index) => Math.max(1, Math.min(activePage - 3, document.numPages - 6)) + index) : [];
     return <section className="pdf-stage" aria-label="Your PDF preview">
