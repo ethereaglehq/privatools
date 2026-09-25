@@ -13,8 +13,8 @@ paralegal would otherwise reconstruct by hand.
 
 import io
 import logging
-import os
 import re
+import time
 from itertools import groupby
 from typing import NamedTuple
 
@@ -24,7 +24,7 @@ from reportlab.lib.colors import black
 from reportlab.pdfgen import canvas
 
 from ..utils.cleanup import safe_open_pdf
-from ..utils.exceptions import ToolError
+from ..utils.exceptions import PdfCorruptError, ToolError
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
 from ..utils.page_space import drawing_unturned, settle_rotation
@@ -52,18 +52,29 @@ _MARGIN_BAND_PT = 72.0
 # _marks).
 _MARK_PT = 0.5
 
-# The work budget. Each candidate stamp costs a pass over the words of its page
-# (reading it again, redacting it, checking it went), and MuPDF checks every
-# character of the page against every redaction, so a page is charged its
-# words times its candidates. A request may take _WORK_FLOOR, and
-# _WORK_PER_BYTE more for each byte uploaded; past that it is refused before
-# the work is done. Measured on 616 real statements, terms and forms (9,343
-# pages): the busiest page had 3,171 words, and 13 candidates with no prefix
-# and the fewest digits; the largest charge was 1.7 million, for a 1,080-page
-# file of 15.5 MB, and the most per byte 0.13. One page with 1,280 candidates
-# (3.6 million) took 28 s to process.
-_WORK_FLOOR = 250_000
-_WORK_PER_BYTE = 2
+# The work budget. It bounds the CPU time the tool spends beyond reading each
+# page once, which every tool does. Each candidate stamp costs two runs over
+# its page's whole content (reading it again, and checking it went), and the
+# page about two more (its drawing log, the redaction): MuPDF interprets
+# everything the page draws each time, text, drawings and the forms it draws,
+# however often. So a page is charged the CPU time its first run (the words
+# pass) took, times twice its candidates plus two. That followed the measured
+# cost within a fifth: a page of text with 1,280 candidates was charged 30 s
+# and took 28 s, a 49 KB page drawing 1 million line segments with 150
+# candidates was charged 93 s and took 88 s. A request may be charged
+# _WORK_FLOOR_S, plus _WORK_READS times what reading all its pages once took;
+# past that it is refused before the work is done. A page with more than
+# _MAX_CANDIDATES candidates is refused too, since MuPDF's own handling of
+# redactions grows with their square, which the charge does not follow.
+# So a page with up to 19 candidates pays its own way, however long it takes
+# to read, and pages with more draw on the floor. Measured on 614 real
+# statements, terms and forms (9,343 pages): the busiest page had 13
+# candidates (no prefix, the fewest digits), and the most any file was
+# charged was 28% of its budget (a 1,080-page file, 42 s of 151 s); with the
+# prefix, on 100 files stamped by our own tool, 7%.
+_WORK_FLOOR_S = 3.0
+_WORK_READS = 40
+_MAX_CANDIDATES = 200
 
 # Everything the file draws as text, including what lies outside the page's
 # visible area, where a match is still in the file for anyone who extracts it.
@@ -300,11 +311,14 @@ def _near_an_edge(box: fitz.Rect, area: fitz.Rect) -> bool:
 
 class _Frame(NamedTuple):
     """Where a page shows what: its visible area as stored (the frame of its
-    words), the page as shown, and the matrix from one to the other."""
+    words), the page as shown, the matrix from one to the other, and what our
+    own Bates Numbering sizes its stamp for: the MediaBox's width and height."""
 
     stored: fitz.Rect
     shown: fitz.Rect
     to_shown: fitz.Matrix
+    rotation: int
+    media: tuple[float, float]
 
     @classmethod
     def of(cls, page: fitz.Page) -> "_Frame":
@@ -314,7 +328,50 @@ class _Frame(NamedTuple):
         rotation = settle_rotation(page)
         shown = page.rect
         width, height = (shown.height, shown.width) if rotation in (90, 270) else (shown.width, shown.height)
-        return cls(fitz.Rect(0, 0, width, height), shown, page.rotation_matrix)
+        media = page.mediabox
+        return cls(fitz.Rect(0, 0, width, height), shown, page.rotation_matrix, rotation, (media.width, media.height))
+
+    def reports(self, box: fitz.Rect, net: _Net) -> bool:
+        """Whether a match at `box` (stored) that is not taken is counted as
+        left in place, so the visitor hears of it.
+
+        With a prefix or suffix, every match anywhere in the file is.
+
+        With neither, only these, on a page turned a quarter, where a stamp
+        can sit outside the net without a prefix: a Bates-shaped word within
+        an inch of the left or right edge as shown, and one where our own
+        Bates Numbering puts its stamp on such a page (see _ours). Nothing
+        else is: a Bates-shaped number in the body is an ordinary number.
+        """
+        if net.exact:
+            return True
+        if self.rotation not in (90, 270) or not box.intersects(self.stored):
+            return False
+        shown = box * self.to_shown
+        return (shown.x1 <= self.shown.x0 + _MARGIN_BAND_PT or shown.x0 >= self.shown.x1 - _MARGIN_BAND_PT
+                or self._ours(shown))
+
+    def _ours(self, shown: fitz.Rect) -> bool:
+        """Whether `shown` (a box on the page as shown) lies where our own
+        Bates Numbering puts a stamp. It draws the stamp on a page the size
+        of the MediaBox, 20 points in from its top or bottom, and lays that
+        page upright on the page as shown, shrunk to fit and centred
+        (pikepdf's add_overlay into the TrimBox, else CropBox, taken here as
+        the visible area). On a page stored landscape and turned to show
+        portrait, that puts the stamp about 173 points from the top or bottom,
+        across the middle of the page, away from every edge. The band is the
+        margin band, shrunk the same way."""
+        width, height = self.media
+        if width <= 0 or height <= 0:
+            return False
+        scale = min(self.shown.width / width, self.shown.height / height)
+        x0 = self.shown.x0 + (self.shown.width - width * scale) / 2
+        y0 = self.shown.y0 + (self.shown.height - height * scale) / 2
+        overlay = fitz.Rect(x0, y0, x0 + width * scale, y0 + height * scale)
+        band = _MARGIN_BAND_PT * scale
+        if not (overlay + (-1, -1, 1, 1)).contains(shown):
+            return False
+        return shown.y1 <= overlay.y0 + band or shown.y0 >= overlay.y1 - band
 
     def holds(self, box: fitz.Rect, net: _Net, across: bool | None = None) -> bool:
         """Whether a match at `box` (stored) is in the margins removal clears.
@@ -369,9 +426,10 @@ def _one_each(items: list[tuple[str, fitz.Rect]]) -> list[list[int]]:
 def _matches(words: list, frame: _Frame, net: _Net) -> tuple[list[tuple[str, fitz.Rect]], list[tuple[str, fitz.Rect]]]:
     """The words matching the pattern, from get_text("words"): those that may
     be stamps (in the margins, see _Frame.holds; which way a word runs is
-    read later, only for these), and, with an exact pattern, all the others,
-    left in place and reported. A match outside the visible area is one of
-    the others: it is still in the file for anyone who extracts its text."""
+    read later, only for these), and the others that are left in place and
+    reported (_Frame.reports). With an exact pattern a match outside the
+    visible area is one of those: it is still in the file for anyone who
+    extracts its text."""
     candidates, others = [], []
     for *coords, text, _, _, _ in words:
         if not net.pattern.match(text):
@@ -379,7 +437,7 @@ def _matches(words: list, frame: _Frame, net: _Net) -> tuple[list[tuple[str, fit
         box = fitz.Rect(coords)
         if box.intersects(frame.stored) and frame.holds(box, net):
             candidates.append((text, box))
-        elif net.exact:
+        elif frame.reports(box, net):
             others.append((text, box))
     return candidates, others
 
@@ -397,21 +455,40 @@ def _has_pictures(page: fitz.Page) -> bool:
     return any(_INLINE_PICTURE.search(doc.xref_stream(xref) or b"") for xref, *_ in page.get_xobjects())
 
 
-def _uncovered(page: fitz.Page, stamps: list[_Word]) -> list[_Word]:
-    """`stamps`, with those a picture drawn after them covers marked as not
-    drawn. Some OCR software draws the text it recognised in the ordinary way
-    and lays the scan over it: the number that shows is the one printed in
-    the picture, as with invisible OCR text. PyMuPDF's bbox log lists what the
-    page draws, in order, in the frame of the words."""
+def _under_pictures(page: fitz.Page, stamps: list[_Word]) -> list[int]:
+    """The indices of the painted `stamps` that a picture drawn after them
+    spans. Some OCR software draws the text it recognised in the ordinary way
+    and lays the scan over it, so the number that shows is the one printed in
+    the picture. PyMuPDF's bbox log lists what the page draws, in order, in
+    the frame of the words. Whether the picture really hides the text (a
+    picture can be see-through) is settled by _hidden."""
     if not any(stamp.drawn for stamp in stamps) or not _has_pictures(page):
-        return stamps
+        return []
     log = [(kind, fitz.Rect(box)) for kind, box in page.get_bboxlog()]
 
-    def covered(word: _Word) -> bool:
+    def spanned(word: _Word) -> bool:
         last = max((i for i, (kind, box) in enumerate(log) if kind.endswith("text") and box.intersects(word.box)), default=None)
         return last is not None and any(kind == "fill-image" and box.contains(word.box) for kind, box in log[last + 1:])
 
-    return [stamp._replace(drawn=False) if stamp.drawn and covered(stamp) else stamp for stamp in stamps]
+    return [i for i, stamp in enumerate(stamps) if stamp.drawn and spanned(stamp)]
+
+
+def _look(page: fitz.Page, box: fitz.Rect) -> bytes:
+    """How the page looks within `box` (stored), without its annotations."""
+    with drawing_unturned(page):
+        return page.get_pixmap(clip=box, dpi=144, colorspace=fitz.csGRAY, annots=False).samples
+
+
+def _hidden(before: bytes, after: bytes) -> bool:
+    """Whether taking a stamp's text out left its box looking as it did, so
+    the text never showed: a picture drawn over it hid it. A see-through
+    picture (a soft mask, a colour-key mask, a fill alpha below 1) lets the
+    text show, and its removal changes the look. Rewriting the page's content
+    can move what is left by a hair, so a few faint pixels do not count."""
+    if len(before) != len(after):
+        return False
+    changed = sum(1 for a, b in zip(before, after) if abs(a - b) > 8)
+    return changed < 4
 
 
 def _marks(word: _Word) -> list[fitz.Rect]:
@@ -528,22 +605,32 @@ def _still_there(page: fitz.Page, stamp: _Word) -> bool:
     )
 
 
-def _remove_from(page: fitz.Page, frame: _Frame, net: _Net, candidates: list[tuple[str, fitz.Rect]]) -> tuple[int, int]:
-    """Take the stamps among `candidates` out of `page`; return how many are
-    no longer on it, and how many are.
+class _Outcome(NamedTuple):
+    """What became of a page's candidates (see BatesRemoval)."""
+
+    removed: int
+    remaining: int
+    elsewhere: int
+
+
+def _remove_from(page: fitz.Page, frame: _Frame, net: _Net, candidates: list[tuple[str, fitz.Rect]]) -> _Outcome:
+    """Take the stamps among `candidates` out of `page`, and count them.
 
     Only the text goes (see _marks), and nothing is painted over the place.
-    Pictures and drawings are left alone, except under a stamp that is not
-    drawn (see _uncovered), like a scan's OCR text: the number that shows
-    there is part of the picture, so the picture under the word is whitened.
-    Links and FreeText comments the redactions touch are put back (_put_back).
+    Pictures and drawings are left alone, except under a stamp whose text
+    does not show: invisible, like a scan's OCR text, or hidden by a picture
+    drawn over it (_under_pictures, _hidden). There the number that shows is
+    part of the picture, so the picture under the word is whitened. Links
+    and FreeText comments the redactions touch are put back (_put_back).
 
     The counts are taken from the page afterwards: a stamp redaction does not
     reach, such as one drawn by a stamp annotation or a form field, is still
     there and is counted as such. A stamp drawn twice in one place counts
-    once (_one_each).
+    once (_one_each). A candidate that turns out not to be in the net once
+    it is read again is left, and counted as left in place when
+    _Frame.reports says so.
     """
-    stamps, unread = [], 0
+    stamps, unread, dropped = [], 0, []
     for text, box in candidates:
         # Only the word "words" found counts: one the clip cuts short could
         # match where the whole word does not.
@@ -556,10 +643,14 @@ def _remove_from(page: fitz.Page, frame: _Frame, net: _Net, candidates: list[tup
             unread += frame.holds(box, net, across=False)
         elif frame.holds(word.box, net, word.across):
             stamps.append(word)
+        elif frame.reports(word.box, net):
+            dropped.append((word.text, word.box))
+    elsewhere = len(_one_each(dropped))
     if not stamps:
-        return 0, unread
+        return _Outcome(0, unread, elsewhere)
 
-    stamps = _uncovered(page, stamps)
+    covered = _under_pictures(page, stamps)
+    looks = {i: _look(page, stamps[i].box) for i in covered}
     before = _annotations(page)
     for word in stamps:
         for rect in _marks(word):
@@ -568,6 +659,7 @@ def _remove_from(page: fitz.Page, frame: _Frame, net: _Net, candidates: list[tup
         images=fitz.PDF_REDACT_IMAGE_NONE, graphics=fitz.PDF_REDACT_LINE_ART_NONE, text=fitz.PDF_REDACT_TEXT_REMOVE,
     )
     hidden = [word for word in stamps if not word.drawn]
+    hidden += [stamps[i] for i, look in looks.items() if _hidden(look, _look(page, stamps[i].box))]
     for word in hidden:
         page.add_redact_annot(word.box, cross_out=False)
     if hidden:
@@ -579,20 +671,15 @@ def _remove_from(page: fitz.Page, frame: _Frame, net: _Net, candidates: list[tup
     left = [_still_there(page, stamp) for stamp in stamps]
     groups = _one_each([(stamp.text, stamp.box) for stamp in stamps])
     gone = sum(1 for group in groups if not any(left[i] for i in group))
-    return gone, len(groups) - gone + unread
+    return _Outcome(gone, len(groups) - gone + unread, elsewhere)
 
 
 def _too_much(net: _Net, found: int, page: int) -> str:
-    if net.exact:
-        return (
-            f"This PDF has far more text matching that prefix or suffix in its page margins than a "
-            f"Bates-numbered document carries ({found:,} up to page {page}), and removing it all would take "
-            f"far too long, so no file was made. Check the prefix or suffix the stamps use."
-        )
+    what = ("text matching that prefix or suffix" if net.exact else "numbers that look like Bates stamps")
+    advice = ("Check the prefix or suffix the stamps use." if net.exact else "Give the prefix or suffix the stamps use.")
     return (
-        f"This PDF has far more numbers that look like Bates stamps in its page margins than a "
-        f"Bates-numbered document carries ({found:,} up to page {page}), and removing them all would take "
-        f"far too long, so no file was made. Give the prefix or suffix the stamps use."
+        f"Removing the {what} in this PDF's page margins ({found:,} up to page {page}) would take far "
+        f"longer than a file like this warrants, so no file was made. {advice}"
     )
 
 
@@ -612,33 +699,43 @@ def remove_bates_numbering(
     rather than covered — the whole point of removing a production number is
     that it is no longer in the file.
 
-    The work is counted, page by page, before it is done (see _WORK_FLOOR),
-    and a file that would take far longer than its size warrants is refused
-    with BatesWorkError.
+    The work is charged, page by page, before it is done (see _WORK_FLOOR_S),
+    and a file that would take far longer than it warrants is refused with
+    BatesWorkError.
     """
     output_path = temp_output("bates_removed", "pdf")
     net = _Net(_removal_pattern(prefix, suffix, digits), exact=bool(prefix or suffix))
-    budget = _WORK_FLOOR + _WORK_PER_BYTE * os.path.getsize(input_path)
-    work = found = 0
-    removed = remaining = elsewhere = 0
+    read_s = charged_s = 0.0
+    found = removed = remaining = elsewhere = 0
 
     doc = fitz.open(input_path)
     try:
+        if not doc.is_pdf:
+            # MuPDF opens HTML, images and more by their content; reading a
+            # PDF key of such a page crashes it (the route lets only content
+            # starting like a PDF through, which MuPDF opens as one or refuses).
+            raise PdfCorruptError()
         for number in range(doc.page_count):
             page = doc[number]
             frame = _Frame.of(page)
+            started = time.thread_time()
             words = page.get_text("words", clip=fitz.INFINITE_RECT(), flags=_ALL_TEXT)
+            run_s = time.thread_time() - started
+            read_s += run_s
             candidates, others = _matches(words, frame, net)
             found += len(candidates)
-            work += len(words) * len(candidates)
-            if work > budget:
-                logger.info("bates-remove refused: %d candidates up to page %d, work %d over %d", found, number + 1, work, budget)
+            if candidates:
+                charged_s += run_s * (2 * len(candidates) + 2)
+            if len(candidates) > _MAX_CANDIDATES or charged_s > _WORK_FLOOR_S + _WORK_READS * read_s:
+                logger.info("bates-remove refused: %d candidates up to page %d (%d on it), charged %.2f s, read %.2f s",
+                            found, number + 1, len(candidates), charged_s, read_s)
                 raise BatesWorkError(_too_much(net, found, number + 1))
             elsewhere += len(_one_each(others))
             if candidates:
-                gone, left = _remove_from(page, frame, net, candidates)
-                removed += gone
-                remaining += left
+                outcome = _remove_from(page, frame, net, candidates)
+                removed += outcome.removed
+                remaining += outcome.remaining
+                elsewhere += outcome.elsewhere
 
         doc.save(str(output_path), garbage=4, deflate=True)
     finally:

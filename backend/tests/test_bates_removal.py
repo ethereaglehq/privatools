@@ -348,7 +348,9 @@ def test_only_the_stamp_goes_when_other_text_looks_like_one(client, name):
     """With no prefix or suffix, anything Bates-shaped in the top or bottom
     inch goes. A turned page must not widen that: before the fix the
     "bottom inch" of a page turned a quarter was a band 252 points wide down
-    one side of the page as shown."""
+    one side of the page as shown. On a page turned a quarter, the number in
+    the inch at the left side stays but is reported as left in place, since
+    a stamp can sit there that the net without a prefix does not take."""
     spec = SPECS[name]
     w, h = _shown_size(spec)
     keep = [
@@ -365,7 +367,7 @@ def test_only_the_stamp_goes_when_other_text_looks_like_one(client, name):
         for word in line.text.split():
             assert word in mupdf and word in pypdf_text, f"{name}: {word!r} ({line.text!r}) was removed"
     assert STAMP not in mupdf and STAMP not in pypdf_text
-    assert _counts(res) == ("1", "0", "0")
+    assert _counts(res) == ("1", "0", "1" if _turn(spec) in (90, 270) else "0")
 
 
 @pytest.mark.parametrize("name", ["rotate-0", "rotate-90", "cropped-rotate-270"])
@@ -795,3 +797,134 @@ def test_the_busiest_real_page_is_not_refused(client):
         assert len(doc[0].get_text("words")) > 3171
     res = _remove(client, pdf, prefix="", digits="3")
     assert _counts(res) == ("13", "0", "0")
+
+
+# ─── Review, round 2 ────────────────────────────────────────────────────────
+#
+# Our own stamps left without a prefix, and never in silence; pages that draw
+# a lot; pictures you can see through.
+
+
+@pytest.mark.parametrize("position", ["bottom-left", "bottom-center", "bottom-right", "top-left", "top-center", "top-right"])
+@pytest.mark.parametrize("rotate", [90, 270])
+def test_our_stamp_left_without_a_prefix_is_reported(client, rotate, position):
+    """With no prefix, our own stamp on a landscape page stored turned a
+    quarter is outside the net: about 173 points from the top or bottom as
+    shown. It stays (removing Bates-shaped numbers from the middle of pages
+    is what the net avoids), but the page is told it was left in place,
+    where before it said "No Bates numbers found", or with other files,
+    that the text was gone. v2.7.4 removed four of these by accident, among
+    them Bates Numbering's default, bottom right on /Rotate 90."""
+    spec = {"rotate": rotate, "mediabox": (0, 0, 792, 612)}
+    stamped = _post(client, "bates-numbering", _pdf([(spec, [Line(BODY, 72, 120)])]),
+                    prefix="PROD", start_number="123", digits="6", position=position).content
+
+    res = _remove(client, stamped, prefix="", digits="6")
+    ((mupdf, pypdf_text),) = _texts(res.content)
+    assert "PROD000123" in mupdf and "PROD000123" in pypdf_text
+    assert BODY in mupdf
+    assert _counts(res) == ("0", "0", "1")
+
+
+def test_numbers_in_the_body_of_a_turned_page_are_not_reported(client):
+    """The report without a prefix covers the inch at either side of a page
+    turned a quarter and the bands where our Bates Numbering puts its stamp
+    there, nothing more: Bates-shaped numbers elsewhere in the body stay and
+    are not mentioned."""
+    for spec in ({"rotate": 90, "mediabox": (0, 0, 792, 612)}, {"rotate": 90}, {"rotate": 270, "cropbox": CROP}):
+        w, h = _shown_size(spec)
+        body = [Line("Account 00451234 opened", 100, h / 2), Line("Reference 998877 filed", 100, h / 2 + 60),
+                Line("Invoice 20240115 paid", 100, 100)]
+        pdf = _pdf([(spec, [*body, _stamp(spec, "bottom-right")])])
+        res = _remove(client, pdf, prefix="", digits="6")
+        ((mupdf, _),) = _texts(res.content)
+        for number in ("00451234", "998877", "20240115"):
+            assert number in mupdf, f"{spec}: {number} was removed"
+        assert _counts(res) == ("1", "0", "0"), spec
+
+
+def _drawing(segments: int, numbers: int) -> bytes:
+    """One page drawing `segments` short line segments (a detailed drawing),
+    with `numbers` Bates-shaped numbers in 4-point type in its bottom inch."""
+    ops = [f"{100 + i % 400} {200 + (i // 400) % 400} m {101 + i % 400} {201 + (i // 400) % 400} l" for i in range(segments)]
+    ops.append("S")
+    for row in range(0, numbers, 40):
+        codes = " ".join(f"{n:06d}" for n in range(row, min(row + 40, numbers)))
+        ops.append(f"BT /F1 4 Tf 1 0 0 1 8 {4 + row / 40 * 4.2:.1f} Tm ({codes}) Tj ET")
+    pdf = pikepdf.new()
+    font = pdf.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type1, BaseFont=pikepdf.Name.Helvetica))
+    pdf.pages.append(pikepdf.Page(pikepdf.Dictionary(
+        Type=pikepdf.Name.Page, MediaBox=pikepdf.Array(LETTER), Resources=pikepdf.Dictionary(Font=pikepdf.Dictionary(F1=font)),
+    )))
+    pdf.pages[0].Contents = pdf.make_stream("\n".join(ops).encode())
+    out = io.BytesIO()
+    pdf.save(out, compress_streams=True)
+    return out.getvalue()
+
+
+def test_a_page_that_draws_a_lot_is_charged_for_it(client):
+    """Each candidate costs two runs over the page's whole content, drawings
+    included. The charge counted words, so a small page drawing 200,000 line
+    segments with 100 numbers in its margin passed and took 2.5 times what
+    v2.7.4 took (a 49 KB page of 1 million segments with 150 numbers: 88 s).
+    The charge now follows the time the page took to read, so it is refused
+    after that first read; with 12 numbers it is processed."""
+    import time
+
+    pdf = _drawing(200_000, 100)
+    start = time.process_time()
+    res = client.post("/api/bates-remove", files={"file": ("d.pdf", pdf, "application/pdf")}, data={"prefix": "", "digits": "6"})
+    spent = time.process_time() - start
+    assert res.status_code == 422, res.text[:300]
+    assert "no file was made" in res.json()["detail"]
+    assert spent < 3, f"refusing took {spent:.1f} s of CPU"
+
+    res = _remove(client, _drawing(200_000, 12), prefix="", digits="6")
+    assert _counts(res) == ("12", "0", "0")
+
+
+def _overlay(pdf: bytes, alpha: str) -> bytes:
+    """`pdf` with a grey picture laid over the whole of page 1 after its text,
+    see-through: with a soft mask (`alpha` "smask") or drawn at a constant
+    fill alpha ("ca")."""
+    with pikepdf.open(io.BytesIO(pdf)) as doc:
+        page = doc.pages[0]
+        grey = pikepdf.Stream(doc, bytes([150]) * 64)
+        grey.Type, grey.Subtype, grey.Width, grey.Height = pikepdf.Name.XObject, pikepdf.Name.Image, 8, 8
+        grey.ColorSpace, grey.BitsPerComponent = pikepdf.Name.DeviceGray, 8
+        resources = page.obj.Resources
+        draw = b"q 612 0 0 792 0 0 cm /Veil Do Q"
+        if alpha == "smask":
+            mask = pikepdf.Stream(doc, bytes([100]) * 64)
+            mask.Type, mask.Subtype, mask.Width, mask.Height = pikepdf.Name.XObject, pikepdf.Name.Image, 8, 8
+            mask.ColorSpace, mask.BitsPerComponent = pikepdf.Name.DeviceGray, 8
+            grey.SMask = mask
+        else:
+            resources.ExtGState = pikepdf.Dictionary(Half=pikepdf.Dictionary(Type=pikepdf.Name.ExtGState, ca=0.4))
+            draw = b"q /Half gs 612 0 0 792 0 0 cm /Veil Do Q"
+        resources.XObject = pikepdf.Dictionary(Veil=grey)
+        page.contents_add(doc.make_stream(draw))
+        out = io.BytesIO()
+        doc.save(out)
+        return out.getvalue()
+
+
+@pytest.mark.parametrize("alpha", ["smask", "ca"])
+def test_a_see_through_picture_over_a_stamp_is_not_whitened(client, alpha):
+    """A picture laid over a stamp after it hides it only if it is opaque.
+    Through a see-through one (a watermark, a tint) the stamp's text shows,
+    so only the text goes: the picture under it stays as it was, and the
+    page looks as it would have without the stamp."""
+    stamp = _stamp({}, "bottom-right")
+    pdf = _overlay(_pdf([({}, [Line(BODY, 72, 120), stamp])]), alpha)
+    without = _overlay(_pdf([({}, [Line(BODY, 72, 120)])]), alpha)
+
+    res = _remove(client, pdf)
+    ((mupdf, _),) = _texts(res.content)
+    assert STAMP not in mupdf
+    after, expected = _shown(res.content, 0, 0), _shown(without, 0, 0)
+    region = _ink_box(stamp) + (-2, -2, 2, 2)
+    assert np.abs(_region(after, region).astype(int) - _region(expected, region).astype(int)).max() <= 2, (
+        f"{alpha}: the stamp's box does not look as it would without the stamp"
+    )
+    assert _counts(res) == ("1", "0", "0")

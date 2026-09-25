@@ -197,6 +197,18 @@ def test_removal_ignores_bates_shaped_text_in_the_body(tmp_path):
     assert "000123" in _all_text(cleaned)
 
 
+def test_removal_refuses_a_file_that_is_not_a_pdf(tmp_path):
+    """MuPDF opens an HTML page saved as .pdf as HTML, and reading a PDF key
+    of such a page crashed the process (turning pages is PDF only). A real
+    one in the corpus of statements did this; it is refused instead."""
+    from backend.app.utils.exceptions import PdfCorruptError
+
+    path = tmp_path / "saved-page.pdf"
+    path.write_bytes(b"\r\n<!DOCTYPE html>\r\n<html><head><title>Card terms</title></head><body><p>PROD000001</p></body></html>")
+    with pytest.raises(PdfCorruptError):
+        remove_bates_numbering(str(path), prefix="PROD")
+
+
 def test_removal_reports_zero_when_nothing_matches(tmp_path):
     cleaned, removed, remaining, elsewhere = remove_bates_numbering(_pdf(tmp_path / "plain.pdf", 2), prefix="ZZZ")
     assert (removed, remaining, elsewhere) == (0, 0, 0)

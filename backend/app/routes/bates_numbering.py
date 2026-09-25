@@ -283,10 +283,11 @@ async def bates_remove(
     X-Bates-Removed counts the stamps that are no longer in the file,
     X-Bates-Remaining the stamps found that are still in it (drawn by a stamp
     annotation or a form field, say, which redaction does not reach), and
-    X-Bates-Elsewhere the text matching the prefix or suffix found anywhere
-    else in the file and left in place (always 0 when neither is given).
-    A file that would take far longer than its size warrants is refused
-    with a 422.
+    X-Bates-Elsewhere what was left in place: with a prefix or suffix, the
+    text matching it found anywhere else in the file; with neither,
+    Bates-shaped numbers on pages turned a quarter that lie within an inch of
+    a side, or where our Bates Numbering puts its stamp on such a page.
+    A file that would take far longer than it warrants is refused with a 422.
     """
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
