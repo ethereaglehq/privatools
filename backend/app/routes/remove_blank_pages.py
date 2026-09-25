@@ -15,7 +15,7 @@ from ..utils.cleanup import (
     safe_open_pdf,
     validate_pdf_content,
 )
-from ..utils.page_removal import remove_pages
+from ..utils.page_removal import WorkBudget, remove_pages
 from ..utils.route_helpers import safe_stem
 from ..utils.render import safe_get_pixmap
 
@@ -100,7 +100,8 @@ def _process_blank_pages(data: bytes, sensitivity: int, out_path: str) -> str:
         if len(blank) == len(pages):
             blank = []  # every page looks blank: keep them all
         if blank:
-            remove_pages(pdf, blank, tool="remove-blank-pages").save(out_path)
+            budget = WorkBudget("remove-blank-pages", len(data))
+            remove_pages(pdf, blank, budget=budget).save(out_path)
         else:
             pdf.save(out_path)  # nothing removed: nothing to prune or check
     return out_path

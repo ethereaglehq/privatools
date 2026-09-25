@@ -26,6 +26,7 @@ import logging
 import re
 import time
 import zipfile
+from pathlib import Path
 
 import pikepdf
 import pytest
@@ -41,10 +42,12 @@ from backend.tests.page_reference_pdfs import (
     build_catalog_listed_pdf,
     build_crafted_pdf,
     build_damaged_tree_pdf,
+    build_dense_tagged_pdf,
     build_direct_page_tree_pdf,
     build_malformed_pdf,
     build_protected_pdf,
     build_reference_pdf,
+    build_shared_chain_pages_pdf,
     build_shared_objects_pdf,
     build_tagged_link_pdf,
     page_texts,
@@ -353,12 +356,20 @@ def _save(pdf: pikepdf.Pdf) -> bytes:
     return buf.getvalue()
 
 
+def _budget(size: int = 0):
+    """A request's work budget for ``size`` bytes uploaded: the floor alone
+    covers the small fixtures."""
+    from backend.app.utils.page_removal import WorkBudget
+
+    return WorkBudget("test", size)
+
+
 def test_removing_nothing_changes_nothing(client, reference_pdf):
     from backend.app.utils.page_removal import remove_pages
 
     data = reference_pdf(KINDS)
     with _open(data) as before, _open(data) as pdf:
-        remove_pages(pdf, [], tool="test")
+        remove_pages(pdf, [], budget=_budget())
         after = _open(_save(pdf))
         for view in (outline, links, named_destinations, form_fields, threads):
             assert view(after) == view(before), view.__name__
@@ -383,7 +394,7 @@ def test_a_file_an_earlier_version_left_pages_in_is_cleaned(reference_pdf):
         damaged = _save(pdf)
     assert leaked_pages(damaged) == {2}
     with _open(damaged) as pdf:
-        remove_pages(pdf, [2], tool="test")  # now remove source page 4
+        remove_pages(pdf, [2], budget=_budget())  # now remove source page 4
         cleaned = _save(pdf)
     assert _numbers(cleaned) == [1, 3]
     assert leaked_pages(cleaned) == set()
@@ -399,7 +410,7 @@ def test_everything_tagged_on_removed_pages_leaves_an_honest_untagged_file():
         root = pdf.Root.StructTreeRoot
         document = root.K[0]
         document.K = pikepdf.Array([document.K[0]])
-        remove_pages(pdf, [0], tool="test")
+        remove_pages(pdf, [0], budget=_budget())
         out = _open(_save(pdf))
     assert "/StructTreeRoot" not in out.Root
     mark = out.Root.get("/MarkInfo")
@@ -419,7 +430,7 @@ def test_a_nested_parent_tree_is_pruned_and_its_limits_fixed(reference_pdf):
             kids.append(pdf.make_indirect(pikepdf.Dictionary(
                 Nums=pikepdf.Array(flat), Limits=pikepdf.Array([chunk[0][0], chunk[-1][0]]))))
         root.ParentTree = pdf.make_indirect(pikepdf.Dictionary(Kids=pikepdf.Array(kids)))
-        remove_pages(pdf, [1], tool="test")
+        remove_pages(pdf, [1], budget=_budget())
         data = _save(pdf)
     assert leaked_pages(data) == set()
     with _open(data) as out:
@@ -436,7 +447,7 @@ def test_a_looping_outline_does_not_hang(reference_pdf):
     with _open(reference_pdf(["outline_dest"])) as pdf:
         last = pdf.Root.Outlines.Last
         last.Next = pdf.Root.Outlines.First  # malformed: the list loops
-        remove_pages(pdf, [1], tool="test")
+        remove_pages(pdf, [1], budget=_budget())
         data = _save(pdf)
     assert leaked_pages(data) == set()
 
@@ -449,11 +460,11 @@ def test_xfa_goes_when_fields_are_removed_and_stays_otherwise(reference_pdf):
         pdf.Root.AcroForm.XFA = pdf.make_stream(b"<xdp:xdp>PRIVA-P2-XFA</xdp:xdp>")
         with_xfa = _save(pdf)
     with _open(with_xfa) as pdf:
-        remove_pages(pdf, [1], tool="test")
+        remove_pages(pdf, [1], budget=_budget())
         assert "/XFA" not in pdf.Root.AcroForm, "XFA holds the removed fields' values"
         assert leaked_pages(_save(pdf)) == set()
     with _open(with_xfa) as pdf:
-        remove_pages(pdf, [], tool="test")
+        remove_pages(pdf, [], budget=_budget())
         assert "/XFA" in pdf.Root.AcroForm
 
 
@@ -467,7 +478,7 @@ def test_template_pages_are_left_alone(reference_pdf):
         ))
         pdf.Root.Names = pikepdf.Dictionary(Templates=pikepdf.Dictionary(
             Names=pikepdf.Array([pikepdf.String("form-page"), template])))
-        remove_pages(pdf, [1], tool="test")
+        remove_pages(pdf, [1], budget=_budget())
         out = _open(_save(pdf))
     names = out.Root.Names.Templates.Names
     assert str(names[0]) == "form-page" and names[1].get("/Type") == "/Page"
@@ -478,8 +489,6 @@ def test_template_pages_are_left_alone(reference_pdf):
 
 def _service(tool: str, path) -> list[bytes]:
     """Run a page service on ``path``; return each output PDF's bytes."""
-    from pathlib import Path
-
     from backend.app.services import (
         delete_pages_service,
         extract_pages_service,
@@ -551,14 +560,15 @@ def test_an_object_shared_by_many_owners_is_read_once(kind, tool, n, tmp_path):
 
     out = tmp_path / "out.pdf"
     source = build_shared_objects_pdf(kind, n)
+    budget = _budget(len(source))
     with pikepdf.open(io.BytesIO(source)) as pdf:
         start = time.process_time()
         if tool == "delete":
-            removal = remove_pages(pdf, [1], tool="test")
+            removal = remove_pages(pdf, [1], budget=budget)
         else:  # Extract every page but page 2
             copy = pikepdf.new()
-            copy_pages(copy, pdf, [i for i in range(len(pdf.pages)) if i != 1], tool="test")
-            removal = prune_to_page_tree(copy, tool="test")
+            copy_pages(copy, pdf, [i for i in range(len(pdf.pages)) if i != 1], budget=budget)
+            removal = prune_to_page_tree(copy, budget=budget)
         cpu = time.process_time() - start
         assert cpu < 3, f"{kind} with {n} owners took {cpu:.1f} s of CPU"
         removal.save(out)
@@ -788,35 +798,35 @@ def test_an_output_that_would_keep_a_removed_page_is_refused(client, monkeypatch
 
 
 def _budgets(monkeypatch) -> list:
-    """Every work budget made from now on, its input counted while open."""
+    """Every work budget made from now on."""
     from backend.app.utils import page_removal
 
     made: list = []
-    init = page_removal._Budget.__init__
+    init = page_removal.WorkBudget.__init__
 
-    def recording(self, tool, count):
-        init(self, tool, count)
-        self.objects()
+    def recording(self, tool, size):
+        init(self, tool, size)
         made.append(self)
 
-    monkeypatch.setattr(page_removal._Budget, "__init__", recording)
+    monkeypatch.setattr(page_removal.WorkBudget, "__init__", recording)
     return made
 
 
 @pytest.mark.parametrize("tool", sorted(set(TOOLS) - {"split-in-half"}))
 def test_every_tool_stays_far_below_its_work_budget(client, reference_pdf, monkeypatch, tool):
-    """Each job counts its steps, and may take _STEPS_PER_OBJECT for each
-    object of its input. With every kind of reference in the file, no job
-    takes a quarter of that: the limit is for files that make a pass read
-    one object once per owner, not for any file a tool meets. (On real
-    files, 19 steps per object at most.)"""
+    """A request has one budget, whatever the parts it writes, and may take
+    _STEPS_PER_BYTE for each byte uploaded, or _STEPS_PER_OBJECT for each
+    object it copies, if that is more. With every kind of reference in the
+    file, no request takes a quarter of that: the limit is for files that
+    make a pass read one object once per owner, not for any file a tool
+    meets. (On real files, at most 0.08 steps per byte.)"""
     from backend.app.utils import page_removal
 
     made = _budgets(monkeypatch)
     _run(client, reference_pdf, tool, KINDS)
-    assert made
-    for budget in made:
-        assert budget.used <= page_removal._STEPS_PER_OBJECT / 4 * budget.objects(), budget.tool
+    assert len(made) == 1, "one budget per request"
+    [budget] = made
+    assert budget.used * 4 <= budget.limit - page_removal._STEPS_FLOOR, budget.tool
 
 
 @pytest.mark.parametrize("route, form", [
@@ -824,14 +834,15 @@ def test_every_tool_stays_far_below_its_work_budget(client, reference_pdf, monke
     ("/api/extract-pages", {"pages": "1,3-4"}),
     ("/api/split", {"mode": "individual"}),
 ])
-def test_a_job_past_its_work_budget_is_refused(client, reference_pdf, monkeypatch, caplog, route, form):
-    """Past its budget, a job stops wherever it is, and is refused like a
-    leak: a 422 that says why, no file, and a log line with the tool, the
-    budget and the size of the input, and no document text."""
+def test_a_request_past_its_work_budget_is_refused(client, reference_pdf, monkeypatch, caplog, route, form):
+    """Past its budget, a request stops wherever it is, and is refused like a
+    leak: a 422 that says why, no file, and a log line with the tool and the
+    budget, and no document text."""
     from backend.app.utils import cleanup, page_removal
 
     monkeypatch.setattr(page_removal, "_STEPS_FLOOR", 100)
-    monkeypatch.setattr(page_removal, "_STEPS_PER_OBJECT", 1)
+    monkeypatch.setattr(page_removal, "_STEPS_PER_BYTE", 0)
+    monkeypatch.setattr(page_removal, "_STEPS_PER_OBJECT", 0)
     before = set(cleanup.TEMP_DIR.iterdir()) if cleanup.TEMP_DIR.exists() else set()
     with caplog.at_level(logging.ERROR, logger="backend.app.utils.page_removal"):
         resp = client.post(route, files={"file": _upload(reference_pdf(KINDS))}, data=form)
@@ -841,8 +852,8 @@ def test_a_job_past_its_work_budget_is_refused(client, reference_pdf, monkeypatc
     tool = {"/api/delete-pages": "delete-pages", "/api/extract-pages": "extract-pages"}.get(route, "split")
     assert len(refusals) == 1
     assert re.fullmatch(
-        rf"page removal refused the output of {tool}: "
-        r"its work passed \d+ steps, for \d+ objects in its input",
+        rf"page removal refused the output of {tool}: its work passed \d+ steps, "
+        r"allowed for \d+ bytes uploaded and \d+ objects copied",
         refusals[0],
     ), refusals
     after = set(cleanup.TEMP_DIR.iterdir()) if cleanup.TEMP_DIR.exists() else set()
@@ -854,7 +865,8 @@ def test_a_shape_read_once_per_owner_is_stopped_by_the_work_budget(monkeypatch, 
     a pass read, or copied, once per owner. As if one were still unknown, the
     pruner here decides a shared list again for each owner: 2,000 links whose
     Hide actions name one list of 2,000 notes took 10 s and made a 35 MB file
-    that way. The budget stops the job after linear work, and refuses it."""
+    that way. The budget stops the job after linear work, and refuses it.
+    (The allowance per byte is lowered to 2, so the test is quick.)"""
     from backend.app.utils import page_removal
     from backend.app.utils.page_removal import PageWorkError, remove_pages
 
@@ -865,59 +877,148 @@ def test_a_shape_read_once_per_owner_is_stopped_by_the_work_budget(monkeypatch, 
         return decide(self, array, keep)
 
     monkeypatch.setattr(page_removal._Pruner, "_shared_array", for_each_owner)
+    monkeypatch.setattr(page_removal, "_STEPS_PER_BYTE", 2)
     out = tmp_path / "out.pdf"
-    with pikepdf.open(io.BytesIO(build_shared_objects_pdf("shared_hide_list", 2000))) as pdf:
+    source = build_shared_objects_pdf("shared_hide_list", 2000)
+    with pikepdf.open(io.BytesIO(source)) as pdf:
         start = time.process_time()
         with pytest.raises(PageWorkError):
-            remove_pages(pdf, [1], tool="test").save(out)
+            remove_pages(pdf, [1], budget=_budget(len(source))).save(out)
         cpu = time.process_time() - start
     assert not out.exists()
     assert cpu < 10, f"the budget stopped the job after {cpu:.1f} s of CPU"
 
 
-def test_an_output_with_far_more_objects_than_its_input_is_refused(client, monkeypatch, caplog):
-    """Pruning removes objects, and the few it makes replace others. An
-    output with more than twice its input's objects, and 10,000 more, is
-    what a pass that makes objects by mistake would write: refused."""
+def _walks_afresh(monkeypatch) -> None:
+    """A walk nobody has found yet, as the backstop tests simulate one: every
+    owner of a shared action walks its chain afresh, in the pruner and in
+    the copier."""
     from backend.app.utils import page_removal
 
+    prune = page_removal._Pruner.prune_action
+
+    def prune_afresh(self, action, depth=0):
+        if depth == 0:
+            self._actions.clear()
+            self._arrays.clear()
+        return prune(self, action, depth)
+
+    chain = page_removal._action_chain
+
+    def chain_afresh(action, seen, depth=0):
+        return chain(action, set() if depth == 0 else seen, depth)
+
+    monkeypatch.setattr(page_removal._Pruner, "prune_action", prune_afresh)
+    monkeypatch.setattr(page_removal, "_action_chain", chain_afresh)
+
+
+@pytest.mark.parametrize("tool", ["split", "merge"])
+def test_the_parts_of_a_request_share_one_work_budget(monkeypatch, tmp_path, tool):
+    """Split prunes and saves a document per part, and Merge copies each
+    source. With a budget per part, each got a floor of its own, and a walk
+    that goes wrong once per owner ran 4 minutes on a 106 KB file without a
+    refusal. A request's parts share one budget, whose floor counts once:
+    here the floor alone, lowered so the test is quick. One job over the
+    whole file fits in it; Split's 20 parts and Merge's 10 sources, each
+    about as much work, do not together."""
+    from backend.app.services import delete_pages_service, merge_service, split_service
+    from backend.app.utils import page_removal
+
+    _walks_afresh(monkeypatch)
+    monkeypatch.setattr(page_removal, "_STEPS_FLOOR", 40_000)
+    monkeypatch.setattr(page_removal, "_STEPS_PER_BYTE", 0)
+    monkeypatch.setattr(page_removal, "_STEPS_PER_OBJECT", 0)
+    path = tmp_path / "chain.pdf"
+    path.write_bytes(build_shared_chain_pages_pdf(pages=20, links=60))
+    made = _budgets(monkeypatch)
+    Path(delete_pages_service.delete_pages(str(path), "2")).unlink()
+    assert made[0].used * 3 < page_removal._STEPS_FLOOR, "one job fits in the floor"
+    with pytest.raises(page_removal.PageWorkError):
+        if tool == "split":
+            split_service.split_pdf(str(path), mode="individual")
+        else:
+            merge_service.merge_pdfs([str(path)] * 10)
+    assert len(made) == 2, "one budget per request"
+
+
+def test_a_valid_file_dense_with_tags_is_not_refused(monkeypatch, tmp_path):
+    """Word-level tags, as some OCR and tagging pipelines write them: 100
+    marked-content ids to each paragraph, 10 paragraphs to a page. Pruning
+    reads every id, about 230 steps per object of the file, so a budget
+    sized by objects refused such a file from about 560 pages, where main
+    returned one. Each id takes room in the file, and the budget is sized by
+    the bytes uploaded: here 0.5 steps per byte. The floor is taken away, so
+    20 pages stand for the 700 the review built."""
+    from backend.app.utils import page_removal
+
+    monkeypatch.setattr(page_removal, "_STEPS_FLOOR", 0)
+    path = tmp_path / "dense.pdf"
+    path.write_bytes(build_dense_tagged_pdf(pages=20, elements=10, mcids=100))
+    made = _budgets(monkeypatch)
+    for tool in ("delete", "extract", "merge"):
+        for data in _service(tool, path):
+            with pikepdf.open(io.BytesIO(data)) as pdf:
+                assert "/StructTreeRoot" in pdf.Root, tool
+            assert not leaked_pages(data), tool
+    assert len(made) == 3
+    for budget in made:
+        assert budget.used * 10 < budget.limit, budget.tool
+
+
+@pytest.mark.parametrize("tool", ["delete", "extract"])
+def test_an_output_with_far_more_objects_than_its_input_is_refused(client, monkeypatch, caplog, tool):
+    """Pruning removes objects, and the few it makes replace others. An
+    output with more than twice its input's objects, and 10,000 more, is
+    what a pass that makes objects by mistake would write: refused. A copy's
+    objects are counted before it is pruned; a file pruned in place stands
+    for no more objects than a quarter of its bytes."""
+    from backend.app.utils import page_removal
+
+    data = build_reference_pdf(["piece_info"])
+    extra = 12_000 + len(data) // 2
+
     def add_objects(pdf):
-        pdf.Root.PrivaJunk = pikepdf.Array([pdf.make_indirect(pikepdf.Dictionary()) for _ in range(12_000)])
+        pdf.Root.PrivaJunk = pikepdf.Array([pdf.make_indirect(pikepdf.Dictionary()) for _ in range(extra)])
 
     _cutting_sweep(monkeypatch, add_objects)
+    route, form, name = {
+        "delete": ("/api/delete-pages", {"pages": "2"}, "delete-pages"),
+        "extract": ("/api/extract-pages", {"pages": "1,3-4"}, "extract-pages"),
+    }[tool]
     with caplog.at_level(logging.ERROR, logger="backend.app.utils.page_removal"):
-        resp = client.post(
-            "/api/delete-pages", files={"file": _upload(build_reference_pdf(["piece_info"]))},
-            data={"pages": "2"},
-        )
+        resp = client.post(route, files={"file": _upload(data)}, data=form)
     assert resp.status_code == 422, resp.text
     assert resp.json()["detail"] == page_removal.PageLeakError.default_detail
     refusals = [r.getMessage() for r in caplog.records if "refused the output" in r.getMessage()]
     assert len(refusals) == 1
     assert re.fullmatch(
-        r"page removal refused the output of delete-pages: "
+        rf"page removal refused the output of {name}: "
         r"it holds \d+ objects, \d+ allowed for \d+ in its input",
         refusals[0],
     ), refusals
 
 
-def test_a_file_cannot_claim_more_objects_than_it_has_room_for(tmp_path):
-    """The budget grows with the input's objects, counted from its
-    cross-reference table, which a crafted file can fill with objects that
-    are not there. No more than a quarter of the file's bytes count."""
-    from backend.app.utils.page_removal import _objects_read
+def test_a_request_budget_is_sized_by_the_upload_not_by_what_it_claims(monkeypatch, tmp_path):
+    """The budget is the floor plus _STEPS_PER_BYTE for each byte uploaded,
+    or _STEPS_PER_OBJECT for each object a copy holds before pruning, if
+    that is more. A cross-reference table that claims 99,999,999 objects
+    changes nothing: nothing counts the objects a file says it has."""
+    from backend.app.utils import page_removal
 
-    path = tmp_path / "plain.pdf"
-    path.write_bytes(build_reference_pdf(()))
-    with pikepdf.open(path) as pdf:
-        in_use = sum(1 for entry in pdf.get_xref_table().values() if entry.type)
-        assert _objects_read(pdf) == in_use
-    data = path.read_bytes()
+    data = build_reference_pdf(())
     declared = re.search(rb"/Size (\d+)", data).group(0)
     claims = tmp_path / "claims.pdf"
     claims.write_bytes(data.replace(declared, b"/Size 99999999"))
-    with pikepdf.open(claims) as pdf:
-        assert _objects_read(pdf) == claims.stat().st_size // 4
+    size = claims.stat().st_size
+    made = _budgets(monkeypatch)
+    _service("delete", claims)
+    _service("extract", claims)
+    delete, extract = made
+    assert delete.limit == page_removal._STEPS_FLOOR + page_removal._STEPS_PER_BYTE * size
+    assert extract.objects > 0
+    assert extract.limit == page_removal._STEPS_FLOOR + max(
+        page_removal._STEPS_PER_BYTE * size, page_removal._STEPS_PER_OBJECT * extract.objects,
+    )
 
 
 def test_a_tagged_link_to_a_removed_page_leaves_no_parent_tree_key(client):

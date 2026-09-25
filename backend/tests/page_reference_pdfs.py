@@ -1112,6 +1112,68 @@ def build_direct_page_tree_pdf() -> bytes:
     return raw.replace(b"/Pages " + number + b" 0 R", b"/Pages " + body, 1)
 
 
+def build_dense_tagged_pdf(pages: int, elements: int, mcids: int) -> bytes:
+    """A valid tagged PDF with word-level marked content.
+
+    Some OCR and tagging pipelines write it this way: each page has
+    ``elements`` paragraph elements, each owning ``mcids`` marked-content ids,
+    and the ParentTree maps every id to its paragraph. So the file holds far
+    more entries to read than objects.
+    """
+    pdf = pikepdf.new()
+    font = pdf.make_indirect(Dictionary(Type=Name.Font, Subtype=Name.Type1, BaseFont=Name.Helvetica))
+    root = pdf.make_indirect(Dictionary(Type=Name.StructTreeRoot))
+    document = pdf.make_indirect(Dictionary(Type=Name.StructElem, S=Name.Document, P=root))
+    paragraphs, nums = [], []
+    for n in range(pages):
+        words = b"BT /F1 6 Tf 20 786 Td (PRIVA-P%d-TEXT) Tj ET\n" % (n + 1) + b"".join(
+            b"/Span <</MCID %d>> BDC BT /F1 6 Tf %d %d Td (PRIVA-P%d-w%d) Tj ET EMC\n"
+            % (m, 20 + (m % 20) * 28, 778 - (m // 20) * 8, n + 1, m)
+            for m in range(elements * mcids)
+        )
+        pdf.pages.append(pikepdf.Page(Dictionary(
+            Type=Name.Page, MediaBox=Array([0, 0, 612, 792]), Contents=pdf.make_stream(words),
+            Resources=Dictionary(Font=Dictionary(F1=font)), StructParents=n)))
+        page = pdf.pages[-1].obj
+        owners = []
+        for e in range(elements):
+            paragraph = pdf.make_indirect(Dictionary(
+                Type=Name.StructElem, S=Name.P, P=document, Pg=page,
+                K=Array(list(range(e * mcids, (e + 1) * mcids)))))
+            paragraphs.append(paragraph)
+            owners.extend([paragraph] * mcids)
+        nums.extend([n, pdf.make_indirect(Array(owners))])
+    document.K = Array(paragraphs)
+    root.K = Array([document])
+    root.ParentTree = pdf.make_indirect(Dictionary(Nums=Array(nums)))
+    root.ParentTreeNextKey = pages
+    pdf.Root.StructTreeRoot = root
+    pdf.Root.MarkInfo = Dictionary(Marked=True)
+    buf = io.BytesIO()
+    pdf.save(buf, object_stream_mode=pikepdf.ObjectStreamMode.generate)
+    pdf.close()
+    return buf.getvalue()
+
+
+def build_shared_chain_pages_pdf(pages: int, links: int) -> bytes:
+    """Every page lists the same ``links`` links, which share one action whose
+    /Next lists ``links`` more: a pass that walked each link's chain afresh
+    would read links * links actions for every document it prunes."""
+    pdf = _open(build_reference_pdf((), pages=pages))
+    chain = pdf.make_indirect(Array([
+        pdf.make_indirect(Dictionary(S=Name.URI, URI=String(f"https://example.com/{k}")))
+        for k in range(links)
+    ]))
+    action = pdf.make_indirect(Dictionary(S=Name.URI, URI=String("https://example.com/"), Next=chain))
+    shared = pdf.make_indirect(Array([
+        pdf.make_indirect(Dictionary(Type=Name.Annot, Subtype=Name.Link, Rect=Array([0, 0, 5, 5]), A=action))
+        for _ in range(links)
+    ]))
+    for page in pdf.pages:
+        page.obj.Annots = shared
+    return _saved(pdf)
+
+
 def build_tagged_link_pdf() -> bytes:
     """A tagged link on page 1 to page 2 whose element also owns link text.
 

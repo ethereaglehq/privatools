@@ -18,7 +18,7 @@ import pikepdf
 from ..utils.cleanup import safe_open_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
-from ..utils.page_removal import PageCopier, prune_to_page_tree
+from ..utils.page_removal import PageCopier, WorkBudget, prune_to_page_tree
 
 # How many pages to add before re-checking the on-disk size. Lower = more
 # accurate boundary, higher = less work per chunk. 5 is a good compromise for
@@ -45,7 +45,7 @@ def split_by_size(input_path: str, max_size_mb: float = 10.0) -> str:
                 copier.copy(out, pages_for_chunk)
                 # Without the other chunks' pages, which links, form fields
                 # and threads would drag along.
-                prune_to_page_tree(out, tool="split-by-size").save(str(out_path))
+                prune_to_page_tree(out, budget=copier.budget).save(str(out_path))
             else:
                 # A size probe. Pruning only ever removes objects, so the
                 # unpruned copy bounds the final chunk's size from above.
@@ -59,7 +59,7 @@ def split_by_size(input_path: str, max_size_mb: float = 10.0) -> str:
             total_pages = len(src.pages)
             if total_pages == 0:
                 raise ValidationError("Cannot split an empty PDF.")
-            copier = PageCopier(src, tool="split-by-size")
+            copier = PageCopier(src, budget=WorkBudget.for_files("split-by-size", input_path))
             src_pages = [page for page in src.pages]
 
             chunks: list[list] = []

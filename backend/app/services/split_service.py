@@ -18,7 +18,7 @@ from typing import List
 import pikepdf
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, safe_open_pdf
-from ..utils.page_removal import PageCopier, prune_to_page_tree
+from ..utils.page_removal import PageCopier, WorkBudget, prune_to_page_tree
 
 logger = logging.getLogger(__name__)
 
@@ -79,8 +79,9 @@ def _write_part(copier: PageCopier, indices, out_path) -> None:
     with pikepdf.Pdf.new() as out:
         copier.copy(out, indices)
         # The other parts' pages must not ride along with this part's links,
-        # form fields and threads.
-        prune_to_page_tree(out, tool="split").save(str(out_path))
+        # form fields and threads. Every part counts against the request's
+        # one budget.
+        prune_to_page_tree(out, budget=copier.budget).save(str(out_path))
 
 
 def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2) -> str:
@@ -101,7 +102,7 @@ def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2)
             if total_pages <= 0:
                 raise ValueError("Cannot split an empty PDF with no pages.")
 
-            copier = PageCopier(pdf, tool="split")
+            copier = PageCopier(pdf, budget=WorkBudget("split", input_size))
             if mode == "individual":
                 for i in range(total_pages):
                     out_path = get_temp_path(f"page_{i+1}_{uuid.uuid4().hex}.pdf")

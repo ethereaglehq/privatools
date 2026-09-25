@@ -25,6 +25,7 @@ from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
 from ..utils.page_removal import (
     PageLeakError,
+    WorkBudget,
     copy_pages,
     prune_structure_tree_to_pages,
     prune_to_page_tree,
@@ -63,6 +64,8 @@ def merge_pdfs(
         "merge: start files=%d total_input_bytes=%d", len(input_paths), total_input_bytes,
     )
 
+    # One budget for the whole request, every source's jobs included.
+    budget = WorkBudget("merge", total_input_bytes)
     dst = pikepdf.Pdf.new()
     total_pages_out = 0
     pages_left_out = False
@@ -89,17 +92,17 @@ def merge_pdfs(
                     # (a crafted file's can) would copy it whole, tags of the
                     # pages left out included, and add_source uses that copy.
                     try:
-                        prune_structure_tree_to_pages(src, indices, tool="merge")
+                        prune_structure_tree_to_pages(src, indices, budget=budget)
                     except PageLeakError:
                         raise
                     except Exception:  # add_source tries again, or drops the tags
                         logger.debug("merge: structure tree not pruned before the copy", exc_info=True)
-                copy_pages(dst, src, indices, tool="merge")
+                copy_pages(dst, src, indices, budget=budget)
                 total_pages_out += len(indices)
                 # Must happen here, while `src` is still open and immediately
                 # after its pages were appended — that append is what lets each
                 # struct element's /Pg resolve to the page now in `dst`.
-                struct_merger.add_source(src, first_page, len(dst.pages) - 1, pages=selected)
+                struct_merger.add_source(src, first_page, len(dst.pages) - 1, pages=selected, budget=budget)
 
         struct_merger.finalize()
 
@@ -111,7 +114,7 @@ def merge_pdfs(
         if pages_left_out:
             # Pages a range left out must not ride along with the links, form
             # fields and threads of the pages merged.
-            prune_to_page_tree(dst, tool="merge").save(str(output))
+            prune_to_page_tree(dst, budget=budget).save(str(output))
         else:
             dst.save(str(output))
     finally:

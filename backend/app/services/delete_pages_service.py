@@ -2,7 +2,7 @@ from ..utils.cleanup import safe_open_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
 from ..utils.page_range import parse_page_range
-from ..utils.page_removal import remove_pages
+from ..utils.page_removal import WorkBudget, remove_pages
 
 
 def parse_page_ranges(pages_str: str, total_pages: int) -> list[int]:
@@ -23,6 +23,7 @@ def delete_pages(input_path: str, pages_str: str) -> str:
 
         # Not just `del pdf.pages[idx]`: bookmarks, links, form fields and
         # the structure tree would keep the deleted pages in the file.
-        remove_pages(pdf, to_delete, tool="delete-pages").save(str(output_path))
+        budget = WorkBudget.for_files("delete-pages", input_path)
+        remove_pages(pdf, to_delete, budget=budget).save(str(output_path))
 
     return str(output_path)

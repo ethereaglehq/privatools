@@ -59,8 +59,9 @@ rather than return a file that holds removed pages or lost kept ones.
 
 Every pass is meant to take time in proportion to what it reads, and every
 review of this module found another way to share objects that made a pass
-read or copy one of them once per owner. So the work is counted too, and a
-job that takes far more than its input warrants is refused the same way
+read or copy one of them once per owner. So the work is counted too, against
+one :class:`WorkBudget` per request that all its jobs share, and a request
+that takes far more than its upload warrants is refused the same way
 (:class:`PageWorkError`), as is an output with far more objects than its
 input: a shape nobody has found yet costs linear work, then a clear 422.
 
@@ -194,82 +195,97 @@ _PRUNED_TO = "_page_removal_tags_pruned_to"
 # ── the work budget ─────────────────────────────────────────────────────────
 #
 # A step is an entry of a dictionary or an item of an array read, an item of
-# an array made, or a link of a chain followed. A job may take _STEPS_FLOOR
-# steps, and _STEPS_PER_OBJECT more for each object of its input; past that
-# it is refused. Measured on 376 jobs over real and generated files, every
-# tool included, a job took at most 21 steps per object (19 on the real
-# ones), and at most 103,000 steps in all: the limit is far from them.
-# Stopped there, the crafted jobs tried had run for one to two seconds.
+# an array made, or a link of a chain followed. A request may take
+# _STEPS_FLOOR steps, once, and the larger of _STEPS_PER_BYTE for each byte
+# uploaded and _STEPS_PER_OBJECT for each object of the documents it builds
+# by copying; past that it is refused. Bytes, not objects: a valid tagged
+# file can hold hundreds of marked-content ids per object, and pruning reads
+# each of them, but each takes room in the file. Measured on 376 requests
+# over real and generated files, every tool included, a request took at most
+# 0.08 steps per byte uploaded (0.07 on the third-party files), and 103,000
+# steps in all; a file tagged word by word takes about 0.5.
+_STEPS_PER_BYTE = 25
 _STEPS_PER_OBJECT = 100
 _STEPS_FLOOR = 1_000_000
-# A save may write _GROWTH times the objects of its input, plus _GROWTH_FLOOR.
-# Pruning removes objects; the few it makes replace others.
+# An output may hold _GROWTH times the objects of its input, plus
+# _GROWTH_FLOOR. Pruning removes objects; the few it makes replace others.
 _GROWTH = 2
 _GROWTH_FLOOR = 10_000
 
 
 class _OutOfSteps(BaseException):
-    """A job went past its budget.
+    """A request went past its budget.
 
     Not an Exception: the passes contain their own errors with ``except
     Exception``, one bad object at a time, and this must stop the whole job.
     """
 
 
-class _Budget:
-    """The steps one job may take (see _STEPS_PER_OBJECT).
+class WorkBudget:
+    """The steps one request may take, shared by all its jobs.
 
-    ``count`` counts the objects of the job's input. It is called only when
-    they matter: when the job passes _STEPS_FLOOR, or its output
-    _GROWTH_FLOOR objects.
+    A tool's service makes one per request, sized by the bytes uploaded
+    (:meth:`for_files`), and passes it to every page removal call: the
+    copier, each part's pruning and save, the structure prunes. A request
+    that removes pages from one document, or writes a part for every page,
+    has one budget, whose floor counts once. ``tool`` is the route's name,
+    for the log of a refusal.
     """
 
-    __slots__ = ("tool", "used", "limit", "_count", "_objects")
+    __slots__ = ("tool", "size", "objects", "used", "limit")
 
-    def __init__(self, tool: str, count: Callable[[], int]):
+    def __init__(self, tool: str, size: int):
         self.tool = tool
+        self.size = size  # bytes uploaded
+        self.objects = 0  # in the documents built by copying, before pruning
         self.used = 0
-        self.limit = _STEPS_FLOOR
-        self._count = count
-        self._objects: int | None = None
+        self.limit = _STEPS_FLOOR + _STEPS_PER_BYTE * size
 
-    def objects(self) -> int:
-        if self._objects is None:
-            self._objects = self._count()
-        return self._objects
+    @classmethod
+    def for_files(cls, tool: str, *paths) -> WorkBudget:
+        """A budget for a request that uploaded the files at ``paths``."""
+        size = 0
+        for path in paths:
+            try:
+                size += os.path.getsize(path)
+            except (OSError, TypeError, ValueError):
+                pass  # not a file: the floor still stands
+        return cls(tool, size)
 
-    def overrun(self) -> None:
-        """``used`` passed ``limit``: allow what the input's size allows, or stop."""
-        self.limit = _STEPS_PER_OBJECT * self.objects() + _STEPS_FLOOR
-        if self.used > self.limit:
-            raise _OutOfSteps
+    def add_objects(self, count: int) -> None:
+        """A document built by copying holds ``count`` objects to prune."""
+        self.objects += count
+        self.limit = _STEPS_FLOOR + max(
+            _STEPS_PER_BYTE * self.size, _STEPS_PER_OBJECT * self.objects,
+        )
 
     @contextmanager
     def charging(self):
-        """Count the steps taken inside; past the budget, refuse the job."""
+        """Count the steps taken inside; past the budget, refuse the request."""
         token = _BUDGET.set(self)
         try:
             yield self
         except _OutOfSteps:
             _refuse(
                 self.tool,
-                f"its work passed {self.limit} steps, for {self.objects()} objects in its input",
+                f"its work passed {self.limit} steps, allowed for {self.size} bytes "
+                f"uploaded and {self.objects} objects copied",
                 PageWorkError,
             )
         finally:
             _BUDGET.reset(token)
 
 
-_BUDGET: ContextVar[_Budget | None] = ContextVar("page_removal_budget", default=None)
+_BUDGET: ContextVar[WorkBudget | None] = ContextVar("page_removal_budget", default=None)
 
 
 def _charge(steps: int) -> None:
-    """Count ``steps`` against the running job's budget."""
+    """Count ``steps`` against the running request's budget."""
     budget = _BUDGET.get()
     if budget is not None:
         budget.used += steps
         if budget.used > budget.limit:
-            budget.overrun()
+            raise _OutOfSteps
 
 
 def _refuse(tool: str, problem: str, error: type[PageLeakError] = PageLeakError) -> NoReturn:
@@ -281,32 +297,12 @@ def _refuse(tool: str, problem: str, error: type[PageLeakError] = PageLeakError)
     raise error() from None
 
 
-def _objects_read(pdf: pikepdf.Pdf) -> int:
-    """The objects of a document read from a file, counted without reading them.
-
-    Its cross-reference table's entries in use, but no more than a quarter of
-    the file's bytes: a crafted table lists objects that are not there almost
-    for free, while the densest file made to test this holds a real object in
-    7 bytes. A document read from memory has no file size to go by.
-    """
-    try:
-        cap = os.path.getsize(pdf.filename) // 4
-    except (OSError, TypeError, ValueError):
-        cap = None
-    declared = pdf.trailer.get("/Size")
-    if cap is not None and type(declared) is int and declared > cap:
-        return cap  # more objects declared than the file has room for
-    in_use = sum(1 for entry in pdf.get_xref_table().values() if entry.type)
-    return in_use if cap is None else min(in_use, cap)
-
-
-def remove_pages(pdf: pikepdf.Pdf, indices: Iterable[int], *, tool: str) -> PageRemoval:
+def remove_pages(pdf: pikepdf.Pdf, indices: Iterable[int], *, budget: WorkBudget) -> PageRemoval:
     """Delete the pages at the 0-based ``indices`` and everything pointing at them.
 
-    ``tool`` is the route's name, for the log of a refusal. Save the result
-    with :meth:`PageRemoval.save`.
+    ``budget`` is the request's (:class:`WorkBudget`). Save the result with
+    :meth:`PageRemoval.save`.
     """
-    budget = _Budget(tool, lambda: _objects_read(pdf))
     with budget.charging():
         pages = _page_objs(pdf)
         doomed = sorted(set(indices), reverse=True)
@@ -317,27 +313,33 @@ def remove_pages(pdf: pikepdf.Pdf, indices: Iterable[int], *, tool: str) -> Page
             del pdf.pages[i]
         pruner = _Pruner(pdf, removed=removed)
         pruner.run()
-    return PageRemoval(pdf, pruner, budget)
+    # The file's objects are not counted: a crafted cross-reference table can
+    # claim objects that are not there almost for free, and counting its
+    # entries costs memory. A real file holds fewer than a quarter of its
+    # bytes (the densest one made to test this holds one in 7 bytes).
+    return PageRemoval(pdf, pruner, budget, input_objects=budget.size // 4)
 
 
-def prune_to_page_tree(pdf: pikepdf.Pdf, *, tool: str) -> PageRemoval:
+def prune_to_page_tree(pdf: pikepdf.Pdf, *, budget: WorkBudget) -> PageRemoval:
     """Drop every reference to a page that is not in ``pdf``'s page tree.
 
     For a document built by copying pages in (:class:`PageCopier`), right
     before it is saved. Anything that belongs to no page of ``pdf``, such as an
     annotation in no page's /Annots or a bead in no page's /B, came from a page
-    that was left behind and is dropped with it. ``tool`` is the route's name,
-    for the log of a refusal. Save the result with :meth:`PageRemoval.save`.
+    that was left behind and is dropped with it. ``budget`` is the request's
+    (:class:`WorkBudget`). Save the result with :meth:`PageRemoval.save`.
     """
     objects = len(pdf.objects)  # before pruning: built in memory, cheap to count
-    budget = _Budget(tool, lambda: objects)
+    budget.add_objects(objects)
     with budget.charging():
         pruner = _Pruner(pdf, removed=None)
         pruner.run()
-    return PageRemoval(pdf, pruner, budget)
+    return PageRemoval(pdf, pruner, budget, input_objects=objects)
 
 
-def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int], *, tool: str) -> None:
+def prune_structure_tree_to_pages(
+    pdf: pikepdf.Pdf, indices: Iterable[int], *, budget: WorkBudget | None = None,
+) -> None:
     """Prune ``pdf``'s structure tree, in memory, to the pages at ``indices``.
 
     For tools that copy a structure tree into a new document. qpdf turns the
@@ -351,12 +353,15 @@ def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int], *, t
     A second call for the same pages does nothing: Extract and Merge prune
     before copying pages, so no copied page can carry the unpruned tree, and
     the tree is then carried over by functions that prune it themselves.
-    ``tool`` is the route's name, for the log of a refusal.
+    ``budget`` is the request's (:class:`WorkBudget`); without one, the file
+    ``pdf`` was read from sizes a budget of its own.
     """
     keep = frozenset(indices)
     if getattr(pdf, _PRUNED_TO, None) == keep:
         return
-    with _Budget(tool, lambda: _objects_read(pdf)).charging():
+    if budget is None:
+        budget = WorkBudget.for_files("structure-tree", pdf.filename)
+    with budget.charging():
         pages = _page_objs(pdf)
         if keep >= set(range(len(pages))):
             return
@@ -375,10 +380,12 @@ def prune_structure_tree_to_pages(pdf: pikepdf.Pdf, indices: Iterable[int], *, t
 class PageRemoval:
     """A document whose removed pages have been pruned, ready to save."""
 
-    def __init__(self, pdf: pikepdf.Pdf, pruner: _Pruner, budget: _Budget):
+    def __init__(self, pdf: pikepdf.Pdf, pruner: _Pruner, budget: WorkBudget, *, input_objects: int):
         self.pdf = pdf
         self._pruner = pruner
         self._budget = budget
+        # At least the objects of the document before pruning (see _GROWTH).
+        self._input_objects = input_objects
         # The pages the output's page tree must list, in order.
         self.expected = [page.objgen for page in pruner.pages]
 
@@ -395,7 +402,7 @@ class PageRemoval:
         still stray, or the output holds far more objects than the input (see
         _GROWTH), the output is deleted, the refusal logged with the tool's
         name and the reason, and :class:`PageLeakError` raised. The second
-        sweep counts against the job's budget. An output that could not be
+        sweep counts against the request's budget. An output that could not be
         saved or checked is deleted too, and the error raised.
 
         The check walks the document in memory rather than reading the file
@@ -435,10 +442,9 @@ class PageRemoval:
                 return f"the page tree lists {len(written)} pages, {len(self.expected)} expected", 0
             return f"the page tree lists other pages than the {len(written)} expected", 0
         stray, objects = _pages_outside_tree(self.pdf, written, self._pruner.inert)
-        if objects > _GROWTH_FLOOR:
-            allowed = _GROWTH * self._budget.objects() + _GROWTH_FLOOR
-            if objects > allowed:
-                return f"it holds {objects} objects, {allowed} allowed for {self._budget.objects()} in its input", 0
+        allowed = _GROWTH * self._input_objects + _GROWTH_FLOOR
+        if objects > allowed:
+            return f"it holds {objects} objects, {allowed} allowed for {self._input_objects} in its input", 0
         return None, stray
 
 
@@ -458,13 +464,13 @@ class PageCopier:
     be copied with the page, tags of the pages left behind included. The /D
     each such action must also have keeps the link working.
 
-    ``tool`` is the route's name, for the log of a refusal. The copies made
-    by one copier share one budget, sized by the source.
+    ``budget`` is the request's (:class:`WorkBudget`); its copies count
+    against it.
     """
 
-    def __init__(self, src: pikepdf.Pdf, *, tool: str):
+    def __init__(self, src: pikepdf.Pdf, *, budget: WorkBudget):
         self.src = src
-        self._budget = _Budget(tool, lambda: _objects_read(src))
+        self.budget = budget
         self._pages: list | None = None
         self._string_dests: dict[bytes, object] | None = None
         self._name_dests: dict[str, object] | None = None
@@ -474,7 +480,7 @@ class PageCopier:
 
     def copy(self, dst: pikepdf.Pdf, indices: Iterable[int]) -> None:
         """Append ``src.pages[i]`` for each index to ``dst``, in order."""
-        with self._budget.charging():
+        with self.budget.charging():
             self._copy(dst, list(indices))
 
     def _copy(self, dst: pikepdf.Pdf, indices: list) -> None:
@@ -580,9 +586,9 @@ class PageCopier:
         return _explicit(self._name_dests.get(name))
 
 
-def copy_pages(dst: pikepdf.Pdf, src: pikepdf.Pdf, indices: Iterable[int], *, tool: str) -> None:
+def copy_pages(dst: pikepdf.Pdf, src: pikepdf.Pdf, indices: Iterable[int], *, budget: WorkBudget) -> None:
     """Append ``src``'s pages at ``indices`` to ``dst``; see :class:`PageCopier`."""
-    PageCopier(src, tool=tool).copy(dst, indices)
+    PageCopier(src, budget=budget).copy(dst, indices)
 
 
 # ── helpers ─────────────────────────────────────────────────────────────────

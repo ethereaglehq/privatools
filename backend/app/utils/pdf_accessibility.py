@@ -33,7 +33,7 @@ from collections.abc import Sequence
 
 import pikepdf
 
-from .page_removal import PageLeakError, prune_structure_tree_to_pages
+from .page_removal import PageLeakError, WorkBudget, prune_structure_tree_to_pages
 
 logger = logging.getLogger(__name__)
 
@@ -169,6 +169,7 @@ def _preserve_title(src: pikepdf.Pdf, dst: pikepdf.Pdf) -> None:
 
 def preserve_structure_tree(
     src: pikepdf.Pdf, dst: pikepdf.Pdf, *, pages: Sequence[int],
+    budget: WorkBudget | None = None,
 ) -> bool:
     """Carry `src`'s structure tree onto `dst`, pruned to the copied pages.
 
@@ -181,10 +182,11 @@ def preserve_structure_tree(
 
     Returns True when `dst` ends up genuinely tagged. Only then is it safe for
     the caller to set `/MarkInfo << /Marked true >>`; setting it otherwise
-    claims the document is tagged when it is not.
+    claims the document is tagged when it is not. `budget` is the request's
+    work budget (see `utils.page_removal.WorkBudget`).
     """
     try:
-        prune_structure_tree_to_pages(src, pages, tool="structure-tree")
+        prune_structure_tree_to_pages(src, pages, budget=budget)
     except PageLeakError:
         raise  # refused: no file at all, rather than one without its tags
     except Exception:
@@ -257,18 +259,19 @@ class StructureTreeMerger:
 
     def add_source(
         self, src: pikepdf.Pdf, first_page: int, last_page: int, *,
-        pages: Sequence[int] | None,
+        pages: Sequence[int] | None, budget: WorkBudget | None = None,
     ) -> None:
         """Add the tree of `src`, whose pages landed at `first_page..last_page`.
 
         `pages` lists the 0-based source pages that were copied, or None when
         every page was. It is required so no caller forgets it: as in
-        `preserve_structure_tree`, `src` is pruned to those pages in memory.
+        `preserve_structure_tree`, `src` is pruned to those pages in memory,
+        against the request's work `budget`.
         """
         self._sources += 1
         if pages is not None:
             try:
-                prune_structure_tree_to_pages(src, pages, tool="structure-tree")
+                prune_structure_tree_to_pages(src, pages, budget=budget)
             except PageLeakError:
                 raise  # refused: no file at all, rather than one without its tags
             except Exception:

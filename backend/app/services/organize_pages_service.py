@@ -7,7 +7,7 @@ from pdf2image import convert_from_path
 from ..utils.cleanup import safe_open_pdf
 from ..utils.exceptions import PageRangeError
 from ..utils.filenames import temp_output
-from ..utils.page_removal import copy_pages, prune_to_page_tree
+from ..utils.page_removal import WorkBudget, copy_pages, prune_to_page_tree
 
 
 def generate_thumbnails(input_path: str) -> list[str]:
@@ -34,12 +34,13 @@ def reorder_pages(input_path: str, page_order: list) -> str:
                     f"Page {page_num} is out of range (PDF has {total} pages)."
                 )
             indices.append(idx)
+        budget = WorkBudget.for_files("organize-pages", input_path)
         with pikepdf.Pdf.new() as out:
-            copy_pages(out, pdf, indices, tool="organize-pages")
+            copy_pages(out, pdf, indices, budget=budget)
             if len(set(indices)) < total:
                 # Pages left out must not ride along with the links, form
                 # fields and threads of the pages that stay.
-                prune_to_page_tree(out, tool="organize-pages").save(str(output_path))
+                prune_to_page_tree(out, budget=budget).save(str(output_path))
             else:
                 out.save(str(output_path))
     return str(output_path)
