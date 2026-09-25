@@ -278,6 +278,10 @@ async def bates_remove(
     that it is no longer in the file, so covering it would defeat the purpose.
     Matching is confined to the page margins and to text shaped like a Bates
     number, so body content is not touched.
+
+    X-Bates-Removed counts the stamps that are no longer in the file, and
+    X-Bates-Remaining the stamps found that are still in it (drawn by a stamp
+    annotation or a form field, say, which redaction does not reach).
     """
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
@@ -303,7 +307,7 @@ async def bates_remove(
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_path.write_bytes(content)
 
-        output_path, removed = await asyncio.to_thread(
+        output_path, removed, remaining = await asyncio.to_thread(
             bates_numbering_service.remove_bates_numbering,
             str(temp_path),
             prefix=prefix,
@@ -318,8 +322,9 @@ async def bates_remove(
             media_type="application/pdf",
             background=cleanup,
             # Reported so the UI can say "nothing matched" instead of silently
-            # handing back an identical file.
-            headers={"X-Bates-Removed": str(removed)},
+            # handing back an identical file, and never says a stamp is gone
+            # while it is still in the file.
+            headers={"X-Bates-Removed": str(removed), "X-Bates-Remaining": str(remaining)},
         )
     except HTTPException:
         remove_files(*([str(temp_path)] if temp_path else []),

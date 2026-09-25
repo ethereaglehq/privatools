@@ -10,7 +10,10 @@
  * — supplying them turns a shape match into an exact one.
  *
  * Multi-file via useMultiFileProcessor — the same pattern is applied to every
- * PDF; the per-file X-Bates-Removed header is summed for the summary.
+ * PDF. Each answer says how many stamps left the file (X-Bates-Removed) and
+ * how many were found but are still in it (X-Bates-Remaining: drawn where
+ * redaction cannot reach, such as a stamp annotation); both are summed, and the
+ * summary never calls a stamp gone while one is still in a file.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader2, AlertCircle, CheckCircle2, Eraser, RotateCcw, Info, Download, Upload } from "lucide-react";
@@ -63,41 +66,57 @@ export function BatesRemoveUI() {
 
     if (status === "done") {
         const isMulti = proc.entries.length > 1;
-        // Per-file removal counts come back on the X-Bates-Removed header.
-        const removed = proc.entries.reduce((sum, e) => {
-            if (e.status !== "done") return sum;
-            const n = Number(e.headers?.["x-bates-removed"] ?? "0");
+        const done = proc.entries.filter(e => e.status === "done");
+        const total = (counts: (string | undefined)[]) => counts.reduce((sum, value) => {
+            const n = Number(value ?? "0");
             return sum + (Number.isFinite(n) ? n : 0);
         }, 0);
-        const nothingMatched = proc.doneCount > 0 && removed === 0;
+        const removed = total(done.map(e => e.headers?.["x-bates-removed"]));
+        const remaining = total(done.map(e => e.headers?.["x-bates-remaining"]));
+        const someLeft = remaining > 0;
+        const nothingMatched = proc.doneCount > 0 && removed === 0 && !someLeft;
+        const warn = someLeft || nothingMatched;
+        const files = proc.doneCount > 1 ? "files" : "file";
+        const failed = proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null;
         return (
             <div className={cn(
                 "rounded-2xl border overflow-hidden animate-fade-up",
-                nothingMatched ? "border-copper/40 bg-copper-soft/40" : "border-accent/30 bg-accent/[0.05]",
+                warn ? "border-copper/40 bg-copper-soft/40" : "border-accent/30 bg-accent/[0.05]",
             )}>
                 <div className="p-7">
                     <div className="flex items-start gap-5">
                         <div className={cn(
                             "h-14 w-14 rounded-2xl border flex items-center justify-center shrink-0 animate-success-pop",
-                            nothingMatched ? "bg-copper/15 border-copper/35" : "bg-accent/15 border-accent/35",
+                            warn ? "bg-copper/15 border-copper/35" : "bg-accent/15 border-accent/35",
                         )}>
-                            {nothingMatched
-                                ? <Info size={24} className="text-copper" strokeWidth={1.75} />
-                                : <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />}
+                            {someLeft
+                                ? <AlertCircle size={24} className="text-copper" strokeWidth={1.75} />
+                                : nothingMatched
+                                    ? <Info size={24} className="text-copper" strokeWidth={1.75} />
+                                    : <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="section-mark mb-2">{nothingMatched ? "Nothing matched" : "Bates removed"}</p>
+                            <p className="section-mark mb-2">{someLeft ? "Not all removed" : nothingMatched ? "Nothing matched" : "Bates removed"}</p>
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight">
-                                {nothingMatched
-                                    ? "No Bates numbers found"
-                                    : isMulti
-                                        ? <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed across {proc.doneCount} file{proc.doneCount === 1 ? "" : "s"}{proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null}</>
-                                        : <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed</>}
+                                {someLeft
+                                    ? <><span className="italic text-copper">{remaining}</span> stamp{remaining === 1 ? "" : "s"} could not be removed{failed}</>
+                                    : nothingMatched
+                                        ? "No Bates numbers found"
+                                        : isMulti
+                                            ? <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed across {proc.doneCount} file{proc.doneCount === 1 ? "" : "s"}{failed}</>
+                                            : <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed</>}
                             </h2>
                             <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1.5">
-                                {nothingMatched
-                                    ? "Nothing in the page margins matched the pattern. Try giving the prefix or suffix the stamps actually use."
-                                    : "Redacted, not covered — the text is gone from the file."}
+                                {someLeft
+                                    ? <>
+                                        {remaining === 1 ? "It was" : "They were"} found in the page margins but {remaining === 1 ? "is" : "are"} still
+                                        in the {files}, drawn where redaction cannot reach, such as a stamp annotation or a form field.
+                                        Check before you share.
+                                        {removed > 0 && <> {removed} other stamp{removed === 1 ? " was" : "s were"} removed.</>}
+                                    </>
+                                    : nothingMatched
+                                        ? "Nothing in the top or bottom inch of the pages matched the pattern. Try giving the prefix or suffix the stamps actually use."
+                                        : "Redacted, not covered — the text is gone from the file."}
                                 {proc.doneCount > 0 && <> {proc.doneCount > 1 ? "ZIP downloaded." : "PDF downloaded."}</>}
                             </p>
                             <div className="mt-5 flex flex-wrap gap-2">
