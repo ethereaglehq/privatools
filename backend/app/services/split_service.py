@@ -18,6 +18,7 @@ from typing import List
 import pikepdf
 
 from ..utils.cleanup import ensure_temp_dir, get_temp_path, safe_open_pdf
+from ..utils.page_removal import PageCopier, WorkBudget, prune_to_page_tree
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,15 @@ def parse_page_selection(pages: str, total_pages: int) -> List[int]:
     return selections
 
 
+def _write_part(copier: PageCopier, indices, out_path) -> None:
+    with pikepdf.Pdf.new() as out:
+        copier.copy(out, indices)
+        # The other parts' pages must not ride along with this part's links,
+        # form fields and threads. Every part counts against the request's
+        # one budget.
+        prune_to_page_tree(out, budget=copier.budget).save(str(out_path))
+
+
 def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2) -> str:
     ensure_temp_dir()
     started = time.monotonic()
@@ -92,12 +102,11 @@ def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2)
             if total_pages <= 0:
                 raise ValueError("Cannot split an empty PDF with no pages.")
 
+            copier = PageCopier(pdf, budget=WorkBudget("split", input_size))
             if mode == "individual":
                 for i in range(total_pages):
                     out_path = get_temp_path(f"page_{i+1}_{uuid.uuid4().hex}.pdf")
-                    with pikepdf.Pdf.new() as out:
-                        out.pages.append(pdf.pages[i])
-                        out.save(str(out_path))
+                    _write_part(copier, [i], out_path)
                     output_files.append(str(out_path))
 
             elif mode == "every_n":
@@ -106,19 +115,13 @@ def split_pdf(input_path: str, mode: str = "pages", pages: str = "", n: int = 2)
                 for start in range(0, total_pages, n):
                     end = min(start + n, total_pages)
                     out_path = get_temp_path(f"pages_{start+1}_{end}_{uuid.uuid4().hex}.pdf")
-                    with pikepdf.Pdf.new() as out:
-                        for i in range(start, end):
-                            out.pages.append(pdf.pages[i])
-                        out.save(str(out_path))
+                    _write_part(copier, range(start, end), out_path)
                     output_files.append(str(out_path))
 
             else:  # specific pages
                 page_nums = parse_page_selection(pages, total_pages)
                 out_path = get_temp_path(f"extracted_{uuid.uuid4().hex}.pdf")
-                with pikepdf.Pdf.new() as out:
-                    for i in page_nums:
-                        out.pages.append(pdf.pages[i])
-                    out.save(str(out_path))
+                _write_part(copier, page_nums, out_path)
                 output_files = [str(out_path)]
 
         if len(output_files) == 1:

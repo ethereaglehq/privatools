@@ -6,6 +6,7 @@ import pikepdf
 from ..utils.cleanup import safe_open_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
+from ..utils.page_removal import PageCopier, WorkBudget, prune_to_page_tree
 
 
 def _resolve_page_index(pdf: pikepdf.Pdf, destination) -> int:
@@ -60,6 +61,7 @@ def split_by_bookmarks(input_path: str) -> str:
                 end = bookmarks[i + 1][1] if i + 1 < len(bookmarks) else total_pages
                 ranges.append((title, start, end))
 
+            copier = PageCopier(pdf, budget=WorkBudget.for_files("split-by-bookmarks", input_path))
             with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
                 for idx, (title, start, end) in enumerate(ranges, start=1):
                     if start >= end:
@@ -68,8 +70,10 @@ def split_by_bookmarks(input_path: str) -> str:
                     chunk_paths.append(chunk_path)
                     safe_title = "".join(c if c.isalnum() or c in " _-" else "_" for c in title)[:50]
                     with pikepdf.Pdf.new() as out:
-                        out.pages.extend(pdf.pages[start:end])
-                        out.save(str(chunk_path))
+                        copier.copy(out, range(start, end))
+                        # The other sections' pages must not ride along with
+                        # this section's links, form fields and threads.
+                        prune_to_page_tree(out, budget=copier.budget).save(str(chunk_path))
                     zf.write(str(chunk_path), f"{idx:02d}_{safe_title}.pdf")
 
             return str(zip_path)

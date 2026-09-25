@@ -18,6 +18,7 @@ import pikepdf
 from ..utils.cleanup import safe_open_pdf
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
+from ..utils.page_removal import PageCopier, WorkBudget, prune_to_page_tree
 
 # How many pages to add before re-checking the on-disk size. Lower = more
 # accurate boundary, higher = less work per chunk. 5 is a good compromise for
@@ -34,11 +35,23 @@ def split_by_size(input_path: str, max_size_mb: float = 10.0) -> str:
     zip_path = temp_output("split_size", "zip")
     chunk_paths: list[Path] = []
 
-    def _save_chunk(pages_for_chunk: list) -> Path:
+    copier: PageCopier | None = None
+    src_pages: list = []
+
+    def _save_chunk(pages_for_chunk: list[int], final: bool = False) -> Path:
         out_path = temp_output("chunk", "pdf")
         with pikepdf.Pdf.new() as out:
-            out.pages.extend(pages_for_chunk)
-            out.save(str(out_path))
+            if final:
+                copier.copy(out, pages_for_chunk)
+                # Without the other chunks' pages, which links, form fields
+                # and threads would drag along.
+                prune_to_page_tree(out, budget=copier.budget).save(str(out_path))
+            else:
+                # A size probe. Pruning only ever removes objects, so the
+                # unpruned copy bounds the final chunk's size from above.
+                for i in pages_for_chunk:
+                    out.pages.append(src_pages[i])
+                out.save(str(out_path))
         return out_path
 
     try:
@@ -46,12 +59,14 @@ def split_by_size(input_path: str, max_size_mb: float = 10.0) -> str:
             total_pages = len(src.pages)
             if total_pages == 0:
                 raise ValidationError("Cannot split an empty PDF.")
+            copier = PageCopier(src, budget=WorkBudget.for_files("split-by-size", input_path))
+            src_pages = [page for page in src.pages]
 
             chunks: list[list] = []
             current: list = []
 
-            for i, page in enumerate(src.pages):
-                current.append(page)
+            for i in range(total_pages):
+                current.append(i)
                 # Only check disk size every SAMPLE_EVERY pages OR on the last
                 # page — keeps the inner loop cheap.
                 if (len(current) % SAMPLE_EVERY == 0) or i == total_pages - 1:
@@ -70,16 +85,15 @@ def split_by_size(input_path: str, max_size_mb: float = 10.0) -> str:
                         while len(current) > MIN_CHUNK_PAGES:
                             carry.insert(0, current.pop())
                             candidate = _save_chunk(current)
-                            if os.path.getsize(candidate) <= max_bytes:
-                                break
+                            fits = os.path.getsize(candidate) <= max_bytes
                             candidate.unlink(missing_ok=True)
-                        else:
-                            # Loop exhausted without fitting: `current` is a lone
-                            # page that's still oversized. The last candidate was
-                            # unlinked, so re-save it before recording the path.
-                            candidate = _save_chunk(current)
+                            if fits:
+                                break
+                        # Either it fits now, or the loop ran out: `current` is
+                        # a lone page that is still oversized. Write it as it
+                        # ships.
                         chunks.append(current)
-                        chunk_paths.append(candidate)
+                        chunk_paths.append(_save_chunk(current, final=True))
                         # Seed the next chunk with ALL trimmed pages, in order.
                         current = carry
                     else:
@@ -89,7 +103,7 @@ def split_by_size(input_path: str, max_size_mb: float = 10.0) -> str:
 
             if current:
                 chunks.append(current)
-                chunk_paths.append(_save_chunk(current))
+                chunk_paths.append(_save_chunk(current, final=True))
 
             with zipfile.ZipFile(str(zip_path), "w", zipfile.ZIP_DEFLATED) as zf:
                 for idx, path in enumerate(chunk_paths, start=1):

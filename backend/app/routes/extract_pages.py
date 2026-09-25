@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ..services import extract_pages_service
+from ..utils.exceptions import ToolError
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -71,7 +72,7 @@ async def extract_pages(
             media_type="application/pdf",
             background=cleanup,
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         to_remove = ([str(temp_path)] if temp_path is not None else []) + (
             [output_path] if output_path else []
         )

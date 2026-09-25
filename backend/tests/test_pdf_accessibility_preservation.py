@@ -423,7 +423,7 @@ def test_preserve_structure_tree_is_a_no_op_on_untagged_input(tmp_path):
     with pikepdf.open(str(plain)) as src:
         dst = pikepdf.Pdf.new()
         dst.pages.append(src.pages[0])
-        assert preserve_structure_tree(src, dst) is False
+        assert preserve_structure_tree(src, dst, pages=[0]) is False
         assert "/StructTreeRoot" not in dst.Root
         assert "/MarkInfo" not in dst.Root
 

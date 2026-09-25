@@ -123,7 +123,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove drop discard",
     popularity: 13,
     category: "organize", accepts: ".pdf", outputLabel: "trimmed.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-24",
   },
   {
     slug: "extract-pages", icon: Download, name: "Extract Pages",
