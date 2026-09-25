@@ -866,7 +866,9 @@ def test_a_shape_read_once_per_owner_is_stopped_by_the_work_budget(monkeypatch, 
     pruner here decides a shared list again for each owner: 2,000 links whose
     Hide actions name one list of 2,000 notes took 10 s and made a 35 MB file
     that way. The budget stops the job after linear work, and refuses it.
-    (The allowance per byte is lowered to 2, so the test is quick.)"""
+    The allowance per byte is lowered to 2, so the test is quick: with the
+    real 25, this 540 KB file fits in it (12 million steps, about 10 s), and
+    the same shape is refused from about 2,500 owners."""
     from backend.app.utils import page_removal
     from backend.app.utils.page_removal import PageWorkError, remove_pages
 

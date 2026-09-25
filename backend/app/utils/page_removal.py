@@ -615,8 +615,7 @@ def _entries(obj):
     return entries
 
 
-def _new_array(items) -> Array:
-    items = list(items)
+def _new_array(items: list) -> Array:
     _charge(len(items))
     return Array(items)
 
@@ -973,7 +972,10 @@ def _prune_tree(node, leaf_key: str, keep: Callable, depth: int = 0, seen: set |
                     first = key
                 last = key
         if not all(flags) or len(entries) != 2 * len(flags):
-            node[leaf_key] = _new_array(_kept_pairs(entries, flags))
+            # Built from the pairs as they are read: a list of them all would
+            # hold a Python object for every entry of a large leaf.
+            _charge(2 * flags.count(1))
+            node[leaf_key] = Array(_kept_pairs(entries, flags))
             changed = True
     foreign = False
     kids = node.get("/Kids")
