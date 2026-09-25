@@ -165,8 +165,8 @@ def test_removal_takes_out_the_stamps_we_added(tmp_path):
     )
     assert "DEL000001" in _all_text(stamped)
 
-    cleaned, removed, remaining = remove_bates_numbering(stamped, prefix="DEL", digits=6)
-    assert (removed, remaining) == (3, 0)
+    cleaned, removed, remaining, elsewhere = remove_bates_numbering(stamped, prefix="DEL", digits=6)
+    assert (removed, remaining, elsewhere) == (3, 0, 0)
     assert "DEL000001" not in _all_text(cleaned)
 
 
@@ -174,7 +174,7 @@ def test_removal_leaves_the_body_text_alone(tmp_path):
     stamped, _ = add_bates_numbering(
         _pdf(tmp_path / "a.pdf", 2, body="Important content"), prefix="KEEP", digits=6
     )
-    cleaned, _, _ = remove_bates_numbering(stamped, prefix="KEEP", digits=6)
+    cleaned, *_ = remove_bates_numbering(stamped, prefix="KEEP", digits=6)
     text = _all_text(cleaned)
     assert "Important content" in text
 
@@ -192,14 +192,14 @@ def test_removal_ignores_bates_shaped_text_in_the_body(tmp_path):
     doc.save(str(path))
     doc.close()
 
-    cleaned, removed, remaining = remove_bates_numbering(str(path), digits=6)
-    assert (removed, remaining) == (0, 0)
+    cleaned, removed, remaining, elsewhere = remove_bates_numbering(str(path), digits=6)
+    assert (removed, remaining, elsewhere) == (0, 0, 0)
     assert "000123" in _all_text(cleaned)
 
 
 def test_removal_reports_zero_when_nothing_matches(tmp_path):
-    cleaned, removed, remaining = remove_bates_numbering(_pdf(tmp_path / "plain.pdf", 2), prefix="ZZZ")
-    assert (removed, remaining) == (0, 0)
+    cleaned, removed, remaining, elsewhere = remove_bates_numbering(_pdf(tmp_path / "plain.pdf", 2), prefix="ZZZ")
+    assert (removed, remaining, elsewhere) == (0, 0, 0)
 
 
 def test_removal_round_trips_with_a_suffix(tmp_path):
@@ -207,8 +207,8 @@ def test_removal_round_trips_with_a_suffix(tmp_path):
         _pdf(tmp_path / "a.pdf", 2), prefix="AB", suffix="-X", digits=4
     )
     assert "AB0001-X" in _all_text(stamped)
-    cleaned, removed, remaining = remove_bates_numbering(stamped, prefix="AB", suffix="-X", digits=4)
-    assert (removed, remaining) == (2, 0)
+    cleaned, removed, remaining, elsewhere = remove_bates_numbering(stamped, prefix="AB", suffix="-X", digits=4)
+    assert (removed, remaining, elsewhere) == (2, 0, 0)
     assert "AB0001-X" not in _all_text(cleaned)
 
 
@@ -300,6 +300,7 @@ def test_remove_endpoint_reports_how_many_it_took_out(client, tmp_path):
     assert res.status_code == 200
     assert res.headers["X-Bates-Removed"] == "3"
     assert res.headers["X-Bates-Remaining"] == "0"
+    assert res.headers["X-Bates-Elsewhere"] == "0"
 
 
 def test_remove_endpoint_reports_zero_rather_than_failing(client, tmp_path):
@@ -313,3 +314,4 @@ def test_remove_endpoint_reports_zero_rather_than_failing(client, tmp_path):
     assert res.status_code == 200
     assert res.headers["X-Bates-Removed"] == "0"
     assert res.headers["X-Bates-Remaining"] == "0"
+    assert res.headers["X-Bates-Elsewhere"] == "0"

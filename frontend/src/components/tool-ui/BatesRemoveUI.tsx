@@ -10,10 +10,13 @@
  * — supplying them turns a shape match into an exact one.
  *
  * Multi-file via useMultiFileProcessor — the same pattern is applied to every
- * PDF. Each answer says how many stamps left the file (X-Bates-Removed) and
- * how many were found but are still in it (X-Bates-Remaining: drawn where
- * redaction cannot reach, such as a stamp annotation); both are summed, and the
- * summary never calls a stamp gone while one is still in a file.
+ * PDF. Each answer says how many stamps left the file (X-Bates-Removed), how
+ * many were found but are still in it (X-Bates-Remaining: drawn where
+ * redaction cannot reach, such as a stamp annotation), and, with a prefix or
+ * suffix, how many other matches for it were found elsewhere in the file and
+ * left in place (X-Bates-Elsewhere). They are summed, the files that still
+ * hold something are named, and the summary never calls the file clean while
+ * a stamp or a match is still in it.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader2, AlertCircle, CheckCircle2, Eraser, RotateCcw, Info, Download, Upload } from "lucide-react";
@@ -66,18 +69,35 @@ export function BatesRemoveUI() {
 
     if (status === "done") {
         const isMulti = proc.entries.length > 1;
-        const done = proc.entries.filter(e => e.status === "done");
-        const total = (counts: (string | undefined)[]) => counts.reduce((sum, value) => {
+        const count = (value: string | undefined) => {
             const n = Number(value ?? "0");
-            return sum + (Number.isFinite(n) ? n : 0);
-        }, 0);
-        const removed = total(done.map(e => e.headers?.["x-bates-removed"]));
-        const remaining = total(done.map(e => e.headers?.["x-bates-remaining"]));
+            return Number.isFinite(n) ? n : 0;
+        };
+        const results = proc.entries.filter(e => e.status === "done").map(e => ({
+            id: e.id,
+            name: e.name,
+            removed: count(e.headers?.["x-bates-removed"]),
+            remaining: count(e.headers?.["x-bates-remaining"]),
+            elsewhere: count(e.headers?.["x-bates-elsewhere"]),
+        }));
+        const sum = (key: "removed" | "remaining" | "elsewhere") => results.reduce((total, r) => total + r[key], 0);
+        const removed = sum("removed");
+        const remaining = sum("remaining");
+        const elsewhere = sum("elsewhere");
+        const exact = prefix !== "" || suffix !== "";
         const someLeft = remaining > 0;
-        const nothingMatched = proc.doneCount > 0 && removed === 0 && !someLeft;
-        const warn = someLeft || nothingMatched;
+        const leftInPlace = elsewhere > 0;
+        const nothingMatched = proc.doneCount > 0 && removed === 0 && !someLeft && !leftInPlace;
+        const warn = someLeft || leftInPlace || nothingMatched;
         const files = proc.doneCount > 1 ? "files" : "file";
+        // In a batch, the files the visitor has to open before sharing.
+        const toCheck = isMulti ? results.filter(r => r.remaining > 0 || r.elsewhere > 0) : [];
         const failed = proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null;
+        const stamps = (n: number) => `${n} stamp${n === 1 ? "" : "s"}`;
+        const elsewhereWhat = someLeft
+            ? `${elsewhere} more ${elsewhere === 1 ? "match" : "matches"} for the prefix or suffix ${elsewhere === 1 ? "was" : "were"}`
+            : "Text matching the prefix or suffix was";
+        const elsewhereSentence = `${elsewhereWhat} found elsewhere in the ${files}, away from the page margins the tool clears, and left in place: it may be a reference to a Bates number, or a stamp placed further in.`;
         return (
             <div className={cn(
                 "rounded-2xl border overflow-hidden animate-fade-up",
@@ -89,22 +109,24 @@ export function BatesRemoveUI() {
                             "h-14 w-14 rounded-2xl border flex items-center justify-center shrink-0 animate-success-pop",
                             warn ? "bg-copper/15 border-copper/35" : "bg-accent/15 border-accent/35",
                         )}>
-                            {someLeft
+                            {someLeft || leftInPlace
                                 ? <AlertCircle size={24} className="text-copper" strokeWidth={1.75} />
                                 : nothingMatched
                                     ? <Info size={24} className="text-copper" strokeWidth={1.75} />
                                     : <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="section-mark mb-2">{someLeft ? "Not all removed" : nothingMatched ? "Nothing matched" : "Bates removed"}</p>
+                            <p className="section-mark mb-2">{someLeft ? "Not all removed" : leftInPlace ? "Left in place" : nothingMatched ? "Nothing matched" : "Bates removed"}</p>
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight">
                                 {someLeft
                                     ? <><span className="italic text-copper">{remaining}</span> stamp{remaining === 1 ? "" : "s"} could not be removed{failed}</>
-                                    : nothingMatched
-                                        ? "No Bates numbers found"
-                                        : isMulti
-                                            ? <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed across {proc.doneCount} file{proc.doneCount === 1 ? "" : "s"}{failed}</>
-                                            : <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed</>}
+                                    : leftInPlace
+                                        ? <><span className="italic text-copper">{elsewhere}</span> {elsewhere === 1 ? "match" : "matches"} left in place{failed}</>
+                                        : nothingMatched
+                                            ? "No Bates numbers found"
+                                            : isMulti
+                                                ? <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed across {proc.doneCount} file{proc.doneCount === 1 ? "" : "s"}{failed}</>
+                                                : <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed</>}
                             </h2>
                             <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1.5">
                                 {someLeft
@@ -113,12 +135,33 @@ export function BatesRemoveUI() {
                                         in the {files}, drawn where redaction cannot reach, such as a stamp annotation or a form field.
                                         Check before you share.
                                         {removed > 0 && <> {removed} other stamp{removed === 1 ? " was" : "s were"} removed.</>}
+                                        {leftInPlace && <> {elsewhereSentence}</>}
                                     </>
-                                    : nothingMatched
-                                        ? "Nothing in the top or bottom inch of the pages matched the pattern. Try giving the prefix or suffix the stamps actually use."
-                                        : "Redacted, not covered — the text is gone from the file."}
+                                    : leftInPlace
+                                        ? <>
+                                            {elsewhereSentence} Check before you share.
+                                            {removed > 0 && <> {stamps(removed)} in the margins {removed === 1 ? "was" : "were"} removed.</>}
+                                        </>
+                                        : nothingMatched
+                                            ? exact
+                                                ? "Nothing in the file matched the prefix or suffix. Check the ones the stamps actually use."
+                                                : "Nothing in the top or bottom inch of the pages looked like a Bates number. Try giving the prefix or suffix the stamps actually use."
+                                            : "Redacted, not covered — the text is gone from the file."}
                                 {proc.doneCount > 0 && <> {proc.doneCount > 1 ? "ZIP downloaded." : "PDF downloaded."}</>}
                             </p>
+                            {toCheck.length > 0 && (
+                                <ul aria-label="Files to check" className="mt-3 space-y-1">
+                                    {toCheck.map(r => (
+                                        <li key={r.id} className="flex items-center gap-2 text-[12px] text-foreground">
+                                            <AlertCircle size={12} className="text-copper shrink-0" />
+                                            <span className="font-medium truncate">{r.name}</span>
+                                            <span className="text-muted-foreground shrink-0">
+                                                {[r.remaining > 0 ? `${r.remaining} could not be removed` : "", r.elsewhere > 0 ? `${r.elsewhere} left in place` : ""].filter(Boolean).join(" · ")}
+                                            </span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
                             <div className="mt-5 flex flex-wrap gap-2">
                                 {proc.doneCount > 0 && (
                                     <button onClick={() => proc.downloadAll("archive_bates_removed")} className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-foreground text-background text-[13px] font-semibold hover:opacity-90">
@@ -178,7 +221,7 @@ export function BatesRemoveUI() {
                     {proc.entries.length ? "Add more PDFs" : "Drop PDFs to remove Bates numbers"}
                 </p>
                 <p className="font-medium text-[11.5px] text-muted-foreground">
-                    Only Bates numbers in the page margins are touched · up to 500 MB each · several files become a ZIP
+                    Only Bates-shaped numbers in the page margins are touched · up to 500 MB each · several files become a ZIP
                 </p>
             </div>
 
@@ -225,9 +268,12 @@ export function BatesRemoveUI() {
                     </div>
                 </div>
                 <p className="px-4 pb-3 text-[12px] text-muted-foreground leading-relaxed">
-                    Leave these blank and anything shaped like a Bates number within an inch of the
-                    top or bottom of a page is removed. Filling them in makes the match exact, which
-                    is safer on documents that carry other numbering in the header or footer.
+                    Leave these blank and anything shaped like a Bates number in the top or bottom inch
+                    of a page is removed, and on a page turned a quarter, one running along the inch
+                    at either side.
+                    Filling them in makes the match exact: a match within an inch of any edge is
+                    removed, and any found elsewhere is left and reported. That is safer on documents
+                    that carry other numbering in the header or footer.
                 </p>
             </div>
 

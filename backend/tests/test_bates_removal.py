@@ -122,7 +122,14 @@ def _picture(spec: dict, dark: list[fitz.Rect]) -> dict:
     return {"Width": w, "Height": h, "data": pixels.tobytes()}
 
 
-def _pdf(pages: list[tuple[dict, list[Line]]], *, dark: dict[int, list[fitz.Rect]] | None = None) -> bytes:
+def _pdf(
+    pages: list[tuple[dict, list[Line]]], *,
+    dark: dict[int, list[fitz.Rect]] | None = None, picture_after: dict[int, int] | None = None, inline: bool = False,
+) -> bytes:
+    """Pages of text. `dark` gives a page a picture filling it, like a scan;
+    it is drawn first, or after the first `picture_after[page]` lines, so that
+    it covers them; with `inline`, written into the page's content (BI ... EI)
+    instead of as an image the page lists."""
     pdf = pikepdf.new()
     font = pdf.make_indirect(pikepdf.Dictionary(
         Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type1, BaseFont=pikepdf.Name.Helvetica,
@@ -135,19 +142,23 @@ def _pdf(pages: list[tuple[dict, list[Line]]], *, dark: dict[int, list[fitz.Rect
         )
         if "cropbox" in spec:
             page.CropBox = pikepdf.Array(spec["cropbox"])
-        ops = []
+        ops = [_text_ops(spec, line).encode() for line in lines]
         if dark is not None and index in dark:
             picture = _picture(spec, dark[index])
-            image = pikepdf.Stream(pdf, picture["data"])
-            image.Type, image.Subtype = pikepdf.Name.XObject, pikepdf.Name.Image
-            image.Width, image.Height = picture["Width"], picture["Height"]
-            image.ColorSpace, image.BitsPerComponent = pikepdf.Name.DeviceGray, 8
-            page.Resources.XObject = pikepdf.Dictionary(Im0=image)
             x0, y0, x1, y1 = _visible(spec)
-            ops.append(f"q {x1 - x0:g} 0 0 {y1 - y0:g} {x0:g} {y0:g} cm /Im0 Do Q")
-        ops += [_text_ops(spec, line) for line in lines]
+            place = f"q {x1 - x0:g} 0 0 {y1 - y0:g} {x0:g} {y0:g} cm ".encode()
+            if inline:
+                draw = place + f"BI /W {picture['Width']} /H {picture['Height']} /CS /G /BPC 8 ID ".encode() + picture["data"] + b" EI Q"
+            else:
+                image = pikepdf.Stream(pdf, picture["data"])
+                image.Type, image.Subtype = pikepdf.Name.XObject, pikepdf.Name.Image
+                image.Width, image.Height = picture["Width"], picture["Height"]
+                image.ColorSpace, image.BitsPerComponent = pikepdf.Name.DeviceGray, 8
+                page.Resources.XObject = pikepdf.Dictionary(Im0=image)
+                draw = place + b"/Im0 Do Q"
+            ops.insert((picture_after or {}).get(index, 0), draw)
         pdf.pages.append(pikepdf.Page(page))
-        pdf.pages[-1].Contents = pdf.make_stream("\n".join(ops).encode())
+        pdf.pages[-1].Contents = pdf.make_stream(b"\n".join(ops))
         if spec.get("rotate") and not spec.get("inherited"):
             pdf.pages[-1].obj.Rotate = spec["rotate"]
     for spec, _ in pages:
@@ -232,9 +243,11 @@ def _remove(client, pdf: bytes, **fields):
     return _post(client, "bates-remove", pdf, **({"prefix": "ABC", "digits": "6"} | fields))
 
 
-def _counts(res) -> tuple[str | None, str | None]:
-    """What the page is told: stamps removed, and stamps found but still in the file."""
-    return res.headers.get("X-Bates-Removed"), res.headers.get("X-Bates-Remaining")
+def _counts(res) -> tuple[str | None, str | None, str | None]:
+    """What the page is told: stamps removed, stamps found but still in the
+    file, and text matching the prefix or suffix found elsewhere and left."""
+    return (res.headers.get("X-Bates-Removed"), res.headers.get("X-Bates-Remaining"),
+            res.headers.get("X-Bates-Elsewhere"))
 
 
 def _mupdf_rotation(pdf: bytes, index: int = 0) -> int:
@@ -266,7 +279,7 @@ def test_a_stamp_in_the_margin_as_shown_leaves_the_file(client, name, where):
         f"{name} {where}: something outside the stamp changed"
     )
     assert _mupdf_rotation(res.content) == _turn(spec), f"{name}: /Rotate still reads differently in different viewers"
-    assert _counts(res) == ("1", "0")
+    assert _counts(res) == ("1", "0", "0")
 
 
 # Bates Numbering sizes its stamp for the page as stored, so on a landscape page
@@ -290,7 +303,7 @@ def test_numbers_from_our_own_bates_tool_leave_turned_and_cut_pages(client, name
     assert STAMP not in mupdf and STAMP not in pypdf_text, f"{name}: the stamp is still in the text layer"
     assert BODY in mupdf and BODY in pypdf_text
     assert _edge_frame_ink(_shown(res.content, 0, _turn(spec))) == 0, f"{name}: the stamp still shows"
-    assert _counts(res) == ("1", "0")
+    assert _counts(res) == ("1", "0", "0")
 
 
 def test_a_production_turned_0_90_0_270_loses_every_number(client):
@@ -304,7 +317,7 @@ def test_a_production_turned_0_90_0_270_loses_every_number(client):
         assert f"PROD00000{n}" not in mupdf and f"PROD00000{n}" not in pypdf_text, f"page {n} (/Rotate {turn}) kept its number"
         assert f"Page {n} body" in mupdf
         assert _edge_frame_ink(_shown(res.content, n - 1, turn)) == 0, f"page {n} still shows its number"
-    assert _counts(res) == ("4", "0")
+    assert _counts(res) == ("4", "0", "0")
 
 
 @pytest.mark.parametrize("angle", [90, 180, 270])
@@ -325,7 +338,7 @@ def test_a_production_stamped_and_then_turned_here_loses_every_number(client, an
         assert f"PROD00000{n}" not in mupdf and f"PROD00000{n}" not in pypdf_text, f"page {n} turned {angle} kept its number"
         assert BODY in mupdf and BODY in pypdf_text
         assert _edge_frame_ink(_shown(res.content, n - 1, angle)) == 0, f"page {n} turned {angle} still shows its number"
-    assert _counts(res) == ("2", "0")
+    assert _counts(res) == ("2", "0", "0")
 
 
 # ─── Nothing else leaves the file ───────────────────────────────────────────
@@ -352,7 +365,7 @@ def test_only_the_stamp_goes_when_other_text_looks_like_one(client, name):
         for word in line.text.split():
             assert word in mupdf and word in pypdf_text, f"{name}: {word!r} ({line.text!r}) was removed"
     assert STAMP not in mupdf and STAMP not in pypdf_text
-    assert _counts(res) == ("1", "0")
+    assert _counts(res) == ("1", "0", "0")
 
 
 @pytest.mark.parametrize("name", ["rotate-0", "rotate-90", "cropped-rotate-270"])
@@ -383,7 +396,7 @@ def test_the_lines_around_a_stamp_stay(client, name):
     assert np.array_equal(_outside(before, _ink_box(stamp)), _outside(after, _ink_box(stamp))), (
         f"{name}: the lines around the stamp look different"
     )
-    assert _counts(res) == ("1", "0")
+    assert _counts(res) == ("1", "0", "0")
 
 
 def test_a_stamp_on_a_slant_or_in_two_sizes_leaves_whole(client):
@@ -407,7 +420,7 @@ def test_a_stamp_on_a_slant_or_in_two_sizes_leaves_whole(client):
         assert BODY in mupdf
     for index in (0, 1):
         assert _edge_frame_ink(_shown(res.content, index, 0)) == 0, f"page {index + 1} still shows its number"
-    assert _counts(res) == ("2", "0")
+    assert _counts(res) == ("2", "0", "0")
 
 
 @pytest.mark.parametrize("name", ["rotate-0", "cropped-rotate-90"])
@@ -438,7 +451,7 @@ def test_a_picture_under_a_stamp_is_left_alone_unless_the_stamp_is_in_it(client,
         _outside(_outside(before, _ink_box(drawn)), burned + (-2, -4, 2, 4)),
         _outside(_outside(after, _ink_box(drawn)), burned + (-2, -4, 2, 4)),
     ), f"{name}: the scan changed away from the two numbers"
-    assert _counts(res) == ("2", "0")
+    assert _counts(res) == ("2", "0", "0")
 
 
 # ─── The count is what left the file ────────────────────────────────────────
@@ -477,9 +490,308 @@ def test_a_stamp_that_cannot_be_removed_is_reported_not_counted(client):
     with fitz.open(stream=res.content, filetype="pdf") as doc:
         assert STAMP not in doc[0].get_text()
         assert "ABC000124" in doc[1].get_text(), "the annotation's number went after all; this test needs another stamp"
-    assert _counts(res) == ("1", "1")
+    assert _counts(res) == ("1", "1", "0")
 
 
 def test_nothing_found_is_reported_as_nothing(client):
     res = _remove(client, _pdf([({"rotate": 90}, [Line(BODY, 72, 120)])]))
-    assert _counts(res) == ("0", "0")
+    assert _counts(res) == ("0", "0", "0")
+
+
+# ─── Review, round 1 ────────────────────────────────────────────────────────
+#
+# A scan laid over its own OCR text; our own stamps on landscape pages stored
+# turned, and on pages stamped while turned and then turned again; text that
+# matches the prefix elsewhere in the file; links and comments that cross a
+# stamp; a stamp drawn twice; a stamp in a form field; and pages crammed with
+# Bates-shaped numbers.
+
+
+def _to_user(spec: dict, rect: fitz.Rect) -> list[float]:
+    """A rectangle on the page as shown, in PDF user space (an annotation's /Rect)."""
+    x0, _, _, top = _visible(spec)
+    corners = [_to_stored(spec, x, y) for x, y in (rect.tl, rect.br)]
+    us, vs = sorted(c[0] for c in corners), sorted(c[1] for c in corners)
+    return [x0 + us[0], top - vs[1], x0 + us[1], top - vs[0]]
+
+
+def _shown_word(pdf: bytes, text: str, index: int = 0) -> fitz.Rect:
+    """Where `text` is on the page as shown (the page's /Rotate is 0, 90, 180 or 270)."""
+    with fitz.open(stream=pdf, filetype="pdf") as doc:
+        page = doc[index]
+        return next(fitz.Rect(w[:4]) * page.rotation_matrix for w in page.get_text("words") if w[4] == text)
+
+
+@pytest.mark.parametrize("inline", [False, True], ids=["listed", "inline"])
+@pytest.mark.parametrize("name", ["rotate-0", "cropped-rotate-90"])
+def test_a_number_printed_in_a_scan_laid_over_its_ocr_text_is_whitened(client, name, inline):
+    """Some OCR software draws the text it recognised in the ordinary way and
+    lays the scan over it, so the number that shows is the one in the picture.
+    Taking out only the text left that number showing, while the page said it
+    was gone. A stamp drawn over the scan still leaves the scan alone. The
+    scan is an image the page lists, or one written into its content."""
+    spec = SPECS[name]
+    w, h = _shown_size(spec)
+    ocr = Line("ABC000124", 20, h - 20)
+    printed = fitz.Rect(ocr.x, ocr.y - 7.2, ocr.x + _width(ocr.text), ocr.y)
+    drawn = Line(STAMP, w - 20 - _width(STAMP), h - 20)
+    pdf = _pdf([(spec, [ocr, drawn])], dark={0: [printed]}, picture_after={0: 1}, inline=inline)
+    before = _shown(pdf, 0, _turn(spec))
+    assert _ink(before, printed) > 0.8 * printed.width * printed.height, f"{name}: the printed number is not in the scan"
+    ocr_box = _shown_word(pdf, ocr.text)
+
+    res = _remove(client, pdf)
+    ((mupdf, pypdf_text),) = _texts(res.content)
+    for text in (ocr.text, drawn.text):
+        assert text not in mupdf and text not in pypdf_text, f"{name}: {text} is still in the text layer"
+    after = _shown(res.content, 0, _turn(spec))
+    assert _ink(after, printed) == 0, f"{name}: the number printed into the scan still shows"
+    under = _region(after, _ink_box(drawn))
+    assert under.min() > 150 and under.max() < 250, f"{name}: the scan under the drawn stamp changed ({under.min()}-{under.max()})"
+    assert np.array_equal(
+        _outside(_outside(before, _ink_box(drawn)), ocr_box + (-2, -2, 2, 2)),
+        _outside(_outside(after, _ink_box(drawn)), ocr_box + (-2, -2, 2, 2)),
+    ), f"{name}: the scan changed away from the two numbers"
+    assert _counts(res) == ("2", "0", "0")
+
+
+@pytest.mark.parametrize("position", ["bottom-left", "bottom-center", "bottom-right", "top-left", "top-center", "top-right"])
+@pytest.mark.parametrize("rotate", [90, 270])
+def test_our_stamp_on_a_landscape_page_stored_turned_is_removed_or_reported(client, rotate, position):
+    """Bates Numbering sizes its stamp for the page as stored, so on a
+    landscape page stored turned a quarter it lands 173 points from the top or
+    bottom as shown, and 16 points from a side unless it is centred. v2.7.4
+    removed four of these twelve placements by accident; the first version of
+    this fix removed none and said "No Bates numbers found". With the prefix,
+    a stamp within an inch of any edge goes, and the centred ones, which are
+    not, are reported rather than left in silence."""
+    spec = {"rotate": rotate, "mediabox": (0, 0, 792, 612)}
+    stamped = _post(client, "bates-numbering", _pdf([(spec, [Line(BODY, 72, 120)])]),
+                    prefix="PROD", start_number="123", digits="6", position=position).content
+    where = _shown_word(stamped, "PROD000123")
+
+    res = _remove(client, stamped, prefix="PROD")
+    ((mupdf, pypdf_text),) = _texts(res.content)
+    left = "PROD000123" in mupdf or "PROD000123" in pypdf_text
+    if position.endswith("center"):
+        assert left and _counts(res) == ("0", "0", "1"), f"{where}: the stamp left in place is not reported"
+    else:
+        assert not left, f"{position} on /Rotate {rotate}: the stamp at {where} is still in the file"
+        assert _ink(_shown(res.content, 0, rotate), where + (-1, -1, 1, 1)) == 0, "the stamp still shows"
+        assert _counts(res) == ("1", "0", "0")
+
+
+@pytest.mark.parametrize("angle", [90, 180, 270])
+def test_a_page_stamped_while_turned_and_turned_again_loses_its_number(client, angle):
+    """Our Bates Numbering on a page stored turned 90, then our Rotate tool
+    turning the page again: the stamp now runs along a side of the page as
+    shown (turned by 90 or 270), or sits upside down at the top (180). The
+    versions before missed the side ones."""
+    stamped = _post(client, "bates-numbering", _pdf([({"rotate": 90}, [Line(BODY, 72, 120)])]),
+                    prefix="PROD", digits="6").content
+    turned = _post(client, "rotate", stamped, angle=str(angle)).content
+    turn = (90 + angle) % 360
+    assert _mupdf_rotation(turned) == turn
+    assert _edge_frame_ink(_shown(turned, 0, turn)) > 50
+
+    res = _remove(client, turned, prefix="PROD")
+    ((mupdf, pypdf_text),) = _texts(res.content)
+    assert "PROD000001" not in mupdf and "PROD000001" not in pypdf_text, f"turned {angle}: the number is still there"
+    assert BODY in mupdf
+    assert _edge_frame_ink(_shown(res.content, 0, turn)) == 0, f"turned {angle}: the number still shows"
+    assert _counts(res) == ("1", "0", "0")
+
+
+def test_text_matching_the_prefix_elsewhere_is_left_and_reported(client):
+    """A reference to a Bates number in the body is not a stamp, and a number
+    hidden outside the visible page is not in its margins: both stay, and the
+    page is told how many, so it never says the file is clean while text
+    matching the prefix is still in it. With no prefix there is nothing exact
+    to count, and nothing is reported."""
+    spec = {"cropbox": (0, 72, 612, 792)}  # hides the bottom inch of the page
+    w, h = _shown_size(spec)
+    lines = [Line("See ABC000555 for the invoice", 72, 300), Line("ABC000556", 72, h + 40), _stamp(spec, "bottom-right")]
+    pdf = _pdf([(spec, lines)])
+    ((mupdf, pypdf_text),) = _texts(pdf)
+    assert "ABC000556" in pypdf_text and "ABC000556" not in mupdf, "the hidden number is not where only pypdf reads it"
+
+    res = _remove(client, pdf)
+    ((mupdf, pypdf_text),) = _texts(res.content)
+    assert STAMP not in mupdf and STAMP not in pypdf_text
+    assert "ABC000555" in mupdf and "ABC000556" in pypdf_text
+    assert _counts(res) == ("1", "0", "2")
+
+    res = _remove(client, pdf, prefix="")
+    assert "ABC000555" in _texts(res.content)[0][0]
+    assert _counts(res) == ("1", "0", "0")
+
+
+def _appearance(doc: pikepdf.Pdf, rect: list[float], text: str) -> pikepdf.Stream:
+    """An annotation's appearance showing `text` along its box: up the box
+    when it is taller than wide (a box on a page turned a quarter), so that
+    the text reads upright as the page is shown."""
+    font = doc.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type1, BaseFont=pikepdf.Name.Helvetica))
+    width, height = rect[2] - rect[0], rect[3] - rect[1]
+    place = f"0 1 -1 0 {width - 4:g} 2 Tm" if height > width else "2 4 Td"
+    form = doc.make_stream(f"BT /F1 8 Tf {place} ({text}) Tj ET".encode())
+    form.Type, form.Subtype = pikepdf.Name.XObject, pikepdf.Name.Form
+    form.BBox = pikepdf.Array([0, 0, rect[2] - rect[0], rect[3] - rect[1]])
+    form.Resources = pikepdf.Dictionary(Font=pikepdf.Dictionary(F1=font))
+    return form
+
+
+def _annotated(pdf: bytes, annots: list[dict]) -> bytes:
+    """Page 1 of `pdf` with link and FreeText annotations: {"kind", "rect"
+    (PDF user space), "uri" or "text"}."""
+    with pikepdf.open(io.BytesIO(pdf)) as doc:
+        made = []
+        for spec in annots:
+            rect = spec["rect"]
+            if spec["kind"] == "link":
+                annot = pikepdf.Dictionary(Type=pikepdf.Name.Annot, Subtype=pikepdf.Name.Link, Rect=pikepdf.Array(rect),
+                                           Border=pikepdf.Array([0, 0, 0]),
+                                           A=pikepdf.Dictionary(S=pikepdf.Name.URI, URI=pikepdf.String(spec["uri"])))
+            else:
+                annot = pikepdf.Dictionary(Type=pikepdf.Name.Annot, Subtype=pikepdf.Name.FreeText, F=4, Rect=pikepdf.Array(rect),
+                                           Contents=pikepdf.String(spec["text"]), DA=pikepdf.String("/Helv 8 Tf 0 g"),
+                                           AP=pikepdf.Dictionary(N=_appearance(doc, rect, spec["text"])))
+            made.append(doc.make_indirect(annot))
+        doc.pages[0].obj.Annots = doc.make_indirect(pikepdf.Array(made))
+        out = io.BytesIO()
+        doc.save(out)
+        return out.getvalue()
+
+
+def _annotations(pdf: bytes) -> list[tuple[str, str]]:
+    with pikepdf.open(io.BytesIO(pdf)) as doc:
+        return sorted((str(a.Subtype), str(a.A.URI) if "/A" in a else str(a.get("/Contents", "")))
+                      for a in doc.pages[0].get("/Annots", []))
+
+
+@pytest.mark.parametrize("name", ["rotate-0", "rotate-90"])
+def test_links_and_comments_crossing_a_stamp_stay(client, name):
+    """MuPDF deletes every link and FreeText annotation a redaction touches: a
+    link over the whole page, one across the footer, a reviewer's comment
+    across it. They stay now. A link on the stamp alone goes with the stamp,
+    and so does a FreeText annotation that is itself a Bates number."""
+    spec = SPECS[name]
+    w, h = _shown_size(spec)
+    stamp = _stamp(spec, "bottom-right")
+    pdf = _pdf([(spec, [Line(BODY, 72, 120), stamp])])
+    on_stamp = _shown_word(pdf, STAMP) + (0.5, 0.5, -0.5, -0.5)
+    pdf = _annotated(pdf, [
+        {"kind": "link", "uri": "https://example.com/page", "rect": _to_user(spec, fitz.Rect(0, 0, w, h))},
+        {"kind": "link", "uri": "https://example.com/footer", "rect": _to_user(spec, fitz.Rect(10, h - 40, w - 10, h - 5))},
+        {"kind": "link", "uri": "https://example.com/stamp", "rect": _to_user(spec, on_stamp)},
+        {"kind": "freetext", "text": "See exhibit list", "rect": _to_user(spec, fitz.Rect(10, h - 45, w - 10, h - 2))},
+        {"kind": "freetext", "text": "ABC000124", "rect": _to_user(spec, fitz.Rect(20, h - 34, 120, h - 14))},
+    ])
+    assert "ABC000124" in _texts(pdf)[0][0], "the FreeText stamp is not where text extraction sees it"
+
+    res = _remove(client, pdf)
+    assert _annotations(res.content) == [
+        ("/FreeText", "See exhibit list"), ("/Link", "https://example.com/footer"), ("/Link", "https://example.com/page"),
+    ]
+    ((mupdf, _),) = _texts(res.content)
+    assert STAMP not in mupdf and "ABC000124" not in mupdf
+    assert _counts(res) == ("2", "0", "0")
+
+
+@pytest.mark.parametrize("name", ["rotate-0", "rotate-90"])
+def test_a_stamp_drawn_twice_in_one_place_counts_once(client, name):
+    """A "fake bold" stamp is drawn twice, 0.3 points apart: one stamp to the
+    visitor, and it was counted as two."""
+    spec = SPECS[name]
+    stamp = _stamp(spec, "bottom-right")
+    pdf = _pdf([(spec, [Line(BODY, 72, 120), stamp, stamp._replace(x=stamp.x + 0.3)])])
+    assert _texts(pdf)[0][0].count(STAMP) == 2
+
+    res = _remove(client, pdf)
+    ((mupdf, pypdf_text),) = _texts(res.content)
+    assert STAMP not in mupdf and STAMP not in pypdf_text
+    assert _ink(_shown(res.content, 0, _turn(spec)), _ink_box(stamp) + (0, 0, 1, 0)) == 0
+    assert _counts(res) == ("1", "0", "0")
+
+
+def test_a_stamp_in_a_form_field_is_reported_as_still_in_the_file(client):
+    """A number held by a form field is drawn by the field, where redaction
+    does not reach: the page is told it is still in the file."""
+    pdf = _pdf([({}, [Line(BODY, 72, 120), _stamp({}, "bottom-right")])])
+    with pikepdf.open(io.BytesIO(pdf)) as doc:
+        rect = [20, 12, 140, 34]
+        field = doc.make_indirect(pikepdf.Dictionary(
+            Type=pikepdf.Name.Annot, Subtype=pikepdf.Name.Widget, F=4, FT=pikepdf.Name.Tx, T=pikepdf.String("bates"),
+            V=pikepdf.String("ABC000124"), Rect=pikepdf.Array(rect), DA=pikepdf.String("/Helv 8 Tf 0 g"),
+            AP=pikepdf.Dictionary(N=_appearance(doc, rect, "ABC000124")),
+        ))
+        doc.pages[0].obj.Annots = doc.make_indirect(pikepdf.Array([field]))
+        doc.Root.AcroForm = pikepdf.Dictionary(Fields=pikepdf.Array([field]))
+        out = io.BytesIO()
+        doc.save(out)
+        pdf = out.getvalue()
+    assert "ABC000124" in _texts(pdf)[0][0]
+
+    res = _remove(client, pdf)
+    ((mupdf, _),) = _texts(res.content)
+    assert STAMP not in mupdf
+    assert "ABC000124" in mupdf, "the field's number went after all; this test needs another stamp"
+    assert _counts(res) == ("1", "1", "0")
+
+
+def _crammed(pages: int, numbers: int) -> bytes:
+    """`pages` pages sharing one content stream: a body of text and `numbers`
+    Bates-shaped numbers in 4-point type in the top and bottom inch."""
+    ops = [f"BT /F1 10 Tf 54 {720 - 12.5 * i:.1f} Td (lorem ipsum dolor sit amet consectetur adipiscing elit sed do) Tj ET"
+           for i in range(50)]
+    rows = [" ".join(f"{n:06d}" for n in range(start, min(start + 40, numbers))) for start in range(0, numbers, 40)]
+    for r, row in enumerate(rows):
+        y = 786 - (r // 2) * 4.2 if r % 2 == 0 else 4 + (r // 2) * 4.2
+        ops.append(f"BT /F1 4 Tf 8 {y:.1f} Td ({row}) Tj ET")
+    pdf = pikepdf.new()
+    font = pdf.make_indirect(pikepdf.Dictionary(Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type1, BaseFont=pikepdf.Name.Helvetica))
+    content = pdf.make_indirect(pdf.make_stream("\n".join(ops).encode()))
+    for _ in range(pages):
+        pdf.pages.append(pikepdf.Page(pikepdf.Dictionary(
+            Type=pikepdf.Name.Page, MediaBox=pikepdf.Array(LETTER), Contents=content,
+            Resources=pikepdf.Dictionary(Font=pikepdf.Dictionary(F1=font)),
+        )))
+    out = io.BytesIO()
+    pdf.save(out, compress_streams=True)
+    return out.getvalue()
+
+
+@pytest.mark.parametrize("pages,numbers", [(1, 1280), (20, 1280), (60, 100)])
+def test_pages_crammed_with_bates_shaped_numbers_are_refused_quickly(client, pages, numbers):
+    """Each Bates-shaped number in a margin costs a pass over its page's
+    words. 1,280 of them on one page took about 28 seconds, and twenty such
+    pages sharing their content, an upload of 8.5 KB, minutes. The work is
+    counted before it is done and refused past what a file of that size
+    warrants: the busiest real page found had 13 such numbers."""
+    import time
+
+    pdf = _crammed(pages, numbers)
+    start = time.process_time()
+    res = client.post("/api/bates-remove", files={"file": ("p.pdf", pdf, "application/pdf")}, data={"prefix": "", "digits": "6"})
+    spent = time.process_time() - start
+    assert res.status_code == 422, res.text[:300]
+    detail = res.json()["detail"]
+    assert "no file was made" in detail and "prefix" in detail, detail
+    assert spent < 5, f"refusing took {spent:.1f} s of CPU"
+
+
+def test_the_busiest_real_page_is_not_refused(client):
+    """The busiest real page in 616 statements and terms had 3,171 words and,
+    with the fewest digits allowed, 13 Bates-shaped numbers in its margins."""
+    pdf = _crammed(1, 13)
+    with pikepdf.open(io.BytesIO(pdf)) as doc:
+        page = pikepdf.Page(doc.pages[0])
+        page.contents_add(doc.make_stream("\n".join(
+            f"BT /F1 3 Tf 80 {640 - 1.6 * i:.1f} Td ({' '.join(['word'] * 10)}) Tj ET" for i in range(300)
+        ).encode()))
+        out = io.BytesIO()
+        doc.save(out)
+        pdf = out.getvalue()
+    with fitz.open(stream=pdf, filetype="pdf") as doc:
+        assert len(doc[0].get_text("words")) > 3171
+    res = _remove(client, pdf, prefix="", digits="3")
+    assert _counts(res) == ("13", "0", "0")
