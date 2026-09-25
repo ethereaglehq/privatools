@@ -10,7 +10,7 @@
     },
     {
       "name": "Download the clean PDF",
-      "text": "The matching stamps are removed. The page tells you if any it found could not be, such as a stamp drawn by an annotation or a form field, and how many other matches it left in place. You download a new PDF; the original on your device is not changed."
+      "text": "The matching stamps are removed. The page tells you if any it found could not be, such as a stamp drawn by an annotation or a form field, and what it left in place: with a prefix or suffix, every other match for it; with both blank, Bates-shaped numbers on a page turned a quarter that lie in the inch at either side, or where Bates Numbering puts its stamp on such a page. You download a new PDF; the original on your device is not changed."
     }
   ],
   "faq": [

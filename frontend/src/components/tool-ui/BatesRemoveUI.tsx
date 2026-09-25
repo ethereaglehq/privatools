@@ -12,11 +12,13 @@
  * Multi-file via useMultiFileProcessor — the same pattern is applied to every
  * PDF. Each answer says how many stamps left the file (X-Bates-Removed), how
  * many were found but are still in it (X-Bates-Remaining: drawn where
- * redaction cannot reach, such as a stamp annotation), and, with a prefix or
- * suffix, how many other matches for it were found elsewhere in the file and
- * left in place (X-Bates-Elsewhere). They are summed, the files that still
- * hold something are named, and the summary never calls the file clean while
- * a stamp or a match is still in it.
+ * redaction cannot reach, such as a stamp annotation), and how many matches
+ * were left in place (X-Bates-Elsewhere): with a prefix or suffix, any other
+ * match for it in the file; without one, Bates-shaped numbers on pages turned
+ * a quarter that sit where a stamp can be but the net without a prefix does
+ * not reach. They are summed, the files that still hold something are named,
+ * and the summary never calls the file clean while a stamp or a match is
+ * still in it, nor claims anything when every file failed.
  */
 import { useState, useEffect, useCallback, useRef } from "react";
 import { Loader2, AlertCircle, CheckCircle2, Eraser, RotateCcw, Info, Download, Upload } from "lucide-react";
@@ -85,68 +87,83 @@ export function BatesRemoveUI() {
         const remaining = sum("remaining");
         const elsewhere = sum("elsewhere");
         const exact = prefix !== "" || suffix !== "";
-        const someLeft = remaining > 0;
-        const leftInPlace = elsewhere > 0;
-        const nothingMatched = proc.doneCount > 0 && removed === 0 && !someLeft && !leftInPlace;
+        // Every file failed: nothing was made, so nothing may read as done.
+        const allFailed = proc.doneCount === 0;
+        const someLeft = !allFailed && remaining > 0;
+        const leftInPlace = !allFailed && elsewhere > 0;
+        const nothingMatched = !allFailed && removed === 0 && !someLeft && !leftInPlace;
         const warn = someLeft || leftInPlace || nothingMatched;
         const files = proc.doneCount > 1 ? "files" : "file";
         // In a batch, the files the visitor has to open before sharing.
         const toCheck = isMulti ? results.filter(r => r.remaining > 0 || r.elsewhere > 0) : [];
         const failed = proc.failedCount > 0 ? <> · <span className="text-destructive italic">{proc.failedCount} failed</span></> : null;
         const stamps = (n: number) => `${n} stamp${n === 1 ? "" : "s"}`;
-        const elsewhereWhat = someLeft
-            ? `${elsewhere} more ${elsewhere === 1 ? "match" : "matches"} for the prefix or suffix ${elsewhere === 1 ? "was" : "were"}`
-            : "Text matching the prefix or suffix was";
-        const elsewhereSentence = `${elsewhereWhat} found elsewhere in the ${files}, away from the page margins the tool clears, and left in place: it may be a reference to a Bates number, or a stamp placed further in.`;
+        // What was left in place: with a prefix or suffix, any other match for
+        // it; without one, only Bates-shaped numbers on pages turned a quarter
+        // that sit where a stamp can be but the net without a prefix does not reach.
+        const leftWhat = exact
+            ? `${elsewhere === 1 ? "match" : "matches"}`
+            : `Bates-shaped number${elsewhere === 1 ? "" : "s"}`;
+        const elsewhereSentence = exact
+            ? `${someLeft ? `${elsewhere} more ${elsewhere === 1 ? "match" : "matches"} for the prefix or suffix ${elsewhere === 1 ? "was" : "were"}` : "Text matching the prefix or suffix was"} found elsewhere in the ${files}, away from the page margins the tool clears, and left in place: it may be a reference to a Bates number, or a stamp placed further in.`
+            : `${elsewhere} Bates-shaped number${elsewhere === 1 ? " was" : "s were"} left in place on pages turned a quarter, outside the margins searched without a prefix. If ${elsewhere === 1 ? "it is a stamp" : "they are stamps"}, give the prefix to remove ${elsewhere === 1 ? "it" : "them"}.`;
         return (
             <div className={cn(
                 "rounded-2xl border overflow-hidden animate-fade-up",
-                warn ? "border-copper/40 bg-copper-soft/40" : "border-accent/30 bg-accent/[0.05]",
+                allFailed ? "border-destructive/30 bg-destructive/[0.06]" : warn ? "border-copper/40 bg-copper-soft/40" : "border-accent/30 bg-accent/[0.05]",
             )}>
                 <div className="p-7">
                     <div className="flex items-start gap-5">
                         <div className={cn(
                             "h-14 w-14 rounded-2xl border flex items-center justify-center shrink-0 animate-success-pop",
-                            warn ? "bg-copper/15 border-copper/35" : "bg-accent/15 border-accent/35",
+                            allFailed ? "bg-destructive/10 border-destructive/30" : warn ? "bg-copper/15 border-copper/35" : "bg-accent/15 border-accent/35",
                         )}>
-                            {someLeft || leftInPlace
-                                ? <AlertCircle size={24} className="text-copper" strokeWidth={1.75} />
-                                : nothingMatched
-                                    ? <Info size={24} className="text-copper" strokeWidth={1.75} />
-                                    : <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />}
+                            {allFailed
+                                ? <AlertCircle size={24} className="text-destructive" strokeWidth={1.75} />
+                                : someLeft || leftInPlace
+                                    ? <AlertCircle size={24} className="text-copper" strokeWidth={1.75} />
+                                    : nothingMatched
+                                        ? <Info size={24} className="text-copper" strokeWidth={1.75} />
+                                        : <CheckCircle2 size={24} className="text-accent" strokeWidth={1.75} />}
                         </div>
                         <div className="flex-1 min-w-0">
-                            <p className="section-mark mb-2">{someLeft ? "Not all removed" : leftInPlace ? "Left in place" : nothingMatched ? "Nothing matched" : "Bates removed"}</p>
+                            <p className="section-mark mb-2">{allFailed ? "Not processed" : someLeft ? "Not all removed" : leftInPlace ? "Left in place" : nothingMatched ? "Nothing matched" : "Bates removed"}</p>
                             <h2 className="font-display text-[26px] font-bold text-foreground tracking-[-0.025em] leading-tight">
-                                {someLeft
-                                    ? <><span className="italic text-copper">{remaining}</span> stamp{remaining === 1 ? "" : "s"} could not be removed{failed}</>
-                                    : leftInPlace
-                                        ? <><span className="italic text-copper">{elsewhere}</span> {elsewhere === 1 ? "match" : "matches"} left in place{failed}</>
-                                        : nothingMatched
-                                            ? "No Bates numbers found"
-                                            : isMulti
-                                                ? <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed across {proc.doneCount} file{proc.doneCount === 1 ? "" : "s"}{failed}</>
-                                                : <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed</>}
+                                {allFailed
+                                    ? "No file was made"
+                                    : someLeft
+                                        ? <><span className="italic text-copper">{remaining}</span> stamp{remaining === 1 ? "" : "s"} could not be removed{failed}</>
+                                        : leftInPlace
+                                            ? <><span className="italic text-copper">{elsewhere}</span> {leftWhat} left in place{failed}</>
+                                            : nothingMatched
+                                                ? "No Bates numbers found"
+                                                : isMulti
+                                                    ? <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed across {proc.doneCount} file{proc.doneCount === 1 ? "" : "s"}{failed}</>
+                                                    : <><span className="italic text-accent">{removed}</span> stamp{removed === 1 ? "" : "s"} removed</>}
                             </h2>
                             <p className="font-mono text-[11px] tracking-[0.04em] text-muted-foreground mt-1.5">
-                                {someLeft
-                                    ? <>
-                                        {remaining === 1 ? "It was" : "They were"} found in the page margins but {remaining === 1 ? "is" : "are"} still
-                                        in the {files}, drawn where redaction cannot reach, such as a stamp annotation or a form field.
-                                        Check before you share.
-                                        {removed > 0 && <> {removed} other stamp{removed === 1 ? " was" : "s were"} removed.</>}
-                                        {leftInPlace && <> {elsewhereSentence}</>}
-                                    </>
-                                    : leftInPlace
+                                {allFailed
+                                    ? (proc.failedCount === 1
+                                        ? "The file could not be processed; the reason is below."
+                                        : `None of the ${proc.failedCount} files could be processed; the reasons are below.`)
+                                    : someLeft
                                         ? <>
-                                            {elsewhereSentence} Check before you share.
-                                            {removed > 0 && <> {stamps(removed)} in the margins {removed === 1 ? "was" : "were"} removed.</>}
+                                            {remaining === 1 ? "It was" : "They were"} found in the page margins but {remaining === 1 ? "is" : "are"} still
+                                            in the {files}, drawn where redaction cannot reach, such as a stamp annotation or a form field.
+                                            Check before you share.
+                                            {removed > 0 && <> {removed} other stamp{removed === 1 ? " was" : "s were"} removed.</>}
+                                            {leftInPlace && <> {elsewhereSentence}</>}
                                         </>
-                                        : nothingMatched
-                                            ? exact
-                                                ? "Nothing in the file matched the prefix or suffix. Check the ones the stamps actually use."
-                                                : "Nothing in the top or bottom inch of the pages looked like a Bates number. Try giving the prefix or suffix the stamps actually use."
-                                            : "Redacted, not covered — the text is gone from the file."}
+                                        : leftInPlace
+                                            ? <>
+                                                {elsewhereSentence} Check before you share.
+                                                {removed > 0 && <> {stamps(removed)} in the margins {removed === 1 ? "was" : "were"} removed.</>}
+                                            </>
+                                            : nothingMatched
+                                                ? exact
+                                                    ? "Nothing in the file matched the prefix or suffix. Check the ones the stamps actually use."
+                                                    : "Nothing in the top or bottom inch of the pages looked like a Bates number. Try giving the prefix or suffix the stamps actually use."
+                                                : `Redacted, not covered: the removed stamps' text is gone from the ${files}.`}
                                 {proc.doneCount > 0 && <> {proc.doneCount > 1 ? "ZIP downloaded." : "PDF downloaded."}</>}
                             </p>
                             {toCheck.length > 0 && (

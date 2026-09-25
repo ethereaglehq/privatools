@@ -73,7 +73,39 @@ describe("Remove Bates Numbers' result", () => {
     it("says the stamps are gone when every one left the file", async () => {
         const heading = await run([answer(3, 0)]);
         expect(heading).toHaveTextContent(/^3 stamps removed$/);
-        expect(screen.getByText(/the text is gone from the file/)).toBeInTheDocument();
+        expect(screen.getByText(/the removed stamps' text is gone from the file/)).toBeInTheDocument();
+    });
+
+    it("reports Bates-shaped numbers left in place without a prefix, and says how to remove them", async () => {
+        const heading = await run([answer(0, 0, 1)]);
+        expect(heading).toHaveTextContent(/^1 Bates-shaped number left in place$/);
+        expect(screen.getByText(/left in place on pages turned a quarter/)).toHaveTextContent(
+            /outside the margins searched without a prefix\. If it is a stamp, give the prefix to remove it\. Check before you share/,
+        );
+        expect(screen.queryByText(/gone from the file/)).toBeNull();
+    });
+
+    it("names the file with a number left in place in a batch run without a prefix", async () => {
+        const heading = await run([answer(4, 0), answer(0, 0, 1)]);
+        expect(heading).toHaveTextContent(/^1 Bates-shaped number left in place$/);
+        expect(screen.getByText(/left in place on pages turned a quarter/)).toHaveTextContent(/4 stamps in the margins were removed/);
+        const list = screen.getByRole("list", { name: "Files to check" });
+        expect(within(list).getAllByRole("listitem").map(item => item.textContent)).toEqual(["production-2.pdf1 left in place"]);
+        expect(screen.queryByText(/gone from the file/)).toBeNull();
+    });
+
+    it("claims nothing when every file failed", async () => {
+        mocks.upload.mockRejectedValueOnce(new Error("Removing the numbers would take far longer than a file like this warrants, so no file was made."));
+        const view = render(<BatesRemoveUI />);
+        fireEvent.change(view.container.querySelector("input[type=file]")!, { target: { files: [new File(["%PDF-1.7"], "crammed.pdf", { type: "application/pdf" })] } });
+        fireEvent.click(screen.getByRole("button", { name: /Remove Bates numbers/ }));
+        const heading = await screen.findByRole("heading", { level: 2 }, { timeout: 5000 });
+        expect(heading).toHaveTextContent(/^No file was made$/);
+        expect(screen.getByText(/could not be processed/)).toBeInTheDocument();
+        expect(screen.getByText(/so no file was made\./)).toBeInTheDocument();
+        expect(screen.queryByText(/stamps? removed/)).toBeNull();
+        expect(screen.queryByText(/gone from the file/)).toBeNull();
+        expect(screen.queryByText("Bates removed")).toBeNull();
     });
 
     it("says nothing matched when nothing was found", async () => {
