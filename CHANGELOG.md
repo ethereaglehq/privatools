@@ -21,7 +21,7 @@ Nothing yet.
 
 ### For API users
 
-- `/delete-pages`, `/extract-pages`, `/organize-pages`, `/split`, `/split-by-bookmarks`, `/split-by-size`, `/merge` with page ranges and `/remove-blank-pages` can answer 422 when they can't produce an output that is safe to return: a file whose structure would take more work to clean than its size allows, or an output that would still contain a removed page. Deleting every page, and Split by Text with a term the file doesn't contain, answer 400 instead of 500. (#280)
+- `/delete-pages`, `/extract-pages`, `/organize-pages`, `/split`, `/split-by-bookmarks`, `/split-by-size`, `/split-by-text`, `/merge` with page ranges and `/remove-blank-pages` can answer 422 when they can't produce an output that is safe to return: a file whose structure would take more work to clean than its size allows, or an output that would still contain a removed page. Deleting every page, and Split by Text with a term the file doesn't contain, answer 400 instead of 500. (#280)
 
 ## [2.7.3] — 2026-09-25 — Boxes that land where you draw them on turned pages, answers the page can read
 
