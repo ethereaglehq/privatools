@@ -10,6 +10,29 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.3] — 2026-09-25 — Boxes that land where you draw them on turned pages, answers the page can read
+
+### Tools
+
+- Redact PDF, White-Out and the other tools you draw on (Annotate, Shapes, Sign, eSign, Edit PDF, Crop and Form Creator) put what you draw where you drew it on pages stored turned (`/Rotate`) or whose visible area doesn't start at the page's corner, as in many scans and in pages turned by our Rotate tool. Before, a box drawn on such a page could land off the page or on other content, so Redact and White-Out could leave visible the text you meant to hide; on a page turned 270°, Redact removed a different line. `/Rotate` values that viewers read differently (−90, 450, 80, 90.0) are read the way the preview shows them. This closes the known issue listed under 2.7.2. (#285)
+- White-Out, Annotate, Shapes and Edit PDF refuse a page number past the end of the PDF instead of returning the file unchanged. On turned pages, Annotate's highlights, underlines and strikethroughs follow the text under the box. (#285)
+- On privatools.me, where the API has its own address, the page can now read the answers it was missing: the download's file name, Redact's withholding log, match and stamp counts, and the details of unexpected server errors, which used to show as "Couldn't reach the server". Pages that process a queue of files name their downloads the same way as the other pages. (#282)
+- Pages that send several files in one request, such as Merge, refuse a selection over the total they state before uploading anything. A failed upload over 10 MB is no longer sent again automatically. (#282)
+
+### For API users
+
+- `/crop` takes `margins_from=shown` to measure its margins on the page as shown; without it, nothing changes. `/whiteout-pdf`, `/annotate-pdf`, `/add-shapes` and `/edit-pdf` answer 400 for a page number that isn't a whole number within the PDF. (#285)
+- Every answer to an allowed origin carries the same CORS headers, errors included. `/api` exposes the headers the site reads (`Content-Disposition`, `X-Request-ID`, `X-Compressed-Size`, `X-Target-Met`, `X-Redaction-Report`, `X-Redact-Hits`, `X-Highlight-Hits`, `X-Bates-Manifest`, `X-Bates-Removed`) and no longer exposes `X-Original-Size` or `X-Stripped-Items`; `/api/v1` exposes these as well as its own. (#282)
+
+### Deploy
+
+- nginx's own 413, 502, 503 and 504 answers on the API host can carry CORS headers for the site's origins, so the page can show a too-large upload or a timeout for what it is. This is applied by hand on the server with the runbook in `deploy/api-subdomain-split.md`; until then, those answers reach the page as network errors. (#282)
+
+### Known issues
+
+- Remove Bates Numbers leaves the numbers on pages turned 90° while reporting them removed; a fix is next.
+- Stamp, Page Numbers and Header/Footer place their marks as if the page were not turned, and Form Creator's field text follows the page as stored.
+
 ## [2.7.2] — 2026-09-24 — Redact the page you chose, uploads sent once
 
 ### Tools
