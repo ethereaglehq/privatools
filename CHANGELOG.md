@@ -10,6 +10,22 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 Nothing yet.
 
+## [2.7.5] — 2026-09-25 — Bates numbers that are really removed, and a count you can trust
+
+### Tools
+
+- Remove Bates Numbers finds stamps in the margins of pages stored turned (`/Rotate`) or cropped, where it used to miss them while reporting them removed. On a scan whose text layer lies under the picture, it whitens the number in the picture as well as removing the text. The count it shows is the number of stamps that actually left the file; a stamp it can't remove (one drawn as a stamp annotation or a form field) or Bates-shaped text it leaves in place is reported, and a batch names the files that still have one. A stamp drawn twice counts once. Links and comments that only cross a stamp are kept. (#288)
+- A run in which every file fails says that no file was made instead of reporting 0 stamps removed. A file whose margins would take far too long to check is refused with a message asking for the stamps' prefix. (#288)
+- The guide says exactly where each mode looks and what changes, including that text printed under a stamp loses the characters it covers and that nearby words can shift slightly where a stamp was removed. (#288)
+
+### For API users
+
+- `/bates-remove` counts a stamp drawn twice in one place once, returns `X-Bates-Remaining` and `X-Bates-Elsewhere` beside `X-Bates-Removed`, and answers 422 when the work would be far out of proportion to the file. All three headers are exposed cross-origin. (#288)
+
+### Known issues
+
+- Bates Numbering places its stamp for the page as stored, not as shown, on landscape pages turned a quarter, so the stamp lands inside the page. Without a prefix, Remove Bates Numbers reports these stamps rather than removing them.
+
 ## [2.7.4] — 2026-09-25 — Deleted pages that are really gone
 
 ### Tools
