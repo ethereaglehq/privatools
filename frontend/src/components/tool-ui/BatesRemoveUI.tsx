@@ -178,7 +178,7 @@ export function BatesRemoveUI() {
                     {proc.entries.length ? "Add more PDFs" : "Drop PDFs to remove Bates numbers"}
                 </p>
                 <p className="font-medium text-[11.5px] text-muted-foreground">
-                    Only text in the page margins is touched · up to 500 MB each · several files become a ZIP
+                    Only Bates numbers in the page margins are touched · up to 500 MB each · several files become a ZIP
                 </p>
             </div>
 
@@ -225,9 +225,9 @@ export function BatesRemoveUI() {
                     </div>
                 </div>
                 <p className="px-4 pb-3 text-[12px] text-muted-foreground leading-relaxed">
-                    Leave these blank and anything in the margins shaped like a Bates number is
-                    removed. Filling them in makes the match exact, which is safer on documents
-                    that carry other numbering in the header or footer.
+                    Leave these blank and anything shaped like a Bates number within an inch of the
+                    top or bottom of a page is removed. Filling them in makes the match exact, which
+                    is safer on documents that carry other numbering in the header or footer.
                 </p>
             </div>
 

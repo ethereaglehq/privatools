@@ -1112,7 +1112,7 @@ const _toolsRaw: Tool[] = [
     synonyms: "remove bates delete bates strip bates numbering legal production stamp discovery unstamp",
     popularity: 82,
     category: "security", accepts: ".pdf", outputLabel: "unstamped.pdf",
-    lastReviewed: "2026-09-18",
+    lastReviewed: "2026-09-25",
   },
 
   {

@@ -1166,8 +1166,8 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "bates-remove": [
         {"name": 'Upload the stamped PDF', "text": 'Select a PDF that carries Bates numbering applied by PrivaTools or another tool.'},
-        {"name": 'Describe the stamp', "text": 'Give the prefix and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone. The digit count matters only when both are blank: then anything in the top or bottom inch that looks like letters followed by at least that many digits is removed.'},
-        {"name": "Download the clean PDF", "text": "The matching stamps are removed and the rest of the page is untouched. You download a new PDF; the original on your device is not changed."},
+        {"name": 'Describe the stamp', "text": 'Give the prefix and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone. Only text within an inch of the top or bottom edge is looked at, measured on the page as you see it or, if the page was turned after it was stamped, as it was when stamped. The digit count matters only when prefix and suffix are both blank: then anything there that looks like a number of at least that many digits (three at the fewest), with or without letters such as DOC- in front, is removed.'},
+        {"name": "Download the clean PDF", "text": "The matching stamps are removed, and the page tells you if any it found could not be. You download a new PDF; the original on your device is not changed."},
     ],
     "accessibility-check": [
         {"name": 'Upload the PDF', "text": 'Select the PDF you need to audit. Tagged, untagged, scanned and born-digital files are all accepted.'},
@@ -2446,9 +2446,9 @@ TOOL_FAQ: dict[str, list[dict[str, str]]] = {
         {"q": 'Can it fix the problems it finds?', "a": 'No. It reports; it does not rewrite your document. Structural accessibility has to be fixed where the file is authored, because that is the only place the intent is known.'},
     ],
     "bates-remove": [
-        {"q": 'Will this remove numbering added by another program?', "a": 'Usually, if the stamps were added as text and you can describe their shape: prefix, digit count, suffix. Numbers burned into a scanned image are part of the picture and cannot be lifted this way.'},
-        {"q": 'Why type the prefix and digits?', "a": 'So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. With a prefix or suffix, only text with exactly that around a number is removed; with both blank, anything in the top or bottom inch shaped like letters and at least the given number of digits goes.'},
-        {"q": "Does removing Bates numbers change the rest of the page?", "a": "No. Only the matching stamp objects are removed; the remaining text, images and layout are untouched. The result is a new PDF, so the file on your device stays as it was."},
+        {"q": 'Will this remove numbering added by another program?', "a": 'Usually, if the stamps were added as page text and you can describe their shape: prefix, digit count, suffix. A stamp added as a stamp annotation or a form field is found but cannot be removed, and the page says so. A number printed into a scanned image can only be found through the scan\'s OCR text: then the text is removed and the picture under it whitened.'},
+        {"q": 'Why type the prefix and digits?', "a": 'So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. With a prefix or suffix, only text with exactly that around a number is removed; with both blank, anything in the top or bottom inch that looks like a number with at least as many digits as you give (three at the fewest), with or without letters in front, goes.'},
+        {"q": "Does removing Bates numbers change the rest of the page?", "a": "No. Only the stamps' text is removed; the text around it, pictures and layout are untouched. The one exception is a number printed into a scanned image, where the picture under its OCR text is whitened. The result is a new PDF, so the file on your device stays as it was."},
         {"q": 'Can I renumber after removing?', "a": 'Yes. Strip the old stamps here, then use Bates Numbering to apply a fresh sequence with whatever prefix and starting number you need.'},
         {"q": "Is it free and account-free?", "a": "Yes. No account and no watermark, the same as every other tool on the site. Fair-use rate limits apply."},
     ],
