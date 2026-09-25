@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ..services import bates_numbering_service
+from ..utils.exceptions import ToolError
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -278,6 +279,15 @@ async def bates_remove(
     that it is no longer in the file, so covering it would defeat the purpose.
     Matching is confined to the page margins and to text shaped like a Bates
     number, so body content is not touched.
+
+    X-Bates-Removed counts the stamps that are no longer in the file,
+    X-Bates-Remaining the stamps found that are still in it (drawn by a stamp
+    annotation or a form field, say, which redaction does not reach), and
+    X-Bates-Elsewhere what was left in place: with a prefix or suffix, the
+    text matching it found anywhere else in the file; with neither,
+    Bates-shaped numbers on pages turned a quarter that lie within an inch of
+    a side, or where our Bates Numbering puts its stamp on such a page.
+    A file that would take far longer than it warrants is refused with a 422.
     """
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
@@ -303,13 +313,14 @@ async def bates_remove(
         temp_path = get_temp_path(f"upload_{uuid.uuid4().hex}.pdf")
         temp_path.write_bytes(content)
 
-        output_path, removed = await asyncio.to_thread(
+        result = await asyncio.to_thread(
             bates_numbering_service.remove_bates_numbering,
             str(temp_path),
             prefix=prefix,
             suffix=suffix,
             digits=digits,
         )
+        output_path = result.path
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
         return FileResponse(
@@ -318,10 +329,15 @@ async def bates_remove(
             media_type="application/pdf",
             background=cleanup,
             # Reported so the UI can say "nothing matched" instead of silently
-            # handing back an identical file.
-            headers={"X-Bates-Removed": str(removed)},
+            # handing back an identical file, and never says a stamp is gone
+            # while it, or other text matching the prefix, is still in the file.
+            headers={
+                "X-Bates-Removed": str(result.removed),
+                "X-Bates-Remaining": str(result.remaining),
+                "X-Bates-Elsewhere": str(result.elsewhere),
+            },
         )
-    except HTTPException:
+    except (HTTPException, ToolError):
         remove_files(*([str(temp_path)] if temp_path else []),
                      *([output_path] if output_path else []))
         raise

@@ -1523,7 +1523,7 @@
     "category": "security",
     "accepts": ".pdf",
     "outputLabel": "unstamped.pdf",
-    "lastReviewed": "2026-09-18",
+    "lastReviewed": "2026-09-25",
     "path": "/tool/bates-remove",
     "priority": 0.6
   },

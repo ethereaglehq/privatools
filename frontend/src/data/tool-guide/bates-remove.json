@@ -6,25 +6,25 @@
     },
     {
       "name": "Describe the stamp",
-      "text": "Give the prefix and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone. The digit count matters only when both are blank: then anything in the top or bottom inch that looks like letters followed by at least that many digits is removed."
+      "text": "Give the prefix and any suffix used when the numbers were applied, so the tool matches those stamps and leaves real page content alone. Then text made of exactly that prefix and suffix around a number is removed where it lies within an inch of any edge of the page, and any found elsewhere on the pages is left in place and reported. The digit count matters only when prefix and suffix are both blank: then anything in the top or bottom inch of the page as you see it that looks like a number of at least that many digits (three at the fewest), with or without letters such as DOC- in front, is removed, and on a page turned a quarter, such a number running along the inch at either side."
     },
     {
       "name": "Download the clean PDF",
-      "text": "The matching stamps are removed and the rest of the page is untouched. You download a new PDF; the original on your device is not changed."
+      "text": "The matching stamps are removed. The page tells you if any it found could not be, such as a stamp drawn by an annotation or a form field, and what it left in place: with a prefix or suffix, every other match for it; with both blank, Bates-shaped numbers on a page turned a quarter that lie in the inch at either side, or where Bates Numbering puts its stamp on such a page. You download a new PDF; the original on your device is not changed."
     }
   ],
   "faq": [
     {
       "q": "Will this remove numbering added by another program?",
-      "a": "Usually, if the stamps were added as text and you can describe their shape: prefix, digit count, suffix. Numbers burned into a scanned image are part of the picture and cannot be lifted this way."
+      "a": "Usually, if the stamps were added as page text and you can describe their shape: prefix, digit count, suffix. A stamp added as a stamp annotation or a form field is found but cannot be removed, and the page says so. A number printed into a scanned image can only be found through the scan's OCR text: then the text is removed and the picture under it whitened."
     },
     {
       "q": "Why type the prefix and digits?",
-      "a": "So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. With a prefix or suffix, only text with exactly that around a number is removed; with both blank, anything in the top or bottom inch shaped like letters and at least the given number of digits goes."
+      "a": "So the tool removes stamps and nothing else. A bare search for numerals would happily delete page numbers, figures and dates. With a prefix or suffix, only text with exactly that around a number is removed, and only within an inch of an edge of the page; matches anywhere else on the pages are left in place and counted for you. With both blank, anything in the top or bottom inch that looks like a number with at least as many digits as you give (three at the fewest), with or without letters in front, goes, so dates and account numbers printed there go too."
     },
     {
       "q": "Does removing Bates numbers change the rest of the page?",
-      "a": "No. Only the matching stamp objects are removed; the remaining text, images and layout are untouched. The result is a new PDF, so the file on your device stays as it was."
+      "a": "A little. The stamps' text is removed, and text printed underneath a stamp loses the characters the stamp covers. A number printed into a scanned image is whitened in the picture along with its OCR text, and a link that lies on a stamp alone goes with it. Other text, pictures, drawings, links and comments stay. Taking a stamp out rewrites the page's content, and in some files that shifts other words on the page, so look the result over before you share it. The result is a new PDF, so the file on your device stays as it was."
     },
     {
       "q": "Can I renumber after removing?",

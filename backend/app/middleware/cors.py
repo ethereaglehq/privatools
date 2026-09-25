@@ -32,6 +32,8 @@ SITE_EXPOSED_HEADERS = [
     "X-Highlight-Hits",      # Highlight: how many matches were marked
     "X-Bates-Manifest",      # Bates Numbering: each file's number range
     "X-Bates-Removed",       # Remove Bates Numbers: how many were removed
+    "X-Bates-Remaining",     # Remove Bates Numbers: how many were found but are still in the file
+    "X-Bates-Elsewhere",     # Remove Bates Numbers: matches for the prefix left elsewhere in the file
 ]
 
 
