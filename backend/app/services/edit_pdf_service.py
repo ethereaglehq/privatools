@@ -11,7 +11,7 @@ from reportlab.pdfgen import canvas
 from ..utils.cleanup import safe_open_pdf
 from ..utils.colors import hex_to_rgb_float as _hex_to_rgb
 from ..utils.filenames import temp_output
-from ..utils.page_space import shown_area
+from ..utils.page_space import settle_rotation, shown_area
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +44,9 @@ def edit_pdf(input_path: str, edits: list) -> str:
             page = pikepdf.Page(pdf.pages[pg_idx])
             # An overlay the size of the page as shown, laid on the visible
             # area: pikepdf turns it with the page, so it maps 1:1
-            # (utils/page_space.py).
+            # (utils/page_space.py). pikepdf only turns it for /Rotate written
+            # 90, 180 or 270, so the page's /Rotate is written that way first.
+            settle_rotation(page)
             area, pg_width, pg_height = shown_area(page)
 
             packet = io.BytesIO()

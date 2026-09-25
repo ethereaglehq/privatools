@@ -17,7 +17,7 @@ import fitz  # PyMuPDF
 
 from ..utils.colors import hex_to_rgb_float
 from ..utils.filenames import temp_output
-from ..utils.page_space import drawing_unturned
+from ..utils.page_space import drawing_unturned, settle_rotation
 
 MAX_CODE_CHARS = 32
 
@@ -125,7 +125,8 @@ def redact_pdf(
             # On a turned page, codes are printed afterwards, upright as the
             # page is shown; PyMuPDF prints them along the page as stored, which
             # showed them sideways or upside down, split over several lines.
-            turned = page.rotation != 0
+            # /Rotate is read the way the preview read it (utils/page_space.py).
+            turned = settle_rotation(page) != 0
             specs = [(_rect_from(spec), str(spec.get("code") or "").strip()[:MAX_CODE_CHARS]) for spec in by_page[pg_idx]]
             bands = _code_boxes_upright(page, [(rect, code) for rect, code in specs if code], code_font_size) if turned else []
 

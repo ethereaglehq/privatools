@@ -3,13 +3,12 @@ import json
 import logging
 import uuid
 
-import fitz  # PyMuPDF
 from fastapi import APIRouter, File, Form, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
-from ..utils.route_helpers import require_item_pages
+from ..utils.route_helpers import pdf_page_count, require_item_pages
 from ..services import edit_pdf_service
 
 router = APIRouter()
@@ -117,8 +116,7 @@ async def edit_pdf(
 
         # An edit on a page the PDF does not have used to be skipped, and the
         # visitor got an unchanged file back. Numbered as the caller sent them.
-        with fitz.open(str(temp_pdf)) as probe:
-            page_count = len(probe)
+        page_count = await pdf_page_count(temp_pdf)
         if page_count == 0:
             raise HTTPException(status_code=400, detail="PDF has no pages")
         require_item_pages(edits_list, page_count, noun="Edit")

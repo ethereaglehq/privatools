@@ -15,12 +15,14 @@ status and detail.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import os
 import re
 from pathlib import Path
 from typing import Callable
 
+import fitz  # PyMuPDF
 from fastapi import HTTPException, UploadFile
 
 from .cleanup import remove_files
@@ -220,6 +222,17 @@ def _whole_number(value) -> int | None:
     return None
 
 
+async def pdf_page_count(path: str | Path) -> int:
+    """How many pages the PDF at `path` has. Opened off the event loop: MuPDF
+    repairs a damaged file while opening it, which takes longer the bigger
+    the file."""
+    def count() -> int:
+        with fitz.open(str(path)) as doc:
+            return len(doc)
+
+    return await asyncio.to_thread(count)
+
+
 def require_item_pages(items: list, page_count: int, *, noun: str, key: str = "page") -> None:
     """Raise 400 unless every item's page, counted from 1, is in the PDF.
 
@@ -227,7 +240,8 @@ def require_item_pages(items: list, page_count: int, *, noun: str, key: str = "p
     Annotate, Add Shapes, Edit PDF). They used to skip an item on a page the
     PDF does not have and return the file unchanged, so the visitor took the
     download for done; for a tool that covers content, that hides nothing. An
-    item without a page means page 1, as it always has.
+    item without a page means page 1, as it always has. Items are numbered from
+    1 ("Region 1"), as the website's pages number them.
     """
     pages = f"{page_count} page{'s' if page_count != 1 else ''}"
     span = "1" if page_count == 1 else f"1 to {page_count}"
@@ -239,13 +253,13 @@ def require_item_pages(items: list, page_count: int, *, noun: str, key: str = "p
         if page is None:
             raise HTTPException(
                 status_code=400,
-                detail=f"{noun} #{number} has page {json.dumps(raw)}, which is not a page number: pages count from 1.",
+                detail=f"{noun} {number} has page {json.dumps(raw)}, which is not a page number: pages count from 1.",
             )
         if not 1 <= page <= page_count:
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    f"{noun} #{number} is on page {page}, which this PDF does not have: "
+                    f"{noun} {number} is on page {page}, which this PDF does not have: "
                     f"pages count from 1, so a PDF with {pages} takes {span}."
                 ),
             )

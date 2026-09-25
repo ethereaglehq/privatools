@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -40,12 +41,10 @@ async def crop_pdf(
     bottom: float = Form(0.0, description=_MARGIN.format(edge="bottom")),
     left: float = Form(0.0, description=_MARGIN.format(edge="left")),
     right: float = Form(0.0, description=_MARGIN.format(edge="right")),
-    margins_from: str = Form("mediabox", description=MARGINS_FROM_DESCRIPTION),
+    margins_from: Literal["mediabox", "shown"] = Form("mediabox", description=MARGINS_FROM_DESCRIPTION),
 ):
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
-    if margins_from not in crop_service.MARGINS_FROM:
-        raise HTTPException(status_code=400, detail="margins_from must be mediabox or shown")
 
     if any(v < 0 for v in (top, bottom, left, right)):
         raise HTTPException(

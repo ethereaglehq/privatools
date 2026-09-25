@@ -19,6 +19,7 @@ import io
 import json
 import math
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import fitz  # PyMuPDF
@@ -240,6 +241,8 @@ def test_every_route_that_takes_page_numbers_has_a_contract():
 # download and thought the region was covered. Like Redact, they now refuse it.
 
 SKIPPING_TOOLS = ["whiteout-pdf", "annotate-pdf", "add-shapes", "edit-pdf"]
+# What each route calls an item; the pages use the same words and numbers.
+NOUNS = {"whiteout-pdf": "Region", "annotate-pdf": "Annotation", "add-shapes": "Shape", "edit-pdf": "Edit"}
 
 
 def _post_items(client, slug: str, item: dict, pdf: bytes = TWO_PAGES):
@@ -254,7 +257,7 @@ def test_an_item_on_a_page_the_pdf_does_not_have_is_refused(client, slug, page):
     res = _post_items(client, slug, {**ITEMS[slug], CONTRACT[slug]["key"]: page})
     assert res.status_code == 400, f"{slug} page={page!r}: {res.status_code} {res.text[:200]}"
     detail = res.json()["detail"]
-    assert "#1" in detail and "page" in detail, detail
+    assert detail.startswith(f"{NOUNS[slug]} 1 "), detail
     if type(page) is int:
         assert f"page {page}, which this PDF does not have" in detail, detail
         assert "1 to 2" in detail, detail
@@ -301,10 +304,44 @@ def _visible_area(spec: dict) -> list[float]:
     return [max(media[0], crop[0]), max(media[1], crop[1]), min(media[2], crop[2]), min(media[3], crop[3])]
 
 
+def _shown_rotate(spec: dict) -> int:
+    return spec.get("shown_rotate", spec["rotate"])
+
+
+def _pdfjs_rotate(raw) -> int:
+    """How pdf.js reads a /Rotate value (Page.rotate in its worker): 0 unless
+    it is a multiple of 90, then turned into 0, 90, 180 or 270. Written out
+    here so the tests do not lean on the code they test."""
+    if isinstance(raw, bool) or not isinstance(raw, (int, Decimal)) or raw % 90:
+        return 0
+    return int(raw) % 360
+
+
+def _as_pdfjs_shows(pdf: bytes) -> bytes:
+    """A copy of `pdf` whose first page carries /Rotate the way pdf.js reads
+    it, so PyMuPDF shows it as the preview does: MuPDF reads /Rotate 80 as 90,
+    where pdf.js (and Chrome) read 0."""
+    with pikepdf.open(io.BytesIO(pdf)) as doc:
+        node, raw = doc.pages[0].obj, None
+        while node is not None:
+            if pikepdf.Name.Rotate in node:
+                raw = node.Rotate
+                break
+            node = node.get(pikepdf.Name.Parent)
+        if raw is None or (type(raw) is int and raw == _pdfjs_rotate(raw)):
+            return pdf
+        doc.pages[0].obj.Rotate = _pdfjs_rotate(raw)
+        out = io.BytesIO()
+        doc.save(out)
+        return out.getvalue()
+
+
 def _turned_pdf(name: str) -> bytes:
     """The contract's page, with both lines written to read upright where the
-    page is shown."""
+    page is shown. /Rotate is written as the contract says, on the page or on
+    the page tree; the lines are laid out for the rotation pdf.js reads."""
     spec = TURNED["pages"][name]
+    turn = _shown_rotate(spec)
     pdf = pikepdf.new()
     font = pdf.make_indirect(pikepdf.Dictionary(
         Type=pikepdf.Name.Font, Subtype=pikepdf.Name.Type1, BaseFont=pikepdf.Name.Helvetica,
@@ -316,8 +353,8 @@ def _turned_pdf(name: str) -> bytes:
     )
     if "cropbox" in spec:
         page.CropBox = pikepdf.Array(spec["cropbox"])
-    if spec["rotate"]:
-        page.Rotate = spec["rotate"]
+    if turn:
+        page.Rotate = turn  # for laying out the lines; replaced below
     pdf.pages.append(pikepdf.Page(page))
     blank = io.BytesIO()
     pdf.save(blank)
@@ -325,13 +362,17 @@ def _turned_pdf(name: str) -> bytes:
         derotate = doc[0].derotation_matrix
     left, _, _, top = _visible_area(spec)
     # Text turned against /Rotate reads upright once the page is turned.
-    angle = math.radians(spec["rotate"])
+    angle = math.radians(turn)
     a, b = round(math.cos(angle)), round(math.sin(angle))
     content = ""
     for text, shown_at in ((SECRET_LINE, SECRET_AT), (PUBLIC_LINE, PUBLIC_AT)):
         at = fitz.Point(shown_at) * derotate  # on the unturned page, from the visible area's top-left
         content += f"BT /F1 14 Tf {a} {b} {-b} {a} {left + at.x:g} {top - at.y:g} Tm ({text}) Tj ET\n"
     pdf.pages[0].Contents = pdf.make_stream(content.encode())
+    if pikepdf.Name.Rotate in pdf.pages[0].obj:
+        del pdf.pages[0].obj.Rotate
+    if spec["rotate"]:
+        (pdf.Root.Pages if spec.get("inherited") else pdf.pages[0].obj).Rotate = spec["rotate"]
     out = io.BytesIO()
     pdf.save(out)
     return out.getvalue()
@@ -342,8 +383,8 @@ DRAWN_RECT = fitz.Rect(DRAWN["x"], DRAWN["y"], DRAWN["x"] + DRAWN["width"], DRAW
 
 
 def _shown(pdf: bytes) -> np.ndarray:
-    """The page as shown, in grey, one pixel per point."""
-    with fitz.open(stream=pdf, filetype="pdf") as doc:
+    """The page as pdf.js shows it, in grey, one pixel per point."""
+    with fitz.open(stream=_as_pdfjs_shows(pdf), filetype="pdf") as doc:
         pix = doc[0].get_pixmap(dpi=72, colorspace=fitz.csGRAY, annots=True)
         return np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.height, pix.width).copy()
 
@@ -366,9 +407,17 @@ def test_each_turned_page_is_built_as_the_contract_says(name):
     with the secret line upright inside the drawn box and the public line
     outside it."""
     spec = TURNED["pages"][name]
+    # /Rotate as the file writes it (pikepdf would copy an inherited value onto
+    # the page while opening the file).
     with fitz.open(stream=TURNED_PDFS[name], filetype="pdf") as doc:
+        page_xref = doc[0].xref
+        tree_xref = int(doc.xref_get_key(page_xref, "Parent")[1].split()[0])
+        on_page, on_tree = doc.xref_get_key(page_xref, "Rotate")[1], doc.xref_get_key(tree_xref, "Rotate")[1]
+    written = (on_page, on_tree) if spec.get("inherited") else (on_tree, on_page)
+    assert written == ("null", str(spec["rotate"]) if spec["rotate"] else "null"), (on_page, on_tree)
+    with fitz.open(stream=_as_pdfjs_shows(TURNED_PDFS[name]), filetype="pdf") as doc:
         page = doc[0]
-        assert page.rotation == spec["rotate"]
+        assert page.rotation == _shown_rotate(spec)
         assert [round(page.rect.width), round(page.rect.height)] == spec["shown"]
         words = page.get_text("words")
         secret = [fitz.Rect(w[:4]) * page.rotation_matrix for w in words if w[4] in SECRET_LINE.split()]
@@ -450,6 +499,9 @@ def test_a_box_drawn_on_a_turned_page_lands_where_it_was_drawn(client, name, kin
     res = client.post("/api" + CONTRACT[slug]["endpoint"], files={"file": ("turned.pdf", pdf, "application/pdf")},
                       data=form(_box_for_route(slug, name)))
     assert res.status_code == 200, f"{kind} on {name}: {res.status_code} {res.text[:300]}"
+    assert _as_pdfjs_shows(res.content) == res.content, (
+        f"{kind} on {name}: the result's /Rotate still reads differently in different viewers"
+    )
     before, after = _shown(pdf), _shown(res.content)
     assert before.shape == after.shape, f"{kind} on {name}: the page changed size"
     landed = _bounds(np.abs(before.astype(int) - after.astype(int)) > 48)
@@ -489,7 +541,8 @@ def test_an_exemption_code_reads_upright_in_its_box_on_a_turned_page(client, nam
     res = client.post("/api/redact", files={"file": ("turned.pdf", TURNED_PDFS[name], "application/pdf")},
                       data={"redactions": json.dumps([{"page": 0, **box, "code": code}])})
     assert res.status_code == 200, res.text[:300]
-    with fitz.open(stream=res.content, filetype="pdf") as doc:
+    assert _as_pdfjs_shows(res.content) == res.content, f"{name}: /Rotate still reads differently in different viewers"
+    with fitz.open(stream=_as_pdfjs_shows(res.content), filetype="pdf") as doc:
         page = doc[0]
         turn = fitz.Matrix(page.rotation_matrix)
         turn.e = turn.f = 0
@@ -508,7 +561,7 @@ def test_smart_redact_paints_its_box_on_the_words_it_removes(client, name):
     ones, but on a turned page whose visible area does not start at 0,0 it
     painted the black box somewhere else."""
     pdf = TURNED_PDFS[name]
-    with fitz.open(stream=pdf, filetype="pdf") as doc:
+    with fitz.open(stream=_as_pdfjs_shows(pdf), filetype="pdf") as doc:
         page = doc[0]
         word = next(fitz.Rect(w[:4]) * page.rotation_matrix for w in page.get_text("words") if w[4] == "SECRET")
     res = client.post("/api/smart-redact", files={"file": ("turned.pdf", pdf, "application/pdf")},
@@ -543,6 +596,7 @@ def test_the_area_drawn_to_keep_on_a_turned_page_is_the_area_kept(client, name):
     data = {k: str(v) for k, v in _crop_margins(name).items()} | {"margins_from": CROP["margins_from"]}
     res = client.post("/api" + CROP["endpoint"], files={"file": ("turned.pdf", pdf, "application/pdf")}, data=data)
     assert res.status_code == 200, res.text[:300]
+    assert _as_pdfjs_shows(res.content) == res.content, f"{name}: /Rotate still reads differently in different viewers"
     before, after = _shown(pdf), _shown(res.content)
     assert after.shape == (DRAWN["height"], DRAWN["width"]), f"{name}: kept {after.shape[::-1]} as shown"
     kept = before[DRAWN["y"]:DRAWN["y"] + DRAWN["height"], DRAWN["x"]:DRAWN["x"] + DRAWN["width"]]
@@ -561,3 +615,113 @@ def test_crop_margins_are_measured_from_the_mediabox_unless_the_caller_asks():
         out = crop_pdf(str(source), top=10, bottom=20, left=30, right=40)
         with pikepdf.open(out) as pdf:
             assert [float(v) for v in pdf.pages[0].CropBox] == [30, 20, 612 - 40, 792 - 10]
+        # Written exactly as before: no rounding of what the caller sent.
+        out = crop_pdf(str(source), top=30.1234567)
+        with pikepdf.open(out) as pdf:
+            assert str(pdf.pages[0].CropBox[3]) == "761.8765433"
+
+
+def test_crop_takes_only_the_two_ways_of_measuring_margins(client):
+    res = client.post("/api/crop", files={"file": ("c.pdf", TWO_PAGES, "application/pdf")},
+                      data={"top": "10", "margins_from": "cropbox"})
+    assert res.status_code == 422, res.text[:300]
+    assert "margins_from" in res.json()["detail"]
+    schema = client.get("/api/v1/openapi.json").json()
+    body = schema["paths"]["/api/v1/crop"]["post"]["requestBody"]["content"]["multipart/form-data"]["schema"]
+    if "$ref" in body:
+        body = schema["components"]["schemas"][body["$ref"].split("/")[-1]]
+    assert body["properties"]["margins_from"]["enum"] == ["mediabox", "shown"]
+
+
+# ─── Text markup follows the text under it ──────────────────────────────────
+#
+# A highlight, underline or strikethrough runs along the text under its box,
+# the way that text reads. Text can be sideways on the page as shown (a page
+# turned by a viewer, or by our own Rotate tool, keeps its text upright on the
+# stored page). Laid across the page as shown, a highlight over such text
+# spilled about 29 points past each side of the box, over the next lines, and
+# an underline crossed the text instead of running under it.
+
+SIDEWAYS_LINE = "SIDEWAYS 4111-0002"
+
+
+def _sideways_pdf() -> tuple[bytes, fitz.Rect]:
+    """A page turned 90 degrees whose line is upright on the stored page, so
+    it reads top to bottom as shown; and the box around the line, stored."""
+    doc = fitz.open()
+    page = doc.new_page(width=612, height=792)
+    page.insert_text((72, 120), SIDEWAYS_LINE, fontsize=14)
+    page.insert_text((72, 150), "the next line", fontsize=14)
+    page.set_rotation(90)
+    words = [fitz.Rect(w[:4]) for w in page.get_text("words") if w[4] in SIDEWAYS_LINE.split()]
+    box = (words[0] | words[1]) + (-2, -2, 2, 2)
+    out = io.BytesIO()
+    doc.save(out)
+    doc.close()
+    return out.getvalue(), box
+
+
+@pytest.mark.parametrize("kind", ["highlight", "underline", "strikethrough"])
+def test_markup_runs_along_sideways_text(client, kind):
+    pdf, box = _sideways_pdf()
+    annotation = {"type": kind, "page": 1, "x": box.x0, "y": box.y0, "width": box.width, "height": box.height, "color": "#e54a3c"}
+    res = client.post("/api/annotate-pdf", files={"file": ("sideways.pdf", pdf, "application/pdf")},
+                      data={"annotations": json.dumps([annotation])})
+    assert res.status_code == 200, res.text[:300]
+    with fitz.open(stream=pdf, filetype="pdf") as doc:
+        shown_box = box * doc[0].rotation_matrix  # tall: the line reads top to bottom as shown
+    before, after = _shown(pdf), _shown(res.content)
+    landed = _bounds(np.abs(before.astype(int) - after.astype(int)) > 48)
+    reach = 7
+    assert landed is not None
+    assert (landed[0] >= shown_box.x0 - reach and landed[1] >= shown_box.y0 - reach
+            and landed[2] <= shown_box.x1 + reach and landed[3] <= shown_box.y1 + reach), (
+        f"{kind}: the box shows at {tuple(round(v) for v in shown_box)}, the mark at {landed}"
+    )
+    if kind != "highlight":  # a line along the text, not across it
+        assert landed[3] - landed[1] > 0.8 * shown_box.height and landed[2] - landed[0] < 6, landed
+
+
+def test_markup_over_no_text_runs_across_the_page_as_shown(client):
+    """Where there is no text to follow, an underline runs across the page as
+    it is shown, under the box."""
+    blank = {"x": 300, "y": 600, "width": 34, "height": 150}  # stored; 150 wide and 34 tall as shown
+    pdf = TURNED_PDFS["rotate-90"]
+    res = client.post("/api/annotate-pdf", files={"file": ("turned.pdf", pdf, "application/pdf")},
+                      data={"annotations": json.dumps([{"type": "underline", "page": 1, **blank, "color": "#e54a3c"}])})
+    assert res.status_code == 200, res.text[:300]
+    landed = _bounds(np.abs(_shown(pdf).astype(int) - _shown(res.content).astype(int)) > 48)
+    stored = fitz.Rect(blank["x"], blank["y"], blank["x"] + blank["width"], blank["y"] + blank["height"])
+    with fitz.open(stream=pdf, filetype="pdf") as doc:
+        shown_box = stored * doc[0].rotation_matrix
+    assert shown_box.width > shown_box.height
+    assert landed[2] - landed[0] > 0.8 * shown_box.width and landed[3] - landed[1] < 6, landed
+    assert landed[1] > shown_box.y0 + shown_box.height / 2, f"the underline is not under the box: {landed}"
+
+
+# ─── Annotate refuses an empty box ──────────────────────────────────────────
+
+@pytest.mark.parametrize("box, answer", [
+    ({"width": 0, "height": 14}, "has an empty box"),
+    ({"width": 100, "height": 0}, "has an empty box"),
+    ({"width": "wide", "height": 14}, "not in numbers"),
+])
+def test_an_empty_markup_box_is_refused(client, box, answer):
+    annotation = {"type": "highlight", "page": 1, "x": 60, "y": 80, **box}
+    res = client.post("/api/annotate-pdf", files={"file": ("contract.pdf", TWO_PAGES, "application/pdf")},
+                      data={"annotations": json.dumps([annotation])})
+    assert res.status_code == 400, res.text[:300]
+    detail = res.json()["detail"]
+    assert detail.startswith("Annotation 1 ") and answer in detail, detail
+
+
+@pytest.mark.parametrize("kind", ["highlight", "underline"])
+def test_a_negative_width_or_height_counts_back_from_x_or_y(client, kind):
+    """(x 380, y 114, width -320, height -34) is the box (60, 80, 320, 34)."""
+    results = []
+    for box in ({"x": 60, "y": 80, "width": 320, "height": 34}, {"x": 380, "y": 114, "width": -320, "height": -34}):
+        res = client.post("/api/annotate-pdf", files={"file": ("contract.pdf", TWO_PAGES, "application/pdf")},
+                          data={"annotations": json.dumps([{"type": kind, "page": 1, **box, "color": "#e54a3c"}])})
+        assert res.status_code == 200, res.text[:300]
+        results.append(_shown(res.content))
+    assert np.array_equal(results[0], results[1])

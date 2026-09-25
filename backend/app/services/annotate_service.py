@@ -2,7 +2,7 @@ import fitz  # PyMuPDF
 
 from ..utils.colors import hex_to_rgb_float
 from ..utils.filenames import temp_output
-from ..utils.page_space import upright_quad
+from ..utils.page_space import markup_quad, settle_rotation
 
 
 def annotate_pdf(input_path: str, annotations: list) -> str:
@@ -15,13 +15,14 @@ def annotate_pdf(input_path: str, annotations: list) -> str:
               does not have
             - x, y, width, height: region coordinates, in points from the
               top-left corner of the page's visible area (its CropBox), before
-              any /Rotate. A note is pinned at x, y.
+              any /Rotate. A negative width or height counts back from x or y;
+              the route refuses an empty box. A note is pinned at x, y.
             - color: hex color (optional, default yellow for highlight)
             - text: note text (for 'note' type)
 
-    Highlights, underlines and strikethroughs run across the page as it is
-    shown: on a page turned by /Rotate, an underline sits under the box as the
-    reader sees it, and a highlight ends where the box does.
+    Highlights, underlines and strikethroughs run along the text under the
+    box, the way it reads (markup_quad), and across the page as shown where
+    there is no text.
     """
     output_path = temp_output("annotated", "pdf")
 
@@ -35,11 +36,12 @@ def annotate_pdf(input_path: str, annotations: list) -> str:
                 continue
 
             page = doc[pg_idx]
+            settle_rotation(page)
             x = float(ann.get("x", 0))
             y = float(ann.get("y", 0))
             w = float(ann.get("width", 100))
             h = float(ann.get("height", 14))
-            rect = fitz.Rect(x, y, x + w, y + h)
+            rect = fitz.Rect(x, y, x + w, y + h).normalize()
 
             # Default yellow for highlight if no/invalid color supplied.
             color = hex_to_rgb_float(ann.get("color", "#ffff00"), default=(1, 1, 0))
@@ -50,7 +52,7 @@ def annotate_pdf(input_path: str, annotations: list) -> str:
                 "strikethrough": page.add_strikeout_annot,
             }.get(ann_type)
             if markup is not None:
-                annot = markup(upright_quad(page, rect))
+                annot = markup(markup_quad(page, rect))
                 annot.set_colors(stroke=color)
                 annot.update()
             elif ann_type == "note":

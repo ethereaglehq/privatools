@@ -24,7 +24,8 @@ describe("a box drawn on the preview, where the page stores it", () => {
     it.each(Object.entries(pages))("%s", async (_name, spec) => {
         const frame = await frameOf(spec);
         expect([frame.shown.width, frame.shown.height]).toEqual(spec.shown);
-        expect(shownRotation(frame)).toBe(spec.rotate);
+        // pdf.js reads /Rotate -90 as 270, 450 as 90 and 80 as 0; the routes read it the same way.
+        expect(shownRotation(frame)).toBe("shown_rotate" in spec ? spec.shown_rotate : spec.rotate);
         expect(shownToUnrotated(frame, drawn)).toEqual(spec.unrotated);
         expect(unrotatedToShown(frame, spec.unrotated)).toEqual(drawn);
     });

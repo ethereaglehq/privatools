@@ -4,7 +4,6 @@ import logging
 import re
 import uuid
 
-import fitz
 from fastapi import APIRouter, File, Form, Request, UploadFile, HTTPException
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
@@ -13,6 +12,7 @@ from ..rate_limit import limiter, EXPENSIVE_RATE_LIMIT
 from ..utils.cleanup import get_temp_path, ensure_temp_dir, remove_files, validate_pdf_content
 from ..services import redact_service
 from ..utils.concurrency import run_bounded
+from ..utils.route_helpers import pdf_page_count
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -163,8 +163,7 @@ async def redact_pdf(
 
         # Open the PDF once just to count pages so we can reject out-of-range
         # redactions with a precise message before any real work happens.
-        with fitz.open(str(temp_pdf)) as probe:
-            page_count = len(probe)
+        page_count = await pdf_page_count(temp_pdf)
         if page_count == 0:
             raise HTTPException(status_code=400, detail="PDF has no pages")
 

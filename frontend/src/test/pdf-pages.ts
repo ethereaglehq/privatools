@@ -9,18 +9,23 @@ import type { MergePreviewDocument } from "@/components/tool-ui/merge-preview";
 export interface PageSpec {
     mediabox: number[];
     cropbox?: number[];
+    /** /Rotate as written, which pdf.js may read otherwise (-90 as 270, 80 as 0). */
     rotate?: number;
+    /** Write /Rotate on the page tree instead of the page. */
+    inherited?: boolean;
 }
 
 /** A PDF whose pages have these boxes and turns, and nothing on them. */
 export function pdfBytes(pages: PageSpec[]): Uint8Array {
     const kids = pages.map((_, index) => `${index + 3} 0 R`).join(" ");
+    // The page tree carries the first inherited /Rotate.
+    const inherited = pages.find(page => page.inherited && page.rotate);
     const objects = [
         "<< /Type /Catalog /Pages 2 0 R >>",
-        `<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>`,
-        ...pages.map(({ mediabox, cropbox, rotate }) =>
+        `<< /Type /Pages /Kids [${kids}] /Count ${pages.length}${inherited ? ` /Rotate ${inherited.rotate}` : ""} >>`,
+        ...pages.map(({ mediabox, cropbox, rotate, inherited: fromTree }) =>
             `<< /Type /Page /Parent 2 0 R /MediaBox [${mediabox.join(" ")}]` +
-            `${cropbox ? ` /CropBox [${cropbox.join(" ")}]` : ""}${rotate ? ` /Rotate ${rotate}` : ""} >>`),
+            `${cropbox ? ` /CropBox [${cropbox.join(" ")}]` : ""}${rotate && !fromTree ? ` /Rotate ${rotate}` : ""} >>`),
     ];
     let out = "%PDF-1.7\n";
     const offsets: number[] = [];
