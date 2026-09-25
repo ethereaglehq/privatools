@@ -56,17 +56,24 @@ def rotation_as_shown(raw: object) -> int:
     0 unless it is a multiple of 90, then turned into 0, 90, 180 or 270."""
     if isinstance(raw, bool) or not isinstance(raw, (int, float, Decimal)):
         return 0
-    if raw % 90 != 0:
+    try:
+        if raw % 90 != 0:
+            return 0
+        return int(raw) % 360
+    except (ArithmeticError, ValueError):  # a real too large to divide: pdf.js reads NaN, so 0
         return 0
-    return int(raw) % 360
 
 
 def _number(kind: str, text: str) -> object:
-    """A PDF number from PyMuPDF's xref_get_key; None for anything else."""
-    if kind == "int":
-        return int(text)
-    if kind == "real":
-        return Decimal(text)
+    """A PDF number from PyMuPDF's xref_get_key, which names a direct integer
+    'int' and a direct real 'float' (90.0 as '90'); None for anything else."""
+    try:
+        if kind == "int":
+            return int(text)
+        if kind in ("float", "real"):
+            return Decimal(text)
+    except (ArithmeticError, ValueError):
+        return None
     return None
 
 
@@ -77,13 +84,9 @@ def _raw_rotate_fitz(page: fitz.Page) -> object:
     while xref and xref not in seen:
         seen.add(xref)
         kind, value = doc.xref_get_key(xref, "Rotate")
-        if kind == "xref":  # an indirect number
+        if kind == "xref":  # an indirect object: a number, or anything else (read as 0)
             text = doc.xref_object(int(value.split()[0]), compressed=True).strip()
-            kind = "int" if text.lstrip("+-").isdigit() else "real"
-            try:
-                return _number(kind, text)
-            except ArithmeticError:
-                return None
+            return _number("int" if text.lstrip("+-").isdigit() else "float", text)
         if kind != "null":
             return _number(kind, value)
         kind, value = doc.xref_get_key(xref, "Parent")

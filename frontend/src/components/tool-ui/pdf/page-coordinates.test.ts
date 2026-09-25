@@ -30,6 +30,12 @@ describe("a box drawn on the preview, where the page stores it", () => {
         expect(unrotatedToShown(frame, spec.unrotated)).toEqual(drawn);
     });
 
+    it("builds the page whose /Rotate is written as a real number with a real token", () => {
+        const spec = pages["cropped-rotate-real-minus-90"];
+        expect(spec.real).toBe(true);
+        expect(new TextDecoder().decode(pdfBytes([spec]))).toContain("/Rotate -90.0 >>");
+    });
+
     it("leaves a box on an unturned page that starts at 0,0 as drawn", async () => {
         const frame = await frameOf({ mediabox: [0, 0, 612, 792] });
         expect(shownToUnrotated(frame, drawn)).toEqual(drawn);

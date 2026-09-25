@@ -13,7 +13,12 @@ export interface PageSpec {
     rotate?: number;
     /** Write /Rotate on the page tree instead of the page. */
     inherited?: boolean;
+    /** Write /Rotate as a real number (-90.0) rather than an integer. */
+    real?: boolean;
 }
+
+/** /Rotate as the file writes it. */
+const rotateToken = ({ rotate, real }: PageSpec) => (real ? rotate!.toFixed(1) : String(rotate));
 
 /** A PDF whose pages have these boxes and turns, and nothing on them. */
 export function pdfBytes(pages: PageSpec[]): Uint8Array {
@@ -22,10 +27,10 @@ export function pdfBytes(pages: PageSpec[]): Uint8Array {
     const inherited = pages.find(page => page.inherited && page.rotate);
     const objects = [
         "<< /Type /Catalog /Pages 2 0 R >>",
-        `<< /Type /Pages /Kids [${kids}] /Count ${pages.length}${inherited ? ` /Rotate ${inherited.rotate}` : ""} >>`,
-        ...pages.map(({ mediabox, cropbox, rotate, inherited: fromTree }) =>
-            `<< /Type /Page /Parent 2 0 R /MediaBox [${mediabox.join(" ")}]` +
-            `${cropbox ? ` /CropBox [${cropbox.join(" ")}]` : ""}${rotate && !fromTree ? ` /Rotate ${rotate}` : ""} >>`),
+        `<< /Type /Pages /Kids [${kids}] /Count ${pages.length}${inherited ? ` /Rotate ${rotateToken(inherited)}` : ""} >>`,
+        ...pages.map(page =>
+            `<< /Type /Page /Parent 2 0 R /MediaBox [${page.mediabox.join(" ")}]` +
+            `${page.cropbox ? ` /CropBox [${page.cropbox.join(" ")}]` : ""}${page.rotate && !page.inherited ? ` /Rotate ${rotateToken(page)}` : ""} >>`),
     ];
     let out = "%PDF-1.7\n";
     const offsets: number[] = [];

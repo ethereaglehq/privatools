@@ -372,7 +372,10 @@ def _turned_pdf(name: str) -> bytes:
     if pikepdf.Name.Rotate in pdf.pages[0].obj:
         del pdf.pages[0].obj.Rotate
     if spec["rotate"]:
-        (pdf.Root.Pages if spec.get("inherited") else pdf.pages[0].obj).Rotate = spec["rotate"]
+        # A Decimal keeps pikepdf writing a real token ("-90.0"); an int or a
+        # float could come out as "-90".
+        written = Decimal(f"{spec['rotate']:.1f}") if spec.get("real") else int(spec["rotate"])
+        (pdf.Root.Pages if spec.get("inherited") else pdf.pages[0].obj).Rotate = written
     out = io.BytesIO()
     pdf.save(out)
     return out.getvalue()
@@ -412,9 +415,16 @@ def test_each_turned_page_is_built_as_the_contract_says(name):
     with fitz.open(stream=TURNED_PDFS[name], filetype="pdf") as doc:
         page_xref = doc[0].xref
         tree_xref = int(doc.xref_get_key(page_xref, "Parent")[1].split()[0])
-        on_page, on_tree = doc.xref_get_key(page_xref, "Rotate")[1], doc.xref_get_key(tree_xref, "Rotate")[1]
-    written = (on_page, on_tree) if spec.get("inherited") else (on_tree, on_page)
-    assert written == ("null", str(spec["rotate"]) if spec["rotate"] else "null"), (on_page, on_tree)
+        on_page, on_tree = doc.xref_get_key(page_xref, "Rotate"), doc.xref_get_key(tree_xref, "Rotate")
+    (other_kind, _), (kind, value) = (on_page, on_tree) if spec.get("inherited") else (on_tree, on_page)
+    assert other_kind == "null", (on_page, on_tree)
+    if spec["rotate"]:
+        # PyMuPDF names a direct real "float" and writes 90.0 as "90".
+        assert kind == ("float" if spec.get("real") else "int") and float(value) == spec["rotate"], (on_page, on_tree)
+        if spec.get("real"):
+            assert f"/Rotate {spec['rotate']:.1f}".encode() in TURNED_PDFS[name], "the file does not write a real token"
+    else:
+        assert kind == "null", (on_page, on_tree)
     with fitz.open(stream=_as_pdfjs_shows(TURNED_PDFS[name]), filetype="pdf") as doc:
         page = doc[0]
         assert page.rotation == _shown_rotate(spec)
@@ -553,6 +563,51 @@ def test_an_exemption_code_reads_upright_in_its_box_on_a_turned_page(client, nam
     direction, _, where = printed[0]
     assert (round(direction.x, 3), round(direction.y, 3)) == (1, 0), f"{name}: the code runs {direction} as shown"
     assert DRAWN_RECT.contains(where), f"{name}: the code shows at {where}, outside the box"
+
+
+# Every way a file can write /Rotate, and how pdf.js (the preview) reads it:
+# a multiple of 90 turned into 0, 90, 180 or 270, anything else 0. PyMuPDF
+# reports a direct integer as "int", a direct real as "float" ("90" for 90.0)
+# and anything indirect as "xref"; reading "float" as no number put boxes back
+# in the wrong place on pages whose /Rotate is written 90.0.
+ROTATE_TOKENS = {
+    "90": 90, "-90": 270, "450": 90, "80": 0, "90.0": 90, "-90.0": 270, "450.0": 90, "90.5": 0,
+    ".0": 0, "true": 0, "/R90": 0, "null": 0,
+}
+
+
+def _rotate_written(token: str, where: str) -> bytes:
+    """A page whose /Rotate is `token`: on the page, as an indirect object,
+    or on the page tree."""
+    rotate = {"page": f" /Rotate {token}", "indirect": " /Rotate 4 0 R", "tree": ""}[where]
+    objects = [
+        "<< /Type /Catalog /Pages 2 0 R >>",
+        f"<< /Type /Pages /Kids [3 0 R] /Count 1{f' /Rotate {token}' if where == 'tree' else ''} >>",
+        f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792]{rotate} >>",
+    ] + ([token] if where == "indirect" else [])
+    out = "%PDF-1.7\n"
+    offsets = []
+    for number, body in enumerate(objects, start=1):
+        offsets.append(len(out))
+        out += f"{number} 0 obj\n{body}\nendobj\n"
+    xref = len(out)
+    out += f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n" + "".join(f"{o:010d} 00000 n \n" for o in offsets)
+    return (out + f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n").encode()
+
+
+@pytest.mark.parametrize("where", ["page", "indirect", "tree"])
+@pytest.mark.parametrize("token", sorted(ROTATE_TOKENS))
+def test_rotate_is_read_as_the_preview_reads_it_however_it_is_written(token, where):
+    from backend.app.utils.page_space import settle_rotation
+
+    data, expected = _rotate_written(token, where), ROTATE_TOKENS[token]
+    with fitz.open(stream=data, filetype="pdf") as doc:
+        assert settle_rotation(doc[0]) == expected, "PyMuPDF path"
+        assert doc[0].rotation == expected  # and MuPDF now reads it that way too
+    with pikepdf.open(io.BytesIO(data)) as pdf:
+        page = pikepdf.Page(pdf.pages[0])
+        assert settle_rotation(page) == expected, "pikepdf path"
+        assert page.rotation == expected
 
 
 @pytest.mark.parametrize("name", sorted(TURNED["pages"]))
