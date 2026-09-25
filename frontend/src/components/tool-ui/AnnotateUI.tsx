@@ -9,6 +9,7 @@ import { uploadFile, downloadBlob } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
+import { itemOffThePdf } from "./pdf/page-numbers";
 
 const ANN_TYPES = [
     { value: "highlight",     label: "Highlight",      defaultColor: "#ffe24a", icon: "▭" },
@@ -23,6 +24,11 @@ interface Annotation {
     id: string;
     type: string;
     page: number;
+    /**
+     * Points from the top-left corner of the page's visible area, before any
+     * /Rotate the page has: the route's own numbers. PdfPageStage converts
+     * what the visitor draws on the turned page it shows.
+     */
     x: number;
     y: number;
     width: number;
@@ -38,6 +44,8 @@ const PAGE_H = 792;
 export function AnnotateUI() {
     const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
+    /** How many pages the chosen PDF has, once the preview has opened it. */
+    const [pageCount, setPageCount] = useState<number | null>(null);
     const [annotations, setAnnotations] = useState<Annotation[]>([
         { id: makeId(), type: "highlight", page: 1, x: 72, y: 72, width: 200, height: 14, color: "#ffe24a", text: "" },
     ]);
@@ -72,6 +80,8 @@ export function AnnotateUI() {
 
     const process = useCallback(async () => {
         if (!file || annotations.length === 0) return;
+        const stray = itemOffThePdf(annotations, pageCount, "Annotation");
+        if (stray) { setError(stray); return; }
         setStatus("processing"); setError(null);
         try {
             const annList = annotations.map(({ id, ...rest }) => rest);
@@ -87,7 +97,7 @@ export function AnnotateUI() {
             setStatus("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
-    }, [file, annotations]);
+    }, [file, annotations, pageCount]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -138,8 +148,8 @@ export function AnnotateUI() {
         <div className="space-y-4">
             <FileUploadZone
                 file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                onFileSelect={next => { setFile(next); setPageCount(null); }}
+                onClear={() => { setFile(null); setPageCount(null); }}
                 accept=".pdf"
                 label="Drop PDF to annotate"
                 hint="Highlight, underline, strike, or sticky-note regions"
@@ -231,6 +241,7 @@ export function AnnotateUI() {
                                                     <input
                                                         ref={ci === 0 ? (el) => { if (el) rowRefs.current.set(ann.id, el); else rowRefs.current.delete(ann.id); } : undefined}
                                                         type="number" aria-label={c.label} inputMode="numeric" min={c.min}
+                                                        max={c.f === "page" ? pageCount ?? undefined : undefined}
                                                         value={ann[c.f]}
                                                         onClick={e => e.stopPropagation()}
                                                         onChange={e => update(ann.id, c.f, +e.target.value)}
@@ -254,7 +265,7 @@ export function AnnotateUI() {
                         </fieldset>
 
                         {/* Page preview */}
-                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} regions={annotations.map((annotation, index) => ({ ...annotation, kind: annotation.type, label: `Annotation ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setAnnotations(items => [...items, { ...region, id, type: "highlight", color: "#ffe24a", text: "" }]); setSelected(id); }} />
+                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} onDimensions={info => setPageCount(info.pages)} regions={annotations.map((annotation, index) => ({ ...annotation, kind: annotation.type, label: `Annotation ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setAnnotations(items => [...items, { ...region, id, type: "highlight", color: "#ffe24a", text: "" }]); setSelected(id); }} />
                     </div>
                 </div>
             )}

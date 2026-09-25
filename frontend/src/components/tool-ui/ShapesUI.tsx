@@ -9,6 +9,7 @@ import { uploadFile, downloadBlob } from "@/lib/api";
 import { emitToolRun } from "@/lib/toolRun";
 import { FileUploadZone } from "./FileUploadZone";
 import { PdfPageStage } from "./pdf/PdfPageStage";
+import { itemOffThePdf } from "./pdf/page-numbers";
 
 const SHAPE_TYPES = [
     { value: "rectangle", label: "Rectangle" },
@@ -23,6 +24,11 @@ interface Shape {
     id: string;
     type: string;
     page: number;
+    /**
+     * Points from the top-left corner of the page's visible area, before any
+     * /Rotate the page has: the route's own numbers. PdfPageStage converts
+     * what the visitor draws on the turned page it shows.
+     */
     x: number; y: number;
     width: number; height: number;
     x2: number; y2: number;
@@ -40,6 +46,8 @@ const VB_H = (PAGE_H / PAGE_W) * VB_W;
 export function ShapesUI() {
     const [previewPage, setPreviewPage] = useState(1);
     const [file, setFile] = useState<File | null>(null);
+    /** How many pages the chosen PDF has, once the preview has opened it. */
+    const [pageCount, setPageCount] = useState<number | null>(null);
     const [shapes, setShapes] = useState<Shape[]>([
         { id: makeId(), type: "rectangle", page: 1, x: 100, y: 100, width: 200, height: 100, x2: 300, y2: 100, color: "#0E8A56", fill: "", stroke_width: 2 },
     ]);
@@ -69,6 +77,8 @@ export function ShapesUI() {
 
     const process = useCallback(async () => {
         if (!file || shapes.length === 0) return;
+        const stray = itemOffThePdf(shapes, pageCount, "Shape");
+        if (stray) { setError(stray); return; }
         setStatus("processing"); setError(null);
         try {
             const shapeList = shapes.map(({ id, ...rest }) => ({ ...rest, fill: rest.fill || undefined }));
@@ -84,7 +94,7 @@ export function ShapesUI() {
             setStatus("idle");
             emitToolRun({ outcome: "error", files: 1 }, e);
         }
-    }, [file, shapes]);
+    }, [file, shapes, pageCount]);
 
     useEffect(() => {
         const handler = (e: KeyboardEvent) => {
@@ -166,8 +176,8 @@ export function ShapesUI() {
         <div className="space-y-4">
             <FileUploadZone
                 file={file}
-                onFileSelect={setFile}
-                onClear={() => setFile(null)}
+                onFileSelect={next => { setFile(next); setPageCount(null); }}
+                onClear={() => { setFile(null); setPageCount(null); }}
                 accept=".pdf"
                 label="Drop PDF to draw on"
                 hint="Add rectangles, circles, lines, or arrows"
@@ -258,7 +268,7 @@ export function ShapesUI() {
                                                 <label className="font-medium text-[10.5px] text-muted-foreground">Pg</label>
                                                 <input
                                                     ref={(el) => { if (el) rowRefs.current.set(s.id, el); else rowRefs.current.delete(s.id); }}
-                                                    type="number" inputMode="numeric" min={1} value={s.page}
+                                                    type="number" aria-label="Page" inputMode="numeric" min={1} max={pageCount ?? undefined} value={s.page}
                                                     onClick={e => e.stopPropagation()}
                                                     onChange={e => update(s.id, "page", +e.target.value)}
                                                     className="mt-0.5 w-full rounded border border-border bg-paper-2/40 px-1.5 py-1 font-mono text-[12px] text-foreground outline-none focus:border-accent focus:ring-1 focus:ring-accent/30 text-center"
@@ -341,7 +351,7 @@ export function ShapesUI() {
                         </fieldset>
 
                         {/* SVG preview */}
-                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} regions={shapes.map((shape, index) => ({ ...shape, width: shape.type === "line" || shape.type === "arrow" ? shape.x2 - shape.x : shape.width, height: shape.type === "line" || shape.type === "arrow" ? shape.y2 - shape.y : shape.height, kind: shape.type, label: `${shape.type} ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setShapes(items => [...items, { ...region, id, type: "rectangle", x2: region.x + region.width, y2: region.y + region.height, color: "#0E8A56", fill: "", stroke_width: 2 }]); setSelected(id); }} />
+                        <PdfPageStage file={file} page={previewPage} onPageChange={setPreviewPage} onDimensions={info => setPageCount(info.pages)} regions={shapes.map((shape, index) => ({ ...shape, width: shape.type === "line" || shape.type === "arrow" ? shape.x2 - shape.x : shape.width, height: shape.type === "line" || shape.type === "arrow" ? shape.y2 - shape.y : shape.height, kind: shape.type, label: `${shape.type} ${index + 1}` }))} selectedId={selected} onSelect={setSelected} disabled={status === "processing"} onDraw={region => { const id = makeId(); setShapes(items => [...items, { ...region, id, type: "rectangle", x2: region.x + region.width, y2: region.y + region.height, color: "#0E8A56", fill: "", stroke_width: 2 }]); setSelected(id); }} />
                     </div>
                 </div>
             )}

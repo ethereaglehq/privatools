@@ -286,7 +286,7 @@ export function SignUI() {
                                 ))}
                             </div>
                             {/* Mini page preview */}
-                            <PdfPageStage file={file} page={page} onPageChange={setPage} coordinateOrigin="bottom" regions={[{ id: "signature", page, x, y, width, height, image: sigFilePreview || sigData || undefined, label: "Your signature" }]} drawLabel="Place signature" disabled={state === "processing"} onDraw={region => { setX(Math.round(region.x)); setY(Math.round(region.y)); setWidth(Math.round(region.width)); setHeight(Math.round(region.height)); }} />
+                            <PdfPageStage file={file} page={page} onPageChange={setPage} coordinates="shown-from-bottom" regions={[{ id: "signature", page, x, y, width, height, image: sigFilePreview || sigData || undefined, label: "Your signature" }]} drawLabel="Place signature" disabled={state === "processing"} onDraw={region => { setX(Math.round(region.x)); setY(Math.round(region.y)); setWidth(Math.round(region.width)); setHeight(Math.round(region.height)); }} />
                         </div>
                     </div>
 

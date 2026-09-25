@@ -6,6 +6,7 @@ from PIL import Image, UnidentifiedImageError
 
 from ..utils.exceptions import ValidationError
 from ..utils.filenames import temp_output
+from ..utils.page_space import drawing_unturned
 
 
 def esign_pdf(input_path: str, signature_data: str,
@@ -21,6 +22,10 @@ def esign_pdf(input_path: str, signature_data: str,
         y: Y position from top (in PDF points)
         width: Signature width
         height: Signature height
+
+    x and y are measured from the top-left corner of the page's visible area
+    (its CropBox), before any /Rotate the page has. The signature stays
+    upright as the page is shown.
     """
     output_path = temp_output("signed", "pdf")
 
@@ -52,11 +57,15 @@ def esign_pdf(input_path: str, signature_data: str,
             pg_idx = 0
 
         page = doc[pg_idx]
-
-        # Convert y from top-origin to PDF bottom-origin
         rect = fitz.Rect(x, y, x + width, y + height)
 
-        page.insert_image(rect, stream=sig_bytes)
+        # The box is in the page's stored coordinates. Turning the image with
+        # the page keeps the signature upright where the page is shown; the
+        # page is unturned while it goes in, because PyMuPDF places images on
+        # a turned page from the wrong corner when the visible area does not
+        # start at 0,0 (utils/page_space.py).
+        with drawing_unturned(page) as rotation:
+            page.insert_image(rect, stream=sig_bytes, rotate=rotation)
 
         doc.save(str(output_path), garbage=4, deflate=True)
     finally:

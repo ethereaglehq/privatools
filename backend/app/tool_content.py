@@ -94,7 +94,7 @@ TOOL_HOWTO: dict[str, list[dict[str, str]]] = {
     ],
     "form-creator": [
         {"name": "Upload a PDF", "text": "Upload the PDF you want to add form fields to. The fields are placed on top of its existing pages, and its bookmarks, links and comments are kept."},
-        {"name": "Add form fields", "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. Give each field a name and choose its type: text, checkbox, radio buttons, dropdown, list or signature."},
+        {"name": "Add form fields", "text": "Click Draw a field and drag a box on the page preview, or click Add and type the page, X, Y, width and height in points from the top-left corner. On a page the PDF stores turned, typed values count from the corner that is top left before the turn; the preview shows where each field goes. Give each field a name and choose its type: text, checkbox, radio buttons, dropdown, list or signature."},
         {"name": "Configure form properties", "text": "Set default values, mark fields as required, allow several lines in a text field, pre-tick checkboxes, and type the options for radio buttons, dropdowns and lists, separated by commas. A radio field gets one button per option inside its box, each labelled with its option; the labels are set in Helvetica, so accented Western European letters print, but other characters, such as the euro sign, curly quotes or Cyrillic, show as dots."},
         {"name": "Export the fillable PDF", "text": "Click Generate fillable PDF. The download contains standard AcroForm fields, the interactive form format PDF readers use; test it in the reader your recipients use."},
     ],

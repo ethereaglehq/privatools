@@ -11,11 +11,20 @@ from reportlab.pdfgen import canvas
 from ..utils.cleanup import safe_open_pdf
 from ..utils.colors import hex_to_rgb_float as _hex_to_rgb
 from ..utils.filenames import temp_output
+from ..utils.page_space import settle_rotation, shown_area
 
 logger = logging.getLogger(__name__)
 
 
 def edit_pdf(input_path: str, edits: list) -> str:
+    """Draw `edits` over their pages.
+
+    Each edit's `page` counts from 1 (the route refuses a page the PDF does not
+    have). Coordinates are points from the bottom-left corner of the page as it
+    is shown: its visible area (CropBox), after /Rotate, which is what the Edit
+    PDF page measures on its pdf.js preview. Text and images stay upright as
+    shown.
+    """
     output_path = temp_output("edited", "pdf")
 
     # Group edits by page number
@@ -32,10 +41,13 @@ def edit_pdf(input_path: str, edits: list) -> str:
             if pg_idx < 0 or pg_idx >= page_count:
                 continue
 
-            page = pdf.pages[pg_idx]
-            mediabox = page.mediabox
-            pg_width = float(mediabox[2]) - float(mediabox[0])
-            pg_height = float(mediabox[3]) - float(mediabox[1])
+            page = pikepdf.Page(pdf.pages[pg_idx])
+            # An overlay the size of the page as shown, laid on the visible
+            # area: pikepdf turns it with the page, so it maps 1:1
+            # (utils/page_space.py). pikepdf only turns it for /Rotate written
+            # 90, 180 or 270, so the page's /Rotate is written that way first.
+            settle_rotation(page)
+            area, pg_width, pg_height = shown_area(page)
 
             packet = io.BytesIO()
             c = canvas.Canvas(packet, pagesize=(pg_width, pg_height))
@@ -197,7 +209,7 @@ def edit_pdf(input_path: str, edits: list) -> str:
 
             overlay_pdf = pikepdf.Pdf.open(packet)
             if len(overlay_pdf.pages) > 0:
-                pikepdf.Page(page).add_overlay(overlay_pdf.pages[0])
+                page.add_overlay(overlay_pdf.pages[0], rect=area)
 
         pdf.save(str(output_path))
 

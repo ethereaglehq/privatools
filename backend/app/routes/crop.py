@@ -1,12 +1,14 @@
 import asyncio
 import logging
 import uuid
+from typing import Literal
 
 from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from starlette.background import BackgroundTask
 
 from ..services import crop_service
+from ..utils.page_space import shown_area
 from ..utils.cleanup import (
     ensure_temp_dir,
     get_temp_path,
@@ -22,14 +24,24 @@ logger = logging.getLogger(__name__)
 # the largest standard page (A0) is ~3370 pt.
 _MAX_CROP_POINTS = 5000
 
+_MARGIN = "Points (1/72 inch) to trim from the page's {edge} edge, on every page; `margins_from` says which edge that is."
+MARGINS_FROM_DESCRIPTION = (
+    "`mediabox` (the default): each margin is measured from that edge of the page's MediaBox as "
+    "stored, before any /Rotate setting it has, and replaces any CropBox the page had. `shown`: "
+    "each margin is measured from the edge a reader sees on that side, on the page's visible area "
+    "(its CropBox) after /Rotate, so the area kept is the area that shows inside the margins. The "
+    "website's Crop page sends `shown`, because the area to keep is drawn on the page as shown."
+)
+
 
 @router.post("/crop")
 async def crop_pdf(
     file: UploadFile = File(...),
-    top: float = Form(0.0),
-    bottom: float = Form(0.0),
-    left: float = Form(0.0),
-    right: float = Form(0.0),
+    top: float = Form(0.0, description=_MARGIN.format(edge="top")),
+    bottom: float = Form(0.0, description=_MARGIN.format(edge="bottom")),
+    left: float = Form(0.0, description=_MARGIN.format(edge="left")),
+    right: float = Form(0.0, description=_MARGIN.format(edge="right")),
+    margins_from: Literal["mediabox", "shown"] = Form("mediabox", description=MARGINS_FROM_DESCRIPTION),
 ):
     if not (file.filename or "").lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Uploaded file is not a PDF")
@@ -64,9 +76,12 @@ async def crop_pdf(
                 if len(_peek.pages) == 0:
                     raise HTTPException(status_code=400, detail="PDF has no pages")
                 first = _peek.pages[0]
-                mb = first.mediabox
-                pw = float(mb[2]) - float(mb[0])
-                ph = float(mb[3]) - float(mb[1])
+                if margins_from == "shown":
+                    _, pw, ph = shown_area(first)
+                else:
+                    mb = first.mediabox
+                    pw = float(mb[2]) - float(mb[0])
+                    ph = float(mb[3]) - float(mb[1])
                 if left + right >= pw:
                     raise HTTPException(
                         status_code=400,
@@ -96,7 +111,7 @@ async def crop_pdf(
 
         output_path = await asyncio.to_thread(
             crop_service.crop_pdf,
-            str(temp_path), top=top, bottom=bottom, left=left, right=right
+            str(temp_path), top=top, bottom=bottom, left=left, right=right, margins_from=margins_from,
         )
         stem = safe_stem(file.filename)
         cleanup = BackgroundTask(remove_files, str(temp_path), output_path)
