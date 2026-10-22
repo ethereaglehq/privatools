@@ -73,7 +73,7 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.1",
-    "vitest": "^5.0.2"
+    "vitest": "^5.0.5"
   },
   "overrides": {
     "sharp": "^0.35.4",
