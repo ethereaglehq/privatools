@@ -8,7 +8,10 @@ Tool totals in older entries describe that release; the live catalogue is at
 
 ## [Unreleased]
 
-Nothing yet.
+### Security
+
+- Pillow 12.3.0 → 13.0.0. It fixes four critical flaws in how images are read: two heap overflows, stale image storage and a Ghostscript argument injection. rembg 2.0.85 → 2.0.86, because 2.0.85 required Pillow below 13. (#373)
+- pypdf 6.21.2, aiohttp 3.14.5 and certifi 2026.10.19. That certifi release no longer trusts the emSign ECC Root CA - G3 that Mozilla removed on 20 October 2026. (#373)
 
 ## [2.7.33] — 2026-10-05 — Old release images removed after each deploy
 
