@@ -11,6 +11,7 @@ and services/media_errors.py reads that for every FFmpeg runner.
 from __future__ import annotations
 
 import io
+import re
 import shutil
 import struct
 import subprocess
@@ -83,7 +84,7 @@ def test_a_file_that_is_not_media_is_a_400_that_says_so(quiet_client, real_media
 
 
 # What FFmpeg 6.1 and later print when an input cannot be opened, and what
-# older versions printed. CI and the dev VM run 6.1; the image runs 7.1.
+# older versions printed. The dev VM runs 6.1, the image 7.1 and CI 8.0.
 OPEN_FAILED_61 = (
     "[mp3 @ 0xadb04cbf4930] Failed to read frame size: Could not seek to 1051.\n"
     "[in#0 @ 0xadb04cbf4830] Error opening input: Invalid argument\n"
@@ -203,7 +204,8 @@ def _not_media_samples(folder) -> dict[str, bytes]:
         "first-20-bytes.wav": pcm[:20], "junk.mp4": junk,
         "report.mp4": b"%PDF-1.4\n1 0 obj\n<< >>\nendobj\ntrailer << >>\n%%EOF\n",
         "page.mp4": b"<!doctype html><p>not a video</p>\n",
-        # "Invalid argument", from the MP3 reader
+        # "Invalid argument", from FFmpeg 6's MP3 reader; 7.0.1 and later's say
+        # "Invalid data found when processing input"
         "notes.mp3": TEXT, "empty.mp3": b"", "junk.mp3": junk, "first-100-bytes.mp3": mp3[:100],
         "archive.mp3": archive.getvalue(), "data.mp3": b'{"title": "not media"}\n',
         # "End of file", from readers the extension chooses
@@ -215,6 +217,12 @@ def _not_media_samples(folder) -> dict[str, bytes]:
         # fixed point). It is media, but not media this tool can read.
         "dsp-encoding.au": b".snd" + struct.pack(">IIIII", 24, 0xFFFFFFFF, 10, 8000, 1) + bytes(4000),
     }
+
+
+def _libavformat_major() -> int:
+    """The major version of this FFmpeg's libavformat: 60 in FFmpeg 6, 61 in 7, 62 in 8."""
+    version = subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True, check=True, timeout=15).stdout
+    return int(re.search(r"^libavformat\s+(\d+)\.", version, re.MULTILINE).group(1))
 
 
 @pytest.mark.parametrize("command", [
@@ -234,8 +242,14 @@ def test_real_ffmpeg_on_files_that_are_not_media_still_reads_as_not_media(tmp_pa
         reasons.update(line.split(": ", 1)[1] for line in done.stderr.splitlines()
                        if line.startswith("Error opening input files: "))
     # The samples cover every reason on the allow list, as this FFmpeg words them.
-    assert reasons == {"Invalid data found when processing input", "End of file", "Invalid argument",
-                       "Input/output error", "Not yet implemented in FFmpeg, patches welcome"}
+    # FFmpeg 6's MP3 reader, running out of file while it looked for a frame,
+    # reported a failed seek, an invalid argument; from 7.0.1 it reports that it
+    # found no two MP3 frames in a row, as invalid data.
+    expected = {"Invalid data found when processing input", "End of file", "Input/output error",
+                "Not yet implemented in FFmpeg, patches welcome"}
+    if _libavformat_major() < 61:
+        expected.add("Invalid argument")
+    assert reasons == expected
 
 
 def _first_upload(command: list[str]) -> str:

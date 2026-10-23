@@ -280,8 +280,14 @@ def test_video_merge_copies_hevc_under_the_tag_apple_players_need(client, media_
     blue = clip_recorded_alike(tmp_path / "blue.mov", "blue", codec=hevc)
     merged = tmp_path / "merged.mp4"
     inspect_download(merge(client, red, blue), merged)
+    # FFmpeg 7.1 and later rewrite an HEVC stream's parameter-set record as they
+    # copy it, and under hvc1 mark each set's array complete (6.1 and 7.0 copied
+    # it byte for byte), so the merge must match the recording as this FFmpeg
+    # copies it under that tag. A re-encode writes its own parameter sets.
+    copied = tmp_path / "red-hvc1.mp4"
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(red), "-c", "copy", "-tag:v", "hvc1", str(copied)], check=True, timeout=15)
     codec, tag, setup = video_setup(merged)
-    assert (codec, tag, setup) == ("hevc", "hvc1", video_setup(red)[2])
+    assert (codec, tag, setup) == ("hevc", "hvc1", video_setup(copied)[2])
     assert decodes_cleanly(merged)
 
 
