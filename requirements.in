@@ -34,17 +34,17 @@
 #   pip install --dry-run --require-hashes -r requirements.txt
 #   pip download --only-binary=:all: --platform manylinux_2_28_aarch64 \
 #       --python-version 3.12 --no-deps <package>==<version> -d <scratch-dir>
-fastapi==0.141.1
+fastapi==0.162.0
 # Used directly for cancellation-safe database work and reservation cleanup.
 anyio==4.15.1
 uvicorn[standard]==0.54.0
 python-multipart==0.0.32
-pikepdf==10.13.0.post1
+pikepdf==10.17.0
 pypdf==6.21.2
 pdf2image==1.17.0
 Pillow==13.0.0
-reportlab==5.0.1
-brotli==1.2.0
+reportlab==5.1.0
+brotli==1.2.1
 slowapi==0.1.10
 pymupdf==1.28.2
 pytesseract==0.3.13
@@ -52,8 +52,8 @@ weasyprint==70.0
 python-docx==1.2.0
 openpyxl==3.1.5
 python-pptx==1.0.2
-pillow-heif==1.8.0
-onnxruntime==1.30.0
+pillow-heif==1.8.1
+onnxruntime==1.31.0
 rembg==2.0.86
 # Declared explicitly because app code imports cv2 directly
 # (services/image_watermark_remove_service.py). It used to arrive transitively
@@ -63,13 +63,13 @@ opencv-python-headless==5.0.0.93
 # Same reason: image_watermark_remove_service.py does `import numpy as np` at
 # module level. It arrived via opencv/scipy before; declaring it means no
 # upstream reshuffle can remove it.
-numpy==2.5.3
+numpy==2.5.4
 cairosvg==2.9.1
 python-barcode==0.16.1
 qrcode==8.2
 pyzbar==0.1.9
 defusedxml==0.7.1
-mistune==3.3.4
+mistune==3.4.0
 
 # PDF signature validation for /verify-signature: whether the signed bytes are
 # unchanged, whether the signature matches the signer's certificate, and what
@@ -93,8 +93,8 @@ pyhanko-certvalidator==0.32.1
 # The alternative was asking Clerk's API to verify each token, which would put
 # a network round-trip on every key request and make API key management stop
 # working whenever Clerk had an incident.
-pyjwt==2.15.0
+pyjwt==2.15.1
 # Current, not merely patched. 46.x carries 19 known advisories
 # (GHSA-537c-gmf6-5ccf among them) and 48.0.1 is only the minimum fix; both
 # the audit and the dependency-review job refuse the 46 series outright.
-cryptography==50.0.1
+cryptography==50.0.2
