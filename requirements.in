@@ -44,7 +44,7 @@ pypdf==6.21.2
 pdf2image==1.17.0
 Pillow==13.0.0
 reportlab==5.0.1
-brotli==1.2.0
+brotli==1.2.1
 slowapi==0.1.10
 pymupdf==1.28.2
 pytesseract==0.3.13
